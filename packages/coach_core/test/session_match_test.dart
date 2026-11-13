@@ -1,6 +1,6 @@
 // Port von CoachCoreTests/SessionMatchTests.swift, PlanAdjustmentsTests.swift (ohne ScheduleAdvisor und
 // Saisonplan-Erinnerungen, die mit ihren Modulen folgen), TrainingBreakTests.swift und den ScheduleCheck-Fällen aus
-// ProfileTests.swift (ohne `everyEvidenceIDExists`, folgt mit Evidence).
+// ProfileTests.swift (`everyEvidenceIDExists` steht in profile_test.dart).
 import 'dart:convert';
 
 import 'package:coach_core/coach_core.dart';
