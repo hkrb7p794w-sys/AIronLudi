@@ -1,8 +1,11 @@
 /// Reine Logik von AIronLudi (Port von `CoachCore` aus Coach-App), ohne Flutter.
 library;
 
+export 'src/analysis/activity_details.dart';
+export 'src/analysis/activity_feed.dart';
 export 'src/analysis/activity_source.dart';
 export 'src/analysis/aerobic_decoupling.dart';
+export 'src/analysis/chart_zoom.dart';
 export 'src/analysis/session_kind.dart';
 export 'src/app/app_appearance.dart';
 export 'src/app/app_route.dart';
