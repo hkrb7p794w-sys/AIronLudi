@@ -1,11 +1,12 @@
 import 'package:collection/collection.dart';
 
 import '../calendar/calendar_day.dart';
+import '../garmin/garmin_activity.dart';
 import '../util/enum_codec.dart';
 import 'personalization.dart';
 import 'week_schedule.dart';
 
-/// Sportarten, aus denen Nutzer:innen wählen. (`garminSport` folgt mit dem Garmin-Modul.)
+/// Sportarten, aus denen Nutzer:innen wählen.
 enum TrainingSport implements RawEnum {
   run('Laufen'),
   strength('Krafttraining'),
@@ -19,6 +20,14 @@ enum TrainingSport implements RawEnum {
 
   @override
   String get rawValue => name;
+
+  ActivitySport get garminSport => switch (this) {
+    run => ActivitySport.run,
+    strength => ActivitySport.strength,
+    bike => ActivitySport.bike,
+    swim => ActivitySport.swim,
+    other => ActivitySport.other,
+  };
 
   /// Ausdauersportart (für Intensitätsverteilung und Ruhepuls-Ziel).
   bool get isEndurance => this == run || this == bike || this == swim;

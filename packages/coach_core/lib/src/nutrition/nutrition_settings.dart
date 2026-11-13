@@ -1,4 +1,5 @@
 import '../calendar/calendar_day.dart';
+import '../garmin/garmin_profile.dart';
 import '../util/enum_codec.dart';
 
 /// Tagestyp für die Ernährungsziele.
@@ -139,7 +140,7 @@ final class BodyProfile {
 }
 
 /// Einstellungen der Ernährung (Schlüssel `coach.nutrition`). Körperwerte sind optional: ohne Eintrag gelten die
-/// Garmin-Werte. Die Auflösung gegen das Garmin-Profil (`profile(garmin:on:)`) folgt mit dem Garmin-Modul.
+/// Garmin-Werte.
 final class NutritionSettings {
   NutritionSettings();
 
@@ -169,6 +170,17 @@ final class NutritionSettings {
 
   /// Letzter Wochen-Check-in (Gewichtsverlauf angesehen bzw. übersprungen), siehe `NutritionCheckIn`.
   CalendarDay? lastCheckInDay;
+
+  /// Einstellungen haben Vorrang, dann Garmin-Profil, dann Standardwerte.
+  BodyProfile profile(GarminProfile? garmin, {required CalendarDay on}) {
+    const fallback = BodyProfile.fallback;
+    return BodyProfile(
+      weightKilograms: weightKilograms ?? garmin?.weightKilograms ?? fallback.weightKilograms,
+      heightCentimeters: heightCentimeters ?? garmin?.heightCentimeters ?? fallback.heightCentimeters,
+      age: age ?? garmin?.ageOn(on) ?? fallback.age,
+      isFemale: isFemale ?? (garmin == null ? null : garmin.gender == 'FEMALE') ?? fallback.isFemale,
+    );
+  }
 
   NutritionSettings copy() => NutritionSettings.fromJson(toJson());
 
