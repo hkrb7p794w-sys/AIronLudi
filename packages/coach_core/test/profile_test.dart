@@ -262,4 +262,19 @@ void main() {
       );
     });
   });
+
+  test('jede Beleg-ID der Wochenplan-Hinweise existiert (everyEvidenceIDExists)', () {
+    var all = WeekSchedule();
+    for (final weekday in Weekday.values) {
+      all = all.withSlots([
+        const SessionSlot(TrainingSport.run, SessionIntensity.hard),
+        const SessionSlot(TrainingSport.strength),
+      ], weekday);
+    }
+    final hints = ScheduleCheck.hints(all, profile(goal: FitnessGoal.buildMuscle));
+    expect(hints, isNotEmpty);
+    for (final hint in hints) {
+      expect(hint.evidenceIDs.every((id) => Evidence.rulesByID[id] != null), isTrue, reason: hint.id);
+    }
+  });
 }
