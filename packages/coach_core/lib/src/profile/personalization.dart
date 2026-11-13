@@ -3,7 +3,9 @@ import 'package:collection/collection.dart';
 import '../calendar/calendar_day.dart';
 import '../integration/data_provider.dart';
 import '../util/enum_codec.dart';
+import 'schedule_check.dart';
 import 'user_profile.dart';
+import 'week_load.dart';
 
 /// Trainingsziele für Haupt- und Nebenziele.
 enum TrainingGoal implements RawEnum {
@@ -170,8 +172,7 @@ final class PersonalGoals {
 
 /// Eine Stelle für alles, was aus Zielen und Prioritäten folgt. Regeln entscheiden, die KI formuliert.
 ///
-/// Noch offen (folgen mit ihren Modulen): `maxLoadIncrease` (WeekLoad), `adjustCounts` (ScheduleCheck),
-/// `healthWidgets` (HealthDashboard), `insightTopics` (Insights).
+/// Noch offen (folgen mit ihren Modulen): `healthWidgets` (HealthDashboard), `insightTopics` (Insights).
 abstract final class Personalization {
   /// Ziele aus dem bisherigen Einzelziel (`FitnessGoal`) und einem Wettkampf – für Profile von vor Paket 6.
   static PersonalGoals derived(UserProfile profile, {required CalendarDay since}) {
@@ -242,6 +243,56 @@ abstract final class Personalization {
       });
     }
     return result.take(PersonalGoals.maxPriorities).toList();
+  }
+
+  /// Höchste Steigerung der Wochenbelastung, ab der gewarnt wird: vorsichtiger bei Regeneration oder Gesundheit als
+  /// Haupt- oder Prioritätsziel (20 statt 30 %).
+  static double maxLoadIncrease(PersonalGoals goals) {
+    final careful =
+        goals.primary == TrainingGoal.recovery ||
+        goals.primary == TrainingGoal.health ||
+        goals.effectivePriorities.take(2).any((area) => area == FocusArea.recovery || area == FocusArea.health);
+    return careful ? 0.20 : WeekLoad.maxIncrease;
+  }
+
+  /// Gewünschte Einheiten je Sportart, angepasst an Haupt- und Nebenziele (nach `SchedulePlanner.wantedCounts`).
+  static Map<TrainingSport, int> adjustCounts(
+    Map<TrainingSport, int> counts, {
+    required PersonalGoals goals,
+    required UserProfile profile,
+  }) {
+    final result = Map.of(counts);
+    final beginner = ScheduleCheck.overallLevel(profile) == ExperienceLevel.beginner;
+    void atLeast(TrainingSport sport, int count) {
+      if (!profile.trains(sport)) return;
+      final current = result[sport] ?? 0;
+      result[sport] = current > count ? current : count;
+    }
+
+    switch (goals.primary) {
+      case TrainingGoal.muscleGain || TrainingGoal.strength:
+        atLeast(TrainingSport.strength, beginner ? 3 : 4);
+      case TrainingGoal.endurance:
+        for (final sport in profile.sports.where((sport) => sport.isEndurance)) {
+          atLeast(sport, beginner ? 2 : 3);
+        }
+      default:
+        break;
+    }
+    if (goals.secondary.contains(TrainingGoal.muscleGain) || goals.secondary.contains(TrainingGoal.strength)) {
+      atLeast(TrainingSport.strength, 2);
+    }
+    if (goals.secondary.contains(TrainingGoal.endurance)) {
+      final main = profile.sports.where((sport) => sport.isEndurance).firstOrNull;
+      if (main != null) atLeast(main, 2);
+    }
+    if (goals.primary == TrainingGoal.recovery || goals.primary == TrainingGoal.health) {
+      // Regelmäßig, aber nicht viel: höchstens 2 je Sportart.
+      for (final sport in result.keys.toList()) {
+        if (result[sport]! > 2) result[sport] = 2;
+      }
+    }
+    return result;
   }
 
   /// Zeilen für den KI-Kontext (Chat, Analyse, Tagesnotiz): Ziele, Prioritäten und worauf Empfehlungen achten sollen.
