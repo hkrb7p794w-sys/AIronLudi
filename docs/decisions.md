@@ -131,3 +131,11 @@
 - **Krafteinheit schreiben** (`writeWorkoutData`) ohne `HKMetadataKeyExternalUUID`; das Paket bietet keine Metadaten.
   Die Einheit trägt Titel, Start und Ende.
 - **Wecker zur Aufstehzeit** (AlarmKit, iOS 26) bleibt eine native Funktion und folgt mit den Plattformbrücken.
+
+## 2026-11-13 – GymBook und Diktat (Phase 2l)
+
+- **GymBook-Backup** wird über das Paket `sqlite3` gelesen (ist schon über drift im Projekt), nur lesend und aus
+  einer Kopie im Temp-Ordner, wie in Swift.
+- **Diktat über `speech_to_text`.** Das Plugin sagt nicht, ob die Erkennung auf dem Gerät möglich ist. Deshalb wird
+  keine Erkennung auf dem Gerät erzwungen, sondern wie beim Diktieren der Tastatur gearbeitet; `isOnDevice` bleibt
+  `false`. Swift erzwingt sie, wenn das Gerät sie unterstützt. Das ließe sich mit einer nativen Brücke nachrüsten.

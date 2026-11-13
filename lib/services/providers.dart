@@ -24,6 +24,7 @@ import 'reminders/reminder_service.dart';
 import 'social/game_service.dart';
 import 'social/league_service.dart';
 import 'social/social_service.dart';
+import 'speech/dictation.dart';
 
 /// Garmin-Konto (inoffizieller Zugang).
 final garminConnectProvider = Provider<GarminConnectSession>(
@@ -128,3 +129,5 @@ final healthImportServiceProvider = ChangeNotifierProvider<HealthImportService>(
 });
 
 final workoutWriterProvider = Provider<WorkoutSaving>((ref) => HealthWorkoutWriter());
+
+final dictationProvider = ChangeNotifierProvider.autoDispose<Dictation>((ref) => Dictation());
