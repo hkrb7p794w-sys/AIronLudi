@@ -1,6 +1,6 @@
 // Port von CoachCoreTests/ProfileTests.swift (UserProfileTests, WeekScheduleTests ohne `templateItems`,
-// GoalRulesTests ohne `weeklyRateShapesTheDailyTarget`) – die übrigen Fälle folgen mit NutritionPlanner,
-// ScheduleCheck, SchedulePlanner und ScheduleAdvisor.
+// GoalRulesTests ohne `weeklyRateShapesTheDailyTarget`), dazu ScheduleAdvisorTests, SchedulePlannerTests und
+// ProfileEvidenceTests; die übrigen Fälle stehen bei NutritionPlanner und ScheduleCheck.
 import 'dart:convert';
 
 import 'package:coach_core/coach_core.dart';
@@ -351,6 +351,140 @@ void main() {
       );
       expect(result.move, isNull);
       expect(result.detail, contains('hole'));
+    });
+  });
+
+  group('Wochenplan-Vorschlag', () {
+    const weekdays = [Weekday.monday, Weekday.wednesday, Weekday.friday, Weekday.saturday];
+    bool hasWarning(WeekSchedule schedule, UserProfile person) =>
+        ScheduleCheck.hints(schedule, person).any((hint) => hint.severity == HintSeverity.warning);
+
+    test('nur verfügbare Tage und keine Warnungen', () {
+      final person = profile(sports: [TrainingSport.run, TrainingSport.strength]);
+      final result = SchedulePlanner.suggest(profile: person, availableDays: weekdays);
+      expect(weekdays.toSet().containsAll(result.trainingDays), isTrue);
+      expect(result.sessionCount, 4);
+      expect(hasWarning(result, person), isFalse);
+      expect(result.count(TrainingSport.run), 3);
+      expect(result.count(TrainingSport.strength), 1);
+    });
+
+    test('Einsteiger bekommen keine intensiven Läufe', () {
+      final result = SchedulePlanner.suggest(
+        profile: profile(sports: [TrainingSport.run], goal: FitnessGoal.loseWeight),
+        availableDays: weekdays,
+      );
+      expect(result.days.expand((day) => day).every((slot) => slot.intensity == SessionIntensity.easy), isTrue);
+    });
+
+    test('kürzt auf die verfügbaren Tage', () {
+      final result = SchedulePlanner.suggest(
+        profile: profile(
+          sports: [TrainingSport.run, TrainingSport.strength, TrainingSport.swim, TrainingSport.bike],
+          level: ExperienceLevel.intermediate,
+        ),
+        availableDays: [Weekday.tuesday, Weekday.thursday],
+      );
+      expect(result.sessionCount, 2);
+      expect(result.count(TrainingSport.run), 1);
+      expect(result.count(TrainingSport.strength), 1);
+    });
+
+    test('Muskelaufbau bekommt mehr Krafttage', () {
+      UserProfile person() => profile(
+        sports: [TrainingSport.run, TrainingSport.strength],
+        goal: FitnessGoal.buildMuscle,
+        level: ExperienceLevel.intermediate,
+      );
+      final result = SchedulePlanner.suggest(
+        profile: person(),
+        availableDays: [Weekday.monday, Weekday.tuesday, Weekday.thursday, Weekday.friday, Weekday.saturday],
+      );
+      expect(result.count(TrainingSport.strength), 4);
+      expect(result.count(TrainingSport.run), 1);
+      expect(hasWarning(result, person()), isFalse);
+    });
+
+    test('Marathonplan hat einen langen Lauf am Wochenende', () {
+      final event = EventGoal(name: 'Marathon', date: monday.adding(120), kind: EventKind.marathon);
+      final person = profile(
+        sports: [TrainingSport.run, TrainingSport.strength],
+        level: ExperienceLevel.intermediate,
+        event: event,
+      );
+      final result = SchedulePlanner.suggest(
+        profile: person,
+        availableDays: [Weekday.tuesday, Weekday.wednesday, Weekday.thursday, Weekday.saturday, Weekday.sunday],
+      );
+      final longDays = Weekday.values
+          .where((day) => result.slots(day).contains(const SessionSlot(TrainingSport.run, SessionIntensity.long)))
+          .toList();
+      expect(longDays.length, 1);
+      expect(longDays.first == Weekday.saturday || longDays.first == Weekday.sunday, isTrue);
+      expect(result.count(TrainingSport.run), 4);
+      expect(result.count(TrainingSport.strength), 1);
+      expect(hasWarning(result, person), isFalse);
+    });
+
+    test('Triathlon behält alle drei Disziplinen', () {
+      final event = EventGoal(name: 'Sprint', date: monday.adding(90), kind: EventKind.triathlon);
+      final person = profile(
+        sports: [TrainingSport.swim, TrainingSport.bike, TrainingSport.run, TrainingSport.strength],
+        level: ExperienceLevel.intermediate,
+        event: event,
+      );
+      final result = SchedulePlanner.suggest(profile: person, availableDays: Weekday.values);
+      for (final sport in [TrainingSport.swim, TrainingSport.bike, TrainingSport.run]) {
+        expect(result.count(sport), 2);
+      }
+      // Auch bei sieben freien Tagen bleibt ein Ruhetag.
+      expect(result.restDays.length, 1);
+      expect(result.sessionCount, SchedulePlanner.maxSessionsPerWeek);
+    });
+
+    test('leere Eingaben', () {
+      expect(
+        SchedulePlanner.suggest(
+          profile: profile(sports: []),
+          availableDays: weekdays,
+        ).isEmpty,
+        isTrue,
+      );
+      expect(SchedulePlanner.suggest(profile: profile(), availableDays: []).isEmpty, isTrue);
+    });
+
+    test('ist deterministisch', () {
+      final person = profile(
+        sports: [TrainingSport.run, TrainingSport.strength, TrainingSport.bike],
+        goal: FitnessGoal.loseWeight,
+        level: ExperienceLevel.intermediate,
+      );
+      final first = SchedulePlanner.suggest(profile: person, availableDays: Weekday.values);
+      final second = SchedulePlanner.suggest(profile: person, availableDays: Weekday.values.reversed.toList());
+      expect(first, second);
+    });
+
+    test('neue Regeln zeigen auf geprüfte Studien', () {
+      const ids = [
+        'activity.who',
+        'weightloss.rate',
+        'weightloss.exercise',
+        'weightloss.protein',
+        'weightloss.sleep',
+        'gain.surplus',
+        'run.progression',
+        'run.minimum',
+        'rhr.endurance',
+        'fitness.hiit',
+        'plan.deload',
+        'cycle.individual',
+      ];
+      for (final id in ids) {
+        final rule = Evidence.rulesByID[id];
+        expect(rule, isNotNull, reason: '$id fehlt');
+        expect(rule!.studies.length, rule.studyIDs.length);
+      }
+      expect(Evidence.rulesByID['run.progression']?.strength, EvidenceStrength.practice);
     });
   });
 }
