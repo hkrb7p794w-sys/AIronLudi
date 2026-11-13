@@ -6,6 +6,7 @@ import '../data/repositories/gym_repository.dart';
 import '../data/repositories/metrics_repository.dart';
 import '../data/settings/coach_settings.dart';
 import '../data/storage.dart';
+import '../platform/notifications.dart';
 
 import 'account/account_service.dart';
 import 'ai/ai_client.dart';
@@ -16,6 +17,7 @@ import 'garmin/garmin_sync_service.dart';
 import 'gym/garmin_strength_service.dart';
 import 'nutrition/open_food_facts_client.dart';
 import 'nutrition/pending_analysis.dart';
+import 'reminders/reminder_service.dart';
 import 'social/game_service.dart';
 import 'social/league_service.dart';
 import 'social/social_service.dart';
@@ -99,3 +101,10 @@ final garminStrengthServiceProvider = Provider<GarminStrengthService>((ref) {
     folder: ref.watch(activityFoldersProvider).support,
   );
 });
+
+/// Mitteilungszentrale des Geräts; wird in `main` gesetzt (Einrichtung ist asynchron), ohne: keine Mitteilungen.
+final notificationCenterProvider = Provider<NotificationCenterBridge?>((ref) => null);
+
+final reminderServiceProvider = ChangeNotifierProvider<ReminderService>(
+  (ref) => ReminderService(settings: ref.read(coachSettingsProvider), center: ref.watch(notificationCenterProvider)),
+);

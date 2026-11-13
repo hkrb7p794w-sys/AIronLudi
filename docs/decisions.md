@@ -99,3 +99,15 @@
   `null` gespeichert. Beides liest sich als „nicht gesetzt“.
 - `ReminderSettings`, `LeagueSettings` und `ImportedNotes` lagen in Swift in der App. Sie sind reine Datentypen
   und stehen deshalb in `coach_core` (`settings/app_settings.dart`).
+
+## 2026-11-13 – Erinnerungen (Phase 2j)
+
+- **Mitteilungen über `flutter_local_notifications`** hinter der Brücke `NotificationCenterBridge`. Das Plugin
+  arbeitet mit Zahlen als Kennung. Die Text-Kennungen der Swift-App (`coach.reminder.…`) liegen deshalb in der
+  Nutzlast, die Zahl ist ein stabiler 31-Bit-FNV-Hash davon.
+- **Erlaubnis:** Das Plugin unterscheidet nicht zwischen „noch nicht gefragt“ und „abgelehnt“. Die App fragt deshalb,
+  wenn eine Erinnerung gewünscht ist und keine Erlaubnis vorliegt. Bleibt sie aus, gilt der Stand als „abgelehnt“
+  (iOS zeigt die Abfrage ohnehin nur einmal).
+- **Mitteilungen in der Vergangenheit** werden nicht eingetragen, bei iOS würden sie nie auslösen.
+- **Ausgelieferte Mitteilungen entfernen** heißt beim Plugin: die Kennung zurückziehen, geplant und ausgeliefert.
+  Nach „Auslassen“ ist beides gewollt.
