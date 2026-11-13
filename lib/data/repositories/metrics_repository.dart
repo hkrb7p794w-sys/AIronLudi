@@ -47,6 +47,15 @@ final class MetricsRepository {
         ),
       );
 
+  /// Jüngster gespeicherter Tag (Start des nächsten Abrufs).
+  Future<CalendarDay?> latestDay() async {
+    final query = _db.select(_db.dailyMetricsRecords)
+      ..orderBy([(t) => OrderingTerm(expression: t.dayKey, mode: OrderingMode.desc)])
+      ..limit(1);
+    final row = await query.getSingleOrNull();
+    return row == null ? null : CalendarDay.tryParse(row.dayKey);
+  }
+
   /// Zeitpunkt der letzten Änderung je Tag.
   Future<Map<String, DateTime>> updatedAt() async => {
     for (final row in await _db.select(_db.dailyMetricsRecords).get()) row.dayKey: row.updatedAt,
@@ -120,6 +129,10 @@ final class RawResponseRepository {
           body: Uint8List.fromList(body),
         ),
       );
+
+  /// Letzte gespeicherte Rohantwort eines Endpunkts.
+  Future<Uint8List?> body(String endpoint) async =>
+      (await (_db.select(_db.rawResponseRecords)..where((t) => t.endpoint.equals(endpoint))).getSingleOrNull())?.body;
 
   Future<List<RawResponseRow>> all() =>
       (_db.select(_db.rawResponseRecords)..orderBy([(t) => OrderingTerm(expression: t.endpoint)])).get();

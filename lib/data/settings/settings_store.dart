@@ -172,6 +172,13 @@ final class SettingsStore {
     }
   }
 
+  /// Zeitpunkt (nur Gerätestand wie `garmin.lastSync`, wird nicht gesichert): ISO-Text, als Zahl Sekunden seit 1970.
+  DateTime? date(String key) => switch (_values[key]) {
+    BackupString(:final value) => DateTime.tryParse(value),
+    BackupDouble(:final value) => DateTime.fromMicrosecondsSinceEpoch((value * 1e6).round(), isUtc: true),
+    _ => null,
+  };
+
   // Schreiben
 
   Future<void> setValue(String key, BackupValue? value) async {
@@ -197,6 +204,8 @@ final class SettingsStore {
   /// Speichert einen JSON-Wert (Map, Liste, Zahl, Text) bzw. ein Objekt mit `toJson()` als JSON-Bytes.
   Future<void> setJson(String key, Object? value) =>
       setValue(key, value == null ? null : BackupData(utf8.encode(jsonEncode(value))));
+
+  Future<void> setDate(String key, DateTime? value) => setString(key, value?.toUtc().toIso8601String());
 
   Future<void> remove(String key) => setValue(key, null);
 
