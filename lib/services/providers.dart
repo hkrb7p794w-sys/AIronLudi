@@ -1,8 +1,11 @@
+import 'package:coach_core/coach_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
 import '../data/repositories/metrics_repository.dart';
+import '../data/settings/coach_settings.dart';
 import '../data/storage.dart';
+
 import 'account/account_service.dart';
 import 'ai/ai_client.dart';
 import 'garmin/activity_stores.dart';
@@ -10,6 +13,7 @@ import 'garmin/garmin_client.dart';
 import 'garmin/garmin_connect_session.dart';
 import 'garmin/garmin_sync_service.dart';
 import 'social/game_service.dart';
+import 'social/league_service.dart';
 import 'social/social_service.dart';
 
 /// Garmin-Konto (inoffizieller Zugang).
@@ -22,9 +26,23 @@ final garminClientProvider = Provider<GarminClient>(
   (ref) => GarminClient(secrets: ref.watch(secretsProvider), connect: ref.watch(garminConnectProvider)),
 );
 
-/// KI-Worker; Einstellungen, eigene Quellen und Nutzungsprotokoll verbindet der App-Zustand.
-final aiClientProvider = Provider<AIClient>(
-  (ref) => AIClient(secrets: ref.watch(secretsProvider), settings: ref.watch(settingsStoreProvider)),
+/// KI-Worker; KI-Stufe, eigene Quellen und Nutzungsprotokoll kommen aus den App-Einstellungen (gelesen bei jeder
+/// Anfrage, damit Änderungen der Einstellungen den Client nicht neu erzeugen).
+final aiClientProvider = Provider<AIClient>((ref) {
+  CoachSettings coach() => ref.read(coachSettingsProvider);
+  return AIClient(secrets: ref.watch(secretsProvider), settings: ref.watch(settingsStoreProvider))
+    ..settings = (() => coach().ai)
+    ..userSources = (() => coach().userSources)
+    ..onUsage = ((entry) => coach().aiUsage = AIUsageLog.appending(entry, coach().aiUsage));
+});
+
+/// App-Einstellungen (`coach.*`).
+final coachSettingsProvider = ChangeNotifierProvider<CoachSettings>(
+  (ref) => CoachSettings(ref.watch(settingsStoreProvider)),
+);
+
+final leagueServiceProvider = ChangeNotifierProvider<LeagueService>(
+  (ref) => LeagueService(ai: ref.watch(aiClientProvider), settings: ref.read(coachSettingsProvider)),
 );
 
 final accountServiceProvider = ChangeNotifierProvider<AccountService>(
@@ -37,6 +55,8 @@ final activityFoldersProvider = Provider<({String? support, String? cache})>((re
 final garminSyncServiceProvider = Provider<GarminSyncService>((ref) {
   final db = ref.watch(databaseProvider);
   final folders = ref.watch(activityFoldersProvider);
+  final sources = ref.watch(sourceStoreProvider);
+  sources.preferences = () => ref.read(coachSettingsProvider).sources;
   return GarminSyncService(
     client: ref.watch(garminClientProvider),
     settings: ref.watch(settingsStoreProvider),
@@ -45,7 +65,7 @@ final garminSyncServiceProvider = Provider<GarminSyncService>((ref) {
     raw: RawResponseRepository(db),
     analysisStore: ActivityAnalysisStore(folder: folders.support),
     reportStore: ActivityReportStore(folder: folders.support, cacheFolder: folders.cache),
-    sources: ref.watch(sourceStoreProvider),
+    sources: sources,
   );
 });
 
