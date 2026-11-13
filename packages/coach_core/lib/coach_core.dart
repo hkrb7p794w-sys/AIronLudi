@@ -1,6 +1,7 @@
 /// Reine Logik von AIronLudi (Port von `CoachCore` aus Coach-App), ohne Flutter.
 library;
 
+export 'src/account/account_rules.dart';
 export 'src/ai/ai_policy.dart';
 export 'src/ai/ai_usage.dart';
 export 'src/ai/insights.dart';
@@ -71,7 +72,13 @@ export 'src/health/morning_report.dart';
 export 'src/health/personal_norm.dart';
 export 'src/health/wake_plan.dart';
 export 'src/integration/data_provider.dart';
+export 'src/integration/source_merge.dart';
+export 'src/integration/sync_ledger.dart';
 export 'src/json/json_value.dart';
+export 'src/motivation/adherence.dart';
+export 'src/motivation/companion.dart';
+export 'src/motivation/daisy_geometry.dart';
+export 'src/motivation/league.dart';
 export 'src/nutrition/bls.dart';
 export 'src/nutrition/cook_plan.dart';
 export 'src/nutrition/food_search.dart';
@@ -113,8 +120,11 @@ export 'src/profile/user_profile.dart';
 export 'src/profile/week_load.dart';
 export 'src/profile/week_schedule.dart';
 export 'src/util/enum_codec.dart';
+export 'src/util/fnv.dart';
 export 'src/util/german_format.dart';
 export 'src/util/int_range.dart';
 export 'src/util/rounding.dart';
 export 'src/util/swift_date.dart';
+export 'src/util/swift_json.dart';
 export 'src/util/text_prefix.dart';
+export 'src/util/url_query.dart';

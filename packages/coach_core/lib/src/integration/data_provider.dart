@@ -151,3 +151,69 @@ enum DataProvider implements RawEnum {
     DataKind.calories || DataKind.steps || DataKind.body => [garmin, polar, fitbit, whoop, appleHealth],
   };
 }
+
+/// Welche Quelle je Datenart gilt: ein primäres Gerät und einzelne Ausnahmen.
+final class SourcePreferences {
+  SourcePreferences({this.primary, Map<DataKind, DataProvider>? overrides}) : overrides = overrides ?? {};
+
+  DataProvider? primary;
+  Map<DataKind, DataProvider> overrides;
+
+  Map<String, Object?> toJson() => {
+    'primary': ?primary?.rawValue,
+    'overrides': {for (final MapEntry(:key, :value) in overrides.entries) key.rawValue: value.rawValue},
+  };
+
+  /// Tolerant: unbekannte Anbieter oder Datenarten (aus neueren Versionen) werden übersprungen.
+  static SourcePreferences fromJson(Object? json) {
+    final map = json is Map ? json : const <String, Object?>{};
+    final rawPrimary = map['primary'];
+    final rawOverrides = map['overrides'];
+    final overrides = <DataKind, DataProvider>{};
+    if (rawOverrides is Map && rawOverrides.values.every((value) => value is String)) {
+      for (final MapEntry(:key, :value) in rawOverrides.entries) {
+        final kind = enumFromRaw(DataKind.values, key);
+        final provider = enumFromRaw(DataProvider.values, value);
+        if (kind != null && provider != null) overrides[kind] = provider;
+      }
+    }
+    return SourcePreferences(
+      primary: rawPrimary is String ? enumFromRaw(DataProvider.values, rawPrimary) : null,
+      overrides: overrides,
+    );
+  }
+
+  /// Reihenfolge der verbundenen Quellen für eine Datenart: gewählte Quelle, dann das primäre Gerät (nur bei seinen
+  /// Stärken), dann die allgemeine Rangfolge. Nur Anbieter, die die Art liefern können.
+  List<DataProvider> order(DataKind kind, {required Set<DataProvider> connected}) {
+    final result = <DataProvider>[];
+    void add(DataProvider? provider) {
+      if (provider == null ||
+          !connected.contains(provider) ||
+          !provider.capabilities.contains(kind) ||
+          result.contains(provider)) {
+        return;
+      }
+      result.add(provider);
+    }
+
+    add(overrides[kind]);
+    if (primary case final primary? when primary.strengths.contains(kind)) add(primary);
+    DataProvider.defaultOrder(kind).forEach(add);
+    return result;
+  }
+
+  /// Bevorzugte Quelle (erste der Reihenfolge).
+  DataProvider? preferred(DataKind kind, {required Set<DataProvider> connected}) =>
+      order(kind, connected: connected).firstOrNull;
+
+  @override
+  bool operator ==(Object other) =>
+      other is SourcePreferences &&
+      other.primary == primary &&
+      other.overrides.length == overrides.length &&
+      overrides.entries.every((entry) => other.overrides[entry.key] == entry.value);
+
+  @override
+  int get hashCode => Object.hash(primary, Object.hashAllUnordered(overrides.entries.map((e) => (e.key, e.value))));
+}
