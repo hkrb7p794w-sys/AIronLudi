@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 
 import '../calendar/calendar_day.dart';
+import '../coach/season_plan.dart';
 import '../garmin/garmin_activity.dart';
 import '../util/enum_codec.dart';
 import 'personalization.dart';
@@ -297,6 +298,12 @@ final class UserProfile {
       TrainingSport.strength.rawValue: ExperienceLevel.advanced,
     },
   );
+
+  /// Entwurf für den Wechsel vom Saisonplan zu einem persönlichen Profil: Sportarten und Hauptrennen bleiben.
+  static UserProfile personalDraft(SeasonConfig config) => seasonPlan
+    ..mode = ProfileMode.personal
+    ..onboardingDone = false
+    ..event = EventGoal(name: config.mainRaceName, date: config.mainRaceDate, kind: EventKind.triathlon);
 
   // Ziele aus der Personalisierung (in Swift eine Extension in Personalization.swift).
 

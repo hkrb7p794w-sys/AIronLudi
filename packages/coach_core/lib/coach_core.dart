@@ -6,6 +6,7 @@ export 'src/app/app_appearance.dart';
 export 'src/app/app_route.dart';
 export 'src/calendar/calendar_day.dart';
 export 'src/coach/recovery_level.dart';
+export 'src/coach/season_plan.dart';
 export 'src/coach/template_item.dart';
 export 'src/garmin/garmin_activity.dart';
 export 'src/garmin/garmin_profile.dart';
