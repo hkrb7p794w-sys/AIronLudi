@@ -101,3 +101,4 @@ flutter:
     - assets/sounds/
     # Bundeslebensmittelschlüssel 4.0 (liegt bei der Logik in coach_core, geladen beim Start).
     - packages/coach_core/assets/bls.tsv
+    - packages/coach_core/assets/season-plan.json

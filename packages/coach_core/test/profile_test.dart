@@ -277,4 +277,80 @@ void main() {
       expect(hint.evidenceIDs.every((id) => Evidence.rulesByID[id] != null), isTrue, reason: hint.id);
     }
   });
+
+  group('Tagesempfehlung aus dem Wochenplan', () {
+    final plan = schedule({
+      Weekday.monday: [const SessionSlot(TrainingSport.run, SessionIntensity.hard)],
+      Weekday.tuesday: [const SessionSlot(TrainingSport.strength, SessionIntensity.hard)],
+      Weekday.thursday: [const SessionSlot(TrainingSport.run)],
+    });
+
+    ScheduleAdvice advice(RecoveryLevel? level, {CalendarDay day = monday, bool trained = false}) {
+      final person = profile(level: ExperienceLevel.advanced)..schedule = plan;
+      return ScheduleAdvisor.advice(profile: person, day: day, recovery: level, trainedToday: trained);
+    }
+
+    test('folgt dem Plan bei guter Erholung', () {
+      final result = advice(RecoveryLevel.normal);
+      expect(result.mode, ScheduleAdviceMode.asPlanned);
+      expect(result.headline, 'Qualitätslauf (Tempo oder Intervalle)');
+      expect(result.detail, contains('Morgen (Dienstag): Krafttraining.'));
+    });
+
+    test('verschiebt harte Einheiten bei niedriger Erholung auf den nächsten freien Tag', () {
+      final result = advice(RecoveryLevel.pause);
+      expect(result.mode, ScheduleAdviceMode.rest);
+      expect(result.move, Weekday.wednesday);
+      expect(result.detail, contains('Mittwoch'));
+      expect(result.evidenceIDs, ['recovery.hrv', 'recovery.subjective']);
+    });
+
+    test('macht die Einheit bei mittlerer Erholung lockerer', () {
+      final result = advice(RecoveryLevel.locker);
+      expect(result.mode, ScheduleAdviceMode.lighter);
+      expect(result.move, isNull);
+      expect(result.detail, contains('lockerer'));
+    });
+
+    test('lockere Einheiten bleiben bei niedriger Erholung locker', () {
+      final result = advice(RecoveryLevel.pause, day: monday.adding(3));
+      expect(result.mode, ScheduleAdviceMode.rest);
+      expect(result.move, isNull);
+      expect(result.headline, 'Heute nur ganz locker oder frei');
+    });
+
+    test('Ruhetage werden erkannt', () {
+      final result = advice(RecoveryLevel.normal, day: monday.adding(2));
+      expect(result.mode, ScheduleAdviceMode.restDay);
+      expect(result.plannedTitles, isEmpty);
+      expect(result.detail, contains('Morgen (Donnerstag): Lockerer Lauf.'));
+      expect(advice(RecoveryLevel.pause, day: monday.adding(2)).evidenceIDs, ['recovery.hrv', 'recovery.subjective']);
+    });
+
+    test('erkennt erledigtes Training', () {
+      expect(advice(RecoveryLevel.normal, trained: true).mode, ScheduleAdviceMode.done);
+    });
+
+    test('funktioniert ohne Garmin-Werte', () {
+      final result = advice(null);
+      expect(result.mode, ScheduleAdviceMode.asPlanned);
+      expect(result.detail, contains('noch keine Garmin-Werte'));
+    });
+
+    test('ohne freien Tag in der Nähe wird nachgeholt', () {
+      var busy = WeekSchedule();
+      for (final weekday in Weekday.values) {
+        busy = busy.withSlots([const SessionSlot(TrainingSport.run, SessionIntensity.hard)], weekday);
+      }
+      final person = profile(level: ExperienceLevel.advanced)..schedule = busy;
+      final result = ScheduleAdvisor.advice(
+        profile: person,
+        day: monday,
+        recovery: RecoveryLevel.pause,
+        trainedToday: false,
+      );
+      expect(result.move, isNull);
+      expect(result.detail, contains('hole'));
+    });
+  });
 }
