@@ -1,0 +1,126 @@
+# Android-APK der Flutter-App (Linux-Runner, Android-SDK vorinstalliert).
+#
+# - Pull Request und main: Release-APK als Artefakt.
+# - Bereitstellung über den Worker (Workers KV, private Download-Seite der bisherigen Android-App) erst, wenn die
+#   Repo-Variable DEPLOY_ANDROID auf "true" steht. So ersetzt kein halbfertiger Stand der Migration die genutzte
+#   Kotlin-App. Gleiche Application-ID und gleicher Schlüssel (Secrets ANDROID_KEYSTORE_B64/_PASSWORD): Android
+#   installiert die Flutter-App dann als Update.
+name: Android
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: "3.47.9"
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Signaturschlüssel
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/ironludi.jks"
+            echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/ironludi.jks" >> "$GITHUB_ENV"
+            echo "SIGNED=true" >> "$GITHUB_ENV"
+          else
+            echo "::warning::ANDROID_KEYSTORE_B64 fehlt – APK nur mit Debug-Signatur, keine Bereitstellung"
+            echo "SIGNED=false" >> "$GITHUB_ENV"
+          fi
+
+      - name: APK bauen
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          set -o pipefail
+          flutter build apk --release --build-number="$((10000 + BUILD_NUMBER))" --build-name="2.0.$BUILD_NUMBER" 2>&1 | tee "$RUNNER_TEMP/build.log"
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          ls -lh "$APK"
+          SIZE=$(stat -c %s "$APK")
+          # Workers KV nimmt höchstens 25 MiB je Wert.
+          if [ "$SIZE" -gt 26000000 ]; then echo "::warning::APK größer als 25 MiB ($SIZE Bytes) – für Workers KV zu groß, Bereitstellung bräuchte Split-APKs"; fi
+          echo "APK_SIZE=$SIZE" >> "$GITHUB_ENV"
+          cp "$APK" "$RUNNER_TEMP/AIronLudi.apk"
+
+      - name: APK als Artefakt
+        uses: actions/upload-artifact@v7
+        with:
+          name: AIronLudi-${{ github.run_number }}
+          path: ${{ runner.temp }}/AIronLudi.apk
+          retention-days: 14
+
+      - name: Fehler als PR-Kommentar
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          LOG="$RUNNER_TEMP/build.log"
+          [ -f "$LOG" ] || echo "Kein Build-Protokoll (Fehler vor dem Build, siehe Actions)." > "$LOG"
+          {
+            echo "❌ Android-Build $GITHUB_RUN_NUMBER fehlgeschlagen"
+            echo
+            echo '```'
+            grep -E "^e: |error:|Error:|FAILED|What went wrong|Could not|Exception" -A3 "$LOG" | head -c 60000 || tail -n 80 "$LOG"
+            echo '```'
+          } > comment.md
+          gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -F body=@comment.md > /dev/null
+
+      - name: Bereitstellen (Workers KV, private Download-Seite)
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && env.SIGNED == 'true' && vars.DEPLOY_ANDROID == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          KV_ID: 103715a4f0004a398c9e75637a2edf36
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::warning::Cloudflare-Secrets fehlen – keine Bereitstellung"
+            exit 0
+          fi
+          if [ "$APK_SIZE" -gt 26000000 ]; then echo "::error::APK zu groß für Workers KV"; exit 1; fi
+          APK="$RUNNER_TEMP/AIronLudi.apk"
+          python3 - "$APK" <<'PY'
+          import datetime, json, os, sys
+          build = int(os.environ["BUILD_NUMBER"])
+          info = {
+              "versionName": f"2.0.{build}",
+              "versionCode": 10000 + build,
+              "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+              "size": os.path.getsize(sys.argv[1]),
+          }
+          json.dump(info, open("android.json", "w", encoding="utf-8"))
+          PY
+          cat android.json
+          WRANGLER="npx --yes wrangler@4.152.0"
+          $WRANGLER kv key put --namespace-id "$KV_ID" --remote android.apk --path "$APK"
+          # Zuletzt die Versionsangaben, damit die Seite nie auf eine fehlende APK zeigt.
+          $WRANGLER kv key put --namespace-id "$KV_ID" --remote android.json --path android.json
