@@ -99,3 +99,5 @@ flutter:
   assets:
     # Pausentöne der Gym-Einheit (wie in der iPhone-App).
     - assets/sounds/
+    # Bundeslebensmittelschlüssel 4.0 (liegt bei der Logik in coach_core, geladen beim Start).
+    - packages/coach_core/assets/bls.tsv
