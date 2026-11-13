@@ -15,3 +15,7 @@ DateTime? swiftDateFromJson(Object? value) {
   }
   return null;
 }
+
+/// Zeitpunkt wie der Standard-`JSONEncoder` in Swift (`.deferredToDate`): Sekunden seit dem 1.1.2001 (UTC). Nötig für
+/// Dateien, die native Swift-Teile lesen (Widgets, Live-Aktivität).
+double swiftReferenceDateToJson(DateTime date) => date.toUtc().difference(DateTime.utc(2001)).inMicroseconds / 1000000;

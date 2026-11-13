@@ -1,6 +1,7 @@
 // Port von ActivityFeedTests (ActivityFeedTests.swift), ChartZoomTests.swift, den Abschnitts- und Format-Fällen aus
 // ActivityDetailsTests.swift (FIT-Fälle folgen mit dem FIT-Modul), den WeekLoad-Fällen aus TrainingTodayTests.swift
-// und `loadWarningUsesGivenThreshold` aus PersonalizationTests.swift. Zeitzone der Tests: UTC (wie die CI).
+// und `loadWarningUsesGivenThreshold` aus PersonalizationTests.swift. Die Fälle des Feeds rechnen in Ortszeit
+// und gelten in jeder Zeitzone.
 import 'package:coach_core/coach_core.dart';
 import 'package:test/test.dart';
 
@@ -15,8 +16,8 @@ void main() {
           ..startLocal = '${day.iso} $time'
           ..durationSeconds = minutes * 60;
 
-    /// 28.10.2026, volle Stunde in UTC.
-    DateTime date(int hour) => utc(1793145600 + hour * 3600);
+    /// 28.10.2026, volle Stunde in Ortszeit (wie die Zeiten der Garmin-Aktivitäten).
+    DateTime date(int hour) => DateTime(2026, 10, 28, hour);
 
     test('führt Gym und Garmin-Kraft zusammen', () {
       final garmin = activity(5, 'strength_training', time: '18:10:00', minutes: 50);
