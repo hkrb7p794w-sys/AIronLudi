@@ -57,4 +57,17 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Was ist dein Ziel?'), findsOneWidget);
   });
+
+  testWidgets('Einstellungen über das Zahnrad, Bereich Allgemein', (tester) async {
+    await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Einstellungen'));
+    await tester.pumpAndSettle();
+    expect(find.text('Einstellungen'), findsOneWidget);
+    expect(find.text('Ziele & Prioritäten'), findsOneWidget);
+    await tester.tap(find.text('Allgemein'));
+    await tester.pumpAndSettle();
+    expect(find.text('Erinnerungen'.toUpperCase()), findsOneWidget);
+    expect(find.text('Nur Einordnungen (empfohlen)'), findsOneWidget);
+  });
 }
