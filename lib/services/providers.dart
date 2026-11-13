@@ -15,6 +15,9 @@ import 'garmin/garmin_client.dart';
 import 'garmin/garmin_connect_session.dart';
 import 'garmin/garmin_sync_service.dart';
 import 'gym/garmin_strength_service.dart';
+import 'health/health_import_service.dart';
+import 'health/health_source.dart';
+import 'health/health_writer.dart';
 import 'nutrition/open_food_facts_client.dart';
 import 'nutrition/pending_analysis.dart';
 import 'reminders/reminder_service.dart';
@@ -108,3 +111,20 @@ final notificationCenterProvider = Provider<NotificationCenterBridge?>((ref) => 
 final reminderServiceProvider = ChangeNotifierProvider<ReminderService>(
   (ref) => ReminderService(settings: ref.read(coachSettingsProvider), center: ref.watch(notificationCenterProvider)),
 );
+
+final healthSourceProvider = Provider<HealthSource>((ref) => PluginHealthSource());
+
+final healthImportServiceProvider = ChangeNotifierProvider<HealthImportService>((ref) {
+  final db = ref.watch(databaseProvider);
+  final folders = ref.watch(activityFoldersProvider);
+  return HealthImportService(
+    source: ref.watch(healthSourceProvider),
+    settings: ref.watch(settingsStoreProvider),
+    metrics: MetricsRepository(db),
+    activities: ActivityRepository(db),
+    sources: ref.watch(sourceStoreProvider),
+    reportStore: ActivityReportStore(folder: folders.support, cacheFolder: folders.cache),
+  );
+});
+
+final workoutWriterProvider = Provider<WorkoutSaving>((ref) => HealthWorkoutWriter());
