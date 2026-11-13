@@ -68,3 +68,41 @@ final class InMemorySecretStore implements SecretStore {
     }
   }
 }
+
+/// Geheimnisse im Arbeitsspeicher, beim Start einmal geladen: synchron lesbar wie `SecretStore.string(for:)` der
+/// Swift-App; Schreiben ändert sofort und speichert dann im sicheren Speicher.
+final class Secrets {
+  Secrets._(this._store, this._values);
+
+  /// Liest alle Schlüssel aus [store]; nicht lesbare gelten als fehlend.
+  static Future<Secrets> load(SecretStore store) async {
+    final values = <SecretKey, String>{};
+    for (final key in SecretKey.values) {
+      try {
+        if (await store.read(key) case final value? when value.isNotEmpty) values[key] = value;
+      } on Object {
+        // Nicht lesbar (z. B. Schlüsselbund gesperrt): wie in Swift als fehlend behandeln.
+      }
+    }
+    return Secrets._(store, values);
+  }
+
+  /// Für Tests und Vorschauen.
+  factory Secrets.memory([Map<SecretKey, String>? values]) =>
+      Secrets._(InMemorySecretStore(values), {...?values}..removeWhere((_, value) => value.isEmpty));
+
+  final SecretStore _store;
+  final Map<SecretKey, String> _values;
+
+  String? string(SecretKey key) => _values[key];
+
+  /// Leer oder `null` löscht den Eintrag.
+  Future<void> set(SecretKey key, String? value) {
+    if (value == null || value.isEmpty) {
+      _values.remove(key);
+    } else {
+      _values[key] = value;
+    }
+    return _store.write(key, value);
+  }
+}
