@@ -2,6 +2,8 @@
 library;
 
 export 'src/analysis/activity_source.dart';
+export 'src/analysis/aerobic_decoupling.dart';
+export 'src/analysis/session_kind.dart';
 export 'src/app/app_appearance.dart';
 export 'src/app/app_route.dart';
 export 'src/calendar/calendar_day.dart';
@@ -25,7 +27,10 @@ export 'src/nutrition/open_food_facts.dart';
 export 'src/nutrition/weight_trend.dart';
 export 'src/profile/goal_rules.dart';
 export 'src/profile/personalization.dart';
+export 'src/profile/plan_adjustments.dart';
+export 'src/profile/schedule_check.dart';
 export 'src/profile/session_match.dart';
+export 'src/profile/training_break.dart';
 export 'src/profile/user_profile.dart';
 export 'src/profile/week_schedule.dart';
 export 'src/util/enum_codec.dart';

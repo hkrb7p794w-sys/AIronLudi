@@ -54,6 +54,8 @@ Flutter-Version: 3.47.9 (in allen Workflows festgelegt).
 - **PRs merged Claude selbst und automatisch** (Auftrag des Nutzers vom 13.11.2026): sobald `check` und `apk` grün
   sind (bei Änderungen an `ios/` zusätzlich der iOS-Build per Label), per Merge-Commit. Gestapelte PRs danach auf
   `main` umstellen.
+- **Ohne Rückfrage weiterarbeiten** (Auftrag des Nutzers vom 13.11.2026): nach dem Merge direkt die nächste
+  Teilphase aus dem Migrationsplan beginnen, nicht auf „weiter“ warten.
 - Aus Claude-Code-Cloud-Sitzungen ist die Actions-API gesperrt: Builds per Label starten, Ergebnisse über
   Check-Runs, PR-Kommentare und Releases lesen.
 
