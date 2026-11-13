@@ -88,3 +88,14 @@
 - **Gerätestand mit Datum** (`garmin.lastSync`) liegt als ISO-Text in den Einstellungen statt als `Date`-Objekt der
   UserDefaults. Diese Schlüssel gehören nicht zur Sicherung. Listen (`garmin.reportFailures`) werden als JSON
   gespeichert.
+
+## 2026-11-13 – App-Einstellungen (Phase 2h)
+
+- **`CoachSettings` speichert beim Zuweisen** (wie `didSet`). Swift-Strukturen sind Werttypen: Dort speichert
+  schon eine geänderte Eigenschaft (`settings.league.code = …`). In Dart sind es Objekte, deshalb wird nach einer
+  Änderung neu zugewiesen (`settings.league = settings.league..code = …`) oder eine Kopie gesetzt. Die Schlüssel und das JSON-Format
+  bleiben gleich wie in Swift.
+- **Optionale Werte** (`coach.illnessDay`, `coach.importedNotes`) werden beim Leeren entfernt, nicht als JSON
+  `null` gespeichert. Beides liest sich als „nicht gesetzt“.
+- `ReminderSettings`, `LeagueSettings` und `ImportedNotes` lagen in Swift in der App. Sie sind reine Datentypen
+  und stehen deshalb in `coach_core` (`settings/app_settings.dart`).

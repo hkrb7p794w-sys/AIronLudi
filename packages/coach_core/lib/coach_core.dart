@@ -127,6 +127,7 @@ export 'src/report/coach_import.dart';
 export 'src/report/data_export.dart';
 export 'src/report/persona_report.dart';
 export 'src/report/prompt_library.dart';
+export 'src/settings/app_settings.dart';
 export 'src/social/social.dart';
 export 'src/social/social_timeline.dart';
 export 'src/util/enum_codec.dart';
