@@ -93,8 +93,8 @@ final class PaceSession {
   final List<PaceLap> laps;
 }
 
-final class PaceRow {
-  PaceRow({required this.id, required this.day, required this.name, required this.kind, this.verdict = 'passt'});
+final class PaceCheckRow {
+  PaceCheckRow({required this.id, required this.day, required this.name, required this.kind, this.verdict = 'passt'});
 
   final int id;
   final CalendarDay day;
@@ -125,7 +125,7 @@ final class PaceResult {
 
   PaceStatus status;
   final int current;
-  final List<PaceRow> rows;
+  final List<PaceCheckRow> rows;
   int? suggested;
   String? reason;
 
@@ -169,13 +169,13 @@ abstract final class PaceCheck {
     required double? maxHeartRate,
     required double restingHeartRate,
   }) {
-    final rows = <PaceRow>[];
+    final rows = <PaceCheckRow>[];
     final estimates = <double>[];
     final directions = <int>[];
     final intervalSlowEnd = (thresholdPace - 18).toDouble();
     final current = thresholdPace.toDouble();
     for (final session in sessions) {
-      final row = PaceRow(id: session.id, day: session.day, name: session.name, kind: session.kind);
+      final row = PaceCheckRow(id: session.id, day: session.day, name: session.name, kind: session.kind);
       final work = workLaps(session.laps, thresholdPace: thresholdPace);
       if (work.isEmpty) {
         row.verdict = 'keine Arbeitsrunden erkannt';
