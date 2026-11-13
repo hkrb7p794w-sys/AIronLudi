@@ -1,11 +1,13 @@
 /// Reine Logik von AIronLudi (Port von `CoachCore` aus Coach-App), ohne Flutter.
 library;
 
+export 'src/analysis/activity_analysis.dart';
 export 'src/analysis/activity_details.dart';
 export 'src/analysis/activity_feed.dart';
 export 'src/analysis/activity_source.dart';
 export 'src/analysis/aerobic_decoupling.dart';
 export 'src/analysis/chart_zoom.dart';
+export 'src/analysis/pace_check.dart';
 export 'src/analysis/session_kind.dart';
 export 'src/app/app_appearance.dart';
 export 'src/app/app_route.dart';
@@ -15,6 +17,8 @@ export 'src/coach/recommendation.dart';
 export 'src/coach/recovery_level.dart';
 export 'src/coach/season_plan.dart';
 export 'src/coach/template_item.dart';
+export 'src/fit/fit_decoder.dart';
+export 'src/fit/inflate.dart';
 export 'src/garmin/daily_metrics.dart';
 export 'src/garmin/garmin_activity.dart';
 export 'src/garmin/garmin_profile.dart';
@@ -43,3 +47,4 @@ export 'src/profile/week_load.dart';
 export 'src/profile/week_schedule.dart';
 export 'src/util/enum_codec.dart';
 export 'src/util/german_format.dart';
+export 'src/util/rounding.dart';
