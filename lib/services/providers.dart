@@ -2,6 +2,7 @@ import 'package:coach_core/coach_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
+import '../data/repositories/gym_repository.dart';
 import '../data/repositories/metrics_repository.dart';
 import '../data/settings/coach_settings.dart';
 import '../data/storage.dart';
@@ -12,6 +13,9 @@ import 'garmin/activity_stores.dart';
 import 'garmin/garmin_client.dart';
 import 'garmin/garmin_connect_session.dart';
 import 'garmin/garmin_sync_service.dart';
+import 'gym/garmin_strength_service.dart';
+import 'nutrition/open_food_facts_client.dart';
+import 'nutrition/pending_analysis.dart';
 import 'social/game_service.dart';
 import 'social/league_service.dart';
 import 'social/social_service.dart';
@@ -80,3 +84,18 @@ final socialServiceProvider = ChangeNotifierProvider<SocialService>(
 final gameServiceProvider = ChangeNotifierProvider<GameService>(
   (ref) => GameService(ai: ref.watch(aiClientProvider), account: ref.watch(accountServiceProvider)),
 );
+
+final openFoodFactsProvider = Provider<OpenFoodFactsClient>((ref) => OpenFoodFactsClient());
+
+final pendingAnalysisStoreProvider = Provider<PendingAnalysisStore>(
+  (ref) => PendingAnalysisStore(ref.watch(settingsStoreProvider), folder: ref.watch(activityFoldersProvider).support),
+);
+
+final garminStrengthServiceProvider = Provider<GarminStrengthService>((ref) {
+  final db = ref.watch(databaseProvider);
+  return GarminStrengthService(
+    gym: GymRepository(db),
+    activities: ActivityRepository(db),
+    folder: ref.watch(activityFoldersProvider).support,
+  );
+});
