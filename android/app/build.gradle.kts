@@ -14,7 +14,9 @@ plugins {
 
 android {
     namespace = "io.github.hkrb7p794w.aironludi"
-    compileSdk = flutter.compileSdkVersion
+    // flutter_local_notifications, permission_handler und androidx.core 1.19 verlangen SDK 37 (abwärtskompatibel,
+    // ändert nicht, auf welchen Geräten die App läuft – das bestimmt minSdk).
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
