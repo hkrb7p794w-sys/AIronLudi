@@ -139,3 +139,12 @@
 - **Diktat über `speech_to_text`.** Das Plugin sagt nicht, ob die Erkennung auf dem Gerät möglich ist. Deshalb wird
   keine Erkennung auf dem Gerät erzwungen, sondern wie beim Diktieren der Tastatur gearbeitet; `isOnDevice` bleibt
   `false`. Swift erzwingt sie, wenn das Gerät sie unterstützt. Das ließe sich mit einer nativen Brücke nachrüsten.
+
+## 2026-11-13 – Ernährung (Phase 3d)
+
+- **Swift-Test `PersonalizationAppTests.nutritionUsesTheOwnWeekPlan`:** Er erwartet für einen geplanten harten Lauf
+  den Tagestyp `.hard`. `SessionSlot.plannedDayType` liefert für `.hard` aber `.moderate`, nur `.long` ergibt `.hard`.
+  Swift und Dart sind dabei Zeile für Zeile gleich. Der Dart-Test erwartet deshalb `.moderate`; die Regel bleibt
+  unverändert.
+- **Fotos für die KI** werden vor dem Controller verkleinert und neu kodiert (ohne EXIF/GPS, wie `MealPhoto`). Der
+  Controller bekommt fertige JPEG-Daten.
