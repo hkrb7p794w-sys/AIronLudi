@@ -1,0 +1,184 @@
+# Unsignierte IPA der Flutter-App für SideStore (macOS-Runner; für öffentliche Repos kostenlos).
+#
+# - Pull Request: Label „ios-build“ setzen (wird beim Start entfernt). Ergebnis als PR-Kommentar, Release als
+#   Vorabversion.
+# - Push auf main und „Run workflow“: Release.
+# - Bereitstellung über den Worker (Workers KV, private SideStore-Quelle) erst, wenn die Repo-Variable
+#   DEPLOY_SIDESTORE auf "true" steht. Gleiche Bundle-ID wie die Swift-App: SideStore ersetzt sie dann. Vorher
+#   bleibt die genutzte Swift-App unangetastet.
+name: iOS Build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: ios-build-${{ github.ref }}-${{ github.event.label.name || 'dispatch' }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: "3.47.9"
+
+jobs:
+  build:
+    if: github.event_name != 'pull_request' || github.event.label.name == 'ios-build'
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      XCODE_MAJOR: "26"
+      LOG: ${{ github.workspace }}/build.log
+      PR: ${{ github.event.pull_request.number }}
+      GH_TOKEN: ${{ github.token }}
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+    steps:
+      - name: Label entfernen
+        if: github.event_name == 'pull_request'
+        run: gh api -X DELETE "repos/$GITHUB_REPOSITORY/issues/$PR/labels/ios-build" || true
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'pull_request' && format('refs/pull/{0}/head', github.event.pull_request.number) || github.sha }}
+
+      - name: Xcode wählen
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_"$XCODE_MAJOR"*.app | grep -vi beta | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version | tee -a "$LOG"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Werkzeuge installieren
+        run: brew install ldid 2>&1 | tee -a "$LOG"
+
+      - name: Version bestimmen
+        run: |
+          BASE=$(sed -n 's/^version: \([0-9]*\.[0-9]*\).*/\1/p' pubspec.yaml)
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            VERSION="$BASE.0"
+            TAG="v${BASE}-pr${PR}.${GITHUB_RUN_NUMBER}"
+          else
+            # Patch-Stelle = Laufnummer: steigt mit jedem Build, SideStore vergleicht major.minor.patch. Die Swift-App
+            # war bei 0.x – 2.0 liegt darüber, SideStore erkennt die Flutter-App also als Update.
+            VERSION="${BASE}.${GITHUB_RUN_NUMBER}"
+            TAG="v${VERSION}"
+          fi
+          { echo "VERSION=$VERSION"; echo "BUILD_NUMBER=$GITHUB_RUN_NUMBER"; echo "TAG=$TAG"; echo "SHORT_SHA=$SHORT_SHA"; } >> "$GITHUB_ENV"
+
+      - name: App bauen (unsigniert)
+        run: |
+          set -o pipefail
+          flutter build ios --release --no-codesign --build-name="$VERSION" --build-number="$BUILD_NUMBER" 2>&1 | tee -a "$LOG"
+
+      - name: IPA packen
+        run: |
+          APP=build/ios/iphoneos/Runner.app
+          test -d "$APP"
+          # Pseudo-Signatur mit Entitlements: SideStore liest daraus, welche Rechte die App anfordert (HealthKit,
+          # App Group). Ohne sie sähe SideStore die Entitlements gar nicht.
+          if [ -d "$APP/Frameworks" ]; then
+            find "$APP/Frameworks" -maxdepth 1 \( -name '*.dylib' -o -name '*.framework' \) | while read -r item; do
+              if [ -d "$item" ]; then ldid -S "$item/$(basename "$item" .framework)"; else ldid -S "$item"; fi
+            done
+          fi
+          if [ -d "$APP/PlugIns" ]; then
+            for ext in "$APP"/PlugIns/*.appex; do
+              name=$(basename "$ext" .appex)
+              if [ -f "ios/$name/$name.entitlements" ]; then ldid -S"ios/$name/$name.entitlements" "$ext/$name"; else ldid -S "$ext/$name"; fi
+            done
+          fi
+          ldid -Sios/Runner/Runner.entitlements "$APP/Runner"
+          echo "Entitlements der IPA:" | tee -a "$LOG"
+          ldid -e "$APP/Runner" | tee -a "$LOG"
+          mkdir -p "$RUNNER_TEMP/ipa/Payload"
+          cp -R "$APP" "$RUNNER_TEMP/ipa/Payload/"
+          (cd "$RUNNER_TEMP/ipa" && zip -qry "$GITHUB_WORKSPACE/AIronLudi.ipa" Payload)
+          ls -lh AIronLudi.ipa
+
+      - name: Für SideStore bereitstellen (Workers KV)
+        if: github.event_name != 'pull_request' && vars.DEPLOY_SIDESTORE == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          KV_ID: 103715a4f0004a398c9e75637a2edf36
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::warning::Cloudflare-Secrets fehlen – keine Bereitstellung für SideStore"
+            exit 0
+          fi
+          git log -1 --format=%B > notes.txt
+          python3 - <<'PY'
+          import datetime, json, os
+          notes = open("notes.txt", encoding="utf-8").read().split("\nCo-Authored-By")[0].strip()
+          info = {
+              "version": os.environ["VERSION"],
+              "buildVersion": os.environ["BUILD_NUMBER"],
+              "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+              "notes": notes[:2000],
+              "size": os.path.getsize("AIronLudi.ipa"),
+          }
+          json.dump(info, open("release.json", "w", encoding="utf-8"), ensure_ascii=False)
+          PY
+          WRANGLER="npx --yes wrangler@4.152.0"
+          # Schlüssel wie bisher (Coach.ipa), damit die SideStore-Quelle des Workers unverändert bleibt.
+          $WRANGLER kv key put --namespace-id "$KV_ID" --remote Coach.ipa --path AIronLudi.ipa
+          $WRANGLER kv key put --namespace-id "$KV_ID" --remote icon.png --path ios/Runner/Assets.xcassets/AppIcon.appiconset/AppIcon.png
+          $WRANGLER kv key put --namespace-id "$KV_ID" --remote release.json --path release.json
+
+      - name: Release anlegen
+        run: |
+          FLAGS=()
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then FLAGS+=(--prerelease); else FLAGS+=(--latest); fi
+          gh release create "$TAG" AIronLudi.ipa \
+            --target "$(git rev-parse HEAD)" \
+            --title "AIronLudi $VERSION" \
+            --notes "Unsignierte IPA für SideStore. Commit $SHORT_SHA, Build $BUILD_NUMBER." \
+            "${FLAGS[@]}"
+
+      - name: Erfolg im PR melden
+        if: success() && github.event_name == 'pull_request'
+        run: |
+          URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$TAG"
+          gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -f body="✅ iOS-Build $BUILD_NUMBER ($SHORT_SHA) erfolgreich: [$TAG]($URL)"
+
+      - name: Fehler im PR melden
+        if: failure() && github.event_name == 'pull_request'
+        run: |
+          RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          touch "$LOG"
+          {
+            echo "❌ iOS-Build fehlgeschlagen ([Run]($RUN_URL))"
+            echo
+            echo '```'
+            grep -E 'error:|Error:|\*\* [A-Z ]+ FAILED \*\*|Failed to build' "$LOG" | cut -c1-400 | head -60
+            echo '```'
+            echo
+            echo '<details><summary>Log-Ende</summary>'
+            echo
+            echo '```'
+            tail -150 "$LOG" | cut -c1-400
+            echo '```'
+            echo '</details>'
+          } > comment.md
+          gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -F body=@comment.md
+
+      - name: Log sichern
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-log
+          path: build.log
+          if-no-files-found: ignore

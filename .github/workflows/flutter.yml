@@ -1,0 +1,86 @@
+# Format, Analyse und Tests (App und coach_core) auf Linux – günstig, läuft bei jedem PR und auf main.
+# Schlägt etwas fehl, schreibt der Job die Fehler als PR-Kommentar (Format-Patch anwendbar mit `git apply`).
+name: Flutter
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: flutter-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: "3.47.9"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Abhängigkeiten
+        run: |
+          flutter pub get
+          (cd packages/coach_core && dart pub get)
+
+      - name: Format
+        id: format
+        continue-on-error: true
+        run: |
+          dart format lib test packages > /dev/null
+          git diff --exit-code > format.patch
+
+      - name: Analyse
+        id: analyze
+        continue-on-error: true
+        run: flutter analyze 2>&1 | tee analyze.log
+
+      - name: coach_core-Tests
+        id: core
+        continue-on-error: true
+        working-directory: packages/coach_core
+        run: dart test 2>&1 | tee ../../core.log
+
+      - name: App-Tests
+        id: app
+        continue-on-error: true
+        run: flutter test 2>&1 | tee app.log
+
+      - name: Fehler als PR-Kommentar
+        if: github.event_name == 'pull_request' && (steps.format.outcome == 'failure' || steps.analyze.outcome == 'failure' || steps.core.outcome == 'failure' || steps.app.outcome == 'failure')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          {
+            echo "❌ Flutter-Prüfung $GITHUB_RUN_NUMBER fehlgeschlagen"
+            if [ "${{ steps.analyze.outcome }}" = failure ]; then
+              echo; echo '**flutter analyze**'; echo '```'; grep -E 'error|warning|info' analyze.log | head -60; echo '```'
+            fi
+            for part in core app; do
+              if [ -f "$part.log" ] && grep -qE 'Some tests failed|\[E\]|Error:' "$part.log"; then
+                echo; echo "**Tests ($part)**"; echo '```'; grep -E '\[E\]|Expected|Actual|Error:|Some tests failed' -A3 "$part.log" | head -80; echo '```'
+              fi
+            done
+            if [ -s format.patch ]; then
+              echo; echo '**dart format** (Patch, `git apply`):'; echo '```diff'; head -c 30000 format.patch; echo '```'
+            fi
+          } > comment.md
+          gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -F body=@comment.md > /dev/null
+
+      - name: Ergebnis
+        if: steps.format.outcome == 'failure' || steps.analyze.outcome == 'failure' || steps.core.outcome == 'failure' || steps.app.outcome == 'failure'
+        run: exit 1
