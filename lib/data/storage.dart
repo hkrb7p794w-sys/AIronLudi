@@ -1,9 +1,9 @@
-
-import 'backup/backup_service.dart';
-import 'db/database.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'backup/backup_service.dart';
+import 'db/database.dart';
 import 'repositories/gym_repository.dart';
 import 'repositories/meal_repository.dart';
 import 'repositories/metrics_repository.dart';
