@@ -50,6 +50,7 @@ abstract final class SettingsKeys {
   static const dismissedSuggestions = 'coach.dismissedSuggestions';
   static const wakeAlarm = 'coach.wakeAlarm';
   static const demo = 'coach.demo';
+  static const note = 'coach.note';
 
   /// Worker-Adresse (gehört zur Sicherung, `AppBackup.isBackedUp`).
   static const workerURL = 'ai.workerURL';
@@ -77,6 +78,15 @@ abstract final class SettingsKeys {
   static const backupLastAuto = 'backup.lastAuto';
   static const backupLastError = 'backup.lastError';
   static const backupFolder = 'backup.folder';
+  static const accountProfile = 'account.profile';
+  static const garminConnectEmail = 'garminConnect.email';
+  static const garminConnectDisplayName = 'garminConnect.displayName';
+  static const sourcesMigrated = 'sources.migrated';
+  static const sourcesSyncStates = 'sources.syncStates';
+  static const recipesChecked = 'recipes.checked';
+  static const recipesPeriodDays = 'recipes.periodDays';
+  static const recipesPeriodStart = 'recipes.periodStart';
+  static const mealsLiveActivity = 'mealsLiveActivity';
 }
 
 /// Einstellungen in der Datenbank, wie die UserDefaults der Swift-App: je Schlüssel ein typisierter Wert

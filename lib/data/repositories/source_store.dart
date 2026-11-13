@@ -20,8 +20,8 @@ final class SourceStore {
   /// Aktuelle Einstellungen (aus den Quellen-Einstellungen).
   SourcePreferences Function() preferences;
 
-  static const migratedKey = 'sources.migrated';
-  static const statesKey = 'sources.syncStates';
+  static const migratedKey = SettingsKeys.sourcesMigrated;
+  static const statesKey = SettingsKeys.sourcesSyncStates;
   static const dailyKind = 'daily';
 
   late final _metrics = MetricsRepository(_db);

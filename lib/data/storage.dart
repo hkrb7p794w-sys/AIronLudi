@@ -17,7 +17,7 @@ final class AppStorage {
 
   final CoachDatabase database;
   final SettingsStore settings;
-  final SecretStore secrets;
+  final Secrets secrets;
 
   /// Die Datenbank ließ sich nicht öffnen (z. B. fehlgeschlagene Migration); die App läuft nur im Arbeitsspeicher. Die
   /// Datei bleibt unangetastet, neue Einträge gehen beim Beenden aber verloren – die App warnt (Banner).
@@ -27,7 +27,7 @@ final class AppStorage {
 
   /// Öffnet die Datei; misslingt das, im Arbeitsspeicher weiter (lieber ohne Daten starten als abstürzen).
   static Future<AppStorage> open({QueryExecutor? executor, SecretStore? secrets}) async {
-    final store = secrets ?? DeviceSecretStore();
+    final store = await Secrets.load(secrets ?? DeviceSecretStore());
     final database = executor == null ? CoachDatabase.open() : CoachDatabase(executor);
     try {
       final settings = await SettingsStore.open(database);
@@ -54,7 +54,7 @@ final databaseProvider = Provider<CoachDatabase>((ref) => ref.watch(appStoragePr
 
 final settingsStoreProvider = Provider<SettingsStore>((ref) => ref.watch(appStorageProvider).settings);
 
-final secretStoreProvider = Provider<SecretStore>((ref) => ref.watch(appStorageProvider).secrets);
+final secretsProvider = Provider<Secrets>((ref) => ref.watch(appStorageProvider).secrets);
 
 final backupServiceProvider = Provider<BackupService>(
   (ref) => BackupService(ref.watch(databaseProvider), ref.watch(settingsStoreProvider)),
