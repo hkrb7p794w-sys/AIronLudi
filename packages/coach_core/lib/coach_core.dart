@@ -138,6 +138,7 @@ export 'src/util/rounding.dart';
 export 'src/util/swift_date.dart';
 export 'src/util/swift_json.dart';
 export 'src/util/text_prefix.dart';
+export 'src/util/time_text.dart';
 export 'src/util/url_query.dart';
 export 'src/widgets/meal_headline.dart';
 export 'src/widgets/widget_snapshot.dart';

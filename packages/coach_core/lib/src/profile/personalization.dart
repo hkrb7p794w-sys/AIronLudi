@@ -29,6 +29,18 @@ enum TrainingGoal implements RawEnum {
 
   @override
   String get rawValue => name;
+
+  /// Symbolname (SF Symbols wie in Swift).
+  String get symbol => switch (this) {
+    muscleGain => 'dumbbell.fill',
+    fatLoss => 'flame.fill',
+    strength => 'figure.strengthtraining.traditional',
+    endurance => 'figure.run',
+    generalFitness => 'figure.mixed.cardio',
+    recovery => 'bed.double.fill',
+    health => 'heart.fill',
+    competition => 'flag.checkered',
+  };
 }
 
 /// Bereiche, die der Person besonders wichtig sind. Sie steuern Reihenfolge und Gewichtung, nicht die Regeln selbst.

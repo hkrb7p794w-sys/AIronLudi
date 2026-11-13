@@ -32,6 +32,15 @@ enum TrainingSport implements RawEnum {
 
   /// Ausdauersportart (für Intensitätsverteilung und Ruhepuls-Ziel).
   bool get isEndurance => this == run || this == bike || this == swim;
+
+  /// Symbolname (SF Symbols wie in Swift; die App bildet ihn auf ihre Icons ab).
+  String get symbol => switch (this) {
+    run => 'figure.run',
+    strength => 'dumbbell.fill',
+    bike => 'figure.outdoor.cycle',
+    swim => 'figure.pool.swim',
+    other => 'figure.yoga',
+  };
 }
 
 /// Hauptziel. Aus ihm folgen Ernährungsziel, Trainingsverteilung und Hinweise.

@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../features/activities/activities_screen.dart';
 import '../features/nutrition/nutrition_screen.dart';
+import '../features/onboarding/onboarding_screen.dart';
 import '../features/today/today_screen.dart';
 import '../features/training/training_screen.dart';
+import '../services/providers.dart';
 import 'root_shell.dart';
 
 /// Pfad des Reiters; jeder Reiter hat einen eigenen Navigationsstapel (wie `TabView` + `NavigationStack`).
@@ -16,10 +18,23 @@ String tabPath(AppTab tab) => switch (tab) {
   AppTab.nutrition => '/ernaehrung',
 };
 
+/// Einrichtungsassistent beim ersten Start (in Swift ein `fullScreenCover`, bis das Profil fertig ist).
+const onboardingPath = '/einrichtung';
+
 final routerProvider = Provider<GoRouter>((ref) {
+  final settings = ref.read(coachSettingsProvider);
   final router = GoRouter(
     initialLocation: tabPath(AppTab.today),
+    refreshListenable: settings,
+    redirect: (context, state) {
+      final done = settings.profile.onboardingDone;
+      final onOnboarding = state.matchedLocation == onboardingPath;
+      if (!done && !onOnboarding) return onboardingPath;
+      if (done && onOnboarding) return tabPath(AppTab.today);
+      return null;
+    },
     routes: [
+      GoRoute(path: onboardingPath, builder: (context, state) => const OnboardingScreen()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => RootShell(shell: shell),
         branches: [
