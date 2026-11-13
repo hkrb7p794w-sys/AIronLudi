@@ -51,6 +51,9 @@ Flutter-Version: 3.47.9 (in allen Workflows festgelegt).
 - `android.yml`: Release-APK als Artefakt; Bereitstellung nur mit `vars.DEPLOY_ANDROID == 'true'`.
 - `ios-build.yml`: unsignierte IPA (pseudo-signiert mit `ldid` und den Entitlements) per Label `ios-build`, auf
   `main` und per „Run workflow“; Bereitstellung nur mit `vars.DEPLOY_SIDESTORE == 'true'`.
+- **PRs merged Claude selbst und automatisch** (Auftrag des Nutzers vom 13.11.2026): sobald `check` und `apk` grün
+  sind (bei Änderungen an `ios/` zusätzlich der iOS-Build per Label), per Merge-Commit. Gestapelte PRs danach auf
+  `main` umstellen.
 - Aus Claude-Code-Cloud-Sitzungen ist die Actions-API gesperrt: Builds per Label starten, Ergebnisse über
   Check-Runs, PR-Kommentare und Releases lesen.
 

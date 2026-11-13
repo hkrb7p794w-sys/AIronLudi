@@ -36,6 +36,9 @@ final class CalendarDay implements Comparable<CalendarDay> {
   /// Anzahl Tage von `this` bis [other] (positiv, wenn [other] später liegt).
   int daysUntil(CalendarDay other) => (other.referenceDate.difference(referenceDate).inHours / 24).round();
 
+  /// Wochentag ab Montag = 0 bis Sonntag = 6.
+  int get weekdayIndex => DateTime.utc(year, month, day).weekday - 1;
+
   bool operator <(CalendarDay other) => compareTo(other) < 0;
   bool operator <=(CalendarDay other) => compareTo(other) <= 0;
   bool operator >(CalendarDay other) => compareTo(other) > 0;
