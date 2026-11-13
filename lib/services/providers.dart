@@ -2,7 +2,9 @@ import 'package:coach_core/coach_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
+import '../app/app_model.dart';
 import '../data/repositories/gym_repository.dart';
+import '../data/repositories/meal_repository.dart';
 import '../data/repositories/metrics_repository.dart';
 import '../data/settings/coach_settings.dart';
 import '../data/storage.dart';
@@ -131,3 +133,24 @@ final healthImportServiceProvider = ChangeNotifierProvider<HealthImportService>(
 final workoutWriterProvider = Provider<WorkoutSaving>((ref) => HealthWorkoutWriter());
 
 final dictationProvider = ChangeNotifierProvider.autoDispose<Dictation>((ref) => Dictation());
+
+/// Saisonplan aus `season-plan.json`; wird in `main` geladen.
+final seasonScheduleProvider = Provider<SeasonSchedule?>((ref) => null);
+
+final appModelProvider = ChangeNotifierProvider<AppModel>((ref) {
+  final db = ref.watch(databaseProvider);
+  return AppModel(
+    settings: ref.read(coachSettingsProvider),
+    garmin: ref.watch(garminClientProvider),
+    sync: ref.watch(garminSyncServiceProvider),
+    health: ref.read(healthImportServiceProvider),
+    sources: ref.watch(sourceStoreProvider),
+    reminders: ref.read(reminderServiceProvider),
+    strength: ref.watch(garminStrengthServiceProvider),
+    metrics: MetricsRepository(db),
+    activities: ActivityRepository(db),
+    meals: MealRepository(db),
+    gymRepository: GymRepository(db),
+    seasonSchedule: ref.watch(seasonScheduleProvider),
+  );
+});
