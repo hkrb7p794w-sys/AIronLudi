@@ -3,6 +3,7 @@ import 'package:collection/collection.dart';
 import '../calendar/calendar_day.dart';
 import '../garmin/garmin_activity.dart';
 import '../garmin/strength_duplicates.dart';
+import '../gym/gym_session.dart';
 import '../profile/session_match.dart';
 import '../profile/user_profile.dart';
 import '../util/german_format.dart';
@@ -21,7 +22,7 @@ extension SessionKindLabel on SessionKind {
   };
 }
 
-/// Gym-Einheit aus der App, ohne Datenbank. (`fromSession` folgt mit dem Gym-Modul.)
+/// Gym-Einheit aus der App, ohne Datenbank.
 final class GymItem {
   const GymItem({
     required this.id,
@@ -31,6 +32,18 @@ final class GymItem {
     required this.sets,
     required this.volumeKg,
   });
+
+  factory GymItem.fromSession(GymSession session) => GymItem(
+    id: session.id,
+    title: session.title,
+    start: session.start,
+    minutes: switch (session.end) {
+      final end? => (end.difference(session.start).inMicroseconds / 1e6 / 60).round(),
+      null => null,
+    },
+    sets: session.doneSetCount,
+    volumeKg: session.volumeKg,
+  );
 
   final String id;
   final String title;
