@@ -82,7 +82,7 @@ void main() {
     expect(metrics?.restingHeartRate, 49);
     expect(metrics?.hrvStatus, 'BALANCED');
     expect(sync.profile?.weightKilograms, 80);
-    expect(sync.lastSync, now);
+    expect(sync.lastSync?.isAtSameMomentAs(now), isTrue);
     expect(report.sources, {'Personal API': greaterThan(0)});
     expect(await sync.raw(GarminEndpoint.profileSettings), isNotNull);
   });

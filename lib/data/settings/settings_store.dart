@@ -174,8 +174,8 @@ final class SettingsStore {
 
   /// Zeitpunkt (nur Gerätestand wie `garmin.lastSync`, wird nicht gesichert): ISO-Text, als Zahl Sekunden seit 1970.
   DateTime? date(String key) => switch (_values[key]) {
-    BackupString(:final value) => DateTime.tryParse(value),
-    BackupDouble(:final value) => DateTime.fromMicrosecondsSinceEpoch((value * 1e6).round(), isUtc: true),
+    BackupString(:final value) => DateTime.tryParse(value)?.toLocal(),
+    BackupDouble(:final value) => DateTime.fromMicrosecondsSinceEpoch((value * 1e6).round()),
     _ => null,
   };
 

@@ -111,3 +111,23 @@
 - **Mitteilungen in der Vergangenheit** werden nicht eingetragen, bei iOS würden sie nie auslösen.
 - **Ausgelieferte Mitteilungen entfernen** heißt beim Plugin: die Kennung zurückziehen, geplant und ausgeliefert.
   Nach „Auslassen“ ist beides gewollt.
+
+## 2026-11-13 – Health (Phase 2k)
+
+- **Paket `health`** (HealthKit auf iOS, Health Connect auf Android) hinter der Schnittstelle `HealthSource`. Das
+  Paket liefert Rohproben, keine HealthKit-Statistikabfragen. Deshalb rechnet die App die Tageswerte selbst
+  aus, je Tag in der Zeitzone des Geräts:
+  - **Summen** (Schritte, Energie): HealthKit führt Uhr und iPhone ohne Doppelzählung zusammen. Hier zählt
+    stattdessen je Tag die Quelle mit der größten Summe.
+  - **Mittel und Minimum** (Ruhepuls, HRV, Atemfrequenz, SpO₂) werden über alle Proben des Tages gebildet.
+- **Was das Paket nicht liefert** (gegenüber Swift fehlt es):
+  - VO2max, Lauf- und Radleistung.
+  - Strecke (GPS) eines Workouts, Runden und Pausen, Höhenmeter.
+  - Zuordnung von Proben zu einem Workout. Puls und Distanz für den Verlauf kommen deshalb aus dem Zeitraum des
+    Workouts; bei mehreren Distanzquellen zählt die mit der größten Strecke.
+  - Das nachzurüsten braucht eine eigene native Brücke (Migrationsplan 4.2).
+- **Workout-Kennungen**, die keine UUID sind (manche Health-Connect-Quellen), werden stabil in UUID-Form gebracht,
+  damit die Aktivitäts-ID wie in Swift entsteht (`HealthImport.activityID`).
+- **Krafteinheit schreiben** (`writeWorkoutData`) ohne `HKMetadataKeyExternalUUID`; das Paket bietet keine Metadaten.
+  Die Einheit trägt Titel, Start und Ende.
+- **Wecker zur Aufstehzeit** (AlarmKit, iOS 26) bleibt eine native Funktion und folgt mit den Plattformbrücken.
