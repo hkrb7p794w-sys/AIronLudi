@@ -1,3 +1,4 @@
+import '../fit/fit_decoder.dart';
 import '../garmin/garmin_activity.dart';
 import '../util/german_format.dart';
 
@@ -30,8 +31,6 @@ final class DetailSection {
 
 /// Aufbereitung einer Aktivität für die Detailansicht, gegliedert wie in Garmin Connect: Übersicht, Zeit, Tempo,
 /// Herzfrequenz, Höhe, Laufdynamik, Leistung, Schwimmen, Trainingseffekt. Nur vorhandene Werte erscheinen.
-///
-/// Verlauf und Strecke aus der FIT-Datei (`samples`, `route`) folgen mit dem FIT-Modul.
 abstract final class ActivityDetails {
   static List<DetailSection> sections(GarminActivity activity) {
     final sport = activity.sport;
@@ -189,4 +188,78 @@ abstract final class ActivityDetails {
       .split(RegExp(r'(?<=\s)|(?=\s)'))
       .map((part) => part.isEmpty ? part : part[0].toUpperCase() + part.substring(1))
       .join();
+
+  /// Höchstens [maxPoints] gemittelte Punkte für Diagramme. Laufkadenz wird auf Schritte pro Minute verdoppelt.
+  static List<DetailSample> samples(FitActivity fit, ActivitySport sport, {int maxPoints = 300}) {
+    final records = fit.records;
+    if (records.isEmpty) return const [];
+    final first = records.first;
+    final byDistance = records.any((record) => (record.distance ?? 0) > 0);
+    final bucket = records.length ~/ maxPoints > 1 ? records.length ~/ maxPoints : 1;
+    final result = <DetailSample>[];
+    double? mean(Iterable<double> values) =>
+        values.isEmpty ? null : values.fold<double>(0, (sum, value) => sum + value) / values.length;
+    for (var index = 0; index < records.length; index += bucket) {
+      final slice = records.sublist(index, index + bucket < records.length ? index + bucket : records.length);
+      final last = slice.last;
+      final x = byDistance ? (last.distance ?? 0) / 1000 : (last.timestamp - first.timestamp) / 60;
+      final speed = mean(slice.map((record) => record.speed).nonNulls.where((value) => value > 0.3));
+      final pace = speed == null
+          ? null
+          : switch (sport) {
+              ActivitySport.run => 1000 / speed,
+              ActivitySport.swim => 100 / speed,
+              _ => speed * 3.6,
+            };
+      final cadence = mean(slice.map((record) => record.cadence).nonNulls.where((value) => value > 0));
+      result.add(
+        DetailSample(
+          x: (x * 1000).roundToDouble() / 1000,
+          heartRate: mean(slice.map((record) => record.heartRate).nonNulls),
+          pace: pace,
+          altitude: mean(slice.map((record) => record.altitude).nonNulls),
+          cadence: cadence == null ? null : (sport == ActivitySport.run ? cadence * 2 : cadence),
+          power: mean(slice.map((record) => record.power).nonNulls),
+        ),
+      );
+    }
+    return result;
+  }
+
+  /// GPS-Strecke (höchstens [maxPoints] Punkte).
+  static List<({double latitude, double longitude})> route(FitActivity fit, {int maxPoints = 1500}) {
+    final points = [
+      for (final record in fit.records)
+        if ((record.latitude, record.longitude) case (final latitude?, final longitude?))
+          (latitude: latitude, longitude: longitude),
+    ];
+    final step = points.length ~/ maxPoints > 1 ? points.length ~/ maxPoints : 1;
+    return [for (var index = 0; index < points.length; index += step) points[index]];
+  }
+}
+
+/// Punkt des Verlaufs aus der FIT-Datei.
+final class DetailSample {
+  const DetailSample({required this.x, this.heartRate, this.pace, this.altitude, this.cadence, this.power});
+
+  /// km seit Start (oder Minuten, wenn keine Distanz vorliegt)
+  final double x;
+  final double? heartRate;
+
+  /// Laufen: s/km, Schwimmen: s/100 m, sonst km/h
+  final double? pace;
+  final double? altitude;
+  final double? cadence;
+  final double? power;
+
+  double get id => x;
+
+  Map<String, Object?> toJson() => {
+    'x': x,
+    'heartRate': ?heartRate,
+    'pace': ?pace,
+    'altitude': ?altitude,
+    'cadence': ?cadence,
+    'power': ?power,
+  };
 }

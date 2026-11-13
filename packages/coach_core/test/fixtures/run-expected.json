@@ -1,0 +1,96 @@
+{
+ "recordCount": 3001,
+ "withHeartRate": 2970,
+ "withPower": 1501,
+ "lastDistance": 8758.48,
+ "firstSpeed": 2.887,
+ "laps": [
+  {
+   "timer": 599,
+   "elapsed": 600,
+   "distance": 1740.0,
+   "avgHR": 140,
+   "maxHR": 150,
+   "intensity": 2
+  },
+  {
+   "timer": 359,
+   "elapsed": 360,
+   "distance": 1044.0,
+   "avgHR": 141,
+   "maxHR": 151,
+   "intensity": 0
+  },
+  {
+   "timer": 119,
+   "elapsed": 120,
+   "distance": 348.0,
+   "avgHR": 142,
+   "maxHR": 152,
+   "intensity": 1
+  },
+  {
+   "timer": 359,
+   "elapsed": 360,
+   "distance": 1044.0,
+   "avgHR": 143,
+   "maxHR": 153,
+   "intensity": 0
+  },
+  {
+   "timer": 119,
+   "elapsed": 120,
+   "distance": 348.0,
+   "avgHR": 144,
+   "maxHR": 154,
+   "intensity": 1
+  },
+  {
+   "timer": 359,
+   "elapsed": 360,
+   "distance": 1044.0,
+   "avgHR": 145,
+   "maxHR": 155,
+   "intensity": 0
+  },
+  {
+   "timer": 119,
+   "elapsed": 120,
+   "distance": 348.0,
+   "avgHR": 146,
+   "maxHR": 156,
+   "intensity": 1
+  },
+  {
+   "timer": 359,
+   "elapsed": 360,
+   "distance": 1044.0,
+   "avgHR": 147,
+   "maxHR": 157,
+   "intensity": 0
+  },
+  {
+   "timer": 119,
+   "elapsed": 120,
+   "distance": 348.0,
+   "avgHR": 148,
+   "maxHR": 158,
+   "intensity": 1
+  },
+  {
+   "timer": 479,
+   "elapsed": 480,
+   "distance": 1392.0,
+   "avgHR": 149,
+   "maxHR": 159,
+   "intensity": 3
+  }
+ ],
+ "decoupling": {
+  "percent": 0.6,
+  "hr1": 139.8,
+  "hr2": 144.6,
+  "pace1": "5:49",
+  "pace2": "5:40"
+ }
+}
