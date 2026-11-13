@@ -1,5 +1,5 @@
 // Port von HealthImportTests.swift und HealthRecordingTests.swift. Berlin im Oktober 2026 (vor dem 25.10.) entspricht
-// UTC+2. Der Fall `reportWorksLikeForAGarminFile` folgt mit `ActivityReportBuilder`.
+// UTC+2.
 import 'package:coach_core/coach_core.dart';
 import 'package:test/test.dart';
 
@@ -162,9 +162,34 @@ void main() {
       expect(fit.records.skip(1).every((record) => ((record.speed ?? 0) - 3).abs() < 0.01), isTrue);
     });
 
-    test('Pausen bleiben eine Lücke', () {
+    test('Bericht wie bei einer Garmin-Datei', () {
+      final activity = GarminActivity(-7)
+        ..typeKey = 'running'
+        ..name = 'Laufen'
+        ..startLocal = '2026-11-09 07:00:00'
+        ..durationSeconds = 1200;
+      final report = ActivityReportBuilder.build(activity, HealthRecording.fit(run()));
+      expect(report.splits.length, 4);
+      expect(report.splits.take(3).every((split) => (split.seconds - 333).abs() <= 6), isTrue);
+      expect(report.halves.speedChangePercent, 0);
+      expect(report.halves.heartRateChangePercent ?? 0, greaterThan(5));
+      expect(report.byDistance, isTrue);
+      expect(
+        ActivityFindings.findings(report)
+            .any((finding) => finding.id == 'drift' && finding.tone == FindingTone.attention),
+        isTrue,
+      );
+    });
+
+    test('Pausen bleiben eine Lücke und zählen als Standzeit', () {
       final fit = HealthRecording.fit(run(pause: const HealthInterval(start: 1300, end: 1600)));
       expect(fit.records.any((record) => record.timestamp >= 1300 && record.timestamp < 1600), isFalse);
+      final activity = GarminActivity(-8)
+        ..typeKey = 'running'
+        ..durationSeconds = 1200;
+      final report = ActivityReportBuilder.build(activity, fit);
+      expect((report.pausedSeconds - 300).abs(), lessThanOrEqualTo(10));
+      expect((report.movingSeconds - 900).abs(), lessThanOrEqualTo(10));
     });
 
     test('Runden mit Zeit, Strecke und Puls', () {
