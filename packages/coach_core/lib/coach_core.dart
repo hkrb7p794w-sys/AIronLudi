@@ -1,9 +1,13 @@
 /// Reine Logik von AIronLudi (Port von `CoachCore` aus Coach-App), ohne Flutter.
 library;
 
+export 'src/ai/ai_policy.dart';
+export 'src/ai/ai_usage.dart';
+export 'src/ai/insights.dart';
 export 'src/analysis/activity_analysis.dart';
 export 'src/analysis/activity_details.dart';
 export 'src/analysis/activity_feed.dart';
+export 'src/analysis/activity_report.dart';
 export 'src/analysis/activity_source.dart';
 export 'src/analysis/aerobic_decoupling.dart';
 export 'src/analysis/chart_zoom.dart';
@@ -12,15 +16,19 @@ export 'src/analysis/session_kind.dart';
 export 'src/app/app_appearance.dart';
 export 'src/app/app_route.dart';
 export 'src/calendar/calendar_day.dart';
+export 'src/coach/chat_context.dart';
 export 'src/coach/coaching_note.dart';
 export 'src/coach/fitness_form.dart';
 export 'src/coach/heart_rate_zones.dart';
+export 'src/coach/personal_note.dart';
 export 'src/coach/recommendation.dart';
 export 'src/coach/recovery_level.dart';
 export 'src/coach/season_plan.dart';
 export 'src/coach/sleep_coach.dart';
 export 'src/coach/template_item.dart';
 export 'src/coach/trends.dart';
+export 'src/coach/weekly_report.dart';
+export 'src/coach/weekly_review.dart';
 export 'src/evidence/evidence.dart';
 export 'src/evidence/user_sources.dart';
 export 'src/fit/fit_decoder.dart';
@@ -100,3 +108,4 @@ export 'src/util/german_format.dart';
 export 'src/util/int_range.dart';
 export 'src/util/rounding.dart';
 export 'src/util/swift_date.dart';
+export 'src/util/text_prefix.dart';
