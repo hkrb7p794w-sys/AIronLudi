@@ -332,5 +332,6 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 |---|---|
 | Phase 2a: Projekt, Abhängigkeiten, Info.plist/Entitlements, AndroidManifest/Gradle, CI, vier Reiter, Deep Links `coach://open/…`, Darstellung, App-Icon | in PR |
 | coach_core: `CalendarDay`/`DateRange`, `AppRoute`/`AppTab`/`QuickActions`, `AppAppearance`, `MealCategory` (mit Tests) | in PR |
+| coach_core Ernährung (Teil 1): `JsonValue`, `GermanFormat`, `Nutrient`/`NutrientValues`, `MealItem`/`Portion`/`MealAnalysis`/`NutritionSummary`, `PortionGuess`, `NutrientCheck`, `NutritionLabel`, `OpenFoodFacts`, `Hydration`/`MealSplit`, `BLS` mit Suche und Zuordnung (alle 17 Zuordnungsfälle), JSON kompatibel zu Swift | in PR |
 | Native Registrierung im `AppDelegate` (Hintergrundabruf, Mitteilungs-Delegate), Widget-Erweiterung, Plattformbrücken | folgt mit den jeweiligen Diensten (Phase 2f/3), geprüft per iOS-Build |
 | Alles Weitere | offen, Reihenfolge siehe Abschnitt 6 |
