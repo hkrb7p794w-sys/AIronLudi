@@ -9,6 +9,8 @@ import 'garmin/activity_stores.dart';
 import 'garmin/garmin_client.dart';
 import 'garmin/garmin_connect_session.dart';
 import 'garmin/garmin_sync_service.dart';
+import 'social/game_service.dart';
+import 'social/social_service.dart';
 
 /// Garmin-Konto (inoffizieller Zugang).
 final garminConnectProvider = Provider<GarminConnectSession>(
@@ -46,3 +48,15 @@ final garminSyncServiceProvider = Provider<GarminSyncService>((ref) {
     sources: ref.watch(sourceStoreProvider),
   );
 });
+
+final socialServiceProvider = ChangeNotifierProvider<SocialService>(
+  (ref) => SocialService(
+    ai: ref.watch(aiClientProvider),
+    account: ref.watch(accountServiceProvider),
+    sharedPosts: SharedPostStore(ref.watch(settingsStoreProvider)),
+  ),
+);
+
+final gameServiceProvider = ChangeNotifierProvider<GameService>(
+  (ref) => GameService(ai: ref.watch(aiClientProvider), account: ref.watch(accountServiceProvider)),
+);
