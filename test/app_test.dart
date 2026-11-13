@@ -70,4 +70,21 @@ void main() {
     expect(find.text('Erinnerungen'.toUpperCase()), findsOneWidget);
     expect(find.text('Nur Einordnungen (empfohlen)'), findsOneWidget);
   });
+
+  testWidgets('Einstellungen › Ernährung: Erinnerung ans Frühstück einschalten', (tester) async {
+    await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Einstellungen'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Ernährung').last);
+    await tester.pumpAndSettle();
+    final breakfast = find.widgetWithText(SwitchListTile, 'Frühstück');
+    await tester.ensureVisible(breakfast);
+    await tester.pumpAndSettle();
+    await tester.tap(breakfast);
+    await tester.pumpAndSettle();
+    final container = ProviderScope.containerOf(tester.element(find.byType(Scaffold).last));
+    expect(container.read(coachSettingsProvider).reminders.meals.breakfast.enabled, isTrue);
+    expect(find.text('Uhrzeit'), findsOneWidget);
+  });
 }
