@@ -4,6 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'backup/backup_service.dart';
 import 'db/database.dart';
+import 'repositories/gym_repository.dart';
+import 'repositories/meal_repository.dart';
+import 'repositories/metrics_repository.dart';
+import 'repositories/source_store.dart';
 import 'secure/secret_store.dart';
 import 'settings/settings_store.dart';
 
@@ -54,4 +58,23 @@ final secretStoreProvider = Provider<SecretStore>((ref) => ref.watch(appStorageP
 
 final backupServiceProvider = Provider<BackupService>(
   (ref) => BackupService(ref.watch(databaseProvider), ref.watch(settingsStoreProvider)),
+);
+
+final metricsRepositoryProvider = Provider<MetricsRepository>((ref) => MetricsRepository(ref.watch(databaseProvider)));
+
+final activityRepositoryProvider = Provider<ActivityRepository>(
+  (ref) => ActivityRepository(ref.watch(databaseProvider)),
+);
+
+final rawResponseRepositoryProvider = Provider<RawResponseRepository>(
+  (ref) => RawResponseRepository(ref.watch(databaseProvider)),
+);
+
+final mealRepositoryProvider = Provider<MealRepository>((ref) => MealRepository(ref.watch(databaseProvider)));
+
+final gymRepositoryProvider = Provider<GymRepository>((ref) => GymRepository(ref.watch(databaseProvider)));
+
+/// Quellen-Ablage; die Einstellungen (`preferences`) setzt der Synchronisierungsdienst.
+final sourceStoreProvider = Provider<SourceStore>(
+  (ref) => SourceStore(ref.watch(databaseProvider), ref.watch(settingsStoreProvider)),
 );
