@@ -235,6 +235,21 @@ final class SocialPost {
 
   DateTime? get date => SocialFormat.date(createdAt);
 
+  /// Kopie mit geänderten Zählern (Swift ändert die Felder der Struktur direkt); [myReaction] als Funktion, damit
+  /// `null` (zurückgenommen) möglich ist.
+  SocialPost copyWith({int? reactions, String? Function()? myReaction, int? comments}) => SocialPost(
+    id: id,
+    kind: kind,
+    createdAt: createdAt,
+    author: author,
+    mine: mine,
+    payload: payload,
+    reactions: reactions ?? this.reactions,
+    myReaction: myReaction == null ? this.myReaction : myReaction(),
+    topReactions: topReactions,
+    comments: comments ?? this.comments,
+  );
+
   /// Überschrift im Feed, z. B. „Lockerer Lauf“ oder „Overnight Oats“.
   String get headline => switch (kind) {
     SocialPostKind.meal => payload.meal?.title ?? 'Mahlzeit',
