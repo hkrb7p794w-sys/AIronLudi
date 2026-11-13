@@ -14,6 +14,7 @@ import '../../platform/notifications.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../onboarding/personalization_widgets.dart';
+import 'data_sources_screen.dart';
 
 final _dateFormat = DateFormat('d. MMM y', 'de_DE');
 
@@ -428,6 +429,12 @@ class _PersonalGoalsSettingsScreenState extends ConsumerState<PersonalGoalsSetti
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: TrackerPicker(setup: _tracker, onChanged: (setup) => setState(() => _tracker = setup)),
+                ),
+                ListTile(
+                  title: const Text('Datenquellen und Vorrang'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () =>
+                      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const DataSourcesScreen())),
                 ),
               ],
             ),

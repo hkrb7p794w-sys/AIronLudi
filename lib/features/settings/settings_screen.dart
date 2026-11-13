@@ -13,7 +13,10 @@ import '../../ui/symbols.dart';
 import '../evidence/evidence_views.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../onboarding/schedule_editor.dart';
+import 'ai_settings.dart';
 import 'backup_screen.dart';
+import 'data_sources_screen.dart';
+import 'nutrition_settings_screen.dart';
 import 'settings_controller.dart';
 import 'settings_sections.dart';
 
@@ -26,11 +29,17 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  late final SettingsController _controller = SettingsController(
-    model: ref.read(appModelProvider),
-    ai: ref.read(aiClientProvider),
-    settings: ref.read(settingsStoreProvider),
-  );
+  late final SettingsController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = SettingsController(
+      model: ref.read(appModelProvider),
+      ai: ref.read(aiClientProvider),
+      settings: ref.read(settingsStoreProvider),
+    );
+  }
 
   @override
   void dispose() {
@@ -164,17 +173,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   _ConnectSection(controller: _controller),
                 ],
               ),
+              ListTile(
+                leading: const Icon(Icons.restaurant),
+                title: const Text('Ernährung'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _push(const NutritionSettingsScreen()),
+              ),
               _area(
                 'Health und Erholung',
                 'heart.text.square',
                 Icons.monitor_heart_outlined,
-                () => [const HealthImportSection()],
+                () => [
+                  const HealthImportSection(),
+                  FormSection(
+                    footer: 'Mehrere Geräte: welche Quelle für Schlaf, HRV, Aktivitäten usw. zählt.',
+                    children: [
+                      ListTile(
+                        title: const Text('Datenquellen und Vorrang'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _push(const DataSourcesScreen()),
+                      ),
+                    ],
+                  ),
+                ],
               ),
               _area(
                 'KI und Automatisierung',
                 'sparkles',
                 Icons.auto_awesome,
                 () => [
+                  const AISettingsSection(),
                   FormSection(
                     header: 'Eigene Daten und Quellen',
                     children: [
