@@ -1,8 +1,10 @@
 import 'package:collection/collection.dart';
 
 import '../calendar/calendar_day.dart';
+import '../coach/template_item.dart';
 import '../nutrition/nutrition_settings.dart';
 import '../util/enum_codec.dart';
+import 'session_match.dart';
 import 'user_profile.dart';
 
 /// Wochentag; der Rohwert ist die Zahl ab Montag = 0 (so steht er in Swift-Daten).
@@ -125,7 +127,7 @@ final class SessionSlot {
 }
 
 /// Der Wochenplan: sieben Tage, an jedem keine, eine oder mehrere Einheiten. Unveränderlich; [withSlots] liefert eine
-/// geänderte Kopie. Die Einträge für die Tagestyp-Erkennung (`templateItems`) folgen mit dem Saisonplan-Modul.
+/// geänderte Kopie.
 final class WeekSchedule {
   WeekSchedule([List<List<SessionSlot>> days = const []]) : days = _normalized(days);
 
@@ -183,6 +185,29 @@ final class WeekSchedule {
       }
     }
     return longest > 7 ? 7 : longest;
+  }
+
+  /// Einträge für die Tagestyp-Erkennung der Ernährung (`NutritionPlanner.plannedDayType`).
+  List<TemplateItem> templateItems(Weekday weekday, {List<int> runMinutes = const []}) {
+    var runIndex = 0;
+    return [
+      for (final slot in slots(weekday))
+        () {
+          final kind = switch (slot.sport) {
+            TrainingSport.run => TemplateItemKind.run,
+            TrainingSport.bike => TemplateItemKind.bike,
+            TrainingSport.swim => TemplateItemKind.swimOrLegs,
+            TrainingSport.strength => TemplateItemKind.strength,
+            TrainingSport.other => TemplateItemKind.optional,
+          };
+          var minutes = slot.sport == TrainingSport.other ? null : SessionMatcher.defaultMinutes(slot);
+          if (slot.sport == TrainingSport.run && runIndex < runMinutes.length) {
+            minutes = runMinutes[runIndex];
+            runIndex += 1;
+          }
+          return TemplateItem(kind: kind, text: slot.title, minutes: minutes, plannedType: slot.plannedDayType);
+        }(),
+    ];
   }
 
   /// JSON wie in Swift: Liste von sieben Listen.
