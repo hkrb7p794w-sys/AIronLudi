@@ -1,6 +1,8 @@
 import 'package:collection/collection.dart';
 
+import '../ai/insights.dart';
 import '../calendar/calendar_day.dart';
+import '../health/health_dashboard.dart';
 import '../integration/data_provider.dart';
 import '../util/enum_codec.dart';
 import 'schedule_check.dart';
@@ -172,7 +174,6 @@ final class PersonalGoals {
 
 /// Eine Stelle für alles, was aus Zielen und Prioritäten folgt. Regeln entscheiden, die KI formuliert.
 ///
-/// Noch offen (folgen mit ihren Modulen): `healthWidgets` (HealthDashboard), `insightTopics` (Insights).
 abstract final class Personalization {
   /// Ziele aus dem bisherigen Einzelziel (`FitnessGoal`) und einem Wettkampf – für Profile von vor Paket 6.
   static PersonalGoals derived(UserProfile profile, {required CalendarDay since}) {
@@ -293,6 +294,53 @@ abstract final class Personalization {
       }
     }
     return result;
+  }
+
+  /// Reihenfolge der Health-Widgets für ein neues bzw. nicht angepasstes Dashboard.
+  static List<HealthWidget> healthWidgets(PersonalGoals goals) {
+    final order = <HealthWidget>[];
+    void add(List<HealthWidget> widgets) {
+      for (final widget in widgets) {
+        if (!order.contains(widget)) order.add(widget);
+      }
+    }
+
+    for (final area in goals.effectivePriorities) {
+      add(switch (area) {
+        FocusArea.sleep => const [HealthWidget.sleep, HealthWidget.hrv],
+        FocusArea.recovery => const [HealthWidget.bodyBattery, HealthWidget.hrv, HealthWidget.recoveryTime],
+        FocusArea.health => const [HealthWidget.restingHeartRate, HealthWidget.steps],
+        FocusArea.endurance => const [HealthWidget.vo2Max, HealthWidget.trainingLoad],
+        FocusArea.performance => const [HealthWidget.trainingLoad, HealthWidget.vo2Max],
+        FocusArea.bodyComposition => const [HealthWidget.weight, HealthWidget.activeCalories],
+        FocusArea.muscle => const [HealthWidget.weight, HealthWidget.trainingLoad],
+        FocusArea.nutrition => const [HealthWidget.weight, HealthWidget.restingCalories],
+      });
+    }
+    add(HealthDashboard.standard);
+    return order;
+  }
+
+  /// Empfehlungs-Themen in der Reihenfolge der Prioritäten (für den Reiter „AI“).
+  static List<InsightTopic> insightTopics(PersonalGoals goals) {
+    final order = <InsightTopic>[];
+    void add(List<InsightTopic> topics) {
+      for (final topic in topics) {
+        if (!order.contains(topic)) order.add(topic);
+      }
+    }
+
+    for (final area in goals.effectivePriorities) {
+      add(switch (area) {
+        FocusArea.muscle => const [InsightTopic.training, InsightTopic.progress, InsightTopic.stagnation],
+        FocusArea.endurance => const [InsightTopic.training, InsightTopic.performance],
+        FocusArea.bodyComposition => const [InsightTopic.nutrition, InsightTopic.progress],
+        FocusArea.sleep || FocusArea.recovery || FocusArea.health => const [InsightTopic.recovery],
+        FocusArea.nutrition => const [InsightTopic.nutrition],
+        FocusArea.performance => const [InsightTopic.performance, InsightTopic.progress],
+      });
+    }
+    return order;
   }
 
   /// Zeilen für den KI-Kontext (Chat, Analyse, Tagesnotiz): Ziele, Prioritäten und worauf Empfehlungen achten sollen.

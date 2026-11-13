@@ -1,7 +1,10 @@
 import 'package:collection/collection.dart';
 
 import '../calendar/calendar_day.dart';
+import '../coach/season_plan.dart';
 import '../garmin/garmin_activity.dart';
+import '../plan/season_schedule.dart';
+import '../plan/today_plan.dart';
 import '../util/enum_codec.dart';
 import 'schedule_check.dart';
 import 'session_match.dart';
@@ -234,7 +237,7 @@ final class TrainingReminder {
 }
 
 /// Was schon trainiert wurde (Aktivitäten aus Garmin/Health, Krafteinheiten der App): Erinnerungen für Erledigtes
-/// entfallen. (`seasonPlan` folgt mit dem Plan-Modul.)
+/// entfallen.
 final class TrainingLog {
   const TrainingLog({this.activities = const [], this.gymDays = const {}});
 
@@ -246,6 +249,28 @@ final class TrainingLog {
     ...activities.where((activity) => (activity.durationSeconds ?? 0) >= 900).map((activity) => activity.day).nonNulls,
     ...gymDays,
   };
+
+  /// Saisonplan-Tag mit dem bis [today] Erledigten dieser Woche.
+  TodayPlan seasonPlan({
+    required SeasonSchedule schedule,
+    required SeasonConfig config,
+    required CompetitionDecisions decisions,
+    required CalendarDay day,
+    required CalendarDay today,
+  }) {
+    final progress = TodayPlan.doneThisWeek(activities: activities, gymDays: gymDays, weekOf: day, upTo: today);
+    return TodayPlan(
+      schedule: schedule,
+      config: config,
+      decisions: decisions,
+      today: day,
+      level: null,
+      advice: '',
+      done: progress.done,
+      gymDays: progress.strengthDays,
+      runZones: null,
+    );
+  }
 }
 
 /// Erinnerung zu einer festen Uhrzeit, die nicht am Trainingstag selbst kommt: Ausrüstung am Vorabend, Wochenplanung am
@@ -285,9 +310,82 @@ final class ScheduledNote {
   String get id => 'coach.reminder.${kind.rawValue}.${day.iso}${tag.isEmpty ? '' : '.$tag'}';
 }
 
-/// Erinnerungen an Einheiten. Die Saisonplan-Erinnerungen (`season`, `swimEquipment`) folgen mit dem Plan-Modul.
+/// Erinnerungen an Einheiten.
 abstract final class ReminderPlanner {
   static const equipmentHour = 18;
+
+  /// Erinnerungen für den Saisonplan: die festen Einheiten der Tage laut `TodayPlan`, ohne Auslassen/Verschieben
+  /// (der Saisonplan verteilt offene Einheiten selbst).
+  static List<TrainingReminder> season({
+    required SeasonSchedule schedule,
+    required SeasonConfig config,
+    required CompetitionDecisions decisions,
+    required CalendarDay today,
+    required bool includeToday,
+    int days = 14,
+    TrainingLog log = const TrainingLog(),
+  }) => [
+    for (var offset = 0; offset < days; offset++)
+      if (offset != 0 || includeToday)
+        if ([
+              for (final item
+                  in log
+                      .seasonPlan(
+                        schedule: schedule,
+                        config: config,
+                        decisions: decisions,
+                        day: today.adding(offset),
+                        today: today,
+                      )
+                      .items)
+                if (item.sport != TodayPlanSport.rest && !item.done) item.title,
+            ]
+            case final titles when titles.isNotEmpty)
+          TrainingReminder(day: today.adding(offset), titles: titles, canAdjust: false),
+  ];
+
+  /// Schwimmen mit Ausrüstung (Pull-Buoy, Paddles, Flossen, Schnorchel): Erinnerung am Vorabend um 18 Uhr.
+  /// Nur der Saisonplan kennt die Ausrüstung je Einheit; im eigenen Wochenplan gibt es keine Angabe dazu.
+  static List<ScheduledNote> swimEquipment({
+    required SeasonSchedule schedule,
+    required SeasonConfig config,
+    required CompetitionDecisions decisions,
+    required CalendarDay today,
+    required int minutesNow,
+    int days = 14,
+    TrainingLog log = const TrainingLog(),
+  }) {
+    final result = <ScheduledNote>[];
+    for (var offset = 1; offset <= (days < 1 ? 1 : days); offset++) {
+      final training = today.adding(offset);
+      final evening = training.adding(-1);
+      if (evening == today && minutesNow >= equipmentHour * 60) continue;
+      // Schon geschwommen (z. B. am Dienstag): Am Donnerstag stehen dann die Beine an, keine Erinnerung.
+      final plan = log.seasonPlan(
+        schedule: schedule,
+        config: config,
+        decisions: decisions,
+        day: training,
+        today: today,
+      );
+      final week = schedule.week(training);
+      if (!plan.items.any((item) => item.sport == TodayPlanSport.swim && !item.done) || week == null) continue;
+      final equipment = SwimStepText.equipment(week.ss ?? const []);
+      if (equipment.isEmpty) continue;
+      final list = ListFormat.german(equipment);
+      result.add(
+        ScheduledNote(
+          kind: ScheduledNoteKind.equipment,
+          day: evening,
+          hour: equipmentHour,
+          minute: 0,
+          title: 'Morgen Schwimmen: $list einpacken',
+          body: 'Für die Schwimmeinheit morgen brauchst du $list. Am besten gleich in die Tasche legen.',
+        ),
+      );
+    }
+    return result;
+  }
 
   /// Erinnerungen für die kommenden [days] Tage ab [today] (iOS erlaubt höchstens 64 geplante Mitteilungen). Heute nur,
   /// wenn die Uhrzeit noch nicht vorbei ist und noch nicht trainiert wurde.
