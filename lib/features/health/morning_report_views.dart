@@ -11,6 +11,7 @@ import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../today/today_controller.dart';
 import '../training/sleep_coach_screen.dart';
+import 'wake_alarm_section.dart';
 
 /// Baut den Morning Report aus den Tageswerten, dem Schlaf-Coach und den Einheiten von heute (Port von
 /// `MorningReportBuilder`).
@@ -368,6 +369,17 @@ class _MorningReportScreenState extends ConsumerState<MorningReportScreen> {
                       Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const SleepCoachScreen())),
                 ),
               ],
+            ),
+            WakeAlarmSection(
+              wake: WakeTime.fromMinutes(settings.sleep.wakeMinutes),
+              tonightMinutes:
+                  SleepCoach.report(
+                    days: _days,
+                    settings: settings.sleep,
+                    goal: settings.profile.goal,
+                    today: report.day,
+                  )?.tonightMinutes ??
+                  (settings.sleep.targetHours * 60).round(),
             ),
             if (report.missing.isNotEmpty)
               FormSection(

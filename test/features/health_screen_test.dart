@@ -49,9 +49,13 @@ void main() {
     expect(find.byType(HealthScreen), findsOneWidget);
     expect(find.byType(HealthWidgetCard), findsWidgets);
     expect(find.text('Ruhepuls'), findsOneWidget);
-    expect(find.textContaining('Ohne Daten in den letzten 30 Tagen'), findsOneWidget);
+    final missing = find.textContaining('Ohne Daten in den letzten 30 Tagen');
+    await tester.scrollUntilVisible(missing, 300, scrollable: find.byType(Scrollable).first);
+    expect(missing, findsOneWidget);
     expect(tester.takeException(), isNull);
 
+    await tester.ensureVisible(find.text('Ruhepuls'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Ruhepuls'));
     await tester.pumpAndSettle();
     expect(find.byType(HealthMetricDetail), findsOneWidget);
@@ -80,6 +84,8 @@ void main() {
     await tester.tap(find.text('Fertig'));
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(find.byType(MorningReportHeader));
+    await tester.pumpAndSettle();
     await tester.tap(find.byType(MorningReportHeader));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await tester.pumpAndSettle();

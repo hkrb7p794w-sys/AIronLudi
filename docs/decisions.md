@@ -281,3 +281,15 @@
 - Body Battery öffnet bis Phase 3h-2 den Verlauf des Werts; die eigene Seite, Mobility und der Wecker folgen dort.
 - Der Morning Report im Gesundheitsbereich rechnet „heute geplant“ wie in Swift über den `TodayController`, wenn er
   nicht aus „Heute“ geöffnet wird.
+
+## 2026-11-14 – Body Battery, Mobility, Wecker (Phase 3h-2)
+
+- `Gauge(.accessoryCircular)` wird zu einem Ring (`CircularProgressIndicator`) mit Farbstufen nach
+  `BodyBatteryAnalysis.band`. Im 30-Tage-Diagramm ist der Aufwachwert eine kurze dunkle Marke im Tagesbalken
+  (`fl_chart` kennt keine Punkte im Balkendiagramm).
+- Wecker: `WakeAlarmService` (Dart) entspricht der Swift-Klasse (höchstens ein Wecker, gleicher Schlüssel
+  `coach.wakeAlarm`, gleiches JSON, Abgleich mit dem Schlaf-Coach). Der Systemwecker läuft über den `MethodChannel`
+  `aironludi/alarm` (`state`, `alarms`, `schedule`, `cancel`). Die native Gegenseite (AlarmKit ab iOS 26,
+  `AlarmManager.setAlarmClock` auf Android) kommt mit den nativen Teilen (Widgets, Live-Aktivitäten); bis dahin meldet
+  die Brücke „nicht unterstützt“ und die App zeigt wie in Swift unter iOS 18–25 den Hinweis auf die Uhr-App.
+- Der Selbsttest „Stufen“ nutzt `RadioGroup` statt eines Inline-Pickers.
