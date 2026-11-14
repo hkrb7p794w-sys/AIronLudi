@@ -203,3 +203,16 @@
 - **Menü „Anleitung und Verlauf“** folgt mit der Übungsbibliothek (3e-4), **„Mit Freunden teilen“** im Abschluss mit
   der Social-Phase.
 
+## 2026-11-14 – Gym-Bibliothek (Phase 3e-4)
+
+- **Verlaufsdiagramme:** Swift Charts scrollt die X-Achse nativ; mit `fl_chart` verschiebt ein Wisch- bzw.
+  Zwei-Finger-Gestenerkenner den sichtbaren Ausschnitt (Zeitraum, Zoom um die Mitte und Y-Achse aus `ChartZoom` wie in
+  Swift). Das Balkendiagramm der bewegten Last zeigt die Einheiten des Ausschnitts gleichmäßig verteilt statt auf
+  einer Zeitachse.
+- **Auswahl im KI-Plan:** „Ziel“ und „Erfahrung“ stehen als Auswahl über die volle Breite statt rechts neben dem
+  Titel – auf iPhone-Breite passten die langen Bezeichnungen nicht (im Widget-Test gefunden).
+- **Trainingspläne sortieren:** Swift nutzt „Bearbeiten“ mit Ziehen; Flutter zeigt einen Griff je Plan. Duplizieren
+  per langem Druck statt Kontextmenü.
+- **GymBook-Import** und **Gym-Einstellungen** (Link in der Bibliothek) gehören in Swift zu Einstellungen ›
+  Disziplinen und folgen dort.
+

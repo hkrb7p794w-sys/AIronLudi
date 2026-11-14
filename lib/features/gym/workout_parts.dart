@@ -10,6 +10,7 @@ import '../../data/settings/coach_settings.dart';
 import '../../services/providers.dart';
 import 'exercise_picker.dart';
 import 'gym_controller.dart';
+import 'gym_library.dart';
 import 'muscle_views.dart';
 
 /// Welcher Wert gerade über den Ziffernblock eingegeben wird.
@@ -194,6 +195,11 @@ class ExerciseMenu extends ConsumerWidget {
             Icons.horizontal_rule,
             () => _pickBar(context, ref),
           ),
+        item(
+          'Anleitung und Verlauf',
+          Icons.info_outline,
+          () => _push(context, ExerciseDetailScreen(exerciseID: exercise.exerciseID, gym: gym, showsDone: true)),
+        ),
         const PopupMenuDivider(),
         item('Übung entfernen', Icons.delete_outline, () => gym.removeExercise(exercise.id), destructive: true),
       ],
