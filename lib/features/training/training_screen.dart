@@ -12,6 +12,8 @@ import '../../ui/components.dart';
 import '../../ui/sport_style.dart';
 import '../gym/gym_providers.dart';
 import '../gym/gym_screen.dart';
+import '../plan/my_week_screen.dart';
+import '../plan/plan_screen.dart';
 import 'discipline_pages.dart';
 import 'sleep_coach_screen.dart';
 import 'training_controller.dart';
@@ -115,6 +117,16 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
           children: [
             FormSection(
               children: [
+                _HubRow(
+                  title: 'Plan',
+                  symbol: 'calendar',
+                  color: Colors.orange,
+                  value: '',
+                  caption: settings.profile.mode == ProfileMode.season ? 'Saisonplan und Woche' : 'Deine Woche',
+                  onTap: () => _open(
+                    (_) => settings.profile.mode == ProfileMode.season ? const PlanScreen() : const MyWeekScreen(),
+                  ),
+                ),
                 // Früher eigener Reiter; „Training starten“ (App-Icon, Kurzbefehl, Widget) öffnet diesen Bereich direkt.
                 if (settings.profile.trains(TrainingSport.strength))
                   _HubRow(

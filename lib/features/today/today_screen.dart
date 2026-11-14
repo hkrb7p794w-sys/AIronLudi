@@ -10,6 +10,7 @@ import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../evidence/evidence_views.dart';
 import '../gym/gym_providers.dart';
+import '../plan/my_week_screen.dart';
 import '../settings/settings_screen.dart';
 import 'now_views.dart';
 import 'today_controller.dart';
@@ -194,6 +195,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
             if (snapshot != null) ...[
               if (snapshot.focus case final focus?) NowSection(snapshot: snapshot, focus: focus),
               _CoachNoteSection(controller: _controller),
+              MissedSessionSection(week: snapshot.sessions, onSaved: _reload),
               SuggestionsSection(suggestions: _suggestions(snapshot)),
               if (settings.profile.mode == ProfileMode.season)
                 if (snapshot.today case final plan?) SeasonOpenSections(today: plan),

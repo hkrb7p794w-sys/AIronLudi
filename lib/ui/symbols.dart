@@ -31,6 +31,13 @@ abstract final class AppSymbols {
     'plus.circle.fill': Icons.add_circle,
     'person.fill': Icons.person,
     'pawprint.fill': Icons.pets,
+    'calendar': Icons.calendar_month,
+    'medal.fill': Icons.military_tech,
+    'arrow.down.right.circle.fill': Icons.trending_down,
+    'arrow.triangle.2.circlepath.circle.fill': Icons.autorenew,
+    'arrow.up.right.circle.fill': Icons.trending_up,
+    'heart.circle.fill': Icons.favorite,
+    'equal.circle.fill': Icons.drag_handle,
   };
 
   static IconData of(String name) => _icons[name] ?? Icons.circle;
