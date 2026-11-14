@@ -67,6 +67,16 @@ public struct CalendarDay: Hashable, Comparable, Codable, Sendable, CustomString
   }
 }
 
+extension CalendarDay {
+  /// Montag = 0 … Sonntag = 6.
+  public var weekdayIndex: Int {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(identifier: "UTC") ?? .current
+    let weekday = calendar.component(.weekday, from: referenceDate)  // Sonntag = 1
+    return (weekday + 5) % 7
+  }
+}
+
 public enum MealCategory: String, CaseIterable, Codable, Sendable {
   case breakfast = "fruehstueck"
   case lunch = "mittagessen"
