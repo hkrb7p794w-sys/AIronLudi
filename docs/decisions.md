@@ -343,3 +343,13 @@
 - Das Begleiter-Foto liegt wie in Swift als `companion.jpg` im App-Support-Ordner (höchstens 600 px, JPEG 0,8) und
   wird über `image_picker` aus der Mediathek gewählt.
 - Liga-Einladungen (`coach://join`) öffnet `RootShell` über `incomingLinkProvider`, wie die Konto-Einladungen.
+
+## 2026-11-14 – Rezeptideen (Phase 3k-1)
+
+- Der Plan liegt wie in Swift als `recipes.json` im App-Support-Ordner (gleiches JSON); Zeitraum und abgehakte
+  Einträge unter den bisherigen Schlüsseln (`recipes.periodStart`, `recipes.periodDays`, `recipes.checked`).
+- Die Teilabfragen laufen mit `Future.wait` nebeneinander (statt `Task`s), der zweite Versuch bei 502/503/504 nach zwei
+  Sekunden wie in Swift.
+- „Als Mahlzeit eintragen …“ öffnet den Mahlzeiten-Entwurf mit einem eigenen `NutritionController` (wie das eigene
+  `NutritionViewModel` in Swift); nichts landet ungefragt im Tagebuch.
+- Wischen zu „Habe ich da“ wird zu einem Kisten-Symbol in der Zeile. „Kochen planen“ folgt in 3k-2.
