@@ -3,6 +3,7 @@ import Flutter
 import UIKit
 import UserNotifications
 import WidgetKit
+import workmanager_apple
 
 #if canImport(AlarmKit)
   import AlarmKit
@@ -16,6 +17,16 @@ import WidgetKit
   ) -> Bool {
     // flutter_local_notifications: Antippen, Aktionen und Anzeige im Vordergrund laufen über diesen Delegate.
     UNUserNotificationCenter.current().delegate = self
+    // Hintergrundabruf (workmanager → BGAppRefreshTask, Kennung wie in der Swift-App): eigene Flutter-Engine mit allen
+    // Plugins und der Widget-Brücke, frühestens alle 2 Stunden.
+    WorkmanagerPlugin.setPluginRegistrantCallback { registry in
+      GeneratedPluginRegistrant.register(with: registry)
+      if let registrar = registry.registrar(forPlugin: "WidgetBridge") {
+        WidgetBridge.register(messenger: registrar.messenger())
+      }
+    }
+    WorkmanagerPlugin.registerPeriodicTask(
+      withIdentifier: "io.github.hkrb7p794w.coach.refresh", earliestBeginInSeconds: NSNumber(value: 2 * 3600))
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 

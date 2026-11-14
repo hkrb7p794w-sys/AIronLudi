@@ -16,6 +16,7 @@ import '../features/plan/my_week_screen.dart';
 import '../features/recipes/cook_plan_views.dart';
 import '../features/today/plan_day_actions.dart';
 import '../services/activities/live_activities.dart';
+import '../services/background/background_refresh.dart';
 import '../services/providers.dart';
 import '../services/reminders/reminder_service.dart';
 import '../services/widgets/widget_providers.dart';
@@ -64,11 +65,14 @@ class _RootShellState extends ConsumerState<RootShell> {
     super.dispose();
   }
 
-  /// App verlässt den Vordergrund (wie `.background` in `CoachApp`): höchstens einmal am Tag in den gewählten Ordner
-  /// sichern, Widgets versorgen, Schnellaktionen am App-Icon anpassen.
+  /// App verlässt den Vordergrund (wie `.background` in `CoachApp`): Hintergrundabruf planen, höchstens einmal am Tag
+  /// in den gewählten Ordner sichern, Widgets versorgen, Schnellaktionen am App-Icon anpassen.
   Future<void> _leave() async {
     final model = ref.read(appModelProvider);
-    if (!model.isDemo) await ref.read(backupServiceProvider).backupToFolder();
+    if (!model.isDemo) {
+      await BackgroundRefresh.schedule();
+      await ref.read(backupServiceProvider).backupToFolder();
+    }
     await ref.read(widgetPublisherProvider).publish();
     await _updateQuickActions();
   }

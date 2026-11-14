@@ -445,5 +445,10 @@
 - „Bildschirm anlassen“ über `wakelock_plus`, an- und abgeschaltet aus `RootShell` wie `isIdleTimerDisabled` in
   `RootView`.
 - Beim Verlassen der App (`AppLifecycleListener.onHide`) wie `.background` in `CoachApp`: Ordner-Sicherung, Widgets,
-  Schnellaktionen. Der Hintergrundabruf folgt in 3n-2.
+  Schnellaktionen, dazu den Hintergrundabruf planen.
+- Hintergrundabruf über `workmanager` (iOS: `BGAppRefreshTask` mit der Kennung der Swift-App; Android: WorkManager,
+  periodisch alle 2 Stunden, nur mit Netz). Der Durchlauf startet den Container wie `main` (`createAppContainer`, ohne
+  Mitteilungszentrale), ruft ab, wenn fällig, und versorgt die Widgets. Unter Android zeichnen sich die Widgets nach
+  einem Abruf im Hintergrund erst mit dem nächsten Aktualisierungsintervall (30 Minuten) bzw. beim Öffnen neu, weil
+  die Kanäle der `MainActivity` in der Hintergrund-Engine fehlen.
 
