@@ -246,3 +246,16 @@
   `TimeText` kommt aus `coach_core`.
 - Die Übernahme im Pace-Check gibt eine Haptik (`HapticFeedback.mediumImpact`) statt `sensoryFeedback(.success)`.
 - `DisclosureGroup` wird zu `ExpansionTile`; der Evidenz-Hinweis steht in der Sektion statt im Footer.
+
+## 2026-11-14 – Plan (Phase 3g-4)
+
+- Sheets der Swift-App (`NextWeekPlanSheet`, `ManualActivitySheet`, `ScheduleEditorSheet`, `SendToWatchSheet`) sind
+  Vollbild-Dialoge (`fullscreenDialog`); die Saisonübersicht ist ein ziehbares Bottom-Sheet.
+- `swipeActions` in „Meine Woche“ werden zu `Dismissible`: nach links auslassen, nach rechts auf den besten Tag
+  verschieben; die Zeile bleibt stehen (`confirmDismiss` gibt `false` zurück), die Änderung kommt über die Einstellungen.
+  Dieselben Aktionen bietet das Menü je Tag.
+- Außerplanmäßige und nachgetragene Einheiten zeigen vorerst eine einfache Zeile ohne Detailseite; die Aktivitätsdetails
+  folgen mit Phase 3g-5. Nachgetragene lassen sich über ein Löschen-Symbol statt Wischen entfernen.
+- `FitnessGoal.symbol` fehlte im Kern-Port und ist ergänzt (wie `UserProfile.swift`).
+- Aus Mitteilungen geöffnete Sheets (`AdjustDaySheet`, „Nächste Woche planen“) zeigt `RootShell`, sobald der
+  `ReminderService` sie meldet – auch wenn die Antwort vor dem ersten Bild kam.

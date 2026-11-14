@@ -7,6 +7,8 @@ import '../../ui/components.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
 import '../evidence/evidence_views.dart';
+import '../plan/my_week_screen.dart';
+import '../plan/plan_screen.dart';
 import 'plan_day_actions.dart';
 import 'today_controller.dart';
 
@@ -41,6 +43,13 @@ class NowSection extends ConsumerWidget {
   final TodaySnapshot snapshot;
   final TodayFocus focus;
 
+  static WorkoutPlan? watchPlan(TodayFocusItem item, {required bool season}) {
+    final sport = item.sport == null ? null : WorkoutSport.of(item.sport!);
+    if (sport == null || (season && sport == WorkoutSport.swim)) return null;
+    final text = [item.detail, item.target].where((part) => part.isNotEmpty).join(' · ');
+    return GarminWorkout.plan(name: item.title, sport: sport, text: text.isEmpty ? item.title : text);
+  }
+
   Color get _color => switch (focus.level) {
     RecoveryLevel.normal => Colors.green,
     RecoveryLevel.locker => Colors.orange,
@@ -73,6 +82,7 @@ class NowSection extends ConsumerWidget {
     final theme = Theme.of(context);
     final secondary = TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant);
     final season = settings.profile.mode == ProfileMode.season;
+    final loggedIn = ref.watch(garminConnectProvider).isLoggedIn;
     final pause = settings.activeBreak(today);
     final advice = snapshot.advice;
     final note = settings.planAdjustments.note(Weekday.of(today), inWeekOf: today);
@@ -155,7 +165,12 @@ class NowSection extends ConsumerWidget {
           ),
         if (focus.items.isEmpty)
           ListTile(title: Text(season ? 'Heute nichts Festes.' : 'Heute nichts geplant.', style: secondary)),
-        for (final item in focus.items) FocusItemRow(item: item),
+        for (final item in focus.items) ...[
+          FocusItemRow(item: item),
+          // Auf Wunsch an die Uhr; die Schwimmeinheiten des Saisonplans legt weiterhin das Add-on an.
+          if (watchPlan(item, season: season) case final plan? when loggedIn && item.status != SessionStatus.done)
+            SendToWatchButton(plan: plan, day: snapshot.plan.today),
+        ],
         // Wochenfokus gehört zum Saisonplan und nicht in ein eigenes Profil.
         if (season && (snapshot.today?.focus ?? '').isNotEmpty)
           Padding(
@@ -329,6 +344,12 @@ class _SuggestionsSectionState extends ConsumerState<SuggestionsSection> {
               ));
               settings.planAdjustments = suggestion.adjustments;
             }),
+            adjust: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                fullscreenDialog: true,
+                builder: (_) => NextWeekPlanScreen(monday: suggestion.week, initial: suggestion.schedule),
+              ),
+            ),
             dismiss: () {
               final dismissed = [...settings.dismissedSuggestions, suggestion.id];
               settings.dismissedSuggestions = dismissed.length > 60
@@ -343,11 +364,14 @@ class _SuggestionsSectionState extends ConsumerState<SuggestionsSection> {
 
 /// Ein Vorschlag als Karte: Quelle, Titel, Begründung, Änderungen je Tag, was bleibt, neue Regelkonflikte.
 class SuggestionCard extends StatelessWidget {
-  const SuggestionCard({super.key, required this.suggestion, required this.apply, required this.dismiss});
+  const SuggestionCard({super.key, required this.suggestion, required this.apply, required this.dismiss, this.adjust});
 
   final PlanSuggestion suggestion;
   final VoidCallback apply;
   final VoidCallback dismiss;
+
+  /// „Anpassen“: Vorschlag als Vorbelegung im Wochenplan-Editor.
+  final VoidCallback? adjust;
 
   @override
   Widget build(BuildContext context) {
@@ -416,6 +440,7 @@ class SuggestionCard extends StatelessWidget {
             spacing: 8,
             children: [
               FilledButton(onPressed: apply, child: const Text('Übernehmen')),
+              if (adjust case final adjust?) OutlinedButton(onPressed: adjust, child: const Text('Anpassen')),
               TextButton(
                 onPressed: dismiss,
                 child: const Text('Verwerfen', style: TextStyle(color: Colors.red)),
@@ -478,6 +503,14 @@ class WeeklyReviewSection extends StatelessWidget {
             leading: const Icon(Icons.star, color: Colors.amber),
             title: Text(line),
           ),
+        ListTile(
+          leading: const Icon(Icons.edit_calendar),
+          title: const Text('Nächste Woche planen'),
+          textColor: Theme.of(context).colorScheme.primary,
+          onTap: () =>
+              Navigator.of(context)
+                  .push(MaterialPageRoute<void>(fullscreenDialog: true, builder: (_) => const NextWeekPlanScreen())),
+        ),
       ],
     );
   }

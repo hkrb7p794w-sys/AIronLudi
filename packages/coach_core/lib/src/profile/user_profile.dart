@@ -57,6 +57,16 @@ enum FitnessGoal implements RawEnum {
   final String label;
   final String detail;
 
+  /// Symbolname (SF Symbols wie in Swift).
+  String get symbol => switch (this) {
+    loseWeight => 'arrow.down.right.circle.fill',
+    loseAndBuild => 'arrow.triangle.2.circlepath.circle.fill',
+    buildMuscle => 'dumbbell.fill',
+    gainWeight => 'arrow.up.right.circle.fill',
+    improveFitness => 'heart.circle.fill',
+    maintain => 'equal.circle.fill',
+  };
+
   @override
   String get rawValue => name;
 

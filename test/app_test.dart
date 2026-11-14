@@ -8,12 +8,13 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
-Future<Widget> app({required bool onboarded}) async {
+Future<Widget> app({required bool onboarded, List<Override> overrides = const []}) async {
   // Deep Links: im Test ohne Plattform-Plugin, sonst meldet der Kanal eine MissingPluginException.
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockStreamHandler(
     const EventChannel('com.llfbandit.app_links/events'),
@@ -23,7 +24,11 @@ Future<Widget> app({required bool onboarded}) async {
   final preferences = await SharedPreferencesWithCache.create(cacheOptions: const SharedPreferencesWithCacheOptions());
   final storage = await AppStorage.open(executor: NativeDatabase.memory(), secrets: InMemorySecretStore());
   final container = ProviderContainer(
-    overrides: [preferencesProvider.overrideWithValue(preferences), appStorageProvider.overrideWithValue(storage)],
+    overrides: [
+      preferencesProvider.overrideWithValue(preferences),
+      appStorageProvider.overrideWithValue(storage),
+      ...overrides,
+    ],
   );
   if (onboarded) {
     container.read(coachSettingsProvider).profile = UserProfile(mode: ProfileMode.personal, onboardingDone: true);
