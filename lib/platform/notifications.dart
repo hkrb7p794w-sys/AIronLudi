@@ -34,6 +34,7 @@ final class LocalNotification {
     this.exact = false,
     this.silent = false,
     this.soundFile,
+    this.repeatsDaily = false,
   });
 
   final String id;
@@ -54,6 +55,9 @@ final class LocalNotification {
 
   /// Eigener Ton (Dateiname, iOS aus `Library/Sounds`); `null` = Standardton.
   final String? soundFile;
+
+  /// Jeden Tag zur selben Uhrzeit (wie `UNCalendarNotificationTrigger` mit Stunde und Minute, `repeats: true`).
+  final bool repeatsDaily;
 }
 
 /// Antwort auf eine Mitteilung (Antippen oder Aktion).
@@ -193,7 +197,7 @@ final class DeviceNotificationCenter implements NotificationCenterBridge {
   @override
   Future<void> add(LocalNotification notification) async {
     final day = notification.day;
-    final date = tz.TZDateTime(
+    var date = tz.TZDateTime(
       tz.local,
       day.year,
       day.month,
@@ -202,7 +206,12 @@ final class DeviceNotificationCenter implements NotificationCenterBridge {
       notification.minute,
       notification.second,
     );
-    if (date.isBefore(tz.TZDateTime.now(tz.local))) return;
+    final now = tz.TZDateTime.now(tz.local);
+    if (date.isBefore(now)) {
+      // Tägliche Wiederholung: nächstes Vorkommen dieser Uhrzeit (das Plugin verlangt einen Zeitpunkt in der Zukunft).
+      if (!notification.repeatsDaily) return;
+      date = date.add(const Duration(days: 1));
+    }
     await _plugin.zonedSchedule(
       id: numericID(notification.id),
       scheduledDate: date,
@@ -217,6 +226,7 @@ final class DeviceNotificationCenter implements NotificationCenterBridge {
           sound: notification.silent ? null : notification.soundFile,
         ),
       ),
+      matchDateTimeComponents: notification.repeatsDaily ? DateTimeComponents.time : null,
       androidScheduleMode: notification.exact
           ? AndroidScheduleMode.exactAllowWhileIdle
           : AndroidScheduleMode.inexactAllowWhileIdle,

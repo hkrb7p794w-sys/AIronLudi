@@ -226,3 +226,13 @@
   dem Reiter „Aktivitäten“.
 - **Verschieben/Auslassen** als Chips, die bei wenig Platz umbrechen (statt `ViewThatFits`).
 
+## 2026-11-14 – Reiter Training (Phase 3g-2)
+
+- **Tägliche Erinnerung:** `LocalNotification.repeatsDaily` plant wie `UNCalendarNotificationTrigger` mit
+  `repeats: true` jeden Tag zur selben Uhrzeit (`matchDateTimeComponents: time`). Liegt die Uhrzeit heute schon hinter
+  uns, beginnt die Wiederholung morgen. Genutzt von der Schlafenszeit-Erinnerung des Schlaf-Coachs.
+- **Diagramme:** `fl_chart`; Balken auf einer Zeitachse (Form, Fitness & Form) als senkrechte Linien je Tag, weil
+  `BarChart` keine Datumsachse kennt. Gestapelte Minuten je Sportart mit `rodStackItems`, Legende darunter.
+- **Übersicht:** Wert und Erklärung stehen rechts, kürzen aber bei Platzmangel (statt umzubrechen wie bei sehr großer
+  Schrift in Swift).
+
