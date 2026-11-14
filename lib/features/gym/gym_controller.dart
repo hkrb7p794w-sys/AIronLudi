@@ -838,6 +838,25 @@ final class GymController extends ChangeNotifier {
     return session;
   }
 
+  /// Überträgt die Einheit als FIT-Krafttraining (Übung, Wiederholungen, Gewicht je Satz) nach Garmin Connect.
+  static Future<String> uploadToGarmin(
+    GymSession session, {
+    required GymRepository repository,
+    required GarminConnectSession garmin,
+  }) async {
+    final fit = StrengthFitExport.fit(session);
+    final name = 'coach-kraft-${session.day.iso}-${session.id.substring(0, 8)}.fit';
+    try {
+      final created = await garmin.upload(fit: fit, fileName: name);
+      await repository.setUploadedToGarmin(session.id, value: true);
+      return created ? 'Nach Garmin Connect übertragen.' : 'War in Garmin Connect schon vorhanden.';
+    } on GarminConnectError catch (error) {
+      return 'Garmin: ${error.message}';
+    } on Object catch (error) {
+      return 'Garmin: $error';
+    }
+  }
+
   /// Gibt eine Meldung für die Anzeige zurück.
   static Future<String> saveToHealth(
     GymSession session, {
