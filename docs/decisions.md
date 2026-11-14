@@ -375,3 +375,15 @@
   Version kommt aus `package_info_plus`. Der Status steht unter der Beschriftung statt rechts daneben.
 - GymBook-Import über `file_picker` (beliebige Datei, wie `.item` in Swift).
 
+## 2026-11-14 – Widget-Stand und App Group (Phase 3m-1)
+
+- Die App Group ermittelt Dart wie Swift aus `embedded.mobileprovision` (`AppGroupProfile`); der `AppDelegate` liefert
+  nur das Profil und den Ordner je Kandidat. Dateien schreibt Dart selbst (temporär schreiben, dann umbenennen statt
+  `.atomic`); nur das Entfernen aus der Warteschlange läuft nativ unter `NSFileCoordinator`, weil das Widget
+  gleichzeitig schreiben kann.
+- Die Brücke steht im `AppDelegate.swift`, damit das Xcode-Projekt nicht für eine neue Datei geändert werden muss.
+- Android schreibt in den Datenordner der App; die Glance-Widgets (3m-3) lesen ihn im selben Prozess.
+- Statt `scenePhase` lauscht `RootShell` mit `AppLifecycleListener`: beim Zurückkehren Wasser übernehmen, schreiben,
+  abrufen, Erinnerungen planen, erneut schreiben; beim Verlassen schreiben. Die Live-Aktivität „Mahlzeiten heute“
+  folgt mit der Widget-Erweiterung (3m-2).
+
