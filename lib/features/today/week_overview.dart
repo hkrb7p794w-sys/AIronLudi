@@ -10,6 +10,7 @@ import '../activities/activities_screen.dart';
 import '../activities/activity_detail_screen.dart';
 import '../activities/activity_parts.dart';
 import '../evidence/evidence_views.dart';
+import '../game/game_views.dart';
 import 'now_views.dart';
 import 'today_controller.dart';
 
@@ -159,6 +160,13 @@ class WeekOverviewScreen extends ConsumerWidget {
             ),
             _PersonalGoalSection(snapshot: snapshot, activities: activities),
           ],
+          MotivationSections(
+            snapshot: snapshot,
+            activities: activities,
+            gym: const [],
+            gymDays: gymDays,
+            showsCompanion: false,
+          ),
           if (imported != null)
             FormSection(
               header: 'Vom KI-Coach (Import vom ${shortDate(imported.day)})',

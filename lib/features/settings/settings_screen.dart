@@ -13,6 +13,7 @@ import '../../ui/symbols.dart';
 import '../account/account_views.dart';
 import '../ai/coach_exchange.dart';
 import '../evidence/evidence_views.dart';
+import '../motivation/motivation_views.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../onboarding/schedule_editor.dart';
 import 'ai_settings.dart';
@@ -151,6 +152,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         title: const Text('Quellen und Regeln'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _push(const EvidenceLibraryScreen()),
+                      ),
+                    ],
+                  ),
+                  FormSection(
+                    header: 'Motivation',
+                    children: [
+                      ListTile(
+                        title: const Text('Begleiter & Rangliste'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _push(const MotivationSettingsScreen()),
                       ),
                     ],
                   ),

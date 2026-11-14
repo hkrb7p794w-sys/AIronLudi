@@ -274,7 +274,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                     if (record.session.day == today) record,
                 ],
               ),
-              MotivationSections(snapshot: snapshot, activities: _activities, gym: _gym),
+              MotivationSections(snapshot: snapshot, activities: _activities, gym: _gym, showsLeague: false),
               TodayHintsSection(snapshot: snapshot, activities: _activities, days: _days),
               FormSection(
                 header: 'Woche',

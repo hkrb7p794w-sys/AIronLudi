@@ -1,11 +1,12 @@
 import 'dart:async';
 
-import 'package:coach_core/coach_core.dart' show AccountInvite;
+import 'package:coach_core/coach_core.dart' show AccountInvite, LeagueInvite;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/account/account_views.dart';
+import '../features/motivation/motivation_views.dart';
 import '../features/plan/my_week_screen.dart';
 import '../features/today/plan_day_actions.dart';
 import '../services/providers.dart';
@@ -46,6 +47,14 @@ class _RootShellState extends ConsumerState<RootShell> {
   /// im Ablauf (vor dem Wiederherstellungscode) zu „Schon angemeldet“ wechseln.
   void _presentLink(Uri? uri) {
     if (uri == null) return;
+    if (LeagueInvite.fromUri(uri) case final league?) {
+      ref.read(incomingLinkProvider.notifier).consume();
+      unawaited(
+        Navigator.of(context)
+            .push(MaterialPageRoute<void>(fullscreenDialog: true, builder: (_) => JoinLeagueScreen(invite: league))),
+      );
+      return;
+    }
     final invite = AccountInvite.fromUri(uri);
     if (invite == null) return;
     ref.read(incomingLinkProvider.notifier).consume();
