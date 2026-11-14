@@ -14,6 +14,7 @@ import '../activities/post_workout_section.dart';
 import '../ai/ai_screen.dart';
 import '../ai/chat_screen.dart';
 import '../evidence/evidence_views.dart';
+import '../game/game_views.dart';
 import '../gym/gym_providers.dart';
 import '../gym/gym_screen.dart';
 import '../health/morning_report_views.dart';
@@ -273,6 +274,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                     if (record.session.day == today) record,
                 ],
               ),
+              MotivationSections(snapshot: snapshot, activities: _activities, gym: _gym),
               TodayHintsSection(snapshot: snapshot, activities: _activities, days: _days),
               FormSection(
                 header: 'Woche',

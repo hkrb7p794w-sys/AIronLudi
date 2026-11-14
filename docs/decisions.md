@@ -328,3 +328,10 @@
   oben links in Swift), mit Zahl der Anfragen. Die Seite „Wettkampf“ folgt mit dem Spiel (3j-3).
 - Wischaktionen (Freund entfernen, Kommentar löschen) werden zu Symbolen bzw. zur Profilseite; Bestätigungen sind
   `AlertDialog`s.
+
+## 2026-11-14 – Spiel (Phase 3j-3)
+
+- `MotivationSections` zeigt vorerst nur den Fortschritt (Serie, Stufe, Abzeichen); Begleiter und Liga folgen in 3j-4.
+- Der Stand wird wie in Swift (`.task(id:)`) nur gemeldet, wenn sich Punkte, Serie, Mahlzeit- oder Trainingstage
+  ändern (Schlüssel im Zustand des Abschnitts, Meldung nach dem Aufbau des Bilds).
+- Abzeichen als `Wrap` statt `LazyVGrid`; Wischen zum Verlassen einer Challenge wird zu einem Symbol mit Bestätigung.
