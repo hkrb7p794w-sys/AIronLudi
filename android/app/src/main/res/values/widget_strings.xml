@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_today_description">Tagesampel, heutige Einheiten und Woche</string>
+    <string name="widget_nutrition_description">Kalorien, Protein und Wasser mit Wasser-Knopf</string>
+    <string name="widget_meals_description">Mahlzeiten des Tages mit „+“ zum Eintragen</string>
+    <string name="widget_health_description">Body Battery, Schlaf, HRV und mehr aus dem Morning Report</string>
+    <string name="widget_gym_description">Nächste Einheit, laufende Einheit und Wochenstand</string>
+</resources>

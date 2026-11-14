@@ -19,6 +19,16 @@ class MainActivity : FlutterFragmentActivity() {
             }
         }
         WorkoutNotification.channel = activities
+        // Homescreen-Widgets neu zeichnen, sobald die App einen neuen Stand geschrieben hat.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "aironludi/widgets").setMethodCallHandler { call, result ->
+            when (call.method) {
+                "reload" -> {
+                    WidgetData.updateAll(applicationContext)
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {

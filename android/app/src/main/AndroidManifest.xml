@@ -133,6 +133,38 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Homescreen-Widgets (Gegenstück zu den iOS-Widgets) und der Wasser-Knopf. -->
+        <receiver android:name=".TodayWidget" android:exported="false" android:label="Heute">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_today_info" />
+        </receiver>
+        <receiver android:name=".NutritionWidget" android:exported="false" android:label="Ernährung">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_nutrition_info" />
+        </receiver>
+        <receiver android:name=".MealsWidget" android:exported="false" android:label="Mahlzeiten">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_meals_info" />
+        </receiver>
+        <receiver android:name=".HealthWidget" android:exported="false" android:label="Health">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_health_info" />
+        </receiver>
+        <receiver android:name=".GymWidget" android:exported="false" android:label="Gym">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_gym_info" />
+        </receiver>
+        <receiver android:name=".WaterReceiver" android:exported="false" />
         <!-- Knöpfe der laufenden Gym-Mitteilung (Satz erledigt, Pause überspringen, Gewicht ±). -->
         <receiver android:name=".WorkoutActionReceiver" android:exported="false" />
     </application>
