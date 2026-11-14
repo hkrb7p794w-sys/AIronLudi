@@ -319,3 +319,12 @@
 - Bestätigungsdialog und Lösch-Abfrage mit Passwortfeld sind `AlertDialog`s; der Wiederherstellungscode lässt sich
   wie in Swift erst nach Bestätigung schließen (`PopScope`).
 - Der Schalter „Trainings automatisch teilen“ in „Konto verwalten“ kommt mit dem Port von `SocialAutoShare` (3j-2).
+
+## 2026-11-14 – Freunde und Teilen (Phase 3j-2)
+
+- `SocialAutoShare` ist ein Dienst (`socialAutoShareProvider`) statt eines statischen Typs; Schlüssel wie in Swift
+  (`social.autoShare`, `social.autoShareSince` in Sekunden seit 1970).
+- Freunde öffnen sich über das Personen-Symbol links in der App-Leiste des Reiters Aktivitäten (wie die Schaltfläche
+  oben links in Swift), mit Zahl der Anfragen. Die Seite „Wettkampf“ folgt mit dem Spiel (3j-3).
+- Wischaktionen (Freund entfernen, Kommentar löschen) werden zu Symbolen bzw. zur Profilseite; Bestätigungen sind
+  `AlertDialog`s.

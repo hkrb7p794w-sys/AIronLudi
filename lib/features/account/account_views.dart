@@ -540,6 +540,23 @@ class _AccountDetailScreenState extends ConsumerState<AccountDetailScreen> {
                   ),
               ],
             ),
+          if (info != null)
+            FormSection(
+              footer:
+                  'Neue Trainings von Uhr und Gym erscheinen von selbst bei deinen Freunden im Reiter „Aktivitäten“ – '
+                  'Sportart, Dauer, Strecke, Höhenmeter, Sätze. Puls, Kalorien, Gewicht und Schlaf bleiben auf deinem '
+                  'Gerät. Ältere Trainings werden nicht nachträglich geteilt.',
+              children: [
+                SwitchListTile(
+                  title: const Text('Trainings automatisch teilen'),
+                  value: ref.read(socialAutoShareProvider).isEnabled,
+                  onChanged: (on) async {
+                    await ref.read(socialAutoShareProvider).setEnabled(on);
+                    if (mounted) setState(() {});
+                  },
+                ),
+              ],
+            ),
           FormSection(
             header: 'Freunde und Familie einladen',
             footer: 'Jede Einladung gilt einmal und 14 Tage. Höchstens 5 offene Einladungen.',

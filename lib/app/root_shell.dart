@@ -28,7 +28,14 @@ class _RootShellState extends ConsumerState<RootShell> {
   void initState() {
     super.initState();
     final model = ref.read(appModelProvider);
-    unawaited(model.start().then((_) => model.syncIfDue()));
+    unawaited(
+      model.start().then((_) async {
+        await model.syncIfDue();
+        // Freundschaftsanfragen (Zahl am Reiter „Aktivitäten“) und neue Trainings für den Feed.
+        await ref.read(socialServiceProvider).refresh();
+        await ref.read(socialAutoShareProvider).run(isDemo: model.isDemo);
+      }),
+    );
     // Schon vor dem ersten Bild beantwortete Mitteilungen (App aus einer Mitteilung gestartet).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _presentReminder(ref.read(reminderServiceProvider));

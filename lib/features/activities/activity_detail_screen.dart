@@ -13,6 +13,7 @@ import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/route_map.dart';
 import '../gym/gym_screen.dart';
+import '../social/social_views.dart';
 import 'activity_parts.dart';
 
 /// Alle Details einer Aktivität wie in Garmin Connect: Übersicht, Karte, Verlauf, Runden, Abschnitte und alle
@@ -117,7 +118,24 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     final sections = ActivityDetails.sections(current);
     final route = fit == null ? const <({double latitude, double longitude})>[] : ActivityDetails.route(fit);
     return Scaffold(
-      appBar: AppBar(title: Text(current.name ?? 'Aktivität')),
+      appBar: AppBar(
+        title: Text(current.name ?? 'Aktivität'),
+        actions: [
+          IconButton(
+            tooltip: 'Mit Freunden teilen',
+            icon: const Icon(Icons.people_outline),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                fullscreenDialog: true,
+                builder: (_) => ShareWithFriendsScreen(
+                  content: ShareWorkout(WorkoutShare.activity(current)),
+                  localKeys: ['a${current.id}'],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.only(bottom: 32),
         children: [

@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../data/settings/coach_settings.dart';
 import '../../services/providers.dart';
+import '../social/social_views.dart';
 import 'exercise_picker.dart';
 import 'gym_controller.dart';
 import 'gym_library.dart';
@@ -910,6 +911,23 @@ class WorkoutResultView extends StatelessWidget {
         ],
         const SizedBox(height: 12),
         Text(finished.status, style: secondary),
+        if (finished.share case final share?) ...[
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(44),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                fullscreenDialog: true,
+                builder: (_) => ShareWithFriendsScreen(content: ShareWorkout(share), localKeys: finished.shareKeys),
+              ),
+            ),
+            icon: const Icon(Icons.people_outline),
+            label: const Text('Mit Freunden teilen'),
+          ),
+        ],
         const SizedBox(height: 16),
         FilledButton(
           style: FilledButton.styleFrom(
