@@ -216,3 +216,13 @@
 - **GymBook-Import** und **Gym-Einstellungen** (Link in der Bibliothek) gehören in Swift zu Einstellungen ›
   Disziplinen und folgen dort.
 
+## 2026-11-14 – Reiter „Heute“ (Phase 3f-2)
+
+- **Bereiche aus anderen Phasen** (Morning Report, verpasste Einheiten, „Nach dem Training“, Motivation und
+  Rangliste, KI-Empfehlungen, Chat, „An die Uhr senden“, Mobility, „Anpassen“ eines Vorschlags und „Nächste Woche
+  planen“) hängen in Swift an Ansichten der Bereiche Health, Plan, Training, Motivation und AI. Sie kommen mit diesen
+  Bereichen dazu; „Heute“ zeigt bis dahin alles Übrige.
+- **„Heute erledigt“** zeigt die Einträge des gemeinsamen Verlaufs noch ohne Link zur Aktivität; der Link folgt mit
+  dem Reiter „Aktivitäten“.
+- **Verschieben/Auslassen** als Chips, die bei wenig Platz umbrechen (statt `ViewThatFits`).
+
