@@ -11,6 +11,9 @@ enum SecretKey {
 
   /// Sitzung des eigenen Kontos am Worker (`s1.…`). Nur auf diesem Gerät.
   accountSession,
+
+  /// WHOOP-Zugang (JSON, `WhoopToken`: Access- und Refresh-Token mit Ablauf).
+  whoopToken,
 }
 
 /// Ablage für Geheimnisse; im Test durch [InMemorySecretStore] ersetzt.

@@ -56,8 +56,8 @@ enum DataProvider implements RawEnum {
   String get rawValue => name;
 
   ProviderAvailability get availability => switch (this) {
-    garmin || appleHealth => ProviderAvailability.available,
-    whoop || polar => ProviderAvailability.planned,
+    garmin || appleHealth || whoop => ProviderAvailability.available,
+    polar => ProviderAvailability.planned,
     fitbit => ProviderAvailability.unavailable,
   };
 
@@ -66,9 +66,8 @@ enum DataProvider implements RawEnum {
     garmin => 'Garmin-Konto (Connect) oder Personal API.',
     appleHealth => 'Über HealthKit auf dem iPhone, sofern SideStore die Berechtigung erhält.',
     whoop =>
-      'Offizielle API (v2, OAuth). Noch nicht eingebaut; braucht eine eigene WHOOP-App im Developer-Dashboard und '
-          'den Worker für den Token-Tausch. Bis dahin: WHOOP schreibt Schlaf, Ruhepuls und Workouts in Apple Health '
-          '(keine HRV).',
+      'Offizielle API (v2, OAuth): Recovery, HRV, Ruhepuls, Schlaf, Kalorien, Schritte und Trainings. Braucht eine '
+          'WHOOP-App im Developer-Dashboard, eingetragen im KI-Worker.',
     polar =>
       'Offizielle AccessLink-API (OAuth). Noch nicht eingebaut; braucht einen eigenen Polar-Client und den Worker. '
           'Bis dahin: Polar Flow schreibt Trainings in Apple Health.',

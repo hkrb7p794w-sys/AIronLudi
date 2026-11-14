@@ -128,7 +128,7 @@ class TrackerPicker extends StatelessWidget {
   static String note(DataProvider provider) => switch (provider) {
     DataProvider.garmin => 'Direkt verbinden: Anmeldung mit dem Garmin-Konto.',
     DataProvider.appleHealth => 'Direkt verbinden: Import aus Apple Health einschalten.',
-    DataProvider.whoop => 'Noch keine direkte Verbindung – Schlaf, Ruhepuls und Workouts kommen über Apple Health.',
+    DataProvider.whoop => 'Direkt verbinden: Anmeldung bei WHOOP (Recovery, HRV, Schlaf, Trainings).',
     DataProvider.polar => 'Noch keine direkte Verbindung – Trainings kommen über Apple Health (Polar Flow).',
     DataProvider.fitbit =>
       'Derzeit nicht möglich: Fitbit schreibt nicht in Apple Health, die Web-API ist abgeschaltet.',

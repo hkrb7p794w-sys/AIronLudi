@@ -404,6 +404,7 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Native Registrierung im `AppDelegate` (Mitteilungs-Delegate, Widget-, Live-Aktivitäts- und Wecker-Brücke), Widget-Erweiterung | erledigt (3m-1 bis 3m-6), geprüft per iOS-Build |
 | Hintergrundabruf (`BGAppRefreshTask` bzw. WorkManager, `workmanager`) | erledigt (3n-1) |
 | Alle Teilphasen aus Abschnitt 6 | erledigt (Stand 14.11.2026) |
+| WHOOP-Anbindung (offizielle API v2, OAuth über den Worker): Recovery, HRV, Ruhepuls, Schlaf, Kalorien, Schritte, Trainings; Einstellungen › Training und Fitness › WHOOP | in PR |
 | Test auf echten Geräten: Widgets, Live-Aktivitäten, laufende Mitteilung, Wecker, Hintergrundabruf, Schnellaktionen (nur dort prüfbar, CI baut sie) | offen – durch den Nutzer |
 | Umstellung: `vars.DEPLOY_SIDESTORE` bzw. `vars.DEPLOY_ANDROID` auf `true`, dann ersetzt die Flutter-App die Swift- bzw. Kotlin-App (gleiche Bundle-/Application-ID) | offen – Entscheidung des Nutzers |
 | Später möglich: Android-Widgets mit Glance (Ringe, Balken, Konfiguration), Wiederholungen ± in der Android-Mitteilung | Idee |

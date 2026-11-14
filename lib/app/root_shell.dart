@@ -19,6 +19,7 @@ import '../services/activities/live_activities.dart';
 import '../services/background/background_refresh.dart';
 import '../services/providers.dart';
 import '../services/reminders/reminder_service.dart';
+import '../services/whoop/whoop_service.dart';
 import '../services/widgets/widget_providers.dart';
 import 'day_change.dart';
 import 'deep_links.dart';
@@ -135,6 +136,12 @@ class _RootShellState extends ConsumerState<RootShell> {
   /// im Ablauf (vor dem Wiederherstellungscode) zu „Schon angemeldet“ wechseln.
   void _presentLink(Uri? uri) {
     if (uri == null) return;
+    // Rücksprung von WHOOP nach der Freigabe: coach://whoop?code=…&state=… (über die Seite /w/whoop des Workers).
+    if (uri.scheme == 'coach' && uri.host == 'whoop') {
+      ref.read(incomingLinkProvider.notifier).consume();
+      unawaited(_completeWhoop(uri));
+      return;
+    }
     // Freigabe fürs gemeinsame Kochen coach://cook/<code> bzw. eigene Freigabe coach://cook/release.
     if (CookLink.fromUri(uri) case final link?) {
       ref.read(incomingLinkProvider.notifier).consume();
@@ -171,6 +178,17 @@ class _RootShellState extends ConsumerState<RootShell> {
       );
     } else {
       unawaited(presentAccountAuth(context, AccountAuthMode.register, invite: invite));
+    }
+  }
+
+  Future<void> _completeWhoop(Uri uri) async {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    try {
+      await ref.read(whoopServiceProvider).complete(uri);
+      messenger?.showSnackBar(const SnackBar(content: Text('WHOOP verbunden – Daten werden abgerufen.')));
+      await ref.read(appModelProvider).syncNow();
+    } on WhoopError catch (error) {
+      messenger?.showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 

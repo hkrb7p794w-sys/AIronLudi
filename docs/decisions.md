@@ -452,3 +452,28 @@
   einem Abruf im Hintergrund erst mit dem nächsten Aktualisierungsintervall (30 Minuten) bzw. beim Öffnen neu, weil
   die Kanäle der `MainActivity` in der Hintergrund-Engine fehlen.
 
+## 2026-11-14 – WHOOP (offizielle API v2)
+
+- **Wie Garmin:** Die App ruft die Daten selbst bei `api.prod.whoop.com/developer/v2` ab; nur die Anmeldung (OAuth
+  2.0, Authorization Code) läuft über den Worker, weil WHOOP das Client-Secret verlangt und kein PKCE anbietet
+  (`hkrb7p794w-sys/Coach-App`, `worker/src/whoop.ts`, Einrichtung in `docs/whoop.md`). Rücksprung über
+  `https://<worker>/w/whoop` → `coach://whoop?code&state`; die App prüft den `state`.
+- **Tokens** (`WhoopToken`) nur im sicheren Speicher (`SecretKey.whoopToken`). WHOOP rotiert das Refresh-Token bei
+  jedem Refresh: Die App erneuert genau einmal gleichzeitig (gemeinsamer Future) und speichert das neue sofort. Ein
+  abgelehntes Refresh-Token oder ein zweites 401 trennt lokal mit „Bitte neu verbinden“.
+- **Abbildung** (`WhoopImport` in coach_core, Felder laut OpenAPI): Recovery → Ruhepuls, HRV (RMSSD wie Garmin),
+  Trainingsbereitschaft (Recovery-Score, Stufe ab 67/34 %), SpO2; Hauptschlaf (ohne Nickerchen, längster der Nacht)
+  → Dauer, Phasen, Wachzeit, Schlaf-Score (Schlafleistung), Atemfrequenz, Zeiten; Zyklus → Gesamtkalorien
+  (kJ ÷ 4,184), Schritte, Max-HF. Zugeordnet zum Aufwachtag (Ende plus sechs Stunden wie beim Health-Import).
+  Trainings → Aktivitäten mit Herkunft WHOOP (stabile negative ID aus der UUID, Sportart auf Garmin-Typen, Zonen 1–5,
+  Strain als „WHOOP-Strain x,y“). Day-Strain hat kein Gegenstück in den Tageswerten und entfällt.
+- **Zusammenführen** wie bei Apple Health über das Herkunftsverzeichnis (`SourceStore.ingestDays`,
+  `recordActivities`): Welche Quelle je Datenart zählt, regeln die Quellen-Einstellungen (WHOOP-Stärken: Schlaf,
+  HRV, Ruhepuls, Recovery); doppelte Trainings mit Garmin oder Health entfernt `deduplicateActivities`.
+- **Abruf:** nach Garmin, vor Health; erster Abruf 90 Tage, danach ab dem letzten mit zwei Tagen Überlappung (WHOOP
+  bewertet nachträglich). Seiten zu 25 Einträgen, höchstens so viele Seiten wie für den Zeitraum nötig (Limit 100
+  Anfragen je Minute). Auch im Hintergrundabruf.
+- **Trennen** widerruft bei WHOOP (`DELETE /v2/user/access`) und löscht Tokens und Profil; übernommene Werte bleiben.
+- Körperwerte (Größe, Gewicht, Max-HF) werden angezeigt, aber nicht in Profil oder Gewichtsverlauf übernommen (keine
+  Datierung, die eigenen Angaben haben Vorrang).
+

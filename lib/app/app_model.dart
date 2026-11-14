@@ -12,6 +12,7 @@ import '../services/garmin/garmin_sync_service.dart';
 import '../services/gym/garmin_strength_service.dart';
 import '../services/health/health_import_service.dart';
 import '../services/reminders/reminder_service.dart';
+import '../services/whoop/whoop_service.dart';
 
 /// Was der App-Zustand von der laufenden Krafteinheit wissen muss (Port des Zugriffs auf `GymViewModel.shared`).
 abstract interface class ActiveGym {
@@ -52,6 +53,7 @@ final class AppModel extends ChangeNotifier {
     required this.meals,
     required this.gymRepository,
     this.seasonSchedule,
+    this.whoop,
     this.gym = const NoActiveGym(),
     this.isDemo = false,
     DateTime Function()? clock,
@@ -71,6 +73,11 @@ final class AppModel extends ChangeNotifier {
 
   /// Saisonplan (aus `season-plan.json`), nur im Modus Saison genutzt.
   final SeasonSchedule? seasonSchedule;
+
+  /// WHOOP (offizielle API); `null` in Tests ohne WHOOP.
+  final WhoopService? whoop;
+
+  bool get isWhoopConnected => whoop?.isConnected ?? false;
   ActiveGym gym;
 
   /// Screenshot-Modus mit Beispieldaten: kein Abruf, keine Mitteilungen.
@@ -88,6 +95,7 @@ final class AppModel extends ChangeNotifier {
     health
       ..sources = sources
       ..reportStore = sync.reportStore;
+    whoop?.sources = sources;
     if (!isDemo) await sources.migrateIfNeeded();
   }
 
@@ -182,6 +190,7 @@ final class AppModel extends ChangeNotifier {
   Set<DataProvider> get connectedSources => {
     if (garmin.isConfigured) DataProvider.garmin,
     if (health.isEnabled) DataProvider.appleHealth,
+    if (whoop?.isConnected ?? false) DataProvider.whoop,
   };
 
   /// Nach geänderten Quellen-Einstellungen: Tageswerte und Aktivitäten neu zusammenführen.
@@ -200,7 +209,13 @@ final class AppModel extends ChangeNotifier {
     final now = _clock();
     final garminDue =
         sources.syncStates[DataProvider.garmin]?.isDue(now: now, minimumInterval: SyncPlan.minimumInterval) ?? true;
-    if (garmin.isConfigured && garminDue && SyncPlan.isDue(lastSync: sync.lastSync, now: now)) {
+    final whoop = this.whoop;
+    final whoopDue =
+        whoop != null &&
+        whoop.isConnected &&
+        (sources.syncStates[DataProvider.whoop]?.isDue(now: now, minimumInterval: SyncPlan.minimumInterval) ?? true) &&
+        SyncPlan.isDue(lastSync: whoop.lastSync, now: now);
+    if ((garmin.isConfigured && garminDue && SyncPlan.isDue(lastSync: sync.lastSync, now: now)) || whoopDue) {
       await syncNow();
     } else if (health.isEnabled && SyncPlan.isDue(lastSync: health.lastImport, now: now)) {
       await health.importNow(garminConnected: garmin.isConfigured);
@@ -212,7 +227,7 @@ final class AppModel extends ChangeNotifier {
     _ => '$error',
   };
 
-  /// Erst Garmin, dann Health: Health ergänzt nur, was Garmin nicht liefert.
+  /// Erst Garmin, dann WHOOP, dann Health: Health ergänzt nur, was die Uhren nicht liefern.
   Future<void> syncNow() async {
     if (isSyncing || isDemo) return;
     isSyncing = true;
@@ -226,6 +241,17 @@ final class AppModel extends ChangeNotifier {
         } on Object catch (error) {
           lastError = _message(error);
           await sources.recordFailure(DataProvider.garmin, error: _message(error));
+        }
+      }
+      // WHOOP nach Garmin: Vorrang je Datenart regeln die Quellen-Einstellungen (WHOOP-Stärken: Schlaf, HRV, Recovery).
+      final whoop = this.whoop;
+      if (whoop != null && whoop.isConnected) {
+        try {
+          await whoop.sync();
+          await sources.recordSuccess(DataProvider.whoop);
+        } on Object catch (error) {
+          lastError = '$error';
+          await sources.recordFailure(DataProvider.whoop, error: '$error');
         }
       }
       await health.importNow(garminConnected: garmin.isConfigured);

@@ -146,6 +146,8 @@ void main() {
         'garminConnectToken',
         'aiAppToken',
         'accountSession',
+        // Neu in der Flutter-App (kein Gegenstück in der Swift-App).
+        'whoopToken',
       ]);
     });
   });

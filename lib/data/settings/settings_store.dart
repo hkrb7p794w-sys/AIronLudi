@@ -67,6 +67,11 @@ abstract final class SettingsKeys {
   static const healthLastImport = 'health.lastImport';
   static const healthImportEnabled = 'health.importEnabled';
   static const healthWeights = 'health.weights';
+  static const whoopState = 'whoop.state';
+  static const whoopProfile = 'whoop.profile';
+  static const whoopBody = 'whoop.body';
+  static const whoopLastSync = 'whoop.lastSync';
+  static const whoopLastResult = 'whoop.lastResult';
   static const healthRecordingFailures = 'health.recordingFailures';
   static const gymActiveSession = 'gym.activeSession';
   static const gymShowsList = 'gym.showsList';
