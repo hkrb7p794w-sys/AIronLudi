@@ -304,3 +304,10 @@
   Analyse es vor der Rezepte-Phase brauchen.
 - Die Links „Rezeptideen“, „Prompt-Bibliothek“, „Export“ und „Import“ in „Weitere KI-Funktionen“ kommen mit den
   jeweiligen Phasen dazu.
+
+## 2026-11-14 – Externe KI: Prompts, Export, Import (Phase 3i-2)
+
+- Dateien für Export und Prompts entstehen in einem eigenen temporären Ordner (`ki-export`, alte werden ersetzt) und
+  werden über `share_plus` geteilt (statt `ShareLink`); Kopieren über die Zwischenablage.
+- Wasser-Einträge (Glas-Knopf) gehen wie in der Mahlzeitenliste nicht in den Export.
+- Pickers mit Menü werden zu `DropdownButtonFormField`, Stepper zu Plus/Minus-Knöpfen.
