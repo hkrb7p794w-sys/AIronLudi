@@ -11,6 +11,7 @@ import '../../services/social/social_service.dart';
 import '../../ui/components.dart';
 import '../../ui/symbols.dart';
 import '../account/account_views.dart';
+import '../game/game_views.dart';
 import '../nutrition/meal_share_views.dart';
 
 String _errorText(Object error) => error is AIClientError ? error.message : '$error';
@@ -24,7 +25,8 @@ IconData postIcon(SocialPost post) => switch (post.symbol) {
 
 enum FriendsPage {
   feed('Feed'),
-  friends('Freunde');
+  friends('Freunde'),
+  game('Wettkampf');
 
   const FriendsPage(this.label);
 
@@ -49,11 +51,13 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   void initState() {
     super.initState();
     unawaited(ref.read(socialServiceProvider).refresh());
+    unawaited(ref.read(gameServiceProvider).refresh());
   }
 
   @override
   Widget build(BuildContext context) {
     final social = ref.watch(socialServiceProvider);
+    final invitations = ref.watch(gameServiceProvider).invitations.length;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Freunde'),
@@ -72,11 +76,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                         for (final page in FriendsPage.values)
                           ButtonSegment(
                             value: page,
-                            label: Text(
-                              page == FriendsPage.friends && social.incomingCount > 0
-                                  ? 'Freunde (${social.incomingCount})'
-                                  : page.label,
-                            ),
+                            label: Text(switch (page) {
+                              FriendsPage.friends when social.incomingCount > 0 => 'Freunde (${social.incomingCount})',
+                              FriendsPage.game when invitations > 0 => 'Wettkampf ($invitations)',
+                              _ => page.label,
+                            }),
                           ),
                       ],
                       selected: {_page},
@@ -89,6 +93,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
                   child: switch (_page) {
                     FriendsPage.feed => const FeedList(),
                     FriendsPage.friends => const FriendList(),
+                    FriendsPage.game => const GameScreen(),
                   },
                 ),
               ],
