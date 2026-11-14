@@ -6,6 +6,9 @@ import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
+import '../activities/activities_screen.dart';
+import '../activities/activity_detail_screen.dart';
+import '../activities/activity_parts.dart';
 import '../evidence/evidence_views.dart';
 import 'now_views.dart';
 import 'today_controller.dart';
@@ -164,6 +167,28 @@ class WeekOverviewScreen extends ConsumerWidget {
                 ListTile(
                   title: const Text('Hinweise entfernen', style: TextStyle(color: Colors.red)),
                   onTap: () => settings.importedNotes = null,
+                ),
+              ],
+            ),
+          if (activities.isNotEmpty)
+            FormSection(
+              header: 'Letzte Aktivitäten',
+              children: [
+                for (final activity in ([
+                  ...activities,
+                ]..sort((a, b) => (b.startLocal ?? '').compareTo(a.startLocal ?? ''))).take(5))
+                  ActivitySummaryRow(
+                    activity: activity,
+                    onTap: () =>
+                        Navigator.of(context)
+                            .push(MaterialPageRoute<void>(builder: (_) => ActivityDetailScreen(activity: activity))),
+                  ),
+                ListTile(
+                  title: const Text('Alle Aktivitäten'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(builder: (_) => const ActivitiesScreen(initialScope: ActivitiesScope.mine)),
+                  ),
                 ),
               ],
             ),

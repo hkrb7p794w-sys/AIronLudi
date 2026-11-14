@@ -8,8 +8,12 @@ import '../../data/repositories/gym_repository.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../activities/activity_detail_screen.dart';
+import '../activities/activity_parts.dart';
+import '../activities/post_workout_section.dart';
 import '../evidence/evidence_views.dart';
 import '../gym/gym_providers.dart';
+import '../gym/gym_screen.dart';
 import '../plan/my_week_screen.dart';
 import '../settings/settings_screen.dart';
 import 'now_views.dart';
@@ -197,6 +201,13 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
               _CoachNoteSection(controller: _controller),
               MissedSessionSection(week: snapshot.sessions, onSaved: _reload),
               SuggestionsSection(suggestions: _suggestions(snapshot)),
+              PostWorkoutSection(
+                activities: [
+                  for (final activity in _activities)
+                    if (activity.day == today) activity,
+                ],
+                sessions: snapshot.sessions,
+              ),
               if (settings.profile.mode == ProfileMode.season)
                 if (snapshot.today case final plan?) SeasonOpenSections(today: plan),
               if (WeeklyReview.isDue(today))
@@ -218,8 +229,8 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                     if (activity.day == today) activity,
                 ],
                 gym: [
-                  for (final item in _gymItems)
-                    if (CalendarDay.fromDate(item.start.toLocal()) == today) item,
+                  for (final record in _gym)
+                    if (record.session.day == today) record,
                 ],
               ),
               TodayHintsSection(snapshot: snapshot, activities: _activities, days: _days),
@@ -337,19 +348,34 @@ class _DoneTodaySection extends StatelessWidget {
   const _DoneTodaySection({required this.activities, required this.gym});
 
   final List<GarminActivity> activities;
-  final List<GymItem> gym;
+  final List<StoredGymSession> gym;
 
   @override
   Widget build(BuildContext context) {
-    final entries = ActivityFeed.entries(activities: activities, gym: gym);
+    final entries = ActivityFeed.entries(
+      activities: activities,
+      gym: [for (final record in gym) GymItem.fromSession(record.session)],
+    );
     if (entries.isEmpty) return const SizedBox.shrink();
     return FormSection(
       header: 'Heute erledigt',
       children: [
         for (final entry in entries)
-          ListTile(
-            title: Text(entry.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: entry.values.isEmpty ? null : Text(entry.values.join(' · ')),
+          FeedRow(
+            entry: entry,
+            onTap: () {
+              final Widget? screen = switch ((entry.activity, entry.gym)) {
+                (final activity?, _) => ActivityDetailScreen(activity: activity),
+                (_, final item?) => switch (gym.where((record) => record.session.id == item.id).firstOrNull) {
+                  final record? => SessionDetailScreen(record: record),
+                  null => null,
+                },
+                _ => null,
+              };
+              if (screen != null) {
+                unawaited(Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen)));
+              }
+            },
           ),
       ],
     );

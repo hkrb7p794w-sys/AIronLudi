@@ -259,3 +259,15 @@
 - `FitnessGoal.symbol` fehlte im Kern-Port und ist ergänzt (wie `UserProfile.swift`).
 - Aus Mitteilungen geöffnete Sheets (`AdjustDaySheet`, „Nächste Woche planen“) zeigt `RootShell`, sobald der
   `ReminderService` sie meldet – auch wenn die Antwort vor dem ersten Bild kam.
+
+## 2026-11-14 – Aktivitäten (Phase 3g-5)
+
+- Die Karte der Strecke nutzt `flutter_map` mit OpenStreetMap-Kacheln (eigener User-Agent, Quellenangabe
+  „© OpenStreetMap-Mitwirkende“), Start- und Zielmarke wie bei MapKit. Gezeigt wird nur die aufgezeichnete Strecke.
+- Diagramme des Verlaufs: `fl_chart` statt Swift Charts; Pace mit umgedrehter Achse über negierte Werte. Die Runden
+  sind eine horizontal scrollbare `DataTable` statt `Grid`.
+- Suche im Verlauf über ein Suchfeld in der App-Leiste (statt `.searchable`); Filter als Menü wie in Swift.
+- Beiträge der Freunde stehen in der Zeitleiste vorerst als einfache Karte (Name, Zeit, Überschrift, Kennzahlen,
+  Anzahl der Reaktionen und Kommentare). Reagieren, Kommentieren, Mahlzeit übernehmen, Beitrag löschen, Freunde und
+  automatisches Teilen kommen mit der Social-Phase.
+- Der leere Platzhalter (`PlaceholderView`) ist entfernt; alle vier Reiter haben Inhalt.

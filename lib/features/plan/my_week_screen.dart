@@ -10,11 +10,12 @@ import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
+import '../activities/activity_detail_screen.dart';
+import '../activities/activity_parts.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../onboarding/schedule_editor.dart';
 import '../today/now_views.dart';
 import '../today/today_controller.dart';
-import '../training/training_pages.dart';
 import 'plan_screen.dart';
 
 /// Plan für Profile ohne Saisonplan: die eigene Woche, Ziel und Hinweise zum Plan (Port von `MyWeekView`).
@@ -182,18 +183,13 @@ class _MyWeekScreenState extends ConsumerState<MyWeekScreen> {
               header: 'Außerplanmäßig und nachgetragen',
               children: [
                 for (final activity in extras)
-                  ListTile(
-                    leading: SportIcon(
-                      symbol: SessionMatcher.sport(activity.sport).symbol,
-                      color: SessionMatcher.sport(activity.sport).color,
-                    ),
-                    title: Text(activity.name ?? 'Aktivität'),
-                    subtitle: Text(
-                      [
-                        if (activity.day case final day?) GermanFormat.date(day),
-                        formatDuration(activity.durationSeconds ?? 0),
-                      ].join(' · '),
-                    ),
+                  ActivitySummaryRow(
+                    activity: activity,
+                    onTap: () async {
+                      await Navigator.of(context)
+                          .push(MaterialPageRoute<void>(builder: (_) => ActivityDetailScreen(activity: activity)));
+                      await _reload();
+                    },
                     trailing: ManualActivity.isManual(activity.id)
                         ? IconButton(
                             tooltip: 'Löschen',
