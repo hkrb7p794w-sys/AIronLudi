@@ -102,6 +102,12 @@ final class NutritionController extends ChangeNotifier {
 
   void _changed() => notifyListeners();
 
+  /// Entwurf öffnen (z. B. aus den Schnellzugriffen beim Erfassen).
+  void present(MealDraft value) {
+    draft = value;
+    _changed();
+  }
+
   /// Vorgewählte Mahlzeit vor der Einschätzung der KI, sonst deren Vorschlag, sonst Uhrzeit.
   MealCategory currentCategoryOr(MealCategory? guess) {
     if (preferredCategory case final preferred?) {

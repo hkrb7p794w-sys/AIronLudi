@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:coach_core/coach_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -11,7 +12,9 @@ import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../evidence/evidence_views.dart';
 import 'bls_views.dart';
+import 'capture_views.dart';
 import 'meal_editor.dart';
+import 'meal_shortcuts.dart';
 import 'nutrition_controller.dart';
 
 String mealSummary(List<MealItem> items) {
@@ -91,7 +94,21 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     }
   }
 
-  void _draftForMissing(String barcode) => _controller.draftForMissingBarcode(barcode);
+  /// Barcode ohne Treffer: Etikett fotografieren (KI liest ab) oder Werte selbst eintragen.
+  Future<void> _draftForMissing(String barcode) async {
+    final result = await showModalBottomSheet<Object>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => MissingBarcodeSheet(barcode: barcode),
+    );
+    if (!mounted) return;
+    switch (result) {
+      case MissingBarcodeSheet.create:
+        _controller.draftForMissingBarcode(barcode);
+      case final Uint8List photo:
+        await _controller.readLabel(photo, barcode: barcode);
+    }
+  }
 
   Future<void> _openEditor(MealDraft draft) async {
     await Navigator.of(context).push(
@@ -289,41 +306,58 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     );
   }
 
-  /// Erfassen: manuell oder nur Kalorien (Foto, Text und Barcode folgen mit den Erfassen-Ansichten).
-  Future<void> _showCapture() async {
-    final choice = await showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.edit_note),
-              title: const Text('Manuell eintragen'),
-              onTap: () => Navigator.of(context).pop('manual'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.bolt),
-              title: const Text('Nur Kalorien'),
-              subtitle: const Text('Restaurant, Kantine, unterwegs'),
-              onTap: () => Navigator.of(context).pop('quick'),
-            ),
-          ],
+  /// Was beim Erfassen sofort bereitsteht: zuletzt, häufig, Rezepte, Favoriten.
+  CaptureShortcuts get _captureShortcuts {
+    final entries = MealRepository.entries(_meals);
+    final category = NutritionController.category(DateTime.now());
+    final settings = ref.read(coachSettingsProvider);
+    return CaptureShortcuts(
+      recent: MealShortcuts.recent(entries),
+      frequent: MealShortcuts.frequent(entries, today: _controller.day),
+      recipes: settings.ownRecipes,
+      favorites: settings.favoriteMeals,
+      log: (title, items) =>
+          _after(_controller.log(title: title, category: category, items: items.map(MealPortion.restored).toList())),
+      open: (title, items) => _controller.present(
+        MealDraft(
+          title: title,
+          category: category,
+          hint: '',
+          items: [for (final item in items) MealPortion.restored(item)..id = newUuid()],
         ),
       ),
+      logRecipe: _logOwnRecipe,
+    );
+  }
+
+  /// Erfassen: Foto und Text zusammen, darunter Barcode, manuell und „Nur Kalorien“.
+  Future<void> _showCapture() async {
+    final result = await Navigator.of(context).push<CaptureResult>(
+      MaterialPageRoute(fullscreenDialog: true, builder: (_) => CaptureScreen(shortcuts: _captureShortcuts)),
     );
     if (!mounted) return;
-    switch (choice) {
-      case 'manual':
+    switch (result) {
+      case CaptureAnalyze(:final text, :final photo):
+        await _controller.analyze(text, photo: photo, foods: _foods);
+        await _reload();
+      case CaptureChoose(other: CaptureOther.manual):
         _controller.newManualDraft();
-      case 'quick':
-        final result = await Navigator.of(context).push<(String, MealCategory, MealItem)>(
+      case CaptureChoose(other: CaptureOther.barcode):
+        final code = await Navigator.of(context)
+            .push<String>(MaterialPageRoute(fullscreenDialog: true, builder: (_) => const BarcodeEntryScreen()));
+        if (code != null) {
+          await _controller.lookup(code, _foods);
+          await _reload();
+        }
+      case CaptureChoose(other: CaptureOther.quick):
+        final quick = await Navigator.of(context).push<(String, MealCategory, MealItem)>(
           MaterialPageRoute(fullscreenDialog: true, builder: (_) => const QuickEntryScreen()),
         );
-        if (result != null) {
-          await _after(_controller.log(title: result.$1, category: result.$2, items: [result.$3]));
+        if (quick != null) {
+          await _after(_controller.log(title: quick.$1, category: quick.$2, items: [quick.$3]));
         }
+      case null:
+        await _reload();
     }
   }
 

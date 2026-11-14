@@ -148,3 +148,17 @@
   unverändert.
 - **Fotos für die KI** werden vor dem Controller verkleinert und neu kodiert (ohne EXIF/GPS, wie `MealPhoto`). Der
   Controller bekommt fertige JPEG-Daten.
+
+## 2026-11-14 – Erfassen (Phase 3d-3)
+
+- **Fotos:** `image_picker` mit `requestFullMetadata: false`, danach `MealPhoto` mit dem Paket `image` (rein Dart, im
+  Isolate): Ausrichtung übernehmen, längste Seite 1280 px, JPEG-Qualität 70, EXIF/ICC/Text verworfen. So verlässt wie
+  in Swift (`UIGraphicsImageRenderer` + `jpegData(0.7)`) kein Standort das Gerät; `image_picker` allein garantiert das
+  auf iOS nicht.
+- **Barcode:** `mobile_scanner` statt VisionKit, gleiche Formate (EAN-13, EAN-8, UPC-E) und Eingabe von Hand mit
+  Prüfziffer. Ohne Kamera zeigt die Ansicht wie Swift „Kamera-Scan nicht verfügbar“.
+- **Diktat-Hinweis:** Swift unterscheidet „läuft auf dem iPhone“ und „Apple wandelt um“. `speech_to_text` meldet das
+  nicht (siehe Phase 2l); der Hinweis lautet neutral „Die Spracherkennung des Geräts wandelt die Sprache in Text um“.
+- **Abfolge der Bildschirme:** Swift wartet 450 ms zwischen zwei Sheets. In Flutter liefert der Erfassen-Bildschirm
+  ein Ergebnis (`CaptureResult`), danach öffnet die Ernährungsansicht den nächsten Bildschirm – ohne Wartezeit.
+

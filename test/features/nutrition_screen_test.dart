@@ -22,7 +22,7 @@ void main() {
     expect(find.byType(NutritionScreen), findsOneWidget);
     await tester.tap(find.byTooltip('Erfassen'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Nur Kalorien'));
+    await tester.tap(find.bySemanticsLabel('Nur kcal'));
     await tester.pumpAndSettle();
     expect(tester.widget<TextButton>(find.widgetWithText(TextButton, 'Eintragen')).onPressed, isNull);
     await tester.enterText(find.widgetWithText(TextField, 'Kalorien'), '650');
