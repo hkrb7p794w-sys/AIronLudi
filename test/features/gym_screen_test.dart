@@ -93,6 +93,9 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
     await tester.pumpAndSettle();
     expect(gym.active, isNull);
+    // Unter dem Ergebnis stehen „Mit Freunden teilen“ und „Fertig“.
+    await tester.scrollUntilVisible(find.text('Fertig'), 300, scrollable: find.byType(Scrollable).first);
+    expect(find.text('Mit Freunden teilen'), findsOneWidget);
     expect(find.text('Fertig'), findsOneWidget);
     await tester.ensureVisible(find.text('Fertig'));
     await tester.pumpAndSettle();

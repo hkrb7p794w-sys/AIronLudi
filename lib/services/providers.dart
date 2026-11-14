@@ -27,6 +27,7 @@ import 'nutrition/pending_analysis.dart';
 import 'reminders/reminder_service.dart';
 import 'social/game_service.dart';
 import 'social/league_service.dart';
+import 'social/social_auto_share.dart';
 import 'social/social_service.dart';
 import 'speech/dictation.dart';
 
@@ -88,6 +89,16 @@ final socialServiceProvider = ChangeNotifierProvider<SocialService>(
     ai: ref.watch(aiClientProvider),
     account: ref.watch(accountServiceProvider),
     sharedPosts: SharedPostStore(ref.watch(settingsStoreProvider)),
+  ),
+);
+
+/// Trainings automatisch mit Freunden teilen.
+final socialAutoShareProvider = Provider<SocialAutoShare>(
+  (ref) => SocialAutoShare(
+    settings: ref.watch(settingsStoreProvider),
+    social: ref.watch(socialServiceProvider),
+    activities: ref.watch(activityRepositoryProvider),
+    gym: ref.watch(gymRepositoryProvider),
   ),
 );
 

@@ -14,6 +14,7 @@ import '../../ui/components.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
 import '../gym/gym_screen.dart';
+import '../social/social_views.dart';
 import '../today/today_controller.dart';
 import 'activity_detail_screen.dart';
 import 'activity_parts.dart';
@@ -57,7 +58,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
   void initState() {
     super.initState();
     unawaited(_reload());
-    unawaited(ref.read(socialServiceProvider).refresh());
+    unawaited(_refreshSocial());
   }
 
   Future<void> _reload() async {
@@ -69,11 +70,23 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
     });
   }
 
+  Future<void> _refreshSocial() async {
+    await ref.read(socialServiceProvider).refresh();
+    await ref.read(socialAutoShareProvider).run(isDemo: ref.read(appModelProvider).isDemo);
+  }
+
   Future<void> _refresh() async {
     await ref.read(appModelProvider).syncNow();
-    await ref.read(socialServiceProvider).refresh();
+    await _refreshSocial();
     await _reload();
   }
+
+  void _openFriends() => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      fullscreenDialog: true,
+      builder: (_) => const FriendsScreen(initialPage: FriendsPage.friends),
+    ),
+  );
 
   Future<void> _open(FeedEntry entry) async {
     final activity = entry.activity;
@@ -122,8 +135,18 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
     final settings = ref.watch(coachSettingsProvider);
     final social = ref.watch(socialServiceProvider);
     final incoming = social.incomingCount;
+    final autoShare = ref.read(socialAutoShareProvider);
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          tooltip: incoming > 0 ? 'Freunde, $incoming neue Anfragen' : 'Freunde',
+          icon: Badge(
+            isLabelVisible: incoming > 0,
+            label: Text('$incoming'),
+            child: Icon(incoming > 0 ? Icons.people : Icons.people_outline),
+          ),
+          onPressed: _openFriends,
+        ),
         title: _searching && _scope == ActivitiesScope.mine
             ? TextField(
                 autofocus: true,
@@ -142,11 +165,25 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
               }),
             ),
             _FilterMenu(filter: _filter, onChanged: (filter) => setState(() => _filter = filter)),
-          ] else
-            Badge(
-              isLabelVisible: incoming > 0,
-              label: Text('$incoming'),
-              child: Icon(incoming > 0 ? Icons.people : Icons.people_outline, semanticLabel: 'Freunde'),
+          ] else if (social.isAvailable)
+            PopupMenuButton<void>(
+              tooltip: 'Teilen',
+              icon: Icon(autoShare.isEnabled ? Icons.wifi_tethering : Icons.more_horiz),
+              itemBuilder: (_) => [
+                CheckedPopupMenuItem(
+                  checked: autoShare.isEnabled,
+                  onTap: () async {
+                    await autoShare.setEnabled(!autoShare.isEnabled);
+                    setState(() {});
+                    await autoShare.run(isDemo: ref.read(appModelProvider).isDemo);
+                  },
+                  child: const Text('Trainings automatisch teilen'),
+                ),
+                const PopupMenuItem(
+                  enabled: false,
+                  child: Text('Ohne Körperwerte: Puls, Kalorien, Gewicht und Schlaf bleiben auf deinem Gerät.'),
+                ),
+              ],
             ),
           const SizedBox(width: 8),
         ],
@@ -312,6 +349,11 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                     'Mit einem Konto siehst du hier auch die Trainings deiner Freunde und kannst reagieren.',
                   ),
                 ),
+                ListTile(
+                  title: const Text('Konto und Freunde'),
+                  textColor: Theme.of(context).colorScheme.primary,
+                  onTap: _openFriends,
+                ),
               ],
             )
           else if (social.lastError case final error?)
@@ -330,10 +372,15 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
           for (final item in items)
             if (item.entry case final entry?) ...[
               FeedRow(entry: entry, onTap: entry.activity != null || entry.gym != null ? () => _open(entry) : null),
-              if (item.post case final post?) _ReactionSummary(post: post),
+              // Eigener geteilter Beitrag: Reaktionen und Kommentare der Freunde direkt darunter.
+              if (item.post case final post?)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(60, 0, 8, 4),
+                  child: ReactionBar(post: post),
+                ),
               const Divider(height: 1, indent: 60),
             ] else if (item.post case final post?) ...[
-              _PostTile(post: post),
+              PostCard(post: post),
               const Divider(height: 1),
             ],
           if (social.isLoading)
@@ -420,80 +467,4 @@ class _FilterMenu extends StatelessWidget {
         ),
     ],
   );
-}
-
-/// Beitrag eines Freundes: Name, Zeit, Überschrift und Kennzahlen. Reaktionen, Kommentare und Mahlzeit-Übernahme
-/// folgen mit dem Bereich „Freunde“.
-class _PostTile extends StatelessWidget {
-  const _PostTile({required this.post});
-
-  final SocialPost post;
-
-  @override
-  Widget build(BuildContext context) {
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-    final date = post.date;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: 6,
-        children: [
-          Row(
-            spacing: 10,
-            children: [
-              CircleAvatar(
-                radius: 16,
-                child: Text((post.mine ? 'D' : post.author.displayName.characters.firstOrNull ?? '?').toUpperCase()),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      post.mine ? 'Du' : post.author.displayName,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    if (date != null)
-                      Text(SocialFormat.relative(date), style: TextStyle(fontSize: 12, color: secondary)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          Row(
-            spacing: 8,
-            children: [
-              Icon(AppSymbols.of(post.symbol), size: 20),
-              Expanded(
-                child: Text(post.headline, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-              ),
-            ],
-          ),
-          if (post.facts.isNotEmpty) Text(post.facts, style: TextStyle(color: secondary)),
-          _ReactionSummary(post: post, padded: false),
-        ],
-      ),
-    );
-  }
-}
-
-class _ReactionSummary extends StatelessWidget {
-  const _ReactionSummary({required this.post, this.padded = true});
-
-  final SocialPost post;
-  final bool padded;
-
-  @override
-  Widget build(BuildContext context) {
-    if (post.reactions == 0 && post.comments == 0) return const SizedBox.shrink();
-    final text = [
-      if (post.reactions > 0) '${post.topReactions} ${post.reactions}'.trim(),
-      if (post.comments > 0) '${post.comments} ${post.comments == 1 ? 'Kommentar' : 'Kommentare'}',
-    ].join(' · ');
-    return Padding(
-      padding: padded ? const EdgeInsets.fromLTRB(72, 0, 16, 8) : EdgeInsets.zero,
-      child: Text(text, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-    );
-  }
 }

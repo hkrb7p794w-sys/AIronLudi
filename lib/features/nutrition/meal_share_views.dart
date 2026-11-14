@@ -12,6 +12,7 @@ import '../../services/ai/ai_client.dart';
 import '../../services/nutrition/meal_share_service.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../social/social_views.dart';
 import 'nutrition_controller.dart';
 
 String _errorText(Object error) => error is AIClientError ? error.message : '$error';
@@ -73,6 +74,21 @@ class _ShareMealScreenState extends ConsumerState<ShareMealScreen> {
               ),
             ],
           ),
+          if (ref.watch(socialServiceProvider).isAvailable)
+            FormSection(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.people_outline),
+                  title: const Text('Im Feed mit Freunden teilen'),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      fullscreenDialog: true,
+                      builder: (_) => ShareWithFriendsScreen(content: ShareMeal(_meal)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           if (created != null && !_revoked)
             FormSection(
               footer: 'Gültig 7 Tage. Zurückziehen löscht die Mahlzeit sofort beim Worker.',
