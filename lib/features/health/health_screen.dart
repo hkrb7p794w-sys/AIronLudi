@@ -11,6 +11,8 @@ import '../../ui/components.dart';
 import '../today/now_views.dart';
 import '../training/sleep_coach_screen.dart';
 import '../training/training_pages.dart';
+import 'body_battery_screen.dart';
+import 'mobility_screen.dart';
 import 'morning_report_views.dart';
 
 /// Daten für die Widgets: Tageswerte plus Ersatzquellen (Wägungen, Belastung aus den eigenen Aktivitäten).
@@ -169,6 +171,8 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
               ),
             ),
             const SizedBox(height: 16),
+            _Card(onTap: () => _push(const MobilityScreen()), child: const MobilitySummary()),
+            const SizedBox(height: 16),
             if (visible.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 32),
@@ -204,6 +208,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                           width: width,
                           child: _Card(
                             onTap: () => _push(switch (entry.kind) {
+                              HealthWidget.bodyBattery => const BodyBatteryScreen(),
                               HealthWidget.sleep => const SleepCoachScreen(),
                               final kind => HealthMetricDetail(kind: kind, data: data),
                             }),

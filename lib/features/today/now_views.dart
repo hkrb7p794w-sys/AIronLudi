@@ -7,6 +7,7 @@ import '../../ui/components.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
 import '../evidence/evidence_views.dart';
+import '../health/mobility_screen.dart';
 import '../plan/my_week_screen.dart';
 import '../plan/plan_screen.dart';
 import 'plan_day_actions.dart';
@@ -171,6 +172,17 @@ class NowSection extends ConsumerWidget {
           if (watchPlan(item, season: season) case final plan? when loggedIn && item.status != SessionStatus.done)
             SendToWatchButton(plan: plan, day: snapshot.plan.today),
         ],
+        if (MobilityPlanner.suggestToday(
+          hasTraining: focus.items.any((item) => item.sport != null),
+          recovery: focus.level,
+          doneToday: settings.mobility.log.any((entry) => entry.day == snapshot.plan.today),
+        ))
+          ListTile(
+            leading: const Icon(Icons.self_improvement),
+            title: Text('Mobility für heute · ${settings.mobility.minutes} min'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const MobilityScreen())),
+          ),
         // Wochenfokus gehört zum Saisonplan und nicht in ein eigenes Profil.
         if (season && (snapshot.today?.focus ?? '').isNotEmpty)
           Padding(

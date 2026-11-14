@@ -12,6 +12,7 @@ import '../platform/notifications.dart';
 
 import 'account/account_service.dart';
 import 'ai/ai_client.dart';
+import 'alarm/wake_alarm_service.dart';
 import 'garmin/activity_stores.dart';
 import 'garmin/garmin_client.dart';
 import 'garmin/garmin_connect_session.dart';
@@ -136,6 +137,11 @@ final workoutWriterProvider = Provider<WorkoutSaving>((ref) => HealthWorkoutWrit
 final dictationProvider = ChangeNotifierProvider.autoDispose<Dictation>((ref) => Dictation());
 
 /// Saisonplan aus `season-plan.json`; wird in `main` geladen.
+/// Wecker zur Aufstehzeit (Systemwecker über die Plattformbrücke).
+final wakeAlarmServiceProvider = ChangeNotifierProvider<WakeAlarmService>(
+  (ref) => WakeAlarmService(store: ref.watch(settingsStoreProvider)),
+);
+
 final seasonScheduleProvider = Provider<SeasonSchedule?>((ref) => null);
 
 final appModelProvider = ChangeNotifierProvider<AppModel>((ref) {
