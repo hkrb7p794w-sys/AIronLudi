@@ -20,6 +20,7 @@ import 'gym/garmin_strength_service.dart';
 import 'health/health_import_service.dart';
 import 'health/health_source.dart';
 import 'health/health_writer.dart';
+import 'nutrition/meal_share_service.dart';
 import 'nutrition/open_food_facts_client.dart';
 import 'nutrition/pending_analysis.dart';
 import 'reminders/reminder_service.dart';
@@ -154,3 +155,5 @@ final appModelProvider = ChangeNotifierProvider<AppModel>((ref) {
     seasonSchedule: ref.watch(seasonScheduleProvider),
   );
 });
+
+final mealShareServiceProvider = Provider<MealShareService>((ref) => MealShareService(ref.watch(aiClientProvider)));
