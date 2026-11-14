@@ -1,13 +1,16 @@
 import 'dart:async';
 
-import 'package:coach_core/coach_core.dart' show AccountInvite, LeagueInvite;
+import 'package:coach_core/coach_core.dart'
+    show AccountInvite, CookLink, CookPartnerLink, CookReleaseLink, LeagueInvite, MealShare;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/account/account_views.dart';
 import '../features/motivation/motivation_views.dart';
+import '../features/nutrition/meal_share_views.dart';
 import '../features/plan/my_week_screen.dart';
+import '../features/recipes/cook_plan_views.dart';
 import '../features/today/plan_day_actions.dart';
 import '../services/providers.dart';
 import '../services/reminders/reminder_service.dart';
@@ -47,6 +50,24 @@ class _RootShellState extends ConsumerState<RootShell> {
   /// im Ablauf (vor dem Wiederherstellungscode) zu „Schon angemeldet“ wechseln.
   void _presentLink(Uri? uri) {
     if (uri == null) return;
+    // Freigabe fürs gemeinsame Kochen coach://cook/<code> bzw. eigene Freigabe coach://cook/release.
+    if (CookLink.fromUri(uri) case final link?) {
+      ref.read(incomingLinkProvider.notifier).consume();
+      final code = switch (link) {
+        CookPartnerLink(:final code) => code,
+        CookReleaseLink() => null,
+      };
+      _presentSheet((_) => CookPartnersScreen(initialCode: code));
+      return;
+    }
+    // Geteilte Mahlzeit coach://meal/<code>.
+    if (uri.scheme == 'coach' && uri.host == 'meal') {
+      if (MealShare.code(uri.toString()) case final code?) {
+        ref.read(incomingLinkProvider.notifier).consume();
+        _presentSheet((_) => ReceivedMealScreen(code: code));
+        return;
+      }
+    }
     if (LeagueInvite.fromUri(uri) case final league?) {
       ref.read(incomingLinkProvider.notifier).consume();
       unawaited(
@@ -67,6 +88,9 @@ class _RootShellState extends ConsumerState<RootShell> {
       unawaited(presentAccountAuth(context, AccountAuthMode.register, invite: invite));
     }
   }
+
+  void _presentSheet(WidgetBuilder builder) =>
+      unawaited(Navigator.of(context).push(MaterialPageRoute<void>(fullscreenDialog: true, builder: builder)));
 
   /// Aus einer Mitteilung: „Nächste Woche planen“ bzw. Einheit verschieben (wie die Sheets in `RootView`).
   void _presentReminder(ReminderService reminders) {

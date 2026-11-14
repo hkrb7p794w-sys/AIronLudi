@@ -14,6 +14,7 @@ import '../evidence/evidence_views.dart';
 import '../nutrition/meal_editor.dart';
 import '../nutrition/nutrition_controller.dart';
 import '../today/now_views.dart';
+import 'cook_plan_views.dart';
 import 'recipe_controller.dart';
 
 int _rounded(double? value) => (value ?? 0).round();
@@ -109,6 +110,24 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
           ListView(
             padding: const EdgeInsets.only(bottom: 32),
             children: [
+              FormSection(
+                footer: 'Für dich, eine verbundene Person oder euch beide; auch zum Vorkochen für mehrere Tage.',
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.people_outline),
+                    title: const Text('Kochen planen: für wen, wie viel'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => CookPlanScreen(
+                          recipes: controller,
+                          favorites: [for (final food in _foods.take(10)) food.name],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               FormSection(
                 children: [
                   ListTile(title: const Text('Ab'), trailing: Text(formatDay(controller.start)), onTap: _pickStart),
@@ -295,7 +314,10 @@ class RecipeDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
-  late final NutritionController _nutrition = NutritionController(
+  /// Erst beim Eintragen angelegt (nicht in `dispose`, dort ist `ref` nicht mehr nutzbar).
+  NutritionController? _nutritionController;
+
+  NutritionController get _nutrition => _nutritionController ??= NutritionController(
     meals: ref.read(mealRepositoryProvider),
     settings: ref.read(coachSettingsProvider),
     ai: ref.read(aiClientProvider),
@@ -305,7 +327,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
 
   @override
   void dispose() {
-    _nutrition.dispose();
+    _nutritionController?.dispose();
     super.dispose();
   }
 

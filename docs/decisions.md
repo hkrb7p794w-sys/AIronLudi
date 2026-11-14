@@ -352,4 +352,15 @@
   Sekunden wie in Swift.
 - „Als Mahlzeit eintragen …“ öffnet den Mahlzeiten-Entwurf mit einem eigenen `NutritionController` (wie das eigene
   `NutritionViewModel` in Swift); nichts landet ungefragt im Tagebuch.
-- Wischen zu „Habe ich da“ wird zu einem Kisten-Symbol in der Zeile. „Kochen planen“ folgt in 3k-2.
+- Wischen zu „Habe ich da“ wird zu einem Kisten-Symbol in der Zeile.
+
+## 2026-11-14 – Gemeinsam kochen (Phase 3k-2)
+
+- Die Kochpläne stehen in einem eigenen `CookPlanController` statt im Rezept-Controller; die eigenen Tagesziele kommen
+  weiterhin aus den Rezeptideen (`RecipeController.targets`), die Datei bleibt `cook-plans.json` im gleichen JSON.
+- Verbindungen und eigene Freigabe liegen unter den bisherigen Schlüsseln `coach.cookPartners` und `coach.cookRelease`.
+- Picker werden zu Auswahlfeldern, der Stepper der Anzahl und der Zutatenmengen (5-g-Schritte, 5–1.000 g) zu
+  Minus/Plus-Knöpfen, „Lösen“ per Wischen zu einem Knopf in der Zeile.
+- Links: `coach://cook/<code>` öffnet „Gemeinsam kochen“ mit abgerufener Freigabe, `coach://open/cookShare` die eigene
+  Freigabe (wird vor den Reiter-Zielen geprüft wie in `RootView`), `coach://meal/<code>` die empfangene Mahlzeit.
+- Der Mahlzeiten-Controller im Rezeptdetail wird erst beim Eintragen angelegt (in `dispose` ist `ref` nicht nutzbar).
