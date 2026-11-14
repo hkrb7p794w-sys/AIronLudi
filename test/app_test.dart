@@ -76,6 +76,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Einstellungen'), findsOneWidget);
     expect(find.text('Ziele & Prioritäten'), findsOneWidget);
+    // Über den Bereichen steht der Kontoabschnitt.
+    await tester.scrollUntilVisible(find.text('Allgemein'), 200, scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(find.text('Allgemein'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Allgemein'));
     await tester.pumpAndSettle();
     expect(find.text('Erinnerungen'.toUpperCase()), findsOneWidget);
@@ -86,6 +90,9 @@ void main() {
     await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Einstellungen'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Ernährung').last, 200, scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(find.text('Ernährung').last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Ernährung').last);
     await tester.pumpAndSettle();

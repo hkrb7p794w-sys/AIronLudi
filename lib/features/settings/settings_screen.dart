@@ -10,6 +10,7 @@ import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
+import '../account/account_views.dart';
 import '../ai/coach_exchange.dart';
 import '../evidence/evidence_views.dart';
 import '../onboarding/onboarding_screen.dart';
@@ -86,6 +87,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
       body: ListView(
         children: [
+          const AccountSettingsSection(),
           FormSection(
             header: 'Profil',
             footer: season

@@ -27,12 +27,28 @@ class PendingRouteController extends Notifier<PendingRoute?> {
   void consume() => state = null;
 }
 
+/// Link von außen, den eine Ansicht übernimmt (Konto-Einladung; Liga, geteilte Mahlzeit und Kochpartner folgen mit
+/// ihren Bereichen).
+final incomingLinkProvider = NotifierProvider<IncomingLinkController, Uri?>(IncomingLinkController.new);
+
+class IncomingLinkController extends Notifier<Uri?> {
+  @override
+  Uri? build() => null;
+
+  void open(Uri uri) => state = uri;
+
+  void consume() => state = null;
+}
+
 /// Hört auf `coach://`-Links. `coach://open/<route>` wählt den Reiter; Einladungen, geteilte Mahlzeiten und
 /// Kochpartner-Links folgen mit ihren Bereichen (Phase 3).
 final deepLinkListenerProvider = Provider<void>((ref) {
   void handle(Uri uri) {
     final route = AppRoute.fromUri(uri);
-    if (route == null) return;
+    if (route == null) {
+      ref.read(incomingLinkProvider.notifier).open(uri);
+      return;
+    }
     ref.read(pendingRouteProvider.notifier).open(PendingRoute(route, mealCategory: AppRoute.mealCategoryFrom(uri)));
     ref.read(routerProvider).go(tabPath(route.tab));
   }
