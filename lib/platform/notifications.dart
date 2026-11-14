@@ -28,8 +28,12 @@ final class LocalNotification {
     required this.day,
     required this.hour,
     required this.minute,
+    this.second = 0,
     this.category,
     this.info = const {},
+    this.exact = false,
+    this.silent = false,
+    this.soundFile,
   });
 
   final String id;
@@ -38,8 +42,18 @@ final class LocalNotification {
   final CalendarDay day;
   final int hour;
   final int minute;
+  final int second;
   final String? category;
   final Map<String, String> info;
+
+  /// Sekundengenau (Pause vorbei); sonst darf das System bündeln.
+  final bool exact;
+
+  /// Ohne Ton.
+  final bool silent;
+
+  /// Eigener Ton (Dateiname, iOS aus `Library/Sounds`); `null` = Standardton.
+  final String? soundFile;
 }
 
 /// Antwort auf eine Mitteilung (Antippen oder Aktion).
@@ -179,7 +193,15 @@ final class DeviceNotificationCenter implements NotificationCenterBridge {
   @override
   Future<void> add(LocalNotification notification) async {
     final day = notification.day;
-    final date = tz.TZDateTime(tz.local, day.year, day.month, day.day, notification.hour, notification.minute);
+    final date = tz.TZDateTime(
+      tz.local,
+      day.year,
+      day.month,
+      day.day,
+      notification.hour,
+      notification.minute,
+      notification.second,
+    );
     if (date.isBefore(tz.TZDateTime.now(tz.local))) return;
     await _plugin.zonedSchedule(
       id: numericID(notification.id),
@@ -189,9 +211,15 @@ final class DeviceNotificationCenter implements NotificationCenterBridge {
       payload: jsonEncode({'id': notification.id, ...notification.info}),
       notificationDetails: NotificationDetails(
         android: _channel,
-        iOS: DarwinNotificationDetails(categoryIdentifier: notification.category, presentSound: true),
+        iOS: DarwinNotificationDetails(
+          categoryIdentifier: notification.category,
+          presentSound: !notification.silent,
+          sound: notification.silent ? null : notification.soundFile,
+        ),
       ),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      androidScheduleMode: notification.exact
+          ? AndroidScheduleMode.exactAllowWhileIdle
+          : AndroidScheduleMode.inexactAllowWhileIdle,
     );
   }
 }
