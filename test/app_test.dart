@@ -6,6 +6,7 @@ import 'package:aironludi/services/providers.dart';
 import 'package:coach_core/coach_core.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,6 +14,11 @@ import 'package:shared_preferences_platform_interface/in_memory_shared_preferenc
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
 Future<Widget> app({required bool onboarded}) async {
+  // Deep Links: im Test ohne Plattform-Plugin, sonst meldet der Kanal eine MissingPluginException.
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockStreamHandler(
+    const EventChannel('com.llfbandit.app_links/events'),
+    MockStreamHandler.inline(onListen: (_, _) {}),
+  );
   SharedPreferencesAsyncPlatform.instance = InMemorySharedPreferencesAsync.empty();
   final preferences = await SharedPreferencesWithCache.create(cacheOptions: const SharedPreferencesWithCacheOptions());
   final storage = await AppStorage.open(executor: NativeDatabase.memory(), secrets: InMemorySecretStore());
