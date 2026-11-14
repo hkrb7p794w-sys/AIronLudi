@@ -1,5 +1,6 @@
 // Wurzel der App: Speicherwarnung, Schnellaktionen am App-Icon, Bildschirm an während einer Einheit.
 import 'package:aironludi/app/app.dart';
+import 'package:aironludi/app/day_change.dart';
 import 'package:aironludi/app/deep_links.dart';
 import 'package:aironludi/data/secure/secret_store.dart';
 import 'package:aironludi/data/settings/preferences.dart';
@@ -44,6 +45,7 @@ void main() {
       overrides: [
         preferencesProvider.overrideWithValue(preferences),
         appStorageProvider.overrideWithValue(storage),
+        midnightTimerProvider.overrideWithValue(false),
         quickActionsProvider.overrideWithValue(quick),
         screenAwakeProvider.overrideWithValue((on) async => awake.add(on)),
       ],

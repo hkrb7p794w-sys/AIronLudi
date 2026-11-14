@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../app/day_change.dart';
 import '../../data/repositories/meal_repository.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
@@ -202,6 +203,8 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Neuer Kalendertag (Mitternacht, Rückkehr in die App): neu laden wie `onDayChange`.
+    ref.listen(currentDayProvider, (_, _) => unawaited(_reload()));
     final settings = ref.watch(coachSettingsProvider);
     final controller = _controller;
     final isToday = controller.day == controller.today;

@@ -20,6 +20,7 @@ import '../services/background/background_refresh.dart';
 import '../services/providers.dart';
 import '../services/reminders/reminder_service.dart';
 import '../services/widgets/widget_providers.dart';
+import 'day_change.dart';
 import 'deep_links.dart';
 
 /// Vier Reiter wie in der iPhone-App: Heute · Aktivitäten · Training · Ernährung. Beim ersten Anzeigen startet der
@@ -112,6 +113,7 @@ class _RootShellState extends ConsumerState<RootShell> {
 
   /// Wasser aus dem Homescreen-Widget übernehmen, Widgets versorgen, abrufen, Widgets mit neuem Stand versorgen.
   Future<void> _refresh() async {
+    ref.read(currentDayProvider.notifier).check();
     final model = ref.read(appModelProvider);
     final widgets = ref.read(widgetPublisherProvider);
     // Android: Knöpfe der laufenden Mitteilung, während die App nicht lief.
