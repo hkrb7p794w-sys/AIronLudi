@@ -44,6 +44,8 @@ void main() {
 
     final week = find.text('Diese Woche, Ziele und Verlauf');
     await tester.scrollUntilVisible(week, 300);
+    await tester.ensureVisible(week);
+    await tester.pumpAndSettle();
     await tester.tap(week);
     await tester.pumpAndSettle();
     expect(find.byType(WeekOverviewScreen), findsOneWidget);

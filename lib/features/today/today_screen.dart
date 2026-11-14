@@ -11,6 +11,8 @@ import '../../ui/components.dart';
 import '../activities/activity_detail_screen.dart';
 import '../activities/activity_parts.dart';
 import '../activities/post_workout_section.dart';
+import '../ai/ai_screen.dart';
+import '../ai/chat_screen.dart';
 import '../evidence/evidence_views.dart';
 import '../gym/gym_providers.dart';
 import '../gym/gym_screen.dart';
@@ -145,6 +147,12 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
         title: const Text('Heute'),
         actions: [
           IconButton(
+            tooltip: 'Coach fragen',
+            icon: const Icon(Icons.forum_outlined),
+            onPressed: () => Navigator.of(context)
+                .push(MaterialPageRoute<void>(fullscreenDialog: true, builder: (_) => ChatScreen(snapshot: snapshot))),
+          ),
+          IconButton(
             tooltip: 'Einstellungen',
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => Navigator.of(
@@ -185,6 +193,26 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                     ),
                 ],
               ),
+            // Empfehlungen aus Regeln und KI (früher eigener Reiter „AI“).
+            FormSection(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.auto_awesome),
+                  title: const Text('AI-Empfehlungen'),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: 6,
+                    children: [
+                      if (InsightInbox.unreadCount(settings.insights, now: DateTime.now()) case final unread
+                          when unread > 0)
+                        CoachChip(text: '$unread neu', color: theme.colorScheme.primary),
+                      const Icon(Icons.chevron_right),
+                    ],
+                  ),
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const AIScreen())),
+                ),
+              ],
+            ),
             if (!model.garmin.isConfigured && !model.health.isEnabled)
               FormSection(
                 children: [

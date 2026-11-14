@@ -293,3 +293,14 @@
   `AlarmManager.setAlarmClock` auf Android) kommt mit den nativen Teilen (Widgets, Live-Aktivitäten); bis dahin meldet
   die Brücke „nicht unterstützt“ und die App zeigt wie in Swift unter iOS 18–25 den Hinweis auf die Uhr-App.
 - Der Selbsttest „Stufen“ nutzt `RadioGroup` statt eines Inline-Pickers.
+
+## 2026-11-14 – KI-Empfehlungen und Chat (Phase 3i-1)
+
+- `swipeActions` und `contextMenu` der Empfehlungen werden zu `Dismissible` (rechts umgesetzt, links verwerfen; die
+  Zeile bleibt, der Status kommt aus den Einstellungen) und einem Aktionsmenü per langem Druck.
+- Der Chat-Verlauf bleibt wie in Swift nur im Speicher, solange der Chat offen ist. Lange auf eine Nachricht drücken
+  kopiert sie (statt `textSelection`; der Text ist zusätzlich markierbar).
+- `RecipeViewModel.gaps` ist als `nutritionGaps` in `lib/features/ai/coach_facts.dart` portiert, weil Regeln und
+  Analyse es vor der Rezepte-Phase brauchen.
+- Die Links „Rezeptideen“, „Prompt-Bibliothek“, „Export“ und „Import“ in „Weitere KI-Funktionen“ kommen mit den
+  jeweiligen Phasen dazu.
