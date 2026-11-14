@@ -11,6 +11,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'app/app.dart';
 import 'data/settings/preferences.dart';
 import 'data/storage.dart';
+import 'platform/notifications.dart';
+import 'services/gym/rest_alarm.dart';
 import 'services/providers.dart';
 
 Future<void> main() async {
@@ -26,15 +28,27 @@ Future<void> main() async {
       .then<SeasonSchedule?>(SeasonSchedule.load, onError: (Object _) => null);
   final support = await getApplicationSupportDirectory().then<String?>((dir) => dir.path, onError: (Object _) => null);
   final cache = await getApplicationCacheDirectory().then<String?>((dir) => dir.path, onError: (Object _) => null);
-  runApp(
-    ProviderScope(
-      overrides: [
-        preferencesProvider.overrideWithValue(preferences),
-        appStorageProvider.overrideWithValue(storage),
-        activityFoldersProvider.overrideWithValue((support: support, cache: cache)),
-        seasonScheduleProvider.overrideWithValue(season),
-      ],
-      child: const AIronLudiApp(),
-    ),
+  // Mitteilungen: Antworten (Antippen, Aktionen) gehen an die Erinnerungen; was vor dem Start eintrifft (App über
+  // eine Mitteilung geöffnet), wird nachgereicht.
+  ProviderContainer? container;
+  final early = <NotificationAnswer>[];
+  void answer(NotificationAnswer value) {
+    final current = container;
+    current == null ? early.add(value) : current.read(reminderServiceProvider).handle(value);
+  }
+
+  final center = await DeviceNotificationCenter.create(onAnswer: answer)
+      .then<NotificationCenterBridge?>((center) => center, onError: (Object _) => null);
+  unawaited(AssetRestSoundPlayer.installNotificationSounds());
+  container = ProviderContainer(
+    overrides: [
+      preferencesProvider.overrideWithValue(preferences),
+      appStorageProvider.overrideWithValue(storage),
+      activityFoldersProvider.overrideWithValue((support: support, cache: cache)),
+      seasonScheduleProvider.overrideWithValue(season),
+      notificationCenterProvider.overrideWithValue(center),
+    ],
   );
+  early.forEach(answer);
+  runApp(UncontrolledProviderScope(container: container, child: const AIronLudiApp()));
 }

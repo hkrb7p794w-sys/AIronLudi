@@ -173,3 +173,20 @@
 - **„Im Feed mit Freunden teilen“** im Teilen-Bildschirm folgt mit der Social-Phase (`ShareWithFriendsSheet`), der
   Link „Rezeptideen für die kommende Woche“ mit der Rezepte-Phase. Teilen per Code und Link funktioniert bereits.
 
+## 2026-11-14 – Gym-Logik der App (Phase 3e-1)
+
+- **`GymViewModelTests.finishSavesDoneSetsAndWritesHealth`** erwartet nach `setWeight(50, set: 0)` noch
+  `[50, 50, 50]`. `WorkoutEdits.setWeight` ändert in Swift aber seit dem Gerätetest bewusst nur den einen Satz
+  (Kommentar dort: „das frühere Mitziehen der Folgesätze überschrieb gewollte Werte“). Die App-Tests laufen nur im
+  Simulator und wurden nicht nachgezogen. Der Dart-Test erwartet das heutige Verhalten `[50, 0, 0]`.
+- **Laufende Einheit** liegt wie in Swift unter `gym.activeSession` (jetzt im Einstellungsspeicher statt in den
+  UserDefaults); `AppBackup` und Umzug bleiben kompatibel.
+- **Pause vorbei:** `LocalNotification` kennt jetzt Sekunden, „exakt“ (Android `exactAllowWhileIdle`), „ohne Ton“ und
+  einen eigenen Ton. iOS spielt eigene Töne nur aus dem Bundle oder `Library/Sounds`; die App kopiert die drei Töne
+  beim Start dorthin. Android nutzt den Ton des Mitteilungskanals (eigene Töne je Mitteilung erlaubt Android 8+
+  nicht); in der geöffneten App spielt `audioplayers` den gewählten Ton mit `ambient` wie in Swift.
+- **Mitteilungszentrale:** `notificationCenterProvider` war bisher nirgends gesetzt – Erinnerungen wären auf dem Gerät
+  nie geplant worden. `main` richtet jetzt `DeviceNotificationCenter` ein und reicht Antworten an `ReminderService`
+  weiter (auch solche, die vor dem Start eintreffen). Dazu setzt der iOS-`AppDelegate` den Delegate der
+  Mitteilungszentrale, wie es `flutter_local_notifications` verlangt.
+
