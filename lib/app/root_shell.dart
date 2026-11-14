@@ -1,13 +1,16 @@
 import 'dart:async';
 
+import 'package:coach_core/coach_core.dart' show AccountInvite;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/account/account_views.dart';
 import '../features/plan/my_week_screen.dart';
 import '../features/today/plan_day_actions.dart';
 import '../services/providers.dart';
 import '../services/reminders/reminder_service.dart';
+import 'deep_links.dart';
 
 /// Vier Reiter wie in der iPhone-App: Heute · Aktivitäten · Training · Ernährung. Beim ersten Anzeigen startet der
 /// App-Zustand und ruft bei Bedarf Daten ab (wie `.task { await model.syncIfDue() }` in `RootView`).
@@ -30,6 +33,23 @@ class _RootShellState extends ConsumerState<RootShell> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _presentReminder(ref.read(reminderServiceProvider));
     });
+  }
+
+  /// Link von außen: Konto-Einladung. Vorher entscheiden: Meldet sich die Person im Fenster an, darf es nicht mitten
+  /// im Ablauf (vor dem Wiederherstellungscode) zu „Schon angemeldet“ wechseln.
+  void _presentLink(Uri? uri) {
+    if (uri == null) return;
+    final invite = AccountInvite.fromUri(uri);
+    if (invite == null) return;
+    ref.read(incomingLinkProvider.notifier).consume();
+    if (ref.read(accountServiceProvider).isSignedIn) {
+      unawaited(
+        Navigator.of(context)
+            .push(MaterialPageRoute<void>(fullscreenDialog: true, builder: (_) => const AlreadySignedInScreen())),
+      );
+    } else {
+      unawaited(presentAccountAuth(context, AccountAuthMode.register, invite: invite));
+    }
   }
 
   /// Aus einer Mitteilung: „Nächste Woche planen“ bzw. Einheit verschieben (wie die Sheets in `RootView`).
@@ -59,6 +79,7 @@ class _RootShellState extends ConsumerState<RootShell> {
     final shell = widget.shell;
     final incoming = ref.watch(socialServiceProvider).incomingCount;
     ref.listen(reminderServiceProvider, (_, reminders) => _presentReminder(reminders));
+    ref.listen(incomingLinkProvider, (_, uri) => _presentLink(uri));
     return Scaffold(
       body: shell,
       bottomNavigationBar: NavigationBar(

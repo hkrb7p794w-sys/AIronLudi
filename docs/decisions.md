@@ -311,3 +311,11 @@
   werden über `share_plus` geteilt (statt `ShareLink`); Kopieren über die Zwischenablage.
 - Wasser-Einträge (Glas-Knopf) gehen wie in der Mahlzeitenliste nicht in den Export.
 - Pickers mit Menü werden zu `DropdownButtonFormField`, Stepper zu Plus/Minus-Knöpfen.
+
+## 2026-11-14 – Konto (Phase 3j-1)
+
+- Links von außen, die keine Reiter-Route sind, landen in `incomingLinkProvider`; `RootShell` übernimmt
+  Konto-Einladungen. Liga-Einladungen, geteilte Mahlzeiten und Kochpartner-Links folgen mit ihren Bereichen.
+- Bestätigungsdialog und Lösch-Abfrage mit Passwortfeld sind `AlertDialog`s; der Wiederherstellungscode lässt sich
+  wie in Swift erst nach Bestätigung schließen (`PopScope`).
+- Der Schalter „Trainings automatisch teilen“ in „Konto verwalten“ kommt mit dem Port von `SocialAutoShare` (3j-2).
