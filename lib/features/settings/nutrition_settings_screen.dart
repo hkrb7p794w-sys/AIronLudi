@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:coach_core/coach_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/settings/settings_store.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
+import '../../services/widgets/widget_providers.dart';
 import '../../ui/components.dart';
 import 'settings_sections.dart';
 
@@ -170,6 +173,8 @@ class NutritionSettingsScreen extends ConsumerWidget {
                 title: 'Mahlzeiten auf dem Sperrbildschirm',
                 store: store,
                 settingKey: SettingsKeys.mealsLiveActivity,
+                // Sofort starten bzw. beenden.
+                onChanged: () => unawaited(ref.read(widgetPublisherProvider).publish()),
               ),
             ],
           ),
@@ -247,11 +252,12 @@ class _OptionalNumberFieldState extends State<_OptionalNumberField> {
 
 /// Schalter für einen einfachen Gerätewert (wie `@AppStorage`).
 class _StoredSwitch extends StatefulWidget {
-  const _StoredSwitch({required this.title, required this.store, required this.settingKey});
+  const _StoredSwitch({required this.title, required this.store, required this.settingKey, this.onChanged});
 
   final String title;
   final SettingsStore store;
   final String settingKey;
+  final VoidCallback? onChanged;
 
   @override
   State<_StoredSwitch> createState() => _StoredSwitchState();
@@ -266,7 +272,7 @@ class _StoredSwitchState extends State<_StoredSwitch> {
     value: _on,
     onChanged: (on) {
       setState(() => _on = on);
-      widget.store.setBool(widget.settingKey, on);
+      unawaited(widget.store.setBool(widget.settingKey, on).then((_) => widget.onChanged?.call()));
     },
   );
 }
