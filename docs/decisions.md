@@ -418,3 +418,13 @@
   (`SharedPreferences`) und führt sie beim nächsten Öffnen aus.
 - „Mahlzeiten heute“ gibt es unter Android nicht als laufende Mitteilung; die Mahlzeiten zeigt das Widget (3m-5).
 
+## 2026-11-14 – Android-Widgets (Phase 3m-5)
+
+- RemoteViews statt Jetpack Glance: kein Compose-Compiler und keine neue Abhängigkeit im Gradle-Build, dieselben
+  fünf Widgets mit Texten statt Ringen und Balken. Glance bleibt eine spätere Verbesserung.
+- Die Widgets lesen dieselbe Datei wie unter iOS (`widget-snapshot.json`, hier im Datenordner der App) und rechnen nur
+  den Tageswechsel ein (wie `WidgetSnapshot.display(on:)`). Wasser merken sie in `widget-actions.json` vor
+  (Zeitpunkt in Sekunden seit 2001, ID als UUID), die App übernimmt es beim Öffnen wie unter iOS.
+- Konfiguration je Widget (iOS: Widget bearbeiten) entfällt unter Android vorerst; die Widgets zeigen die Standard-
+  Auswahl der iOS-Widgets.
+
