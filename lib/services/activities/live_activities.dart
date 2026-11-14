@@ -192,7 +192,8 @@ final class AdjustRepsAction extends WorkoutAction {
   final int delta;
 }
 
-/// Plattformteil der Live-Aktivitäten (iOS: ActivityKit im `AppDelegate`; sonst nichts).
+/// Plattformteil der Live-Aktivitäten (iOS: ActivityKit im `AppDelegate`; Android: laufende Mitteilung der Einheit in
+/// `WorkoutNotification.kt`).
 abstract interface class LiveActivityHost {
   /// `state == null` beendet die Aktivität.
   Future<void> updateWorkout(WorkoutLiveState? state, {required String title});
@@ -202,6 +203,9 @@ abstract interface class LiveActivityHost {
 
   /// Knöpfe der Live-Aktivität; laufen im Prozess der App, auch wenn iOS sie dafür im Hintergrund startet.
   set onWorkoutAction(void Function(WorkoutAction action)? handler);
+
+  /// Android: Knöpfe der laufenden Mitteilung, die getippt wurden, während die App nicht lief.
+  Future<List<WorkoutAction>> takePendingActions();
 }
 
 /// Kanal `aironludi/activities`.
@@ -220,12 +224,25 @@ final class ChannelLiveActivityHost implements LiveActivityHost {
   @override
   set onWorkoutAction(void Function(WorkoutAction action)? handler) => _handler = handler;
 
+  static bool get _supported => Platform.isIOS || Platform.isAndroid;
+
   Future<void> _invoke(String method, Map<String, Object?> arguments) async {
-    if (!Platform.isIOS) return;
+    if (!_supported) return;
     try {
       await _channel.invokeMethod<void>(method, arguments);
     } on Object {
       // Älterer Build ohne Plattformteil oder Live-Aktivitäten abgeschaltet.
+    }
+  }
+
+  @override
+  Future<List<WorkoutAction>> takePendingActions() async {
+    if (!Platform.isAndroid) return const [];
+    try {
+      final pending = await _channel.invokeMethod<List<Object?>>('takePendingActions') ?? const [];
+      return [for (final item in pending) ?WorkoutAction.fromChannel(item)];
+    } on Object {
+      return const [];
     }
   }
 
@@ -252,4 +269,13 @@ final class FakeLiveActivityHost implements LiveActivityHost {
 
   @override
   Future<void> updateMeals(MealsLiveState? state, {required DateTime now}) async => meals.add(state);
+
+  List<WorkoutAction> pending = [];
+
+  @override
+  Future<List<WorkoutAction>> takePendingActions() async {
+    final taken = pending;
+    pending = [];
+    return taken;
+  }
 }
