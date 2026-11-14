@@ -271,3 +271,13 @@
   Anzahl der Reaktionen und Kommentare). Reagieren, Kommentieren, Mahlzeit übernehmen, Beitrag löschen, Freunde und
   automatisches Teilen kommen mit der Social-Phase.
 - Der leere Platzhalter (`PlaceholderView`) ist entfernt; alle vier Reiter haben Inhalt.
+
+## 2026-11-14 – Gesundheitsbereich (Phase 3h-1)
+
+- Widget-Raster: zwei Spalten über `Wrap` mit halber Breite statt `LazyVGrid`; Mini-Verläufe und Verlauf je Wert mit
+  `fl_chart`, der eigene Bereich als graues Band (`HorizontalRangeAnnotation`).
+- Editor: `ReorderableListView` mit Ziehgriff; Entfernen über ein Papierkorb-Symbol statt Wischen (wie in den anderen
+  Listen der Flutter-App).
+- Body Battery öffnet bis Phase 3h-2 den Verlauf des Werts; die eigene Seite, Mobility und der Wecker folgen dort.
+- Der Morning Report im Gesundheitsbereich rechnet „heute geplant“ wie in Swift über den `TodayController`, wenn er
+  nicht aus „Heute“ geöffnet wird.
