@@ -19,6 +19,14 @@ class MainActivity : FlutterFragmentActivity() {
             }
         }
         WorkoutNotification.channel = activities
+        // Wecker zur Aufstehzeit (AlarmManager.setAlarmClock).
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "aironludi/alarm").setMethodCallHandler { call, result ->
+            try {
+                result.success(WakeAlarm.handle(applicationContext, call.method, call.arguments as? Map<*, *>))
+            } catch (error: IllegalArgumentException) {
+                result.notImplemented()
+            }
+        }
         // Homescreen-Widgets neu zeichnen, sobald die App einen neuen Stand geschrieben hat.
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "aironludi/widgets").setMethodCallHandler { call, result ->
             when (call.method) {

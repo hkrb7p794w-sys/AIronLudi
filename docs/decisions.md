@@ -428,3 +428,13 @@
 - Konfiguration je Widget (iOS: Widget bearbeiten) entfällt unter Android vorerst; die Widgets zeigen die Standard-
   Auswahl der iOS-Widgets.
 
+## 2026-11-14 – Wecker-Brücke (Phase 3m-6)
+
+- iOS: AlarmKit wie in Swift (`IronLudiAlarm`), im `AppDelegate` hinter `#if canImport(AlarmKit)` und
+  `#available(iOS 26.0, *)`. Die Wecker-ID kommt aus Dart (`coach.wakeAlarm`, UUID in Großbuchstaben wie
+  `uuidString`).
+- Android: `AlarmManager.setAlarmClock` (erscheint als nächster Wecker, klingelt im Ruhemodus) statt eines Wecker-Pakets.
+  Beim Klingeln eine Vollbild-Mitteilung im Kanal „Wecker“ (Weckton, `FLAG_INSISTENT` bis „Aus“). Wiederholungen
+  stellt der Empfänger auf den nächsten passenden Tag, nach Neustart und Update ebenso. Ohne Erlaubnis für genaue
+  Wecker (Android 12+) meldet der Kanal `denied`.
+

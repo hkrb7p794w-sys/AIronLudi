@@ -4,6 +4,10 @@ import UIKit
 import UserNotifications
 import WidgetKit
 
+#if canImport(AlarmKit)
+  import AlarmKit
+#endif
+
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   override func application(
@@ -19,6 +23,10 @@ import WidgetKit
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "WidgetBridge") {
       WidgetBridge.register(messenger: registrar.messenger())
+    }
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AlarmBridge") {
+      let messenger = registrar.messenger()
+      MainActor.assumeIsolated { AlarmBridge.register(messenger: messenger) }
     }
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "ActivityBridge") {
       let messenger = registrar.messenger()
@@ -193,3 +201,117 @@ enum ActivityBridge {
     _ = try? Activity.request(attributes: MealsActivityAttributes(startedAt: now), content: content)
   }
 }
+
+/// Kanal `aironludi/alarm`: Wecker zur Aufstehzeit über AlarmKit (iOS 26), Port von `WakeAlarmService`. Ein echter
+/// System-Wecker, der auch lautlos und im Fokus klingelt. Unter iOS 18–25 meldet der Kanal `unsupported`; die App zeigt
+/// dann den Hinweis auf die Uhr-App. Welcher Wecker der App gehört, merkt sich Dart (`coach.wakeAlarm`).
+@MainActor
+enum AlarmBridge {
+  static func register(messenger: FlutterBinaryMessenger) {
+    let channel = FlutterMethodChannel(name: "aironludi/alarm", binaryMessenger: messenger)
+    channel.setMethodCallHandler { call, result in
+      let arguments = call.arguments as? [String: Any] ?? [:]
+      MainActor.assumeIsolated {
+        switch call.method {
+        case "state": result(state())
+        case "alarms": result(alarms())
+        case "schedule":
+          Task { @MainActor in result(await schedule(arguments)) }
+        case "cancel":
+          cancel(arguments["id"] as? String)
+          result(nil)
+        default: result(FlutterMethodNotImplemented)
+        }
+      }
+    }
+  }
+
+  private static func state() -> String {
+    #if canImport(AlarmKit)
+      if #available(iOS 26.0, *) {
+        switch AlarmManager.shared.authorizationState {
+        case .authorized: return "authorized"
+        case .denied: return "denied"
+        case .notDetermined: return "notDetermined"
+        @unknown default: return "notDetermined"
+        }
+      }
+    #endif
+    return "unsupported"
+  }
+
+  /// Noch gestellte Wecker (vom System gelöschte oder abgelaufene einmalige fehlen).
+  private static func alarms() -> [String] {
+    #if canImport(AlarmKit)
+      if #available(iOS 26.0, *) {
+        return ((try? AlarmManager.shared.alarms) ?? []).map(\.id.uuidString)
+      }
+    #endif
+    return []
+  }
+
+  /// Fragt beim ersten Mal nach der Erlaubnis; `false` ohne Erlaubnis oder unter iOS 18–25.
+  private static func schedule(_ arguments: [String: Any]) async -> Bool {
+    #if canImport(AlarmKit)
+      if #available(iOS 26.0, *) {
+        guard let raw = arguments["id"] as? String, let id = UUID(uuidString: raw),
+          let hour = arguments["hour"] as? Int, let minute = arguments["minute"] as? Int
+        else { return false }
+        do {
+          if AlarmManager.shared.authorizationState != .authorized {
+            guard try await AlarmManager.shared.requestAuthorization() == .authorized else { return false }
+          }
+          let weekdays = (arguments["weekdays"] as? [Int] ?? []).compactMap(IronLudiAlarm.localeWeekday)
+          try await IronLudiAlarm.schedule(id: id, hour: hour, minute: minute, weekdays: weekdays)
+          return true
+        } catch {
+          return false
+        }
+      }
+    #endif
+    return false
+  }
+
+  private static func cancel(_ raw: String?) {
+    #if canImport(AlarmKit)
+      if #available(iOS 26.0, *), let raw, let id = UUID(uuidString: raw) {
+        try? AlarmManager.shared.cancel(id: id)
+      }
+    #endif
+  }
+}
+
+#if canImport(AlarmKit)
+  /// Keine eigenen Daten am Wecker nötig.
+  @available(iOS 26.0, *)
+  nonisolated struct IronLudiAlarmMetadata: AlarmMetadata {}
+
+  @available(iOS 26.0, *)
+  enum IronLudiAlarm {
+    static func schedule(id: UUID, hour: Int, minute: Int, weekdays: [Locale.Weekday]) async throws {
+      let schedule = Alarm.Schedule.relative(
+        .init(time: .init(hour: hour, minute: minute), repeats: weekdays.isEmpty ? .never : .weekly(weekdays)))
+      let stop = AlarmButton(text: "Aus", textColor: .white, systemImageName: "sun.max.fill")
+      let alert = AlarmPresentation.Alert(title: "Guten Morgen – Zeit aufzustehen", stopButton: stop)
+      let attributes = AlarmAttributes<IronLudiAlarmMetadata>(
+        presentation: AlarmPresentation(alert: alert), metadata: IronLudiAlarmMetadata(), tintColor: .indigo)
+      let configuration = AlarmManager.AlarmConfiguration<IronLudiAlarmMetadata>(
+        countdownDuration: nil, schedule: schedule, attributes: attributes, stopIntent: nil, secondaryIntent: nil)
+      _ = try await AlarmManager.shared.schedule(id: id, configuration: configuration)
+    }
+
+    /// `Calendar`-Wochentag (1 = Sonntag) in `Locale.Weekday`.
+    static func localeWeekday(_ weekday: Int) -> Locale.Weekday? {
+      switch weekday {
+      case 1: .sunday
+      case 2: .monday
+      case 3: .tuesday
+      case 4: .wednesday
+      case 5: .thursday
+      case 6: .friday
+      case 7: .saturday
+      default: nil
+      }
+    }
+  }
+#endif

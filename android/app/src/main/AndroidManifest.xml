@@ -165,6 +165,13 @@
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_gym_info" />
         </receiver>
         <receiver android:name=".WaterReceiver" android:exported="false" />
+        <!-- Wecker zur Aufstehzeit: Klingeln, „Aus“ und nach Neustart oder Update neu stellen. -->
+        <receiver android:name=".WakeAlarmReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
         <!-- Knöpfe der laufenden Gym-Mitteilung (Satz erledigt, Pause überspringen, Gewicht ±). -->
         <receiver android:name=".WorkoutActionReceiver" android:exported="false" />
     </application>
