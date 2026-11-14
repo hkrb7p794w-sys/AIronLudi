@@ -387,3 +387,15 @@
   abrufen, Erinnerungen planen, erneut schreiben; beim Verlassen schreiben. Die Live-Aktivität „Mahlzeiten heute“
   folgt mit der Widget-Erweiterung (3m-2).
 
+## 2026-11-14 – Widget-Erweiterung (Phase 3m-2)
+
+- Die Widgets bleiben SwiftUI (Migrationsplan 4.2). Statt das ganze Swift-Paket CoachCore (≈ 25 700 Zeilen) ins Repo zu
+  holen, enthält `ios/CoachWidgets/WidgetCore.swift` nur die Typen, die die Widgets lesen (`WidgetSnapshot`,
+  `WidgetActionQueue`, `AppGroupProfile`, `MealHeadline`, `CalendarDay`, `MealCategory`, `MealSplit`,
+  `RecoveryLevel`, `GermanFormat`, `AppRoute`, Einordnung des Morning Reports). Die Rechnung macht die Flutter-App.
+- `WidgetStore.swift` liegt nur in der Erweiterung (die App schreibt über `aironludi/widgets` aus Dart);
+  `Shared/` mit den Live-Aktivitäts-Attributen und Intents gehört zu App und Erweiterung, weil `LiveActivityIntent`
+  im Prozess der App läuft.
+- Ohne Mac fügt `ios/scripts/add_widget_extension.rb` das Ziel mit dem Gem `xcodeproj` ein (einmalig, Ergebnis
+  eingecheckt). Die Erweiterung erbt nur `Flutter/Generated.xcconfig` (Versionsnummern), nicht die Pod-Einstellungen.
+
