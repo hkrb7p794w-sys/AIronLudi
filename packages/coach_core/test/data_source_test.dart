@@ -84,7 +84,7 @@ void main() {
     test('der Katalog ist ehrlich', () {
       expect(DataProvider.garmin.availability, ProviderAvailability.available);
       expect(DataProvider.appleHealth.availability, ProviderAvailability.available);
-      expect(DataProvider.whoop.availability, ProviderAvailability.planned);
+      expect(DataProvider.whoop.availability, ProviderAvailability.available);
       expect(DataProvider.polar.availability, ProviderAvailability.planned);
       expect(DataProvider.fitbit.availability, ProviderAvailability.unavailable);
       for (final provider in DataProvider.values) {

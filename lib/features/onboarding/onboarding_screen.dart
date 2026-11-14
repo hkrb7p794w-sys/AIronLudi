@@ -648,7 +648,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         'Garmin: nach dem Start unter Einstellungen › Garmin anmelden.',
                       DataProvider.appleHealth =>
                         'Apple Health: Der Import wird eingeschaltet; das Gerät fragt gleich nach den Daten.',
-                      DataProvider.whoop || DataProvider.polar =>
+                      DataProvider.whoop when !model.isWhoopConnected =>
+                        'WHOOP: nach dem Start unter Einstellungen › Training und Fitness › WHOOP verbinden. Bis dahin '
+                            'kommen Schlaf, Ruhepuls und Workouts über Apple Health.',
+                      DataProvider.polar =>
                         '${provider.label}: kommt über Apple Health – schalte dort die Weitergabe an Health ein.',
                       DataProvider.fitbit => 'Fitbit: derzeit keine Verbindung möglich.',
                       _ => null,

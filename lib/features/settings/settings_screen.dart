@@ -25,6 +25,7 @@ import 'discipline_settings.dart';
 import 'nutrition_settings_screen.dart';
 import 'settings_controller.dart';
 import 'settings_sections.dart';
+import 'whoop_section.dart';
 
 /// Einstellungen: Profil, dann die Bereiche als eigene Seiten (wie `SettingsView.swift`).
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -189,6 +190,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ],
                     ),
                   _ConnectSection(controller: _controller),
+                  const WhoopSection(),
                 ],
               ),
               ListTile(

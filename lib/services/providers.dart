@@ -33,6 +33,7 @@ import 'social/league_service.dart';
 import 'social/social_auto_share.dart';
 import 'social/social_service.dart';
 import 'speech/dictation.dart';
+import 'whoop/whoop_service.dart';
 
 /// Garmin-Konto (inoffizieller Zugang).
 final garminConnectProvider = Provider<GarminConnectSession>(
@@ -173,8 +174,19 @@ final appModelProvider = ChangeNotifierProvider<AppModel>((ref) {
     meals: MealRepository(db),
     gymRepository: GymRepository(db),
     seasonSchedule: ref.watch(seasonScheduleProvider),
+    whoop: ref.read(whoopServiceProvider),
   );
 });
+
+/// WHOOP über die offizielle API; den Token-Tausch macht der Worker.
+final whoopServiceProvider = ChangeNotifierProvider<WhoopService>(
+  (ref) => WhoopService(
+    ai: ref.watch(aiClientProvider),
+    secrets: ref.watch(secretsProvider),
+    settings: ref.watch(settingsStoreProvider),
+    activities: ActivityRepository(ref.watch(databaseProvider)),
+  ),
+);
 
 final mealShareServiceProvider = Provider<MealShareService>((ref) => MealShareService(ref.watch(aiClientProvider)));
 
