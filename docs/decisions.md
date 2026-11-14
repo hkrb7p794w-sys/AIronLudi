@@ -162,3 +162,14 @@
 - **Abfolge der Bildschirme:** Swift wartet 450 ms zwischen zwei Sheets. In Flutter liefert der Erfassen-Bildschirm
   ein Ergebnis (`CaptureResult`), danach öffnet die Ernährungsansicht den nächsten Bildschirm – ohne Wartezeit.
 
+## 2026-11-14 – Ernährungsplan, Gewicht und Teilen (Phase 3d-4)
+
+- **Diagramme:** `fl_chart` statt Swift Charts. Im Wochendiagramm kennt `fl_chart` keine Punkte über Balken; das
+  Tagesziel steht deshalb als „◆ kcal“ unter dem jeweiligen Balken statt als Raute im Diagramm. Inhalt und
+  Bedienungshilfe-Text („Raute = Ziel, orange = Trainingstag“) bleiben gleich.
+- **Wochen-Check-in beim Öffnen des Gewichtsverlaufs:** Swift setzt `lastCheckInDay` in `onAppear`. In Flutter darf
+  ein Provider nicht während des Aufbaus geändert werden; die App setzt den Tag nach dem ersten Bild
+  (`addPostFrameCallback`). Für die Person gleich.
+- **„Im Feed mit Freunden teilen“** im Teilen-Bildschirm folgt mit der Social-Phase (`ShareWithFriendsSheet`), der
+  Link „Rezeptideen für die kommende Woche“ mit der Rezepte-Phase. Teilen per Code und Link funktioniert bereits.
+

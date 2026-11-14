@@ -14,8 +14,11 @@ import '../evidence/evidence_views.dart';
 import 'bls_views.dart';
 import 'capture_views.dart';
 import 'meal_editor.dart';
+import 'meal_share_views.dart';
 import 'meal_shortcuts.dart';
 import 'nutrition_controller.dart';
+import 'nutrition_plan_views.dart';
+import 'weight_views.dart';
 
 String mealSummary(List<MealItem> items) {
   final totals = NutritionSummary.totals(items);
@@ -253,12 +256,39 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                     ListTile(
                       leading: const Icon(Icons.tune),
                       title: const Text('Übersicht anpassen'),
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          fullscreenDialog: true,
-                          builder: (_) => const NutritionDashboardEditor(),
+                      onTap: () => _push((_) => const NutritionDashboardEditor(), fullscreen: true),
+                    ),
+                    if (ref.watch(aiClientProvider).isConfigured)
+                      ListTile(
+                        leading: const Icon(Icons.move_to_inbox_outlined),
+                        title: const Text('Geteilte Mahlzeit öffnen'),
+                        onTap: () => _push((_) => const ReceivedMealScreen(), fullscreen: true),
+                      ),
+                    ListTile(
+                      leading: const Icon(Icons.calendar_month_outlined),
+                      title: const Text('Woche und Auswertung'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _push(
+                        (_) => NutritionWeekScreen(
+                          summary: _weekSummary,
+                          weights: ref.read(appModelProvider).allWeights,
+                          goal: settings.nutrition.goal,
+                          review: ListenableBuilder(listenable: _controller, builder: (_, _) => _reviewSection()),
                         ),
                       ),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.restaurant),
+                      title: const Text('Eigene Rezepte und Meal-Prep'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () =>
+                          _push((_) => OwnRecipesScreen(log: (recipe, grams) => _logOwnRecipe(recipe, grams: grams))),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.monitor_weight_outlined),
+                      title: const Text('Gewichtsverlauf'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _push((_) => const WeightTrendScreen()),
                     ),
                   ],
                 ),
@@ -409,30 +439,46 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
   }
 
   Future<void> _showNow() async {
-    await _controller.suggestNow(_foods);
-    if (!mounted) return;
-    final recipe = await showModalBottomSheet<Recipe>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            for (final note in _controller.nowNotes)
-              ListTile(leading: const Icon(Icons.info_outline), title: Text(note)),
-            for (final recipe in _controller.nowSuggestions)
-              ListTile(
-                title: Text(recipe.title),
-                subtitle: Text(mealSummary(recipe.ingredients)),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.of(context).pop(recipe),
-              ),
-          ],
+    final recipe = await Navigator.of(context).push<Recipe>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => MealNowScreen(
+          controller: _controller,
+          pantry: ref.read(coachSettingsProvider).pantry,
+          generate: () => _controller.suggestNow(_foods),
         ),
       ),
     );
     if (recipe != null) _controller.draftFromRecipe(recipe);
+  }
+
+  /// Woche des gewählten Tages: Energie gegen das Ziel, Protein, Trainingstage.
+  NutritionWeekSummary get _weekSummary {
+    final day = _controller.day;
+    final monday = day.adding(-day.weekdayIndex);
+    final settings = ref.read(coachSettingsProvider);
+    final profile = ref.read(appModelProvider).sync.profile;
+    return NutritionWeek.summary(
+      entries: MealRepository.entries(_meals),
+      monday: monday,
+      targets: {
+        for (var offset = 0; offset < 7; offset++)
+          monday.adding(offset): NutritionController.targetsFor(
+            monday.adding(offset),
+            activities: _activities,
+            settings: settings,
+            profile: profile,
+            hasGarminData: _days.isNotEmpty,
+          ).values,
+      },
+      trainedDays: {for (final activity in _activities) ?activity.day},
+      today: _controller.today,
+    );
+  }
+
+  Future<void> _push(Widget Function(BuildContext context) builder, {bool fullscreen = false}) async {
+    await Navigator.of(context).push(MaterialPageRoute<void>(fullscreenDialog: fullscreen, builder: builder));
+    if (mounted) await _reload();
   }
 
   Widget _quickSection() {
@@ -586,13 +632,36 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                   ];
                 },
               ),
+            if (ref.read(aiClientProvider).isConfigured)
+              ListTile(
+                leading: const Icon(Icons.ios_share),
+                title: const Text('Teilen …'),
+                onTap: () {
+                  Navigator.of(sheet).pop();
+                  _push((_) => ShareMealScreen(title: meal.title, items: meal.items), fullscreen: true);
+                },
+              ),
             ListTile(
               leading: const Icon(Icons.restaurant_menu),
               title: const Text('Als eigenes Rezept speichern'),
-              subtitle: const Text('Unter „Eigene Rezepte“ Portionen und gekochtes Gewicht für Meal-Prep festlegen.'),
-              onTap: () {
+              onTap: () async {
                 Navigator.of(sheet).pop();
-                settings.ownRecipes = [...settings.ownRecipes, OwnRecipe.fromMeal(meal.title, meal.items)];
+                final save = await showDialog<bool>(
+                  context: context,
+                  builder: (dialog) => AlertDialog(
+                    title: const Text('Als eigenes Rezept speichern'),
+                    content: const Text(
+                      'Unter „Eigene Rezepte“ kannst du Portionen und gekochtes Gewicht für Meal-Prep festlegen.',
+                    ),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.of(dialog).pop(false), child: const Text('Abbrechen')),
+                      TextButton(onPressed: () => Navigator.of(dialog).pop(true), child: const Text('Speichern')),
+                    ],
+                  ),
+                );
+                if (save ?? false) {
+                  settings.ownRecipes = [...settings.ownRecipes, OwnRecipe.fromMeal(meal.title, meal.items)];
+                }
               },
             ),
             ListTile(
@@ -640,6 +709,12 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         '– sie ändert nichts ohne dein OK.',
     children: [
       ListTile(
+        leading: const Icon(Icons.event_available),
+        title: const Text('Gewichtstrend und Verbrauch ansehen'),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => _push((_) => const WeightTrendScreen()),
+      ),
+      ListTile(
         title: const Text('Diese Woche überspringen'),
         onTap: () {
           final settings = ref.read(coachSettingsProvider);
@@ -650,7 +725,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
   );
 
   Widget _reviewSection() {
-    final ai = ref.watch(aiClientProvider);
+    final ai = ref.read(aiClientProvider);
     final controller = _controller;
     return FormSection(
       header: 'KI-Auswertung',
