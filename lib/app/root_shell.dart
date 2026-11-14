@@ -79,6 +79,11 @@ class _RootShellState extends ConsumerState<RootShell> {
   Future<void> _refresh() async {
     final model = ref.read(appModelProvider);
     final widgets = ref.read(widgetPublisherProvider);
+    // Android: Knöpfe der laufenden Mitteilung, während die App nicht lief.
+    final gym = ref.read(gymControllerProvider);
+    for (final action in await ref.read(liveActivityHostProvider).takePendingActions()) {
+      gym.perform(action);
+    }
     await widgets.takeQueuedActions();
     await widgets.publish();
     await model.syncIfDue();

@@ -408,3 +408,13 @@
   `workoutAction` an Dart, `GymController.perform` führt sie aus, der neue Stand geht über `RootShell` zurück.
 - Der Schalter „Mahlzeiten auf dem Sperrbildschirm“ schreibt sofort neu (wie `onChange` in Swift).
 
+## 2026-11-14 – Laufende Mitteilung der Gym-Einheit unter Android (Phase 3m-4)
+
+- Kein Foreground-Service: Die Einheit läuft in der App, die Mitteilung zeigt nur ihren Stand (Kanal „Laufende
+  Einheit“, leise, dauerhaft). Gebaut mit `android.app.Notification` (minSdk 26), ohne zusätzliche Abhängigkeit.
+- Android zeigt höchstens drei Knöpfe: „Satz erledigt“ und in der Pause „Pause überspringen“, sonst Gewicht − und +.
+  Wiederholungen ± bleiben der App vorbehalten.
+- Die Knöpfe gehen per `BroadcastReceiver` an Dart; läuft keine Flutter-Engine, merkt sich die App sie
+  (`SharedPreferences`) und führt sie beim nächsten Öffnen aus.
+- „Mahlzeiten heute“ gibt es unter Android nicht als laufende Mitteilung; die Mahlzeiten zeigt das Widget (3m-5).
+

@@ -133,6 +133,8 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Knöpfe der laufenden Gym-Mitteilung (Satz erledigt, Pause überspringen, Gewicht ±). -->
+        <receiver android:name=".WorkoutActionReceiver" android:exported="false" />
     </application>
 
     <queries>
