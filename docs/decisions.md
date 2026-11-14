@@ -236,3 +236,13 @@
 - **Übersicht:** Wert und Erklärung stehen rechts, kürzen aber bei Platzmangel (statt umzubrechen wie bei sehr großer
   Schrift in Swift).
 
+
+## 2026-11-14 – Disziplinseiten (Phase 3g-3)
+
+- Swift-Charts der Testverläufe, Kilometer, VO2max und Kopplung sind `fl_chart`-Diagramme; bei Paces (kleiner ist
+  besser) wird die Achse wie in Swift umgedreht, indem die Werte negiert und die Beschriftung zurückgerechnet wird.
+- Die Testeingaben (`TestEntrySection`) sind Textfelder mit Ziffern, Doppelpunkt und Komma; die Auswertung liegt je
+  Seite in einem `evaluate`-Rückruf, gespeichert wird wie in Swift über `settings.record(TestKind, Wert)`.
+  `TimeText` kommt aus `coach_core`.
+- Die Übernahme im Pace-Check gibt eine Haptik (`HapticFeedback.mediumImpact`) statt `sensoryFeedback(.success)`.
+- `DisclosureGroup` wird zu `ExpansionTile`; der Evidenz-Hinweis steht in der Sektion statt im Footer.

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:coach_core/coach_core.dart';
 import 'package:flutter/material.dart';
@@ -8,8 +9,10 @@ import '../../data/repositories/gym_repository.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/sport_style.dart';
 import '../gym/gym_providers.dart';
 import '../gym/gym_screen.dart';
+import 'discipline_pages.dart';
 import 'sleep_coach_screen.dart';
 import 'training_controller.dart';
 import 'training_pages.dart';
@@ -98,6 +101,8 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
       today: today,
     );
     final recovery = controller.recovery.firstOrNull;
+    final season = settings.season;
+    final estimate = RaceEstimate(config: season, tests: settings.tests, today: today);
     return Scaffold(
       appBar: AppBar(title: const Text('Training')),
       body: RefreshIndicator(
@@ -175,6 +180,81 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                 ),
               ],
             ),
+            if (settings.profile.mode == ProfileMode.season) ...[
+              FormSection(
+                header: 'Disziplinen',
+                children: [
+                  _HubRow(
+                    title: 'Schwimmen',
+                    symbol: 'figure.pool.swim',
+                    color: Colors.blue,
+                    value: '${PlanTokens.mmss(season.cssSecondsPer100m)} /100 m',
+                    caption: 'CSS',
+                    onTap: () => _open((_) => SwimScreen(controller: controller)),
+                  ),
+                  _HubRow(
+                    title: 'Rad',
+                    symbol: 'figure.outdoor.cycle',
+                    color: Colors.orange,
+                    value: '${season.ftpWatts} W',
+                    caption: 'FTP',
+                    onTap: () => _open((_) => BikeScreen(controller: controller)),
+                  ),
+                  _HubRow(
+                    title: 'Laufen',
+                    symbol: 'figure.run',
+                    color: Colors.green,
+                    value: '${PlanTokens.mmss(season.thresholdPaceSecondsPerKm)} /km',
+                    caption: 'Schwelle',
+                    onTap: () => _open((_) => RunScreen(controller: controller)),
+                  ),
+                ],
+              ),
+              FormSection(
+                header: 'Ziele',
+                children: [
+                  _HubRow(
+                    title: 'Almere',
+                    symbol: 'flag.checkered',
+                    color: Colors.teal,
+                    value: '${RaceEstimate.hoursMinutes(estimate.totalMinutes)} h',
+                    caption: 'geschätzte Zielzeit',
+                    onTap: () => _open((_) => const AlmereScreen()),
+                  ),
+                  _HubRow(
+                    title: 'Marathon',
+                    symbol: 'medal.fill',
+                    color: Colors.pink,
+                    value: '${math.max(today.daysUntil(season.marathonDate), 0)} Tage',
+                    caption: GermanFormat.date(season.marathonDate),
+                    onTap: () => _open((_) => const MarathonScreen()),
+                  ),
+                ],
+              ),
+            ] else
+              FormSection(
+                header: 'Meine Sportarten',
+                children: [
+                  for (final sport in settings.profile.sports)
+                    if (sport == TrainingSport.run || sport == TrainingSport.bike || sport == TrainingSport.swim)
+                      _HubRow(
+                        title: sport.shortLabel,
+                        symbol: switch (sport) {
+                          TrainingSport.run => 'figure.run',
+                          TrainingSport.bike => 'figure.outdoor.cycle',
+                          _ => 'figure.pool.swim',
+                        },
+                        color: sport.color,
+                        value: formatNumber(
+                          controller.weeks.lastOrNull?.volume.kilometers[sport.garminSport] ?? 0,
+                          unit: 'km',
+                          digits: 1,
+                        ),
+                        caption: 'diese Woche',
+                        onTap: () => _open((_) => PersonalSportScreen(sport: sport, controller: controller)),
+                      ),
+                ],
+              ),
           ],
         ),
       ),
