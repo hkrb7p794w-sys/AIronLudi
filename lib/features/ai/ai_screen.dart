@@ -11,6 +11,7 @@ import '../../ui/components.dart';
 import '../../ui/symbols.dart';
 import '../gym/gym_library.dart';
 import '../gym/gym_providers.dart';
+import '../recipes/recipe_views.dart';
 import '../settings/ai_settings.dart';
 import 'ai_controller.dart';
 import 'ai_data.dart';
@@ -336,6 +337,13 @@ class _AIScreenState extends ConsumerState<AIScreen> {
                       ),
                     ),
                   ),
+                ListTile(
+                  leading: const Icon(Icons.soup_kitchen_outlined),
+                  title: const Text('Rezeptideen für die Woche'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () =>
+                      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const RecipesScreen())),
+                ),
                 ListTile(
                   leading: const Icon(Icons.chat_outlined),
                   title: const Text('Prompt-Bibliothek für externe KI'),

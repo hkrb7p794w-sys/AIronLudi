@@ -11,6 +11,7 @@ import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../evidence/evidence_views.dart';
+import '../recipes/recipe_views.dart';
 import 'bls_views.dart';
 import 'capture_views.dart';
 import 'meal_editor.dart';
@@ -289,6 +290,12 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                       title: const Text('Gewichtsverlauf'),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => _push((_) => const WeightTrendScreen()),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.soup_kitchen_outlined),
+                      title: const Text('Rezeptideen für die kommende Woche'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _push((_) => const RecipesScreen()),
                     ),
                   ],
                 ),
