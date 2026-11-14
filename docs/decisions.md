@@ -335,3 +335,11 @@
 - Der Stand wird wie in Swift (`.task(id:)`) nur gemeldet, wenn sich Punkte, Serie, Mahlzeit- oder Trainingstage
   ändern (Schlüssel im Zustand des Abschnitts, Meldung nach dem Aufbau des Bilds).
 - Abzeichen als `Wrap` statt `LazyVGrid`; Wischen zum Verlassen einer Challenge wird zu einem Symbol mit Bestätigung.
+
+## 2026-11-14 – Begleiter und Liga (Phase 3j-4)
+
+- Daisy wird mit `CustomPainter` gezeichnet (statt `Canvas` in `TimelineView`); ein `Ticker` liefert die Zeit für
+  `DaisyGeometry.pose`, bei `MediaQuery.disableAnimations` steht sie still. Farben und Pfade sind 1:1 übernommen.
+- Das Begleiter-Foto liegt wie in Swift als `companion.jpg` im App-Support-Ordner (höchstens 600 px, JPEG 0,8) und
+  wird über `image_picker` aus der Mediathek gewählt.
+- Liga-Einladungen (`coach://join`) öffnet `RootShell` über `incomingLinkProvider`, wie die Konto-Einladungen.

@@ -12,6 +12,7 @@ import '../../services/providers.dart';
 import '../../services/social/game_service.dart';
 import '../../ui/components.dart';
 import '../../ui/symbols.dart';
+import '../motivation/motivation_views.dart';
 import '../social/social_views.dart';
 import '../today/now_views.dart';
 import '../today/today_controller.dart';
@@ -48,23 +49,68 @@ Set<CalendarDay> trainingDays(WidgetRef ref, List<GarminActivity> activities, Se
   };
 }
 
-/// Begleiter und Rangliste unter „Heute“ (Port von `MotivationSections`). Begleiter und Liga folgen in Phase 3j-4;
-/// hier Serie, Stufe und Abzeichen.
+/// Begleiter und Rangliste unter „Heute“ (Port von `MotivationSections`).
 class MotivationSections extends ConsumerWidget {
-  const MotivationSections({super.key, required this.snapshot, required this.activities, required this.gym});
+  const MotivationSections({
+    super.key,
+    required this.snapshot,
+    required this.activities,
+    required this.gym,
+    this.gymDays,
+    this.showsCompanion = true,
+    this.showsLeague = true,
+  });
+
+  /// Tage mit Krafteinheiten, wenn keine Einheiten übergeben werden (Wochenübersicht).
+  final Set<CalendarDay>? gymDays;
 
   final TodaySnapshot snapshot;
   final List<GarminActivity> activities;
   final List<StoredGymSession> gym;
+  final bool showsCompanion;
+  final bool showsLeague;
+
+  List<String> _plannedToday(WidgetRef ref, CalendarDay today) {
+    final settings = ref.read(coachSettingsProvider);
+    if (settings.profile.mode == ProfileMode.personal) {
+      return [for (final slot in settings.schedule(today).slots(Weekday.of(today))) slot.title];
+    }
+    return [
+      for (final item in snapshot.today?.items ?? const <TodayPlanItem>[])
+        if (item.sport != TodayPlanSport.rest && !item.done) item.title,
+    ];
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(coachSettingsProvider);
+    final settings = ref.watch(coachSettingsProvider);
     final today = snapshot.plan.today;
-    final days = trainingDays(ref, activities, {for (final record in gym) record.session.day});
+    final days = trainingDays(ref, activities, gymDays ?? {for (final record in gym) record.session.day});
     final summary = ref.read(appModelProvider).motivation(days, today: today);
-    // Serie, Stufe und Abzeichen; meldet den Stand an die Freundes-Rangliste.
-    return GameSection(summary: summary, activities: activities, gym: gym, trainingDays: days, today: today);
+    final companion = settings.companion;
+    return Column(
+      children: [
+        if (showsCompanion && companion.isActive)
+          CompanionSection(
+            companion: companion,
+            message: CompanionVoice.message(
+              CompanionContext(
+                plannedToday: _plannedToday(ref, today),
+                trainedToday: days.contains(today),
+                recovery: snapshot.metrics == null ? null : snapshot.recommendation.level,
+                week: summary.week,
+                missedYesterday: summary.missedYesterday(today),
+              ),
+              companion: companion,
+              day: today,
+            ),
+          ),
+        // Serie, Stufe und Abzeichen (auf „Heute“); meldet den Stand an die Freundes-Rangliste.
+        if (showsCompanion)
+          GameSection(summary: summary, activities: activities, gym: gym, trainingDays: days, today: today),
+        if (showsLeague && settings.league.isJoined) LeagueSection(summary: summary),
+      ],
+    );
   }
 }
 
