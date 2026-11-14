@@ -2,6 +2,7 @@ import 'package:coach_core/coach_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../app/app_model.dart';
 import '../data/repositories/gym_repository.dart';
@@ -190,3 +191,14 @@ final appVersionProvider = FutureProvider<String>((ref) async {
   final info = await PackageInfo.fromPlatform();
   return '${info.version} (${info.buildNumber})';
 });
+
+/// Bildschirm anlassen (laufende Gym-Einheit); in Tests ohne Wirkung.
+final screenAwakeProvider = Provider<Future<void> Function(bool on)>(
+  (ref) => (on) async {
+    try {
+      await WakelockPlus.toggle(enable: on);
+    } on Object {
+      // Ohne Plattformteil.
+    }
+  },
+);

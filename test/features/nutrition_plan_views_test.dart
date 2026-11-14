@@ -66,6 +66,9 @@ void main() {
     await tester.pumpAndSettle();
     final link = find.text('Gewichtsverlauf');
     await tester.scrollUntilVisible(link, 200);
+    // Nicht unter der Reiterleiste antippen (je nach Wochentag steht oben eine Karte mehr).
+    await tester.ensureVisible(link);
+    await tester.pumpAndSettle();
     await tester.tap(link);
     await tester.pumpAndSettle();
     expect(find.byType(WeightTrendScreen), findsOneWidget);

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../app/day_change.dart';
 import '../../data/repositories/gym_repository.dart';
 import '../../data/storage.dart';
 import '../../services/garmin/garmin_connect_session.dart';
@@ -83,6 +84,8 @@ class _GymScreenState extends ConsumerState<GymScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Neuer Kalendertag (Mitternacht, Rückkehr in die App): neu laden wie `onDayChange`.
+    ref.listen(currentDayProvider, (_, _) => unawaited(_reload()));
     final gym = ref.watch(gymControllerProvider);
     final settings = ref.watch(coachSettingsProvider);
     final active = gym.active;

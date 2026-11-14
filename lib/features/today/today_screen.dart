@@ -4,6 +4,7 @@ import 'package:coach_core/coach_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/day_change.dart';
 import '../../data/repositories/gym_repository.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
@@ -132,6 +133,8 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Neuer Kalendertag (Mitternacht, Rückkehr in die App): neu laden wie `onDayChange`.
+    ref.listen(currentDayProvider, (_, _) => unawaited(_reload()));
     // Einstellungen, Abruf und laufende Einheit ändern die Einordnung.
     ref.listen(coachSettingsProvider, (_, _) => _update());
     ref.listen(gymControllerProvider, (_, _) => _update());

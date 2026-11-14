@@ -1,4 +1,5 @@
 import 'package:aironludi/app/app.dart';
+import 'package:aironludi/app/day_change.dart';
 import 'package:aironludi/data/secure/secret_store.dart';
 import 'package:aironludi/data/settings/preferences.dart';
 import 'package:aironludi/data/storage.dart';
@@ -27,6 +28,7 @@ Future<Widget> app({required bool onboarded, List<Override> overrides = const []
     overrides: [
       preferencesProvider.overrideWithValue(preferences),
       appStorageProvider.overrideWithValue(storage),
+      midnightTimerProvider.overrideWithValue(false),
       ...overrides,
     ],
   );
