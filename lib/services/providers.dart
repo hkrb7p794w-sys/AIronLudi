@@ -1,6 +1,7 @@
 import 'package:coach_core/coach_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../app/app_model.dart';
 import '../data/repositories/gym_repository.dart';
@@ -177,3 +178,15 @@ final appModelProvider = ChangeNotifierProvider<AppModel>((ref) {
 final mealShareServiceProvider = Provider<MealShareService>((ref) => MealShareService(ref.watch(aiClientProvider)));
 
 final cookShareServiceProvider = Provider<CookShareService>((ref) => CookShareService(ref.watch(aiClientProvider)));
+
+/// Prüft Apple Health bzw. Health Connect (Diagnose in den Einstellungen).
+final healthProbeProvider = Provider<Future<HealthAccessDiagnosis> Function()>(
+  (ref) =>
+      () => HealthProbe().run(),
+);
+
+/// Version und Build der installierten App.
+final appVersionProvider = FutureProvider<String>((ref) async {
+  final info = await PackageInfo.fromPlatform();
+  return '${info.version} (${info.buildNumber})';
+});

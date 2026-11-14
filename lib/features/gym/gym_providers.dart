@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
 import '../../data/storage.dart';
@@ -11,6 +12,9 @@ final gymControllerProvider = ChangeNotifierProvider<GymController>(
   (ref) => GymController(
     store: ref.watch(settingsStoreProvider),
     alarm: NotificationRestAlarm(ref.watch(notificationCenterProvider)),
-    sound: AssetRestSoundPlayer(),
+    sound: ref.watch(restSoundPlayerProvider),
   ),
 );
+
+/// Ton am Pausenende (auch zum Probehören in den Gym-Einstellungen).
+final restSoundPlayerProvider = Provider<RestSoundPlaying>((ref) => AssetRestSoundPlayer());
