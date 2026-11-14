@@ -14,6 +14,7 @@ import '../activities/post_workout_section.dart';
 import '../evidence/evidence_views.dart';
 import '../gym/gym_providers.dart';
 import '../gym/gym_screen.dart';
+import '../health/morning_report_views.dart';
 import '../plan/my_week_screen.dart';
 import '../settings/settings_screen.dart';
 import 'now_views.dart';
@@ -197,6 +198,17 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                 ],
               ),
             if (snapshot != null) ...[
+              // Morning Report bis 12 Uhr ganz oben; danach über „Gesundheit“ im Reiter Training.
+              if (DateTime.now().hour < 12)
+                MorningReportCard(
+                  report: MorningReportBuilder.make(
+                    settings: settings,
+                    days: _days,
+                    activities: _activities,
+                    focus: snapshot.focus,
+                  ),
+                  focus: snapshot.focus,
+                ),
               if (snapshot.focus case final focus?) NowSection(snapshot: snapshot, focus: focus),
               _CoachNoteSection(controller: _controller),
               MissedSessionSection(week: snapshot.sessions, onSaved: _reload),

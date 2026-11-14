@@ -12,6 +12,7 @@ import '../../ui/components.dart';
 import '../../ui/sport_style.dart';
 import '../gym/gym_providers.dart';
 import '../gym/gym_screen.dart';
+import '../health/health_screen.dart';
 import '../plan/my_week_screen.dart';
 import '../plan/plan_screen.dart';
 import 'discipline_pages.dart';
@@ -138,6 +139,17 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                     caption: running ?? 'Pläne, Übungen, Auswertung',
                     onTap: () => _open((_) => const GymScreen()),
                   ),
+                _HubRow(
+                  title: 'Gesundheit',
+                  symbol: 'heart.text.square.fill',
+                  color: Colors.pink,
+                  value: switch (BodyBatteryAnalysis.summary(days: _days, today: today).current) {
+                    final current? => 'BB ${current.toInt()}',
+                    null => '',
+                  },
+                  caption: 'Morning Report, Widgets, Body Battery',
+                  onTap: () => _open((_) => const HealthScreen()),
+                ),
                 _HubRow(
                   title: 'Erholung',
                   symbol: 'bed.double.fill',

@@ -11,7 +11,8 @@ import '../app_test.dart' show app;
 
 void main() {
   testWidgets('persönliches Profil: Jetzt dran, Notiz ohne KI, Woche, auslassen', (tester) async {
-    tester.view.physicalSize = const Size(1170, 2532);
+    // Höher als ein iPhone: vor 12 Uhr steht der Morning Report über „Jetzt dran“.
+    tester.view.physicalSize = const Size(1170, 3600);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
