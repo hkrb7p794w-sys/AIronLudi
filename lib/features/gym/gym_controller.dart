@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../data/repositories/gym_repository.dart';
 import '../../data/settings/settings_store.dart';
+import '../../services/activities/live_activities.dart';
 import '../../services/ai/ai_client.dart';
 import '../../services/garmin/garmin_connect_session.dart';
 import '../../services/gym/garmin_strength_service.dart';
@@ -659,6 +660,51 @@ final class GymController extends ChangeNotifier {
   FlowPosition? get currentPosition => switch (active) {
     final session? => WorkoutFlow.current(session, preferring: focusExerciseID),
     null => null,
+  };
+
+  /// Stand der Live-Aktivität (Port von `GymViewModel.liveState`). Keine Live-Aktivität, solange nur geöffnet und noch
+  /// kein Satz gemacht ist.
+  WorkoutLiveState? liveState({DateTime? now}) {
+    final session = active;
+    if (session == null || !sessionState(now: now).showsLiveActivity) return null;
+    final position = currentPosition;
+    if (position == null) {
+      return WorkoutLiveState(
+        exercise: 'Plan geschafft',
+        detail: '${session.doneSetCount} Sätze – beenden oder fortsetzen',
+        restEndsAt: restEndsAt,
+        doneSets: session.doneSetCount,
+        allDone: true,
+      );
+    }
+    final exercise = session.exercises[position.exercise];
+    final set = exercise.sets[position.set];
+    final info = gym.exercise(exercise.exerciseID);
+    final isTime = info?.tracking == ExerciseTracking.time;
+    final weight = ExerciseUnits.weightText(set.weightKg, info: info);
+    final step = ExerciseLibrary.rule(exercise.exerciseID, name: exercise.name, custom: gym.customExercises).step;
+    final following = WorkoutFlow.nextExercise(position.exercise, session);
+    // Immer nur der Name der Übung: „Pause“ bzw. „Jetzt“ und der Satz stehen in eigenen Zeilen der Karte.
+    return WorkoutLiveState(
+      exercise: exercise.name,
+      detail: 'Satz ${position.set + 1} von ${exercise.sets.length}',
+      restEndsAt: restEndsAt,
+      doneSets: session.doneSetCount,
+      allDone: false,
+      weight: weight.unit.isEmpty ? weight.value : '${weight.value} ${weight.unit}',
+      reps: isTime ? '${set.reps} s' : '${set.reps} Wdh.',
+      weightStep: GermanFormat.number(step),
+      repsStep: isTime ? '5 s' : '1',
+      next: following == null ? null : 'Danach: ${session.exercises[following].name}',
+    );
+  }
+
+  /// Knopf der Live-Aktivität ausführen (Port von `WorkoutActivityController.connect`).
+  void perform(WorkoutAction action) => switch (action) {
+    CompleteSetAction() => completeCurrent(),
+    SkipRestAction() => skipRest(),
+    AdjustWeightAction(:final steps) => adjustCurrent(weightBy: steps),
+    AdjustRepsAction(:final delta) => adjustCurrent(repsBy: delta),
   };
 
   /// „Satz erledigt“ aus der Live-Aktivität.

@@ -7,11 +7,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/account/account_views.dart';
+import '../features/gym/gym_controller.dart';
+import '../features/gym/gym_providers.dart';
 import '../features/motivation/motivation_views.dart';
 import '../features/nutrition/meal_share_views.dart';
 import '../features/plan/my_week_screen.dart';
 import '../features/recipes/cook_plan_views.dart';
 import '../features/today/plan_day_actions.dart';
+import '../services/activities/live_activities.dart';
 import '../services/providers.dart';
 import '../services/reminders/reminder_service.dart';
 import '../services/widgets/widget_providers.dart';
@@ -38,6 +41,11 @@ class _RootShellState extends ConsumerState<RootShell> {
     unawaited(model.start().then((_) => _refresh()));
     // Wie `scenePhase` in `CoachApp`: beim Zurückkehren Widget-Aktionen übernehmen und abrufen, beim Verlassen den
     // Stand für die Widgets schreiben.
+    // Knöpfe der Live-Aktivität („Satz erledigt“, ±, „Pause überspringen“) an die laufende Einheit binden.
+    ref.read(liveActivityHostProvider).onWorkoutAction = (action) => ref.read(gymControllerProvider).perform(action);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _updateWorkoutActivity(ref.read(gymControllerProvider));
+    });
     _lifecycle = AppLifecycleListener(
       onResume: () => unawaited(_refresh()),
       onHide: () => unawaited(ref.read(widgetPublisherProvider).publish()),
@@ -52,6 +60,19 @@ class _RootShellState extends ConsumerState<RootShell> {
   void dispose() {
     _lifecycle.dispose();
     super.dispose();
+  }
+
+  WorkoutLiveState? _workoutState;
+  bool _workoutShown = false;
+
+  /// Live-Aktivität der laufenden Einheit: Pause und nächster Satz auf dem Sperrbildschirm (wie `RootView`).
+  void _updateWorkoutActivity(GymController gym) {
+    final enabled = ref.read(coachSettingsProvider).gym.liveActivity;
+    final state = enabled ? gym.liveState() : null;
+    if (state == _workoutState && _workoutShown == (state != null)) return;
+    _workoutState = state;
+    _workoutShown = state != null;
+    unawaited(ref.read(liveActivityHostProvider).updateWorkout(state, title: gym.active?.title ?? ''));
   }
 
   /// Wasser aus dem Homescreen-Widget übernehmen, Widgets versorgen, abrufen, Widgets mit neuem Stand versorgen.
@@ -142,6 +163,7 @@ class _RootShellState extends ConsumerState<RootShell> {
     final incoming = ref.watch(socialServiceProvider).incomingCount;
     ref.listen(reminderServiceProvider, (_, reminders) => _presentReminder(reminders));
     ref.listen(incomingLinkProvider, (_, uri) => _presentLink(uri));
+    ref.listen(gymControllerProvider, (_, gym) => _updateWorkoutActivity(gym));
     return Scaffold(
       body: shell,
       bottomNavigationBar: NavigationBar(

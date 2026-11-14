@@ -9,6 +9,7 @@ import '../../features/gym/gym_controller.dart';
 import '../../features/health/morning_report_views.dart';
 import '../../features/nutrition/nutrition_controller.dart';
 import '../../features/today/today_controller.dart';
+import '../activities/live_activities.dart';
 import 'widget_store.dart';
 
 /// Homescreen-Widgets: schreibt den Stand der App in den gemeinsamen Speicher und übernimmt Wasser, das im Widget
@@ -25,6 +26,7 @@ final class WidgetPublisher {
     required this.gym,
     required this.garminProfile,
     required this.schedule,
+    this.liveActivities,
     this.isDemo = false,
   });
 
@@ -38,7 +40,13 @@ final class WidgetPublisher {
   final GymController gym;
   final GarminProfile? Function() garminProfile;
   final SeasonSchedule? schedule;
+
+  /// Live-Aktivität „Mahlzeiten heute“ (iOS); `null` ohne Plattformteil.
+  final LiveActivityHost? liveActivities;
   final bool isDemo;
+
+  /// Schalter in den Einstellungen (Ernährung); aus, solange ihn niemand einschaltet.
+  bool get mealsActivityEnabled => settingsStore.boolValue(SettingsKeys.mealsLiveActivity);
 
   /// Wasser aus dem Widget als Einträge speichern (beim Öffnen, vor dem Neuberechnen).
   Future<int> takeQueuedActions({DateTime? now}) async {
@@ -70,9 +78,23 @@ final class WidgetPublisher {
 
   /// Stand schreiben und die Widgets neu laden. Günstig: rechnet dieselben Regeln wie die Reiter, ohne KI.
   Future<void> publish({DateTime? now}) async {
-    if (isDemo || !settings.profile.onboardingDone || !await store.isAvailable) return;
-    await store.save(await snapshot(now: now));
-    await store.reloadWidgets();
+    if (isDemo || !settings.profile.onboardingDone) return;
+    final current = now ?? DateTime.now();
+    final available = await store.isAvailable;
+    // Die Live-Aktivität „Mahlzeiten heute“ braucht keinen gemeinsamen Ordner.
+    if (!available && !mealsActivityEnabled) {
+      await liveActivities?.updateMeals(null, now: current);
+      return;
+    }
+    final value = await snapshot(now: current);
+    if (available) {
+      await store.save(value);
+      await store.reloadWidgets();
+    }
+    await liveActivities?.updateMeals(
+      mealsActivityEnabled ? MealsLiveState.fromSnapshot(value, now: current) : null,
+      now: current,
+    );
   }
 
   Future<WidgetSnapshot> snapshot({DateTime? now}) async {

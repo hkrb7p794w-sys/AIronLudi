@@ -399,3 +399,12 @@
 - Ohne Mac fügt `ios/scripts/add_widget_extension.rb` das Ziel mit dem Gem `xcodeproj` ein (einmalig, Ergebnis
   eingecheckt). Die Erweiterung erbt nur `Flutter/Generated.xcconfig` (Versionsnummern), nicht die Pod-Einstellungen.
 
+## 2026-11-14 – Live-Aktivitäten aus der App (Phase 3m-3)
+
+- Statt des Pakets `live_activities` eine eigene kleine Brücke im `AppDelegate` (`ActivityBridge`): Die Attribute und
+  Intents aus `ios/Shared/` bleiben unverändert, nur die Inhalte rechnet Dart (`WorkoutLiveState`, `MealsLiveState`)
+  und schickt sie als Wörterbuch. So passen App und Erweiterung ohne doppelte Typen zusammen.
+- Die Knöpfe laufen weiter als `LiveActivityIntent` im Prozess der App; `WorkoutActions.handler` meldet sie als
+  `workoutAction` an Dart, `GymController.perform` führt sie aus, der neue Stand geht über `RootShell` zurück.
+- Der Schalter „Mahlzeiten auf dem Sperrbildschirm“ schreibt sofort neu (wie `onChange` in Swift).
+
