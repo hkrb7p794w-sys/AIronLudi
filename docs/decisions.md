@@ -364,3 +364,14 @@
 - Links: `coach://cook/<code>` öffnet „Gemeinsam kochen“ mit abgerufener Freigabe, `coach://open/cookShare` die eigene
   Freigabe (wird vor den Reiter-Zielen geprüft wie in `RootView`), `coach://meal/<code>` die empfangene Mahlzeit.
 - Der Mahlzeiten-Controller im Rezeptdetail wird erst beim Eintragen angelegt (in `dispose` ist `ref` nicht nutzbar).
+
+## 2026-11-14 – Einstellungen nach Disziplin und Diagnose (Phase 3l-1)
+
+- Picker werden zu Auswahlfeldern, Stepper zu Minus/Plus-Knöpfen (`StepperRow`, `HeartRateRow`); „automatisch“ steht
+  beim Pulswert als Untertitel, der Knopf heißt „eigenen Wert setzen“ (passt so in die Zeile).
+- Der Ton am Pausenende wird beim Wählen probeweise abgespielt; dafür gibt es `restSoundPlayerProvider`, den auch die
+  Gym-Einheit nutzt.
+- Die Diagnose-Seite heißt wie in Swift „HealthKit“ und nutzt `HealthProbe` (Apple Health bzw. Health Connect); die
+  Version kommt aus `package_info_plus`. Der Status steht unter der Beschriftung statt rechts daneben.
+- GymBook-Import über `file_picker` (beliebige Datei, wie `.item` in Swift).
+

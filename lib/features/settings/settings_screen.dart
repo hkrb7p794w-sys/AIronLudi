@@ -16,9 +16,12 @@ import '../evidence/evidence_views.dart';
 import '../motivation/motivation_views.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../onboarding/schedule_editor.dart';
+import '../training/sleep_coach_screen.dart';
 import 'ai_settings.dart';
 import 'backup_screen.dart';
 import 'data_sources_screen.dart';
+import 'diagnostics_screens.dart';
+import 'discipline_settings.dart';
 import 'nutrition_settings_screen.dart';
 import 'settings_controller.dart';
 import 'settings_sections.dart';
@@ -172,6 +175,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 'figure.strengthtraining.traditional',
                 Icons.sports_gymnastics,
                 () => [
+                  const DisciplineSettingsSection(),
                   const TrainingBreakSection(),
                   if (ref.read(coachSettingsProvider).profile.mode == ProfileMode.season)
                     FormSection(
@@ -198,6 +202,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 'heart.text.square',
                 Icons.monitor_heart_outlined,
                 () => [
+                  FormSection(
+                    children: [
+                      ListTile(
+                        title: const Text('Schlaf'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _push(const SleepCoachScreen()),
+                      ),
+                    ],
+                  ),
                   const HealthImportSection(),
                   FormSection(
                     footer: 'Mehrere Geräte: welche Quelle für Schlaf, HRV, Aktivitäten usw. zählt.',
@@ -248,7 +261,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 'Technik',
                 'wrench.and.screwdriver',
                 Icons.build_outlined,
-                () => [_AISection(controller: _controller), _GarminKeySection(controller: _controller)],
+                () => [
+                  _AISection(controller: _controller),
+                  _GarminKeySection(controller: _controller),
+                  FormSection(
+                    header: 'Diagnose',
+                    children: [
+                      ListTile(
+                        title: const Text('Garmin-Diagnose'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _push(const GarminDiagnosticsScreen()),
+                      ),
+                      ListTile(
+                        title: const Text('HealthKit'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _push(const HealthDiagnosticsScreen()),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
