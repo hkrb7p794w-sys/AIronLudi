@@ -190,3 +190,16 @@
   weiter (auch solche, die vor dem Start eintreffen). Dazu setzt der iOS-`AppDelegate` den Delegate der
   Mitteilungszentrale, wie es `flutter_local_notifications` verlangt.
 
+## 2026-11-14 – Laufende Einheit (Phase 3e-3)
+
+- **„Pause starten“:** Ist die automatische Pause aus, merkt sich `GymViewModel` die Pause (`pendingRest`) und die
+  Einstellung verspricht „erscheint nach dem Satz ‚Pause starten‘“ – die Swift-Ansicht zeigt den Knopf aber nirgends.
+  Flutter zeigt ihn an der Stelle des Pausenfelds.
+- **Zeiten:** Swift nutzt `Text(timerInterval:)` und `TimelineView`; Flutter aktualisiert Uhr der Einheit,
+  Pausen-Countdown und Stoppuhr mit einem Sekundentakt. Vorwarnung 10 s vor Pausenende und Signal am Ende wie in Swift
+  (`HapticFeedback` statt `sensoryFeedback`).
+- **Gym-Eintrag im Reiter Training:** Status („Einheit starten“ bzw. „läuft“) steht als Untertitel statt rechts neben
+  dem Titel – auf iPhone-Breite passte beides nicht in eine Zeile (im Widget-Test gefunden).
+- **Menü „Anleitung und Verlauf“** folgt mit der Übungsbibliothek (3e-4), **„Mit Freunden teilen“** im Abschluss mit
+  der Social-Phase.
+

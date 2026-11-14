@@ -16,6 +16,10 @@ import '../app_test.dart' show app;
 
 void main() {
   Future<ProviderContainer> openGym(WidgetTester tester, {List<GymSession> sessions = const []}) async {
+    // Bildschirm in iPhone-Größe, damit Ziffernblock und Pausenfeld ganz sichtbar sind.
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
     await tester.pumpAndSettle();
     final container = ProviderScope.containerOf(tester.element(find.byType(NavigationBar)));
@@ -39,7 +43,7 @@ void main() {
     return container;
   }
 
-  testWidgets('freies Training starten, Satz abhaken, verwerfen', (tester) async {
+  testWidgets('laufende Einheit: Satz erledigt, Pause mit RIR, Ziffernblock, Liste, beenden', (tester) async {
     final container = await openGym(tester);
     expect(find.byType(GymScreen), findsOneWidget);
     expect(find.textContaining('Lege unter „Trainingspläne“'), findsOneWidget);
@@ -49,14 +53,51 @@ void main() {
     final gym = container.read(gymControllerProvider);
     expect(gym.active?.title, 'Krafttraining');
     gym.addExercise(ExerciseLibrary.byID['bankdruecken']!);
+    await tester.pump();
+    expect(find.text('Satz 1 von 3'), findsOneWidget);
+
+    // Gewicht über den Ziffernblock: erste Taste ersetzt den alten Wert.
+    await tester.tap(find.bySemanticsLabel(RegExp(r'^Gewicht:')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(CheckboxListTile).first);
+    await tester.tap(find.text('6'));
+    await tester.tap(find.text('0').last);
+    await tester.pump();
+    await tester.tap(find.text('Übernehmen'));
+    await tester.pumpAndSettle();
+    expect(gym.active!.exercises.first.sets.first.weightKg, 60);
+
+    await tester.tap(find.text('Satz erledigt'));
     await tester.pump();
     expect(gym.active!.doneSetCount, 1);
-    expect(gym.restEndsAt, isNotNull);
-    await tester.tap(find.text('Einheit verwerfen'));
+    expect(find.text('Pause'), findsOneWidget);
+    expect(find.textContaining('wie viele wären noch gegangen?'), findsOneWidget);
+    await tester.tap(find.text('2'));
+    await tester.pump();
+    expect(gym.active!.exercises.first.sets.first.rir, 2);
+    await tester.tap(find.bySemanticsLabel('Pause 15 Sekunden länger'));
+    await tester.pump();
+    expect(container.read(coachSettingsProvider).gym.restOverrides['bankdruecken'], 135);
+    await tester.tap(find.text('Weiter'));
+    await tester.pump();
+    expect(gym.restEndsAt, isNull);
+
+    await tester.tap(find.text('Liste'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('× '), findsWidgets);
+    expect(find.byTooltip('Satz abhaken'), findsNWidgets(2));
+
+    await tester.tap(find.text('Beenden'));
+    await tester.pumpAndSettle();
+    expect(find.text('2 Sätze sind eingetragen, aber nicht abgehakt.'), findsOneWidget);
+    await tester.tap(find.text('Nur abgehakte speichern'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
     await tester.pumpAndSettle();
     expect(gym.active, isNull);
+    expect(find.text('Fertig'), findsOneWidget);
+    await tester.ensureVisible(find.text('Fertig'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Fertig'));
+    await tester.pumpAndSettle();
     expect(find.byType(GymScreen), findsOneWidget);
   });
 
