@@ -14,6 +14,7 @@ import '../features/recipes/cook_plan_views.dart';
 import '../features/today/plan_day_actions.dart';
 import '../services/providers.dart';
 import '../services/reminders/reminder_service.dart';
+import '../services/widgets/widget_providers.dart';
 import 'deep_links.dart';
 
 /// Vier Reiter wie in der iPhone-App: Heute · Aktivitäten · Training · Ernährung. Beim ersten Anzeigen startet der
@@ -28,22 +29,43 @@ class RootShell extends ConsumerStatefulWidget {
 }
 
 class _RootShellState extends ConsumerState<RootShell> {
+  late final AppLifecycleListener _lifecycle;
+
   @override
   void initState() {
     super.initState();
     final model = ref.read(appModelProvider);
-    unawaited(
-      model.start().then((_) async {
-        await model.syncIfDue();
-        // Freundschaftsanfragen (Zahl am Reiter „Aktivitäten“) und neue Trainings für den Feed.
-        await ref.read(socialServiceProvider).refresh();
-        await ref.read(socialAutoShareProvider).run(isDemo: model.isDemo);
-      }),
+    unawaited(model.start().then((_) => _refresh()));
+    // Wie `scenePhase` in `CoachApp`: beim Zurückkehren Widget-Aktionen übernehmen und abrufen, beim Verlassen den
+    // Stand für die Widgets schreiben.
+    _lifecycle = AppLifecycleListener(
+      onResume: () => unawaited(_refresh()),
+      onHide: () => unawaited(ref.read(widgetPublisherProvider).publish()),
     );
     // Schon vor dem ersten Bild beantwortete Mitteilungen (App aus einer Mitteilung gestartet).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _presentReminder(ref.read(reminderServiceProvider));
     });
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
+
+  /// Wasser aus dem Homescreen-Widget übernehmen, Widgets versorgen, abrufen, Widgets mit neuem Stand versorgen.
+  Future<void> _refresh() async {
+    final model = ref.read(appModelProvider);
+    final widgets = ref.read(widgetPublisherProvider);
+    await widgets.takeQueuedActions();
+    await widgets.publish();
+    await model.syncIfDue();
+    await model.refreshReminders();
+    await widgets.publish();
+    // Freundschaftsanfragen (Zahl am Reiter „Aktivitäten“) und neue Trainings für den Feed.
+    await ref.read(socialServiceProvider).refresh();
+    await ref.read(socialAutoShareProvider).run(isDemo: model.isDemo);
   }
 
   /// Link von außen: Konto-Einladung. Vorher entscheiden: Meldet sich die Person im Fenster an, darf es nicht mitten
