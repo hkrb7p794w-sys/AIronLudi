@@ -10,6 +10,7 @@ import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
+import '../ai/coach_exchange.dart';
 import '../evidence/evidence_views.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../onboarding/schedule_editor.dart';
@@ -215,6 +216,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         title: const Text('Eigene Quellen'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _push(const UserSourcesScreen()),
+                      ),
+                      ListTile(
+                        title: const Text('Daten für KI exportieren'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _push(const CoachExportScreen()),
+                      ),
+                      ListTile(
+                        title: const Text('KI-Antwort importieren'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _push(const CoachImportScreen()),
                       ),
                     ],
                   ),

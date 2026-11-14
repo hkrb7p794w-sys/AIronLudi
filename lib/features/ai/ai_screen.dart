@@ -15,6 +15,8 @@ import '../settings/ai_settings.dart';
 import 'ai_controller.dart';
 import 'ai_data.dart';
 import 'chat_screen.dart';
+import 'coach_exchange.dart';
+import 'prompt_library_screen.dart';
 
 IconData _icon(String symbol) => switch (symbol) {
   'dumbbell' => Icons.fitness_center,
@@ -334,6 +336,27 @@ class _AIScreenState extends ConsumerState<AIScreen> {
                       ),
                     ),
                   ),
+                ListTile(
+                  leading: const Icon(Icons.chat_outlined),
+                  title: const Text('Prompt-Bibliothek für externe KI'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () =>
+                      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PromptLibraryScreen())),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.ios_share),
+                  title: const Text('Daten für eine externe KI exportieren'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () =>
+                      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const CoachExportScreen())),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.download),
+                  title: const Text('Antwort einer externen KI übernehmen'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () =>
+                      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const CoachImportScreen())),
+                ),
                 ListTile(
                   leading: const Icon(Icons.settings_outlined),
                   title: const Text('KI-Einstellungen'),
