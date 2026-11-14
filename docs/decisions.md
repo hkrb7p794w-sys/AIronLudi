@@ -438,3 +438,12 @@
   stellt der Empfänger auf den nächsten passenden Tag, nach Neustart und Update ebenso. Ohne Erlaubnis für genaue
   Wecker (Android 12+) meldet der Kanal `denied`.
 
+## 2026-11-14 – Feinschliff Teil 1 (Phase 3n-1)
+
+- Schnellaktionen über `quick_actions` ohne eigene Symbole (das Paket erwartet Bild-Assets statt SF Symbols); Titel
+  und Untertitel wie in Swift. Antippen läuft über denselben Weg wie `coach://open/<route>` (`openRoute`).
+- „Bildschirm anlassen“ über `wakelock_plus`, an- und abgeschaltet aus `RootShell` wie `isIdleTimerDisabled` in
+  `RootView`.
+- Beim Verlassen der App (`AppLifecycleListener.onHide`) wie `.background` in `CoachApp`: Ordner-Sicherung, Widgets,
+  Schnellaktionen. Der Hintergrundabruf folgt in 3n-2.
+

@@ -15,6 +15,7 @@ class AIronLudiApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     // Links von außen (Widgets, Schnellaktionen, Einladungen) mitlaufen lassen.
     ref.watch(deepLinkListenerProvider);
+    ref.watch(quickActionsProvider);
     return MaterialApp.router(
       title: 'AIronLudi',
       debugShowCheckedModeBanner: false,
