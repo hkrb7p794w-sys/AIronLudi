@@ -18,7 +18,7 @@ class TrainingScreen extends ConsumerWidget {
     final settings = ref.watch(coachSettingsProvider);
     final running = ref.watch(gymControllerProvider).active?.title;
     final theme = Theme.of(context);
-    final secondary = TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant);
+    final secondary = TextStyle(color: theme.colorScheme.onSurfaceVariant);
     return Scaffold(
       appBar: AppBar(title: const Text('Training')),
       body: ListView(
@@ -30,28 +30,33 @@ class TrainingScreen extends ConsumerWidget {
                 ListTile(
                   leading: const SportIcon(symbol: 'dumbbell.fill', color: Colors.green),
                   title: const Text('Gym', style: TextStyle(fontWeight: FontWeight.w500)),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: running != null
-                            ? [
-                                const Text(
-                                  'läuft',
-                                  style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green),
-                                ),
-                                Text(running, style: secondary, maxLines: 1),
-                              ]
-                            : [
-                                const Text('Einheit starten', style: TextStyle(fontWeight: FontWeight.w600)),
-                                Text('Pläne, Übungen, Auswertung', style: secondary),
-                              ],
-                      ),
-                      const Icon(Icons.chevron_right),
-                    ],
-                  ),
+                  // Auf schmalen Bildschirmen passt der Status nicht rechts neben den Titel: als Untertitel.
+                  subtitle: running != null
+                      ? Text.rich(
+                          TextSpan(
+                            children: [
+                              const TextSpan(
+                                text: 'läuft',
+                                style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green),
+                              ),
+                              TextSpan(text: ' · $running', style: secondary),
+                            ],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        )
+                      : Text.rich(
+                          TextSpan(
+                            children: [
+                              const TextSpan(
+                                text: 'Einheit starten',
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                              TextSpan(text: ' · Pläne, Übungen, Auswertung', style: secondary),
+                            ],
+                          ),
+                        ),
+                  trailing: const Icon(Icons.chevron_right),
                   onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const GymScreen())),
                 ),
               ],

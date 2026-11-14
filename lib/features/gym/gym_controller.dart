@@ -135,6 +135,12 @@ final class GymController extends ChangeNotifier {
 
   DateTime _now(DateTime? now) => now ?? _clock();
 
+  /// Übung auf der Fokus-Karte zeigen (`null` = automatisch der nächste offene Satz).
+  void focus(String? exerciseID) {
+    focusExerciseID = exerciseID;
+    notifyListeners();
+  }
+
   /// Zustand der offenen Einheit: erst der erste Satz macht sie zum Training (Live-Aktivität, zählt als gemacht).
   ActiveSessionState sessionState({DateTime? now}) => ActiveSessionState.of(active, now: _now(now));
 
