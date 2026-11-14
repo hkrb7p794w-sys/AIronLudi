@@ -14,6 +14,7 @@ import '../../ui/components.dart';
 import '../evidence/evidence_views.dart';
 import 'active_workout_screen.dart';
 import 'gym_controller.dart';
+import 'gym_library.dart';
 import 'gym_providers.dart';
 import 'muscle_views.dart';
 
@@ -138,6 +139,29 @@ class _GymScreenState extends ConsumerState<GymScreen> {
             FormSection(
               header: 'Planen und auswerten',
               children: [
+                _HubTile(
+                  title: 'Trainingspläne',
+                  icon: Icons.view_list_outlined,
+                  caption: settings.gym.routines.isEmpty
+                      ? 'Plan anlegen oder Vorlage übernehmen'
+                      : '${settings.gym.routines.length} Pläne · bearbeiten, neu anlegen',
+                  onTap: () => _push(
+                    (context) => RoutinesScreen(
+                      gym: gym,
+                      start: (routine) {
+                        gym.startRoutine(routine);
+                        Navigator.of(context).pop();
+                        unawaited(_open());
+                      },
+                    ),
+                  ),
+                ),
+                _HubTile(
+                  title: 'Übungen',
+                  icon: Icons.menu_book_outlined,
+                  caption: 'Suchen, nach Muskel filtern, Anleitung',
+                  onTap: () => _push((_) => ExerciseLibraryScreen(gym: gym)),
+                ),
                 _HubTile(
                   title: 'Auswertung',
                   icon: Icons.fitness_center,
@@ -816,11 +840,11 @@ class _ProgressSectionState extends State<_ProgressSection> {
               style: secondary,
             ),
           ),
-        for (final item in active) _ProgressRow(item: item),
+        for (final item in active) _ProgressRow(item: item, gym: widget.gym),
         if (rest.isNotEmpty)
           ExpansionTile(
             title: Text('${rest.length} weitere Übungen'),
-            children: [for (final item in rest) _ProgressRow(item: item)],
+            children: [for (final item in rest) _ProgressRow(item: item, gym: widget.gym)],
           ),
         const EvidenceDisclosure(ruleIDs: ['gym.progression', 'gym.rir']),
       ],
@@ -829,9 +853,10 @@ class _ProgressSectionState extends State<_ProgressSection> {
 }
 
 class _ProgressRow extends StatelessWidget {
-  const _ProgressRow({required this.item});
+  const _ProgressRow({required this.item, required this.gym});
 
   final ExerciseProgress item;
+  final GymController gym;
 
   @override
   Widget build(BuildContext context) {
@@ -845,6 +870,11 @@ class _ProgressRow extends StatelessWidget {
       _ => null,
     };
     return ListTile(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ExerciseDetailScreen(exerciseID: item.exerciseID, gym: gym),
+        ),
+      ),
       title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
       subtitle: Text(
         '${item.weightKg > 0 ? '${GermanFormat.number(item.weightKg)} kg' : 'Körpergewicht'} × '
