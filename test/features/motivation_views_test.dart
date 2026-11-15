@@ -61,6 +61,8 @@ void main() {
       ..kind = CompanionKind.daisy
       ..name = 'Daisy';
     await tester.pump(const Duration(milliseconds: 100));
+    // Sonntags steht der Wochenrückblick davor (`WeeklyReview.isDue`); die Liste baut nur, was sichtbar ist.
+    await tester.scrollUntilVisible(find.byType(CompanionSection), 300, scrollable: find.byType(Scrollable).first);
     expect(find.byType(CompanionSection), findsOneWidget);
     expect(find.byType(DaisyAvatar), findsOneWidget);
     settings.companion = settings.companion..enabled = false;
