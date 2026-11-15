@@ -8,7 +8,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../services/ai/ai_client.dart';
-import '../../services/motivation/companion_photo.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/symbols.dart';
@@ -67,23 +66,23 @@ class CompanionAvatar extends StatelessWidget {
 }
 
 /// Begleiter unter „Heute“: Avatar mit Stimmung und freundlicher Nachricht (Port von `CompanionSection`).
-class CompanionSection extends StatefulWidget {
+class CompanionSection extends ConsumerStatefulWidget {
   const CompanionSection({super.key, required this.companion, required this.message});
 
   final CompanionSettings companion;
   final CompanionMessage message;
 
   @override
-  State<CompanionSection> createState() => _CompanionSectionState();
+  ConsumerState<CompanionSection> createState() => _CompanionSectionState();
 }
 
-class _CompanionSectionState extends State<CompanionSection> {
+class _CompanionSectionState extends ConsumerState<CompanionSection> {
   Uint8List? _photo;
 
   @override
   void initState() {
     super.initState();
-    CompanionPhoto.load().then((photo) {
+    ref.read(companionPhotoProvider).load().then((photo) {
       if (mounted) setState(() => _photo = photo);
     });
   }
@@ -260,7 +259,7 @@ class _MotivationSettingsScreenState extends ConsumerState<MotivationSettingsScr
   }
 
   Future<void> _loadPhoto() async {
-    final photo = await CompanionPhoto.load();
+    final photo = await ref.read(companionPhotoProvider).load();
     if (mounted) setState(() => _photo = photo);
   }
 
@@ -281,7 +280,7 @@ class _MotivationSettingsScreenState extends ConsumerState<MotivationSettingsScr
   Future<void> _pickPhoto() async {
     final file = await ImagePicker().pickImage(source: ImageSource.gallery, requestFullMetadata: false);
     if (file == null) return;
-    await CompanionPhoto.save(await file.readAsBytes());
+    await ref.read(companionPhotoProvider).save(await file.readAsBytes());
     await _loadPhoto();
   }
 
@@ -406,7 +405,7 @@ class _MotivationSettingsScreenState extends ConsumerState<MotivationSettingsScr
                     ListTile(
                       title: const Text('Foto entfernen', style: TextStyle(color: Colors.red)),
                       onTap: () async {
-                        await CompanionPhoto.remove();
+                        await ref.read(companionPhotoProvider).remove();
                         setState(() => _photo = null);
                       },
                     ),

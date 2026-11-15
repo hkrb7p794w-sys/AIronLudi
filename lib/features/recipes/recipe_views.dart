@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../app/user_providers.dart';
 import '../../data/repositories/meal_repository.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
@@ -30,8 +31,10 @@ class RecipesScreen extends ConsumerStatefulWidget {
 }
 
 class _RecipesScreenState extends ConsumerState<RecipesScreen> {
-  late final RecipeController _controller = RecipeController(store: ref.read(settingsStoreProvider))
-    ..addListener(_changed);
+  late final RecipeController _controller = RecipeController(
+    store: ref.read(settingsStoreProvider),
+    folder: ref.read(userDirectoryProvider),
+  )..addListener(_changed);
   List<StoredMeal> _meals = const [];
   List<StoredFood> _foods = const [];
 

@@ -93,7 +93,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Einstellungen'));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('Ernährung').last, 200, scrollable: find.byType(Scrollable).first);
+    await tester.scrollUntilVisible(find.text('Ernährung'), 200, scrollable: find.byType(Scrollable).first);
     await tester.ensureVisible(find.text('Ernährung').last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Ernährung').last);

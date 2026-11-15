@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/app_model.dart';
+import '../../app/user_providers.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
@@ -26,6 +27,7 @@ import 'lock_screen_settings.dart';
 import 'nutrition_settings_screen.dart';
 import 'settings_controller.dart';
 import 'settings_sections.dart';
+import 'users_screen.dart';
 import 'whoop_section.dart';
 
 /// Einstellungen: Profil, dann die Bereiche als eigene Seiten (wie `SettingsView.swift`).
@@ -93,6 +95,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
       body: ListView(
         children: [
+          FormSection(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.switch_account),
+                title: Text(ref.watch(currentUserProvider).title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: const Text('Benutzer dieses Geräts: wechseln, hinzufügen'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _push(const UsersScreen()),
+              ),
+            ],
+          ),
           const AccountSettingsSection(),
           FormSection(
             header: 'Profil',

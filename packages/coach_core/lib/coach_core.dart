@@ -2,6 +2,7 @@
 library;
 
 export 'src/account/account_rules.dart';
+export 'src/account/user_directory.dart';
 export 'src/ai/ai_policy.dart';
 export 'src/ai/ai_usage.dart';
 export 'src/ai/insights.dart';

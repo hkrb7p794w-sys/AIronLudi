@@ -27,8 +27,11 @@ abstract interface class SecretStore {
 /// iOS-Schlüsselbund bzw. Android-Keystore. Lesbar nach dem ersten Entsperren (Hintergrundabruf), nicht in Backups
 /// anderer Geräte (iOS `first_unlock_this_device`; Android ist per `data_extraction_rules.xml` vom Auto-Backup
 /// ausgenommen).
+///
+/// [prefix] trennt die Benutzer eines Geräts (`UserLocation.secretPrefix`; leer für den ursprünglichen Benutzer, damit
+/// vorhandene Schlüssel weiter gelten).
 final class DeviceSecretStore implements SecretStore {
-  DeviceSecretStore({FlutterSecureStorage? storage})
+  DeviceSecretStore({FlutterSecureStorage? storage, this.prefix = ''})
     : _storage =
           storage ??
           const FlutterSecureStorage(
@@ -39,16 +42,19 @@ final class DeviceSecretStore implements SecretStore {
           );
 
   final FlutterSecureStorage _storage;
+  final String prefix;
+
+  String _name(SecretKey key) => '$prefix${key.name}';
 
   @override
-  Future<String?> read(SecretKey key) => _storage.read(key: key.name);
+  Future<String?> read(SecretKey key) => _storage.read(key: _name(key));
 
   @override
   Future<void> write(SecretKey key, String? value) async {
     if (value == null || value.isEmpty) {
-      await _storage.delete(key: key.name);
+      await _storage.delete(key: _name(key));
     } else {
-      await _storage.write(key: key.name, value: value);
+      await _storage.write(key: _name(key), value: value);
     }
   }
 }

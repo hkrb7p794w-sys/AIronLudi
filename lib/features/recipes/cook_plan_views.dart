@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../app/user_providers.dart';
 import '../../data/storage.dart';
 import '../../services/ai/ai_client.dart';
 import '../../services/nutrition/cook_share_service.dart';
@@ -66,7 +67,8 @@ class CookPlanScreen extends ConsumerStatefulWidget {
 }
 
 class _CookPlanScreenState extends ConsumerState<CookPlanScreen> {
-  late final CookPlanController _controller = (widget.controller ?? CookPlanController())..addListener(_changed);
+  late final CookPlanController _controller =
+      (widget.controller ?? CookPlanController(folder: ref.read(userDirectoryProvider)))..addListener(_changed);
   CookAudience _audience = CookAudience.me;
   String? _partnerCode;
   MealCategory _meal = MealCategory.dinner;
@@ -572,8 +574,11 @@ class CookPartnersScreen extends ConsumerStatefulWidget {
 }
 
 class _CookPartnersScreenState extends ConsumerState<CookPartnersScreen> {
-  late final CookPlanController _plans = widget.controller ?? CookPlanController();
-  late final RecipeController _recipes = widget.recipes ?? RecipeController(store: ref.read(settingsStoreProvider));
+  late final CookPlanController _plans =
+      widget.controller ?? CookPlanController(folder: ref.read(userDirectoryProvider));
+  late final RecipeController _recipes =
+      widget.recipes ??
+      RecipeController(store: ref.read(settingsStoreProvider), folder: ref.read(userDirectoryProvider));
   final _name = TextEditingController();
   final _code = TextEditingController();
   CookShareFields _fields = CookShareFields();
