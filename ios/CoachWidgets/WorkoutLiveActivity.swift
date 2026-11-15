@@ -29,7 +29,11 @@ struct WorkoutLiveActivity: Widget {
           Text(context.state.exercise).font(.headline).lineLimit(1)
         }
         DynamicIslandExpandedRegion(.trailing) {
-          RestTimer(end: context.state.restEndsAt).font(.title3.bold())
+          if Layout(context.state).showsTimer {
+            RestTimer(end: context.state.restEndsAt).font(.title3.bold())
+          } else {
+            Text(context.state.reps ?? "").font(.title3.bold()).monospacedDigit()
+          }
         }
         DynamicIslandExpandedRegion(.bottom) {
           VStack(spacing: 8) {
@@ -40,7 +44,11 @@ struct WorkoutLiveActivity: Widget {
       } compactLeading: {
         Image(systemName: "dumbbell.fill")
       } compactTrailing: {
-        RestTimer(end: context.state.restEndsAt).frame(maxWidth: 48)
+        if Layout(context.state).showsTimer {
+          RestTimer(end: context.state.restEndsAt).frame(maxWidth: 48)
+        } else {
+          Text(context.state.reps ?? "").monospacedDigit().lineLimit(1).frame(maxWidth: 56)
+        }
       } minimal: {
         Image(systemName: "dumbbell.fill")
       }
@@ -48,37 +56,78 @@ struct WorkoutLiveActivity: Widget {
   }
 }
 
+/// Ansicht aus den Einstellungen (`WorkoutActivityLayout` in Dart). Ohne Angabe (ältere Version): beides.
+private struct Layout {
+  let showsTimer: Bool
+  let showsExercise: Bool
+
+  init(_ state: WorkoutActivityAttributes.ContentState) {
+    showsTimer = state.layout != "exercise"
+    showsExercise = state.layout != "timer"
+  }
+}
+
 /// Eine Live-Aktivität ist höchstens 160 Punkte hoch. Drei klar getrennte Zeilen: oben, was dran ist (Übung
-/// ungekürzt, Satz, Pausenuhr), in der Mitte die Werte als zwei zusammenhängende Regler, unten die Aktion.
+/// ungekürzt, Satz, Pausenuhr), in der Mitte die Werte als zwei zusammenhängende Regler, unten die Aktion. Je nach
+/// Ansicht nur die Pause (groß) oder nur Übung und Satz.
 private struct LockScreenView: View {
   let state: WorkoutActivityAttributes.ContentState
   let title: String
 
   private var resting: Bool { state.restEndsAt.map { $0 > .now } ?? false }
+  private var layout: Layout { Layout(state) }
 
   var body: some View {
     VStack(alignment: .leading, spacing: 8) {
-      HStack(alignment: .center, spacing: 10) {
-        VStack(alignment: .leading, spacing: 1) {
-          Text(state.allDone ? "Fertig" : resting ? "Pause – gleich" : "Jetzt")
-            .font(.caption2.weight(.bold))
-            .textCase(.uppercase)
-            .foregroundStyle(resting ? Color.orange : Color.green)
-          Text(state.exercise).font(.headline).lineLimit(1).minimumScaleFactor(0.6)
-          Text(state.detail).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+      if layout.showsExercise {
+        HStack(alignment: .center, spacing: 10) {
+          VStack(alignment: .leading, spacing: 1) {
+            Text(state.allDone ? "Fertig" : resting ? "Pause – gleich" : "Jetzt")
+              .font(.caption2.weight(.bold))
+              .textCase(.uppercase)
+              .foregroundStyle(resting ? Color.orange : Color.green)
+            Text(state.exercise).font(.headline).lineLimit(1).minimumScaleFactor(0.6)
+            Text(state.detail).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+          }
+          Spacer(minLength: 4)
+          if resting, layout.showsTimer {
+            RestTimer(end: state.restEndsAt)
+              .font(.system(size: 34, weight: .bold, design: .rounded))
+              .frame(maxWidth: 96, alignment: .trailing)
+              .accessibilityLabel("Pause")
+          }
         }
-        Spacer(minLength: 4)
-        if resting {
-          RestTimer(end: state.restEndsAt)
-            .font(.system(size: 34, weight: .bold, design: .rounded))
-            .frame(maxWidth: 96, alignment: .trailing)
-            .accessibilityLabel("Pause")
+        if !state.allDone, let weight = state.weight, let reps = state.reps {
+          AdjustRow(weight: weight, reps: reps, weightStep: state.weightStep, repsStep: state.repsStep)
         }
-      }
-      if !state.allDone, let weight = state.weight, let reps = state.reps {
-        AdjustRow(weight: weight, reps: reps, weightStep: state.weightStep, repsStep: state.repsStep)
+      } else {
+        TimerOnlyView(state: state, resting: resting)
       }
       ActionButtons(state: state)
+    }
+  }
+}
+
+/// Nur die Pause: große Uhr, darunter klein, was danach kommt.
+private struct TimerOnlyView: View {
+  let state: WorkoutActivityAttributes.ContentState
+  let resting: Bool
+
+  var body: some View {
+    HStack(alignment: .center, spacing: 10) {
+      VStack(alignment: .leading, spacing: 2) {
+        Text(state.allDone ? "Fertig" : resting ? "Pause" : "Los geht’s")
+          .font(.caption2.weight(.bold))
+          .textCase(.uppercase)
+          .foregroundStyle(resting ? Color.orange : Color.green)
+        Text(resting ? "Gleich: \(state.exercise)" : state.exercise)
+          .font(.caption).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.7)
+      }
+      Spacer(minLength: 4)
+      RestTimer(end: state.restEndsAt)
+        .font(.system(size: 48, weight: .bold, design: .rounded))
+        .frame(maxWidth: 150, alignment: .trailing)
+        .accessibilityLabel("Pause")
     }
   }
 }

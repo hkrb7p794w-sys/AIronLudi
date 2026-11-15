@@ -15,6 +15,7 @@ import '../nutrition/meal_editor.dart';
 import '../nutrition/nutrition_controller.dart';
 import '../today/now_views.dart';
 import 'cook_plan_views.dart';
+import 'pantry_views.dart';
 import 'recipe_controller.dart';
 
 int _rounded(double? value) => (value ?? 0).round();
@@ -110,6 +111,21 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
           ListView(
             padding: const EdgeInsets.only(bottom: 32),
             children: [
+              FormSection(
+                footer:
+                    'Aus dem Kühlschrank: Foto machen, die KI schlägt passende Gerichte vor und fragt nach, wenn nur '
+                    'Kleinigkeiten wie Butter oder Milch fehlen.',
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.kitchen_outlined),
+                    title: const Text('Was koche ich daraus? (Foto)'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () =>
+                        Navigator.of(context)
+                            .push(MaterialPageRoute<void>(builder: (_) => const PantryRecipesScreen())),
+                  ),
+                ],
+              ),
               FormSection(
                 footer: 'Für dich, eine verbundene Person oder euch beide; auch zum Vorkochen für mehrere Tage.',
                 children: [

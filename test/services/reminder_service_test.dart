@@ -103,4 +103,18 @@ void main() {
     );
     expect(service.showsWeekPlanning, isTrue);
   });
+
+  test('Mahlzeiten auf dem Sperrbildschirm: keine Mitteilung für Mahlzeiten', () {
+    final coach = settings();
+    coach.reminders = coach.reminders.copy()
+      ..meals.lunch = MealReminderSlot(enabled: true, hour: 12, minute: 30)
+      ..morningReport = false;
+    var lockScreen = false;
+    final service = ReminderService(settings: coach, mealsOnLockScreen: () => lockScreen);
+    bool hasMeal() =>
+        service.notes(seasonSchedule: null, now: at(9)).any((note) => note.kind == ScheduledNoteKind.meal);
+    expect(hasMeal(), isTrue);
+    lockScreen = true;
+    expect(hasMeal(), isFalse);
+  });
 }

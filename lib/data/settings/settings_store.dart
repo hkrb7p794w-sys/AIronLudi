@@ -92,6 +92,9 @@ abstract final class SettingsKeys {
   static const recipesPeriodDays = 'recipes.periodDays';
   static const recipesPeriodStart = 'recipes.periodStart';
   static const mealsLiveActivity = 'mealsLiveActivity';
+
+  /// Erinnerung an Mahlzeiten auf dem Sperrbildschirm („Mahlzeiten heute“) statt als Mitteilung.
+  static const mealsLiveReminders = 'mealsLiveReminders';
 }
 
 /// Einstellungen in der Datenbank, wie die UserDefaults der Swift-App: je Schlüssel ein typisierter Wert

@@ -21,6 +21,9 @@ nonisolated struct WorkoutActivityAttributes: ActivityAttributes {
     var repsStep: String? = nil
     /// „Danach: Schulterdrücken“.
     var next: String? = nil
+    /// Ansicht aus den Einstellungen (`WorkoutActivityLayout`): `timer`, `exercise` oder `combined` (Standard, auch
+    /// für Aktivitäten älterer Versionen ohne das Feld).
+    var layout: String? = nil
   }
 
   var title: String

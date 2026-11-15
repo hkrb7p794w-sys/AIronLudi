@@ -477,3 +477,48 @@
 - Körperwerte (Größe, Gewicht, Max-HF) werden angezeigt, aber nicht in Profil oder Gewichtsverlauf übernommen (keine
   Datierung, die eigenen Angaben haben Vorrang).
 
+
+## 2026-11-15 – Sperrbildschirm, Teilen, Kühlschrank-Rezepte (Erweiterungen ohne Swift-Gegenstück)
+
+Neue Funktionen auf Wunsch des Nutzers; die Swift-App hat sie nicht. Datenformate bleiben kompatibel (neue Felder sind
+optional, alte Stände lesen sich wie bisher). Tests: `packages/coach_core/test/lock_screen_share_pantry_test.dart`,
+`test/features/pantry_controller_test.dart`, Ergänzungen in `live_activities_test.dart` und
+`reminder_service_test.dart`.
+
+- **Vorrang der Gym-Einheit** (`LockScreenActivities`): Sobald die Live-Aktivität der Einheit läuft (eingeschaltet,
+  erster Satz gemacht), endet „Mahlzeiten heute“; nach der Einheit startet sie mit dem nächsten Stand wieder. Dart
+  entscheidet (`WidgetPublisher.showsMealsActivity`), `RootShell` stößt beim Wechsel neu an – erst Mahlzeiten beenden,
+  dann die Einheit starten. Als Sicherheitsnetz beendet auch der `AppDelegate` Mahlzeiten-Aktivitäten, solange eine
+  Einheit läuft, und Android nimmt die Mahlzeiten-Mitteilung beim Start der Einheits-Mitteilung weg.
+- **Doppelte „Mahlzeiten heute“**: Ursache war das asynchrone `end` – bis es durch war, stand die alte Aktivität noch in
+  `Activity.activities`; der nächste Aufruf (beim Öffnen kommen zwei `publish` kurz hintereinander) hielt sie für die
+  laufende, fand sie zu alt und startete eine weitere. Jetzt merkt sich die Brücke angestoßene Enden (`ending`), zählt
+  nur aktive/veraltete, behält die neueste und beendet alle übrigen. Gleiches für die Einheit.
+- **Einstellungen › Sperrbildschirm**: Schalter je Bereich (Gym = `GymSettings.liveActivity`, Ernährung =
+  `mealsLiveActivity`), Ansicht der Gym-Karte (`GymSettings.liveActivityLayout`: `timer`, `exercise`, `combined`;
+  Standard `combined` wie bisher) und „Erinnerung an Mahlzeiten auf dem Sperrbildschirm statt als Mitteilung“
+  (`mealsLiveReminders`). Die bisherigen Schalter unter Gym und Ernährung verweisen dorthin. Die Ansicht geht als
+  `layout` an die Live-Aktivität (fehlt = beides) und an die Android-Mitteilung.
+- **Erinnerung auf dem Sperrbildschirm** (`MealLiveReminder`): nächste offene Mahlzeit nach den eingeschalteten
+  Essenszeiten, ohne eingeschaltete die gewohnten Hauptmahlzeiten (8:00, 12:30, 19:00); eine offene Mahlzeit bleibt
+  drei Stunden „fällig“, dann rückt die nächste nach. Live-Aktivitäten können sich nicht selbst zeitgesteuert ändern:
+  Der Stand gilt deshalb ab der Essenszeit als veraltet (`staleDate`), iOS zeichnet die Karte neu und sie zeigt „Zeit
+  fürs Mittagessen – jetzt eintragen?“. „Neuer Tag“ gilt erst ab `dayEndsAt` (Mitternacht), nicht mehr bei jedem
+  Veralten. Mit dem Schalter plant `ReminderService` keine Mitteilungen für Mahlzeiten mehr. Grenze: Öffnet man die
+  App länger nicht, beendet iOS die Karte nach etwa acht Stunden – dann gibt es auch keine Erinnerung (im Fußtext
+  genannt). Unter Android aktualisiert sich die Mitteilung nur beim Öffnen bzw. mit dem nächsten Stand der App.
+- **„Mahlzeiten heute“ unter Android**: bisher nicht vorhanden (Abschnitt 4.2), jetzt als dauerhafte, lautlose
+  Mitteilung (Kanal `meals`, `IMPORTANCE_LOW`) mit Kopfzeile, kcal je Mahlzeit und einem Knopf „… eintragen“.
+- **Einheit teilen** (`GymShareText`, `RoutineLink`): über das Teilen-Menü des Systems als Text, ohne Körperwerte und
+  RIR. Abgeschlossene Einheit (Abschluss-Bildschirm „Teilen …“, Verlauf) und Trainingsplan (Liste der Pläne). Dazu ein
+  Link `coach://routine/<base64url(JSON)>` mit kurzem JSON (`n`, `i` als Listen), ohne Server; `RootShell` zeigt ihn
+  als „Geteilter Trainingsplan“ zum Übernehmen (neue Kennungen, Werte begrenzt, höchstens 20 Übungen). Aus einer
+  Einheit wird die Routine aus den erledigten Sätzen gebildet (Sätze, Wiederholungsbereich, schwerster Satz).
+- **Rezepte aus dem Kühlschrank-Foto** (`PantryRecipes`, Worker-Aufgabe `pantry_recipes`, Art „planning“): Foto plus
+  Ernährungsweise, Allergene, Abneigungen, Vorrat aus der Einkaufsliste; bei „Neu vorschlagen“ die korrigierte Liste
+  und die Antworten (`erkannt`, `bestaetigt`, `nicht_da`). Die KI nennt je Gericht unter `fehlt` höchstens zwei kleine
+  Standardzutaten; die App fragt „Ist noch Butter da?“ (häufigste zuerst, höchstens vier Fragen). Antworten wirken
+  sofort und ohne neue Anfrage (bereit / wartet / geht nicht). Regeln wie bei allen Rezepten (Ernährungsweise,
+  Allergene, unplausible Nährwerte); mehr als zwei fehlende Zutaten verwirft die App, Zutaten aus Vorrat, Foto oder
+  bestätigten Antworten gelten nicht als fehlend. Die Aufgabe muss im Worker (Coach-App) ergänzt werden; Vertrag in
+  `docs/worker-pantry-recipes.md`. Bis dahin meldet die App den Fehler des Workers.

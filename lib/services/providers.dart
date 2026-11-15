@@ -9,6 +9,7 @@ import '../data/repositories/gym_repository.dart';
 import '../data/repositories/meal_repository.dart';
 import '../data/repositories/metrics_repository.dart';
 import '../data/settings/coach_settings.dart';
+import '../data/settings/settings_store.dart';
 import '../data/storage.dart';
 import '../platform/notifications.dart';
 
@@ -129,7 +130,14 @@ final garminStrengthServiceProvider = Provider<GarminStrengthService>((ref) {
 final notificationCenterProvider = Provider<NotificationCenterBridge?>((ref) => null);
 
 final reminderServiceProvider = ChangeNotifierProvider<ReminderService>(
-  (ref) => ReminderService(settings: ref.read(coachSettingsProvider), center: ref.watch(notificationCenterProvider)),
+  (ref) => ReminderService(
+    settings: ref.read(coachSettingsProvider),
+    center: ref.watch(notificationCenterProvider),
+    mealsOnLockScreen: () {
+      final store = ref.read(settingsStoreProvider);
+      return store.boolValue(SettingsKeys.mealsLiveActivity) && store.boolValue(SettingsKeys.mealsLiveReminders);
+    },
+  ),
 );
 
 final healthSourceProvider = Provider<HealthSource>((ref) => PluginHealthSource());

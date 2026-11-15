@@ -12,6 +12,7 @@ import '../evidence/evidence_views.dart';
 import 'exercise_history_charts.dart';
 import 'exercise_picker.dart';
 import 'gym_controller.dart';
+import 'gym_share_views.dart';
 import 'muscle_views.dart';
 import 'workout_parts.dart';
 
@@ -464,6 +465,7 @@ class RoutinesScreen extends ConsumerWidget {
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            GymShareButton(onShare: (context) => shareRoutine(context, ref, routine)),
                             IconButton(
                               tooltip: 'Bearbeiten',
                               icon: const Icon(Icons.edit_outlined),

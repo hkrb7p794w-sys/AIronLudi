@@ -22,6 +22,7 @@ import 'backup_screen.dart';
 import 'data_sources_screen.dart';
 import 'diagnostics_screens.dart';
 import 'discipline_settings.dart';
+import 'lock_screen_settings.dart';
 import 'nutrition_settings_screen.dart';
 import 'settings_controller.dart';
 import 'settings_sections.dart';
@@ -198,6 +199,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 title: const Text('Ernährung'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _push(const NutritionSettingsScreen()),
+              ),
+              ListTile(
+                leading: const Icon(Icons.phone_iphone),
+                title: const Text('Sperrbildschirm'),
+                subtitle: const Text('Live-Aktivitäten für Gym und Ernährung'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _push(const LockScreenSettingsScreen()),
               ),
               _area(
                 'Health und Erholung',

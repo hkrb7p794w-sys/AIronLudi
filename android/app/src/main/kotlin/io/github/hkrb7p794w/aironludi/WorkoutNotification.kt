@@ -34,8 +34,10 @@ object WorkoutNotification {
             update(context, arguments?.get("state") as? Map<*, *>)
             null
         }
-        // „Mahlzeiten heute“ gibt es unter Android nicht als laufende Mitteilung (Migrationsplan 4.2).
-        "updateMeals" -> null
+        "updateMeals" -> {
+            MealsNotification.update(context, arguments?.get("state") as? Map<*, *>)
+            null
+        }
         "takePendingActions" -> takePending(context)
         else -> throw IllegalArgumentException(method)
     }
@@ -48,6 +50,8 @@ object WorkoutNotification {
             manager.cancel(NOTIFICATION_ID)
             return
         }
+        // Vorrang der Einheit: „Mahlzeiten heute“ tritt zurück (Dart startet sie nach der Einheit neu).
+        MealsNotification.cancel(context)
         manager.createNotificationChannel(
             NotificationChannel(CHANNEL_ID, "Laufende Einheit", NotificationManager.IMPORTANCE_LOW).apply {
                 description = "Pause und nächster Satz während einer Gym-Einheit"
@@ -61,9 +65,19 @@ object WorkoutNotification {
         val reps = state["reps"] as? String
         val next = state["next"] as? String
         val restEndsAt = (state["restEndsAt"] as? Number)?.toDouble()?.let { (it * 1000).toLong() }
-        val resting = restEndsAt != null && restEndsAt > System.currentTimeMillis()
+        // Ansicht aus den Einstellungen: nur Pause, nur Übung und Satz oder beides (Standard).
+        val layout = state["layout"] as? String ?: "combined"
+        val showsTimer = layout != "exercise"
+        val showsExercise = layout != "timer"
+        val resting = showsTimer && restEndsAt != null && restEndsAt > System.currentTimeMillis()
         val values = listOfNotNull(weight, reps).joinToString(" × ")
-        val text = listOf(detail, values).filter { it.isNotEmpty() }.joinToString(" · ")
+        val text = if (showsExercise) {
+            listOf(detail, values).filter { it.isNotEmpty() }.joinToString(" · ")
+        } else if (resting) {
+            "Gleich: $exercise"
+        } else {
+            detail
+        }
 
         val open = PendingIntent.getActivity(
             context,
@@ -73,7 +87,7 @@ object WorkoutNotification {
         )
         val builder = Notification.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle(if (resting) "Pause · $exercise" else exercise)
+            .setContentTitle(if (resting) (if (showsExercise) "Pause · $exercise" else "Pause") else exercise)
             .setContentText(text)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -81,7 +95,7 @@ object WorkoutNotification {
             .setCategory(Notification.CATEGORY_WORKOUT)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
             .setContentIntent(open)
-        if (next != null) builder.setSubText(next)
+        if (next != null && showsExercise) builder.setSubText(next)
         if (resting) {
             builder.setWhen(restEndsAt!!).setUsesChronometer(true).setChronometerCountDown(true)
         }
@@ -89,7 +103,7 @@ object WorkoutNotification {
         if (!allDone) builder.addAction(action(context, "completeSet", 0, "Satz erledigt"))
         if (resting) {
             builder.addAction(action(context, "skipRest", 0, "Pause überspringen"))
-        } else if (!allDone && weight != null) {
+        } else if (!allDone && weight != null && showsExercise) {
             val step = state["weightStep"] as? String ?: ""
             builder.addAction(action(context, "weight", -1, "− $step kg"))
             builder.addAction(action(context, "weight", 1, "+ $step kg"))

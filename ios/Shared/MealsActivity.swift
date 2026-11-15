@@ -22,6 +22,13 @@ nonisolated struct MealsActivityAttributes: ActivityAttributes {
     var kcalRemaining: Int?
     /// Kopfzeile passend zum Stand des Tages (`MealHeadline`); fehlt in Aktivitäten älterer Versionen.
     var headline: String? = nil
+    /// Nächste offene Mahlzeit (`MealLiveReminder`) – die Erinnerung steht hier statt als Mitteilung. Ab `nextMealAt`
+    /// zeigt die Karte „Zeit fürs …“; iOS zeichnet sie dann neu, weil der Stand ab dieser Zeit als veraltet gilt.
+    var nextMealID: String? = nil
+    var nextMealTitle: String? = nil
+    var nextMealAt: Date? = nil
+    /// Mitternacht des Tages, zu dem der Stand gehört; danach ist er von gestern.
+    var dayEndsAt: Date? = nil
   }
 
   /// iOS beendet eine Live-Aktivität nach etwa acht Stunden; die App startet sie beim Öffnen rechtzeitig neu.

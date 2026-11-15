@@ -48,6 +48,18 @@ final class WidgetPublisher {
   /// Schalter in den Einstellungen (Ernährung); aus, solange ihn niemand einschaltet.
   bool get mealsActivityEnabled => settingsStore.boolValue(SettingsKeys.mealsLiveActivity);
 
+  /// Erinnerung an die nächste Mahlzeit auf dem Sperrbildschirm statt als Mitteilung.
+  bool get mealsRemindOnLockScreen => mealsActivityEnabled && settingsStore.boolValue(SettingsKeys.mealsLiveReminders);
+
+  /// Die Live-Aktivität der Einheit läuft (eingeschaltet, mindestens ein Satz gemacht) – sie hat dann Vorrang.
+  bool workoutActivityShown({DateTime? now}) => settings.gym.liveActivity && gym.liveState(now: now) != null;
+
+  /// „Mahlzeiten heute“ zeigen? Nicht während einer laufenden Einheit (`LockScreenActivities`).
+  bool showsMealsActivity({DateTime? now}) => LockScreenActivities.showsMeals(
+    mealsEnabled: mealsActivityEnabled,
+    workoutShown: workoutActivityShown(now: now),
+  );
+
   /// Wasser aus dem Widget als Einträge speichern (beim Öffnen, vor dem Neuberechnen).
   Future<int> takeQueuedActions({DateTime? now}) async {
     if (isDemo || !await store.isAvailable) return 0;
@@ -81,8 +93,10 @@ final class WidgetPublisher {
     if (isDemo || !settings.profile.onboardingDone) return;
     final current = now ?? DateTime.now();
     final available = await store.isAvailable;
-    // Die Live-Aktivität „Mahlzeiten heute“ braucht keinen gemeinsamen Ordner.
-    if (!available && !mealsActivityEnabled) {
+    // Die Live-Aktivität „Mahlzeiten heute“ braucht keinen gemeinsamen Ordner. Während einer Einheit tritt sie zurück
+    // und kommt mit dem nächsten Stand nach der Einheit wieder.
+    final showsMeals = showsMealsActivity(now: current);
+    if (!available && !showsMeals) {
       await liveActivities?.updateMeals(null, now: current);
       return;
     }
@@ -92,7 +106,13 @@ final class WidgetPublisher {
       await store.reloadWidgets();
     }
     await liveActivities?.updateMeals(
-      mealsActivityEnabled ? MealsLiveState.fromSnapshot(value, now: current) : null,
+      showsMeals
+          ? MealsLiveState.fromSnapshot(
+              value,
+              now: current,
+              reminders: mealsRemindOnLockScreen ? settings.reminders.meals : null,
+            )
+          : null,
       now: current,
     );
   }

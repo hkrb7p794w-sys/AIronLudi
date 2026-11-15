@@ -13,6 +13,7 @@ import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
 import '../gym/gym_library.dart';
 import '../gym/gym_providers.dart';
+import 'lock_screen_settings.dart';
 
 void _push(BuildContext context, Widget screen) =>
     unawaited(Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen)));
@@ -217,6 +218,13 @@ class GymSettingsScreen extends ConsumerWidget {
                 value: gym.liveActivity,
                 onChanged: (value) => change((gym) => gym.liveActivity = value),
               ),
+              if (gym.liveActivity)
+                ListTile(
+                  title: const Text('Ansicht auf dem Sperrbildschirm'),
+                  subtitle: Text(gym.liveActivityLayout.label),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _push(context, const LockScreenSettingsScreen()),
+                ),
             ],
           ),
           FormSection(

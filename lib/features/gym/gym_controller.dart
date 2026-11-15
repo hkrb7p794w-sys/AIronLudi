@@ -29,6 +29,7 @@ final class FinishedWorkout {
     this.volumeChange,
     this.share,
     this.shareKeys = const [],
+    this.shareText,
   });
 
   final String title;
@@ -50,6 +51,9 @@ final class FinishedWorkout {
 
   /// Schlüssel der Einheit im Reiter „Aktivitäten“ (`SocialTimeline.keys`).
   final List<String> shareKeys;
+
+  /// Text mit Link für „Teilen …“ über das System (`GymShareText`).
+  final String? shareText;
 }
 
 /// Trainingsplan, laufende Einheit, Progression und Wochenvolumen (Port von `GymViewModel`).
@@ -675,6 +679,7 @@ final class GymController extends ChangeNotifier {
         restEndsAt: restEndsAt,
         doneSets: session.doneSetCount,
         allDone: true,
+        layout: gym.liveActivityLayout,
       );
     }
     final exercise = session.exercises[position.exercise];
@@ -696,6 +701,7 @@ final class GymController extends ChangeNotifier {
       weightStep: GermanFormat.number(step),
       repsStep: isTime ? '5 s' : '1',
       next: following == null ? null : 'Danach: ${session.exercises[following].name}',
+      layout: gym.liveActivityLayout,
     );
   }
 
@@ -869,6 +875,7 @@ final class GymController extends ChangeNotifier {
       ),
       share: WorkoutShare.gym(session, records: records, now: time),
       shareKeys: ['g${session.id}'],
+      shareText: GymShareText.session(session, custom: gym.customExercises, now: time),
     );
     finished = summary;
     _resetFlow();
