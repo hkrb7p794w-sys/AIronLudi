@@ -68,7 +68,7 @@ enum AITrigger implements RawEnum {
 abstract final class AIPolicy {
   static AITaskKind kind(String task) => switch (task) {
     'meal_analyze' || 'meal_amend' || 'nutrition_label' => AITaskKind.capture,
-    'gym_plan' || 'weekly_recipes' || 'meal_now' || 'cook_plan' => AITaskKind.planning,
+    'gym_plan' || 'weekly_recipes' || 'meal_now' || 'cook_plan' || 'pantry_recipes' => AITaskKind.planning,
     'ping' => AITaskKind.system,
     _ => AITaskKind.recommendation,
   };

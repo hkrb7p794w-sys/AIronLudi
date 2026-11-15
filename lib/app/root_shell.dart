@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:coach_core/coach_core.dart'
-    show AccountInvite, CookLink, CookPartnerLink, CookReleaseLink, LeagueInvite, MealShare, TrainingSport;
+    show AccountInvite, CookLink, CookPartnerLink, CookReleaseLink, LeagueInvite, MealShare, RoutineLink, TrainingSport;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +10,7 @@ import '../data/storage.dart';
 import '../features/account/account_views.dart';
 import '../features/gym/gym_controller.dart';
 import '../features/gym/gym_providers.dart';
+import '../features/gym/gym_share_views.dart';
 import '../features/motivation/motivation_views.dart';
 import '../features/nutrition/meal_share_views.dart';
 import '../features/plan/my_week_screen.dart';
@@ -104,13 +105,23 @@ class _RootShellState extends ConsumerState<RootShell> {
 
   /// Live-Aktivität der laufenden Einheit: Pause und nächster Satz auf dem Sperrbildschirm (wie `RootView`).
   void _updateWorkoutActivity(GymController gym) {
-    final enabled = ref.read(coachSettingsProvider).gym.liveActivity;
-    final state = enabled ? gym.liveState() : null;
+    final settings = ref.read(coachSettingsProvider).gym;
+    final state = settings.liveActivity ? gym.liveState()?.withLayout(settings.liveActivityLayout) : null;
     if (state == _workoutState && _workoutShown == (state != null)) return;
+    final changed = _workoutShown != (state != null);
     _workoutState = state;
     _workoutShown = state != null;
-    unawaited(ref.read(liveActivityHostProvider).updateWorkout(state, title: gym.active?.title ?? ''));
+    final host = ref.read(liveActivityHostProvider);
+    // Vorrang der Einheit: „Mahlzeiten heute“ endet, bevor die Einheit startet, und kommt nach ihr zurück.
+    if (changed && state != null) {
+      unawaited(ref.read(widgetPublisherProvider).publish().then((_) => host.updateWorkout(state, title: _title(gym))));
+      return;
+    }
+    unawaited(host.updateWorkout(state, title: _title(gym)));
+    if (changed) unawaited(ref.read(widgetPublisherProvider).publish());
   }
+
+  static String _title(GymController gym) => gym.active?.title ?? '';
 
   /// Wasser aus dem Homescreen-Widget übernehmen, Widgets versorgen, abrufen, Widgets mit neuem Stand versorgen.
   Future<void> _refresh() async {
@@ -150,6 +161,12 @@ class _RootShellState extends ConsumerState<RootShell> {
         CookReleaseLink() => null,
       };
       _presentSheet((_) => CookPartnersScreen(initialCode: code));
+      return;
+    }
+    // Geteilter Trainingsplan coach://routine/<daten>.
+    if (RoutineLink.decode(uri.toString()) case final routine?) {
+      ref.read(incomingLinkProvider.notifier).consume();
+      _presentSheet((_) => ImportRoutineScreen(routine: routine));
       return;
     }
     // Geteilte Mahlzeit coach://meal/<code>.
@@ -227,6 +244,8 @@ class _RootShellState extends ConsumerState<RootShell> {
       _updateWorkoutActivity(gym);
       _updateScreenAwake(gym);
     });
+    // Ansicht oder Schalter der Live-Aktivität geändert: sofort übernehmen.
+    ref.listen(coachSettingsProvider, (_, _) => _updateWorkoutActivity(ref.read(gymControllerProvider)));
     final storage = ref.watch(appStorageProvider);
     final showsStorageWarning = storage.isTemporary && !ref.read(appModelProvider).isDemo;
     return Scaffold(

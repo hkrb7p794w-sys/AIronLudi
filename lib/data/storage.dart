@@ -10,6 +10,8 @@ import 'repositories/metrics_repository.dart';
 import 'repositories/source_store.dart';
 import 'secure/secret_store.dart';
 import 'settings/settings_store.dart';
+import 'users/current_user.dart';
+import 'users/user_storage.dart';
 
 /// Geöffneter Speicher der App: Datenbank, Einstellungen und Geheimnisse.
 final class AppStorage {
@@ -26,9 +28,13 @@ final class AppStorage {
   bool get isTemporary => openError != null;
 
   /// Öffnet die Datei; misslingt das, im Arbeitsspeicher weiter (lieber ohne Daten starten als abstürzen).
-  static Future<AppStorage> open({QueryExecutor? executor, SecretStore? secrets}) async {
-    final store = await Secrets.load(secrets ?? DeviceSecretStore());
-    final database = executor == null ? CoachDatabase.open() : CoachDatabase(executor);
+  ///
+  /// [location]: Speicher des Benutzers (eigene Datenbankdatei, eigene Schlüssel); ohne: der ursprüngliche.
+  static Future<AppStorage> open({QueryExecutor? executor, SecretStore? secrets, UserLocation? location}) async {
+    final store = await Secrets.load(secrets ?? DeviceSecretStore(prefix: location?.secretPrefix ?? ''));
+    final database = executor == null
+        ? CoachDatabase.open(name: location?.databaseName ?? 'coach')
+        : CoachDatabase(executor);
     try {
       final settings = await SettingsStore.open(database);
       return AppStorage(database: database, settings: settings, secrets: store);
@@ -56,9 +62,14 @@ final settingsStoreProvider = Provider<SettingsStore>((ref) => ref.watch(appStor
 
 final secretsProvider = Provider<Secrets>((ref) => ref.watch(appStorageProvider).secrets);
 
-final backupServiceProvider = Provider<BackupService>(
-  (ref) => BackupService(ref.watch(databaseProvider), ref.watch(settingsStoreProvider)),
-);
+final backupServiceProvider = Provider<BackupService>((ref) {
+  final user = ref.watch(currentUserProvider);
+  return BackupService(
+    ref.watch(databaseProvider),
+    ref.watch(settingsStoreProvider),
+    owner: user.isLegacy ? null : user.username,
+  );
+});
 
 final metricsRepositoryProvider = Provider<MetricsRepository>((ref) => MetricsRepository(ref.watch(databaseProvider)));
 

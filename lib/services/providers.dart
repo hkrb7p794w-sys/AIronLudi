@@ -5,13 +5,14 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../app/app_model.dart';
+import '../app/user_providers.dart';
 import '../data/repositories/gym_repository.dart';
 import '../data/repositories/meal_repository.dart';
 import '../data/repositories/metrics_repository.dart';
 import '../data/settings/coach_settings.dart';
+import '../data/settings/settings_store.dart';
 import '../data/storage.dart';
 import '../platform/notifications.dart';
-
 import 'account/account_service.dart';
 import 'ai/ai_client.dart';
 import 'alarm/wake_alarm_service.dart';
@@ -23,6 +24,7 @@ import 'gym/garmin_strength_service.dart';
 import 'health/health_import_service.dart';
 import 'health/health_source.dart';
 import 'health/health_writer.dart';
+import 'motivation/companion_photo.dart';
 import 'nutrition/cook_share_service.dart';
 import 'nutrition/meal_share_service.dart';
 import 'nutrition/open_food_facts_client.dart';
@@ -68,7 +70,10 @@ final accountServiceProvider = ChangeNotifierProvider<AccountService>(
   (ref) => AccountService(ai: ref.watch(aiClientProvider), settings: ref.watch(settingsStoreProvider)),
 );
 
-/// Ordner für Auswertungen (App-Support) und FIT-Dateien (Cache); in `main` gesetzt.
+/// Foto des Begleiters im Ordner des Benutzers.
+final companionPhotoProvider = Provider<CompanionPhoto>((ref) => CompanionPhoto(ref.watch(userDirectoryProvider)));
+
+/// Ordner für Auswertungen (App-Support) und FIT-Dateien (Cache) des Benutzers; in `createAppContainer` gesetzt.
 final activityFoldersProvider = Provider<({String? support, String? cache})>((ref) => (support: null, cache: null));
 
 final garminSyncServiceProvider = Provider<GarminSyncService>((ref) {
@@ -129,7 +134,14 @@ final garminStrengthServiceProvider = Provider<GarminStrengthService>((ref) {
 final notificationCenterProvider = Provider<NotificationCenterBridge?>((ref) => null);
 
 final reminderServiceProvider = ChangeNotifierProvider<ReminderService>(
-  (ref) => ReminderService(settings: ref.read(coachSettingsProvider), center: ref.watch(notificationCenterProvider)),
+  (ref) => ReminderService(
+    settings: ref.read(coachSettingsProvider),
+    center: ref.watch(notificationCenterProvider),
+    mealsOnLockScreen: () {
+      final store = ref.read(settingsStoreProvider);
+      return store.boolValue(SettingsKeys.mealsLiveActivity) && store.boolValue(SettingsKeys.mealsLiveReminders);
+    },
+  ),
 );
 
 final healthSourceProvider = Provider<HealthSource>((ref) => PluginHealthSource());

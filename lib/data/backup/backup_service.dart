@@ -25,10 +25,14 @@ final class RestoreResult {
 /// (wie `BackupService` der Swift-App, gleiches Dateiformat). Automatisch sichert die App höchstens einmal je
 /// `AppBackup.autoInterval` in einen selbst gewählten Ordner.
 final class BackupService {
-  BackupService(this._db, this._settings);
+  BackupService(this._db, this._settings, {this.owner});
 
   final CoachDatabase _db;
   final SettingsStore _settings;
+
+  /// Benutzername für den Dateinamen der Ordner-Sicherung; `null` für den ursprünglichen Benutzer (Dateiname wie in
+  /// der Swift-App). So überschreiben sich zwei Benutzer im selben Ordner nicht gegenseitig.
+  final String? owner;
 
   // Erstellen
 
@@ -80,10 +84,16 @@ final class BackupService {
     return 'IronLudi-Sicherung-${local.year}-${two(local.month)}-${two(local.day)}.json';
   }
 
+  /// `IronLudi-Sicherung.json` bzw. je weiterem Benutzer `IronLudi-Sicherung-<benutzername>.json`.
+  static String folderFileName(String? owner, {bool previous = false}) {
+    if (owner == null) return previous ? AppBackup.previousFileName : AppBackup.fileName;
+    return 'IronLudi-Sicherung-$owner${previous ? '-vorher' : ''}.json';
+  }
+
   /// Schreibt in den Ordner; die bisherige Sicherung bleibt als „…-vorher.json“ erhalten.
-  static Future<File> write(AppBackup backup, {required Directory folder}) async {
-    final file = File(p.join(folder.path, AppBackup.fileName));
-    final previous = File(p.join(folder.path, AppBackup.previousFileName));
+  static Future<File> write(AppBackup backup, {required Directory folder, String? owner}) async {
+    final file = File(p.join(folder.path, folderFileName(owner)));
+    final previous = File(p.join(folder.path, folderFileName(owner, previous: true)));
     if (file.existsSync()) {
       if (previous.existsSync()) await previous.delete();
       await file.rename(previous.path);
@@ -181,7 +191,11 @@ final class BackupService {
     final lastDate = last == null ? null : DateTime.fromMicrosecondsSinceEpoch((last * 1e6).round(), isUtc: true);
     if (!force && !AppBackup.isDue(last: lastDate, now: current)) return false;
     try {
-      await write(await make(now: current), folder: Directory(path));
+      await write(
+        await make(now: current),
+        folder: Directory(path),
+        owner: owner,
+      );
       await _settings.setDouble(SettingsKeys.backupLastAuto, current.microsecondsSinceEpoch / 1e6);
       await _settings.remove(SettingsKeys.backupLastError);
       return true;

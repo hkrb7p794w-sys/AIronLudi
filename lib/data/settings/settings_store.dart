@@ -92,6 +92,9 @@ abstract final class SettingsKeys {
   static const recipesPeriodDays = 'recipes.periodDays';
   static const recipesPeriodStart = 'recipes.periodStart';
   static const mealsLiveActivity = 'mealsLiveActivity';
+
+  /// Erinnerung an Mahlzeiten auf dem Sperrbildschirm („Mahlzeiten heute“) statt als Mitteilung.
+  static const mealsLiveReminders = 'mealsLiveReminders';
 }
 
 /// Einstellungen in der Datenbank, wie die UserDefaults der Swift-App: je Schlüssel ein typisierter Wert
@@ -187,6 +190,8 @@ final class SettingsStore {
   // Schreiben
 
   Future<void> setValue(String key, BackupValue? value) async {
+    // Nach einem Benutzerwechsel: späte Schreibvorgänge des alten Benutzers landen nirgends.
+    if (_closed) return;
     if (value == null) {
       _values.remove(key);
       _changes.add(key);
@@ -222,6 +227,7 @@ final class SettingsStore {
 
   /// Einstellungen aus einer Sicherung übernehmen (ersetzen); nur Schlüssel, die zur Sicherung gehören.
   Future<int> restore(Map<String, BackupValue> settings) async {
+    if (_closed) return 0;
     var count = 0;
     await _db.transaction(() async {
       for (final MapEntry(:key, :value) in settings.entries) {
@@ -237,7 +243,15 @@ final class SettingsStore {
     return count;
   }
 
-  Future<void> close() => _changes.close();
+  bool _closed = false;
+
+  /// Geschlossen (Benutzerwechsel): Lesen liefert weiter den letzten Stand, Schreiben wird ignoriert.
+  bool get isClosed => _closed;
+
+  Future<void> close() {
+    _closed = true;
+    return _changes.close();
+  }
 
   static SettingRecordsCompanion _encode(String key, BackupValue value) => SettingRecordsCompanion.insert(
     key: key,

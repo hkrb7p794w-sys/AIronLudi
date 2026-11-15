@@ -19,6 +19,7 @@ final class WorkoutLiveState {
     this.weightStep,
     this.repsStep,
     this.next,
+    this.layout = WorkoutActivityLayout.combined,
   });
 
   /// Übung des nächsten offenen Satzes.
@@ -41,6 +42,24 @@ final class WorkoutLiveState {
   /// „Danach: Schulterdrücken“.
   final String? next;
 
+  /// Was der Sperrbildschirm zeigt (Einstellung „Ansicht“).
+  final WorkoutActivityLayout layout;
+
+  /// Gleicher Stand mit anderer Ansicht (die Einstellung kann sich während der Einheit ändern).
+  WorkoutLiveState withLayout(WorkoutActivityLayout layout) => WorkoutLiveState(
+    exercise: exercise,
+    detail: detail,
+    restEndsAt: restEndsAt,
+    doneSets: doneSets,
+    allDone: allDone,
+    weight: weight,
+    reps: reps,
+    weightStep: weightStep,
+    repsStep: repsStep,
+    next: next,
+    layout: layout,
+  );
+
   /// Für den Kanal: Zeitpunkte in Sekunden seit 1970.
   Map<String, Object?> toChannel() => {
     'exercise': exercise,
@@ -53,11 +72,13 @@ final class WorkoutLiveState {
     'weightStep': weightStep,
     'repsStep': repsStep,
     'next': next,
+    'layout': layout.rawValue,
   };
 
   @override
   bool operator ==(Object other) =>
       other is WorkoutLiveState &&
+      other.layout == layout &&
       other.exercise == exercise &&
       other.detail == detail &&
       other.restEndsAt == restEndsAt &&
@@ -71,7 +92,7 @@ final class WorkoutLiveState {
 
   @override
   int get hashCode =>
-      Object.hash(exercise, detail, restEndsAt, doneSets, allDone, weight, reps, weightStep, repsStep, next);
+      Object.hash(exercise, detail, restEndsAt, doneSets, allDone, weight, reps, weightStep, repsStep, next, layout);
 }
 
 /// Eine Mahlzeit der Live-Aktivität „Mahlzeiten heute“.
@@ -110,6 +131,8 @@ final class MealsLiveState {
     required this.streakActive,
     required this.kcalRemaining,
     required this.headline,
+    this.nextMeal,
+    this.dayEndsAt,
   });
 
   final List<MealsLiveMeal> meals;
@@ -120,8 +143,19 @@ final class MealsLiveState {
   final int? kcalRemaining;
   final String headline;
 
-  /// Aus dem Widget-Stand (Port von `MealsActivityController.state(from:)`).
-  static MealsLiveState? fromSnapshot(WidgetSnapshot snapshot, {required DateTime now}) {
+  /// Nächste offene Mahlzeit – die Erinnerung auf dem Sperrbildschirm statt als Mitteilung; `null` ohne.
+  final MealLiveNext? nextMeal;
+
+  /// Mitternacht: Danach gilt der Stand als von gestern.
+  final DateTime? dayEndsAt;
+
+  /// Aus dem Widget-Stand (Port von `MealsActivityController.state(from:)`). [reminders]: gewohnte Essenszeiten für
+  /// die nächste Mahlzeit; `null` ohne Erinnerung auf dem Sperrbildschirm.
+  static MealsLiveState? fromSnapshot(
+    WidgetSnapshot snapshot, {
+    required DateTime now,
+    MealReminderSettings? reminders,
+  }) {
     final nutrition = snapshot.nutrition;
     if (nutrition == null) return null;
     final parts =
@@ -141,6 +175,8 @@ final class MealsLiveState {
       streakActive: snapshot.mealStreak?.activeToday ?? false,
       kcalRemaining: nutrition.kcalRemaining?.round(),
       headline: MealHeadline.forSnapshot(snapshot, hour: now.hour),
+      nextMeal: reminders == null ? null : MealLiveReminder.next(settings: reminders, meals: parts, now: now),
+      dayEndsAt: DateTime(now.year, now.month, now.day + 1),
     );
   }
 
@@ -150,6 +186,15 @@ final class MealsLiveState {
     'streakActive': streakActive,
     'kcalRemaining': kcalRemaining,
     'headline': headline,
+    // iOS zeichnet die Zeile zur Essenszeit selbst um (veraltet ab `nextMealAt`); Android bekommt den fertigen Satz.
+    'nextMealID': nextMeal?.category.rawValue,
+    'nextMealTitle': switch (nextMeal) {
+      final next? => MealHeadline.name(next.category),
+      null => null,
+    },
+    'nextMealAt': nextMeal == null ? null : nextMeal!.at.millisecondsSinceEpoch / 1000,
+    'nextMealText': nextMeal?.text,
+    'dayEndsAt': dayEndsAt == null ? null : dayEndsAt!.millisecondsSinceEpoch / 1000,
   };
 }
 

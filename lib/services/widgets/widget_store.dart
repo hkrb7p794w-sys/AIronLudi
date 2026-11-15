@@ -150,4 +150,18 @@ final class WidgetStore {
   }
 
   Future<void> reloadWidgets() => _host.reloadWidgets();
+
+  /// Beim Benutzerwechsel: Stand und Warteschlange des bisherigen Benutzers entfernen, damit die Widgets nichts von
+  /// ihm zeigen, bis der neue Benutzer seinen Stand schreibt.
+  Future<void> clear() async {
+    for (final name in const [WidgetSnapshot.fileName, WidgetActionQueue.fileName]) {
+      final file = await _file(name);
+      try {
+        if (file != null && file.existsSync()) await file.delete();
+      } on Object {
+        // Bleibt stehen; der nächste Stand überschreibt ihn.
+      }
+    }
+    await reloadWidgets();
+  }
 }

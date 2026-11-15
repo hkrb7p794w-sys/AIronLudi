@@ -477,3 +477,88 @@
 - Körperwerte (Größe, Gewicht, Max-HF) werden angezeigt, aber nicht in Profil oder Gewichtsverlauf übernommen (keine
   Datierung, die eigenen Angaben haben Vorrang).
 
+
+## 2026-11-15 – Sperrbildschirm, Teilen, Kühlschrank-Rezepte (Erweiterungen ohne Swift-Gegenstück)
+
+Neue Funktionen auf Wunsch des Nutzers; die Swift-App hat sie nicht. Datenformate bleiben kompatibel (neue Felder sind
+optional, alte Stände lesen sich wie bisher). Tests: `packages/coach_core/test/lock_screen_share_pantry_test.dart`,
+`test/features/pantry_controller_test.dart`, Ergänzungen in `live_activities_test.dart` und
+`reminder_service_test.dart`.
+
+- **Vorrang der Gym-Einheit** (`LockScreenActivities`): Sobald die Live-Aktivität der Einheit läuft (eingeschaltet,
+  erster Satz gemacht), endet „Mahlzeiten heute“; nach der Einheit startet sie mit dem nächsten Stand wieder. Dart
+  entscheidet (`WidgetPublisher.showsMealsActivity`), `RootShell` stößt beim Wechsel neu an – erst Mahlzeiten beenden,
+  dann die Einheit starten. Als Sicherheitsnetz beendet auch der `AppDelegate` Mahlzeiten-Aktivitäten, solange eine
+  Einheit läuft, und Android nimmt die Mahlzeiten-Mitteilung beim Start der Einheits-Mitteilung weg.
+- **Doppelte „Mahlzeiten heute“**: Ursache war das asynchrone `end` – bis es durch war, stand die alte Aktivität noch in
+  `Activity.activities`; der nächste Aufruf (beim Öffnen kommen zwei `publish` kurz hintereinander) hielt sie für die
+  laufende, fand sie zu alt und startete eine weitere. Jetzt merkt sich die Brücke angestoßene Enden (`ending`), zählt
+  nur aktive/veraltete, behält die neueste und beendet alle übrigen. Gleiches für die Einheit.
+- **Einstellungen › Sperrbildschirm**: Schalter je Bereich (Gym = `GymSettings.liveActivity`, Ernährung =
+  `mealsLiveActivity`), Ansicht der Gym-Karte (`GymSettings.liveActivityLayout`: `timer`, `exercise`, `combined`;
+  Standard `combined` wie bisher) und „Erinnerung an Mahlzeiten auf dem Sperrbildschirm statt als Mitteilung“
+  (`mealsLiveReminders`). Die bisherigen Schalter unter Gym und Ernährung verweisen dorthin. Die Ansicht geht als
+  `layout` an die Live-Aktivität (fehlt = beides) und an die Android-Mitteilung.
+- **Erinnerung auf dem Sperrbildschirm** (`MealLiveReminder`): nächste offene Mahlzeit nach den eingeschalteten
+  Essenszeiten, ohne eingeschaltete die gewohnten Hauptmahlzeiten (8:00, 12:30, 19:00); eine offene Mahlzeit bleibt
+  drei Stunden „fällig“, dann rückt die nächste nach. Live-Aktivitäten können sich nicht selbst zeitgesteuert ändern:
+  Der Stand gilt deshalb ab der Essenszeit als veraltet (`staleDate`), iOS zeichnet die Karte neu und sie zeigt „Zeit
+  fürs Mittagessen – jetzt eintragen?“. „Neuer Tag“ gilt erst ab `dayEndsAt` (Mitternacht), nicht mehr bei jedem
+  Veralten. Mit dem Schalter plant `ReminderService` keine Mitteilungen für Mahlzeiten mehr. Grenze: Öffnet man die
+  App länger nicht, beendet iOS die Karte nach etwa acht Stunden – dann gibt es auch keine Erinnerung (im Fußtext
+  genannt). Unter Android aktualisiert sich die Mitteilung nur beim Öffnen bzw. mit dem nächsten Stand der App.
+- **„Mahlzeiten heute“ unter Android**: bisher nicht vorhanden (Abschnitt 4.2), jetzt als dauerhafte, lautlose
+  Mitteilung (Kanal `meals`, `IMPORTANCE_LOW`) mit Kopfzeile, kcal je Mahlzeit und einem Knopf „… eintragen“.
+- **Einheit teilen** (`GymShareText`, `RoutineLink`): über das Teilen-Menü des Systems als Text, ohne Körperwerte und
+  RIR. Abgeschlossene Einheit (Abschluss-Bildschirm „Teilen …“, Verlauf) und Trainingsplan (Liste der Pläne). Dazu ein
+  Link `coach://routine/<base64url(JSON)>` mit kurzem JSON (`n`, `i` als Listen), ohne Server; `RootShell` zeigt ihn
+  als „Geteilter Trainingsplan“ zum Übernehmen (neue Kennungen, Werte begrenzt, höchstens 20 Übungen). Aus einer
+  Einheit wird die Routine aus den erledigten Sätzen gebildet (Sätze, Wiederholungsbereich, schwerster Satz).
+- **Rezepte aus dem Kühlschrank-Foto** (`PantryRecipes`, Worker-Aufgabe `pantry_recipes`, Art „planning“): Foto plus
+  Ernährungsweise, Allergene, Abneigungen, Vorrat aus der Einkaufsliste; bei „Neu vorschlagen“ die korrigierte Liste
+  und die Antworten (`erkannt`, `bestaetigt`, `nicht_da`). Die KI nennt je Gericht unter `fehlt` höchstens zwei kleine
+  Standardzutaten; die App fragt „Ist noch Butter da?“ (häufigste zuerst, höchstens vier Fragen). Antworten wirken
+  sofort und ohne neue Anfrage (bereit / wartet / geht nicht). Regeln wie bei allen Rezepten (Ernährungsweise,
+  Allergene, unplausible Nährwerte); mehr als zwei fehlende Zutaten verwirft die App, Zutaten aus Vorrat, Foto oder
+  bestätigten Antworten gelten nicht als fehlend. Die Aufgabe muss im Worker (Coach-App) ergänzt werden; Vertrag in
+  `docs/worker-pantry-recipes.md`. Bis dahin meldet die App den Fehler des Workers.
+
+## 2026-11-15 – Mehrere Benutzer auf einem Gerät, strikt getrennt
+
+Auf Wunsch des Nutzers; die Swift-App kennt nur einen Benutzer. Tests: `packages/coach_core/test/user_directory_test.dart`,
+`test/app/user_session_test.dart`.
+
+- **Trennung über den Speicherort statt über eine `username`-Spalte.** Jeder Benutzer hat eine eigene Datenbankdatei
+  (`coach-<id>.sqlite`), eigene Schlüssel im Schlüsselbund (`u.<id>.<name>`) und eigene Ordner (`users/<id>/` in
+  App-Support und Cache: Rezepte, Kochplan, Begleiter-Foto, Auswertungen, FIT-Dateien, wartende Fotos). Eine Spalte
+  in allen Tabellen hätte bei jeder einzelnen Abfrage einen Filter verlangt – eine vergessene Bedingung, und Daten
+  wären übergreifend sichtbar. Mit getrennten Dateien kann keine Abfrage die Daten eines anderen erreichen; die
+  Tabellen, das Sicherungsformat (`AppBackup`) und alle Repositories bleiben unverändert. Skaliert ohne Kosten: Offen
+  ist immer nur der Speicher des aktiven Benutzers (höchstens 20 Benutzer je Gerät).
+- **Benutzer ↔ Speicher über eine feste Kennung (UUID)**, nicht über den Namen. Der Benutzername ist eindeutig auf dem
+  Gerät, folgt den Regeln der Konten (`AccountRules`, passt also zu einem Konto am Worker) und ändert sich nie; der
+  Anzeigename schon. Verzeichnis in `users.json` (`UserDirectory`) – nur Kennung, Benutzer- und Anzeigename.
+- **Bestehende Installationen:** Ohne `users.json` gehört der vorhandene Speicher dem ursprünglichen Benutzer
+  (`legacyID`, Name „ich“) an den bisherigen Stellen (Datenbank `coach`, Schlüssel ohne Präfix, Ordner direkt im
+  App-Support). Nichts wird verschoben, nichts geht verloren. Dieser Benutzer lässt sich nicht löschen (sein Speicher
+  liegt zwischen den Verzeichnissen der anderen und ließe sich nur unsicher entfernen); umbenennen geht.
+- **Ein Provider-Container je Benutzer** (`createAppContainer(user:)`, `UserSession`): Alle Controller, Zwischenspeicher
+  und die im Arbeitsspeicher gehaltenen Geheimnisse hängen am Container. Wechsel: aufräumen (Wasser aus dem Widget
+  noch dem bisherigen Benutzer gutschreiben, Live-Aktivitäten beenden, alle geplanten Mitteilungen entfernen,
+  Widget-Stand löschen), Einstellungen schließen (späte Schreibvorgänge werden ignoriert), Container verwerfen,
+  Datenbank schließen, Bild-Zwischenspeicher leeren; dann neuer Container und die Oberfläche mit neuem Schlüssel
+  (`UserScope`) – jeder Bildschirm entsteht neu. Spät eintreffende Antworten (KI, Garmin, WHOOP) des alten Containers
+  schreiben in eine geschlossene Datenbank und landen nirgends. Mitteilungs-Antworten gehen immer an den aktiven
+  Container. Hintergrundabruf und Widgets arbeiten mit dem aktiven Benutzer.
+- **Kein Benutzername an die KI.** Die Anfrage war, KI-Aufrufen den Benutzernamen mitzugeben, damit Ergebnisse in der
+  richtigen Historie landen. Das ist bereits durch den Aufbau gesichert: Jeder Container hat sein eigenes App-Token,
+  seine eigene Konto-Sitzung und schreibt Ergebnisse (Rezepte, Empfehlungen, Verlauf) nur in den eigenen Speicher.
+  Den Namen zusätzlich an Worker und KI-Anbieter zu schicken, brächte keine Trennung, widerspräche aber dem
+  Datenschutzmodus „reduziert“ (CLAUDE.md) – deshalb nicht.
+- **Ordner-Sicherung:** Weitere Benutzer sichern als `IronLudi-Sicherung-<benutzername>.json`, damit zwei Benutzer im
+  selben Ordner sich nicht überschreiben; der ursprüngliche behält den Namen der Swift-App.
+- **Bewusst gerätebezogen** (keine Nutzerdaten): Darstellung (hell/dunkel), mitgelieferte Tabellen (BLS, Saisonplan),
+  das Verzeichnis selbst. Homescreen-Widgets und Live-Aktivitäten zeigen den aktiven Benutzer. Ein mit AlarmKit
+  gestellter Wecker ist ein System-Wecker und bleibt beim Wechsel bestehen. Apple Health / Health Connect sind Daten
+  des Geräts: Ein neuer Benutzer startet mit ausgeschaltetem Import und sollte ihn nur einschalten, wenn es seine
+  Daten sind.

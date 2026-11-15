@@ -147,20 +147,42 @@ enum ActivityBridge {
       doneSets: values["doneSets"] as? Int ?? 0, allDone: values["allDone"] as? Bool ?? false,
       weight: values["weight"] as? String, reps: values["reps"] as? String,
       weightStep: values["weightStep"] as? String, repsStep: values["repsStep"] as? String,
-      next: values["next"] as? String)
+      next: values["next"] as? String, layout: values["layout"] as? String)
   }
 
-  /// Nach jeder Änderung der Einheit; ohne Stand (keine Einheit, ausgeschaltet) endet die Aktivität.
-  private static func updateWorkout(_ arguments: [String: Any]) {
-    let running = Activity<WorkoutActivityAttributes>.activities
-    guard let state = (arguments["state"] as? [String: Any]).flatMap(workoutState) else {
-      for activity in running {
-        Task { await activity.end(nil, dismissalPolicy: .immediate) }
+  /// Aktivitäten, deren Ende schon angestoßen ist. `end` läuft asynchron; bis dahin stehen sie noch in `activities`
+  /// und dürfen weder aktualisiert noch als „läuft schon“ gezählt werden – sonst erscheinen zwei Karten.
+  private static var ending: Set<String> = []
+
+  private static func live<A: ActivityAttributes>(_ type: A.Type) -> [Activity<A>] {
+    Activity<A>.activities.filter {
+      ($0.activityState == .active || $0.activityState == .stale) && !ending.contains($0.id)
+    }
+  }
+
+  private static func end<A: ActivityAttributes>(_ activities: [Activity<A>]) {
+    for activity in activities {
+      ending.insert(activity.id)
+      Task {
+        await activity.end(nil, dismissalPolicy: .immediate)
+        ending.remove(activity.id)
       }
+    }
+  }
+
+  /// Nach jeder Änderung der Einheit; ohne Stand (keine Einheit, ausgeschaltet) endet die Aktivität. Läuft die Einheit,
+  /// hat sie Vorrang: „Mahlzeiten heute“ endet (Dart startet sie nach der Einheit neu).
+  private static func updateWorkout(_ arguments: [String: Any]) {
+    let running = live(WorkoutActivityAttributes.self)
+    guard let state = (arguments["state"] as? [String: Any]).flatMap(workoutState) else {
+      end(running)
       return
     }
+    end(live(MealsActivityAttributes.self))
     let content = ActivityContent(state: state, staleDate: nil)
     if let activity = running.first {
+      // Doppelte (z. B. aus einem abgebrochenen Start) aufräumen, eine bleibt.
+      end(Array(running.dropFirst()))
       Task { await activity.update(content) }
     } else if ActivityAuthorizationInfo().areActivitiesEnabled {
       let title = arguments["title"] as? String ?? ""
@@ -178,35 +200,37 @@ enum ActivityBridge {
         return .init(id: id, title: title, kcal: meal["kcal"] as? Int ?? 0, fraction: meal["fraction"] as? Double)
       },
       streakDays: values["streakDays"] as? Int ?? 0, streakActive: values["streakActive"] as? Bool ?? false,
-      kcalRemaining: values["kcalRemaining"] as? Int, headline: values["headline"] as? String)
+      kcalRemaining: values["kcalRemaining"] as? Int, headline: values["headline"] as? String,
+      nextMealID: values["nextMealID"] as? String, nextMealTitle: values["nextMealTitle"] as? String,
+      nextMealAt: (values["nextMealAt"] as? Double).map(Date.init(timeIntervalSince1970:)),
+      dayEndsAt: (values["dayEndsAt"] as? Double).map(Date.init(timeIntervalSince1970:)))
   }
 
   /// Nach jedem neuen Widget-Stand. Starten darf iOS nur, solange die App sichtbar ist; im Hintergrund wird eine
-  /// laufende Aktivität nur aktualisiert.
+  /// laufende Aktivität nur aktualisiert. Immer höchstens eine Karte: die neueste bleibt, ältere enden.
   private static func updateMeals(_ arguments: [String: Any]) {
     let now = (arguments["now"] as? Double).map(Date.init(timeIntervalSince1970:)) ?? .now
-    let running = Activity<MealsActivityAttributes>.activities.filter {
-      $0.activityState == .active || $0.activityState == .stale
-    }
-    guard let state = (arguments["state"] as? [String: Any]).flatMap(mealsState) else {
-      for activity in running {
-        Task { await activity.end(nil, dismissalPolicy: .immediate) }
-      }
+    let running = live(MealsActivityAttributes.self).sorted { $0.attributes.startedAt > $1.attributes.startedAt }
+    // Vorrang der laufenden Einheit, auch wenn Dart es (älterer Stand) anders sieht.
+    let workoutRunning = !live(WorkoutActivityAttributes.self).isEmpty
+    guard !workoutRunning, let state = (arguments["state"] as? [String: Any]).flatMap(mealsState) else {
+      end(running)
       return
     }
-    // Ab Mitternacht gilt der Stand als veraltet; die Anzeige zeigt dann einen leeren Tag.
-    let midnight = Calendar.current.startOfDay(for: now).addingTimeInterval(24 * 3600)
-    let content = ActivityContent(state: state, staleDate: midnight)
+    // Ab Mitternacht gilt der Stand als veraltet; die Anzeige zeigt dann einen leeren Tag. Zur nächsten Essenszeit
+    // ebenfalls, damit iOS die Karte mit „Zeit fürs …“ neu zeichnet.
+    let midnight = state.dayEndsAt ?? Calendar.current.startOfDay(for: now).addingTimeInterval(24 * 3600)
+    let staleDate = state.nextMealAt.map { $0 > now ? min($0, midnight) : midnight } ?? midnight
+    let content = ActivityContent(state: state, staleDate: staleDate)
     let canStart =
       UIApplication.shared.applicationState != .background && ActivityAuthorizationInfo().areActivitiesEnabled
     if let activity = running.first {
+      end(Array(running.dropFirst()))
       guard canStart, now.timeIntervalSince(activity.attributes.startedAt) > restartAfter else {
         Task { await activity.update(content) }
         return
       }
-      for old in running {
-        Task { await old.end(nil, dismissalPolicy: .immediate) }
-      }
+      end([activity])
     }
     guard canStart else { return }
     _ = try? Activity.request(attributes: MealsActivityAttributes(startedAt: now), content: content)

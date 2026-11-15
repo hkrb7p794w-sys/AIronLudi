@@ -17,6 +17,7 @@ import 'active_workout_screen.dart';
 import 'gym_controller.dart';
 import 'gym_library.dart';
 import 'gym_providers.dart';
+import 'gym_share_views.dart';
 import 'muscle_views.dart';
 
 String _day(CalendarDay day) => DateFormat('EEE, d.M.', 'de_DE').format(day.referenceDate);
@@ -454,7 +455,10 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     final session = _record.session;
     final connect = ref.watch(garminConnectProvider);
     return Scaffold(
-      appBar: AppBar(title: Text(session.title)),
+      appBar: AppBar(
+        title: Text(session.title),
+        actions: [GymShareButton(onShare: (context) => shareSession(context, ref, session))],
+      ),
       body: ListView(
         padding: const EdgeInsets.only(bottom: 32),
         children: [

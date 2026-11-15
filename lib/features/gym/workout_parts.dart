@@ -12,6 +12,7 @@ import '../social/social_views.dart';
 import 'exercise_picker.dart';
 import 'gym_controller.dart';
 import 'gym_library.dart';
+import 'gym_share_views.dart';
 import 'muscle_views.dart';
 
 /// Welcher Wert gerade über den Ziffernblock eingegeben wird.
@@ -926,6 +927,20 @@ class WorkoutResultView extends StatelessWidget {
             ),
             icon: const Icon(Icons.people_outline),
             label: const Text('Mit Freunden teilen'),
+          ),
+        ],
+        if (finished.shareText case final text?) ...[
+          const SizedBox(height: 8),
+          Builder(
+            builder: (context) => OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(44),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              onPressed: () => unawaited(shareGymText(context, text, subject: finished.title)),
+              icon: const Icon(Icons.ios_share),
+              label: const Text('Teilen …'),
+            ),
           ),
         ],
         const SizedBox(height: 16),

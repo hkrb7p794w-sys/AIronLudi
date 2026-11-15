@@ -404,7 +404,10 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Native Registrierung im `AppDelegate` (Mitteilungs-Delegate, Widget-, Live-Aktivitäts- und Wecker-Brücke), Widget-Erweiterung | erledigt (3m-1 bis 3m-6), geprüft per iOS-Build |
 | Hintergrundabruf (`BGAppRefreshTask` bzw. WorkManager, `workmanager`) | erledigt (3n-1) |
 | Alle Teilphasen aus Abschnitt 6 | erledigt (Stand 14.11.2026) |
-| WHOOP-Anbindung (offizielle API v2, OAuth über den Worker): Recovery, HRV, Ruhepuls, Schlaf, Kalorien, Schritte, Trainings; Einstellungen › Training und Fitness › WHOOP | in PR |
+| WHOOP-Anbindung (offizielle API v2, OAuth über den Worker): Recovery, HRV, Ruhepuls, Schlaf, Kalorien, Schritte, Trainings; Einstellungen › Training und Fitness › WHOOP | erledigt |
+| Erweiterungen nach der Migration (15.11.2026): Vorrang der Gym-Live-Aktivität vor „Mahlzeiten heute“ (keine doppelten Karten mehr), Einstellungen › Sperrbildschirm (Bereiche Gym/Ernährung, Ansicht der Gym-Karte: nur Pause, nur Übung, beides), Einheit und Trainingsplan teilen (Text plus `coach://routine/…` zum Übernehmen), Rezepte aus dem Kühlschrank-Foto mit Rückfragen, Erinnerung an Mahlzeiten auf dem Sperrbildschirm statt als Mitteilung, „Mahlzeiten heute“ unter Android als lautlose Mitteilung | in PR |
+| Mehrere Benutzer je Gerät, strikt getrennt (eigene Datenbankdatei, Schlüssel und Ordner je Benutzer; Wechsel verwirft den kompletten Zustand), Einstellungen › Benutzer | in PR |
+| Worker-Aufgabe `pantry_recipes` in `hkrb7p794w-sys/Coach-App` ergänzen (Vertrag in `docs/worker-pantry-recipes.md`) | offen – Worker liegt in Coach-App |
 | Test auf echten Geräten: Widgets, Live-Aktivitäten, laufende Mitteilung, Wecker, Hintergrundabruf, Schnellaktionen (nur dort prüfbar, CI baut sie) | offen – durch den Nutzer |
 | Umstellung: `vars.DEPLOY_SIDESTORE` bzw. `vars.DEPLOY_ANDROID` auf `true`, dann ersetzt die Flutter-App die Swift- bzw. Kotlin-App (gleiche Bundle-/Application-ID) | offen – Entscheidung des Nutzers |
 | Später möglich: Android-Widgets mit Glance (Ringe, Balken, Konfiguration), Wiederholungen ± in der Android-Mitteilung | Idee |

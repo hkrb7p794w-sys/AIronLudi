@@ -110,6 +110,7 @@ class AIUsageScreen extends ConsumerStatefulWidget {
     'meal_now' => 'Was jetzt?',
     'weekly_recipes' => 'Rezeptideen',
     'cook_plan' => 'Gemeinsam kochen',
+    'pantry_recipes' => 'Aus dem Kühlschrank',
     'ai_insights' => 'KI-Analyse',
     'ping' => 'Verbindungstest',
     _ => task,

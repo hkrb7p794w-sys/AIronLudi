@@ -137,7 +137,8 @@ final class CoachDatabase extends _$CoachDatabase {
   CoachDatabase(super.executor);
 
   /// Datei `coach.sqlite` im Anwendungsverzeichnis.
-  factory CoachDatabase.open() => CoachDatabase(driftDatabase(name: 'coach'));
+  /// [name]: Datei je Benutzer (`UserLocation.databaseName`), `coach` für den ursprünglichen.
+  factory CoachDatabase.open({String name = 'coach'}) => CoachDatabase(driftDatabase(name: name));
 
   @override
   int get schemaVersion => 1;

@@ -14,8 +14,10 @@ final class ReminderService extends ChangeNotifier {
     required this._settings,
     this._center,
     bool Function()? suppressesToday,
+    bool Function()? mealsOnLockScreen,
     void Function(String route)? openRoute,
   }) : _suppressesToday = suppressesToday ?? (() => false),
+       _mealsOnLockScreen = mealsOnLockScreen ?? (() => false),
        _openRoute = openRoute ?? ((_) {});
 
   static const identifierPrefix = 'coach.reminder.';
@@ -25,6 +27,9 @@ final class ReminderService extends ChangeNotifier {
 
   /// Läuft gerade eine Krafteinheit? Dann keine Erinnerung für heute (`GymViewModel.sessionState().suppressesReminders`).
   final bool Function() _suppressesToday;
+
+  /// Erinnerung an Mahlzeiten steht auf dem Sperrbildschirm („Mahlzeiten heute“) – dann keine Mitteilung dafür.
+  final bool Function() _mealsOnLockScreen;
 
   /// Öffnet einen Bereich der App (Morning Report → Gesundheit).
   final void Function(String route) _openRoute;
@@ -163,7 +168,8 @@ final class ReminderService extends ChangeNotifier {
           minute: config.planningMinute,
         ),
       if (config.nutritionReview) ...NutritionReviewReminder.nutritionReview(today: today, minutesNow: minutesNow),
-      ...MealReminderPlanner.meals(config.meals, today: today, minutesNow: minutesNow, logged: loggedMeals),
+      if (!_mealsOnLockScreen())
+        ...MealReminderPlanner.meals(config.meals, today: today, minutesNow: minutesNow, logged: loggedMeals),
       if (config.morningReport)
         ...MorningReportReminder.morningReport(today: today, minutesNow: minutesNow, summary: morningSummary),
     ];

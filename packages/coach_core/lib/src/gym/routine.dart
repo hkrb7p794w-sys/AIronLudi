@@ -475,6 +475,41 @@ enum RestSound implements RawEnum {
   static RestSound? fromRaw(Object? raw) => enumFromRaw(values, raw);
 }
 
+/// Was die Live-Aktivität der laufenden Einheit auf dem Sperrbildschirm zeigt.
+enum WorkoutActivityLayout implements RawEnum {
+  /// Nur die Satzpause (groß), ohne Regler.
+  timer,
+
+  /// Nur Übung, Satz und Wiederholungen mit Reglern, ohne Pausenuhr.
+  exercise,
+
+  /// Beides (Standard, wie bisher).
+  combined;
+
+  @override
+  String get rawValue => name;
+
+  String get id => rawValue;
+
+  String get label => switch (this) {
+    timer => 'Nur Pause',
+    exercise => 'Nur Übung und Satz',
+    combined => 'Pause und Übung',
+  };
+
+  String get detail => switch (this) {
+    timer => 'Große Pausenuhr, darunter „Satz erledigt“.',
+    exercise => 'Übung, Satz, Gewicht und Wiederholungen zum Ändern – ohne Uhr.',
+    combined => 'Übung, Satz und Pausenuhr, darunter Gewicht und Wiederholungen.',
+  };
+
+  bool get showsTimer => this != exercise;
+
+  bool get showsExercise => this != timer;
+
+  static WorkoutActivityLayout? fromRaw(Object? raw) => enumFromRaw(values, raw);
+}
+
 /// Gym-Einstellungen: eigene Routinen, eigene Übungen, Ausstattung.
 final class GymSettings {
   GymSettings({
@@ -517,6 +552,9 @@ final class GymSettings {
 
   /// Pause und nächster Satz als Live-Aktivität auf dem Sperrbildschirm.
   bool liveActivity = true;
+
+  /// Ansicht der Live-Aktivität (nur Pause, nur Übung oder beides).
+  WorkoutActivityLayout liveActivityLayout = WorkoutActivityLayout.combined;
 
   /// Standardpausen in Sekunden, wenn weder die Routine noch die Übung eine eigene haben.
   int restCompound = 120;
@@ -582,6 +620,7 @@ final class GymSettings {
     'notes': notes,
     'restOverrides': restOverrides,
     'liveActivity': liveActivity,
+    'liveActivityLayout': liveActivityLayout.rawValue,
     'restCompound': restCompound,
     'restIsolation': restIsolation,
     'restWarmup': restWarmup,
@@ -624,6 +663,7 @@ final class GymSettings {
       ..notes = map('notes', (value) => value is String ? value : null) ?? {}
       ..restOverrides = map('restOverrides', (value) => value is int ? value : null) ?? {}
       ..liveActivity = flag('liveActivity', true)
+      ..liveActivityLayout = WorkoutActivityLayout.fromRaw(json['liveActivityLayout']) ?? WorkoutActivityLayout.combined
       ..restCompound = number('restCompound', 120)
       ..restIsolation = number('restIsolation', 90)
       ..restWarmup = number('restWarmup', 60)
