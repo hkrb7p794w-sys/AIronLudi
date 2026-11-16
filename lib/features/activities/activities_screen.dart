@@ -11,6 +11,7 @@ import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../services/social/social_service.dart';
 import '../../ui/components.dart';
+import '../../ui/large_title.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
 import '../gym/gym_screen.dart';
@@ -153,7 +154,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                 decoration: const InputDecoration(hintText: 'Name, Sportart, Wert', border: InputBorder.none),
                 onChanged: (text) => setState(() => _filter = _copy(_filter, search: text)),
               )
-            : const Text('Aktivitäten'),
+            : const CollapsingTitle(child: Text('Aktivitäten')),
         actions: [
           if (_scope == ActivitiesScope.mine) ...[
             IconButton(
@@ -190,6 +191,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
       ),
       body: Column(
         children: [
+          if (!_searching) const LargeTitleHeader('Aktivitäten', collapsible: true),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: SizedBox(

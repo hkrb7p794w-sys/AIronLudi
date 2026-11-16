@@ -266,12 +266,12 @@ class _SleepCoachScreenState extends ConsumerState<SleepCoachScreen> {
                 trailing: Text(clock(sleep.wakeHour, sleep.wakeMinute)),
                 onTap: () => _pickTime(settings, free: false),
               ),
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 title: const Text('Erinnerung 30 min vorher'),
                 value: sleep.reminder,
                 onChanged: (value) => _change(settings, (sleep) => sleep.reminder = value),
               ),
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 title: const Text('An freien Tagen später aufstehen'),
                 value: sleep.usesFreeDayTime,
                 onChanged: (value) => _change(settings, (sleep) => sleep.usesFreeDayTime = value),

@@ -5,6 +5,7 @@ import 'package:aironludi/features/social/social_views.dart';
 import 'package:aironludi/services/providers.dart';
 import 'package:aironludi/services/social/social_auto_share.dart';
 import 'package:coach_core/coach_core.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,9 +18,9 @@ Future<ProviderContainer> _open(WidgetTester tester, Widget screen) async {
   addTearDown(tester.view.reset);
   await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
   await tester.pumpAndSettle();
-  final container = ProviderScope.containerOf(tester.element(find.byType(NavigationBar)));
+  final container = ProviderScope.containerOf(tester.element(find.byType(CupertinoTabBar)));
   unawaited(
-    Navigator.of(tester.element(find.byType(NavigationBar))).push(MaterialPageRoute<void>(builder: (_) => screen)),
+    Navigator.of(tester.element(find.byType(CupertinoTabBar))).push(MaterialPageRoute<void>(builder: (_) => screen)),
   );
   await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
   await tester.pumpAndSettle();

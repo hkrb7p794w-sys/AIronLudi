@@ -66,14 +66,14 @@ class _LockScreenSettingsScreenState extends ConsumerState<LockScreenSettingsScr
                 'der Einheit wieder. ${android ? 'Unter Android als dauerhafte, lautlose Mitteilung.' : 'Abschalten '
                           'lässt sich alles auch in den iOS-Einstellungen unter AIronLudi › Live-Aktivitäten.'}',
             children: [
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 secondary: const Icon(Icons.fitness_center),
                 title: const Text('Gym-Einheit'),
                 subtitle: Text(trainsStrength ? 'Pause und nächster Satz' : 'Krafttraining ist nicht im Profil'),
                 value: gym.liveActivity,
                 onChanged: (value) => change((gym) => gym.liveActivity = value),
               ),
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 secondary: const Icon(Icons.restaurant),
                 title: const Text('Ernährung'),
                 subtitle: const Text('Mahlzeiten heute, Serie und übrige Kalorien'),
@@ -113,7 +113,7 @@ class _LockScreenSettingsScreenState extends ConsumerState<LockScreenSettingsScr
                 'länger nicht, blendet das System die Karte nach einigen Stunden aus – dann erscheint auch keine '
                 'Erinnerung.',
             children: [
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 title: const Text('Auf dem Sperrbildschirm statt als Mitteilung'),
                 value: _meals && _mealReminders,
                 onChanged: _meals ? (on) => unawaited(_setMealReminders(on)) : null,

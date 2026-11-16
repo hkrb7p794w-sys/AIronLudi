@@ -207,7 +207,7 @@ class _MobilityScreenState extends ConsumerState<MobilityScreen> {
                 'Schmerzen ärztlich abklären lassen.',
             children: [
               for (final area in ComplaintArea.values)
-                SwitchListTile(
+                SwitchListTile.adaptive(
                   title: Text(area.label),
                   value: mobility.complaints.contains(area),
                   onChanged: (on) => changeMobility(settings, (mobility) {
@@ -393,7 +393,7 @@ class MobilitySummary extends ConsumerWidget {
             ],
           ),
         ),
-        Icon(Icons.chevron_right, color: secondary),
+        const DisclosureChevron(),
       ],
     );
   }

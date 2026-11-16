@@ -9,6 +9,7 @@ import '../../data/repositories/gym_repository.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/large_title.dart';
 import '../activities/activity_detail_screen.dart';
 import '../activities/activity_parts.dart';
 import '../activities/post_workout_section.dart';
@@ -148,7 +149,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
     final lastSync = model.lastSync ?? model.health.lastImport;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Heute'),
+        title: const CollapsingTitle(child: Text('Heute')),
         actions: [
           IconButton(
             tooltip: 'Coach fragen',
@@ -174,6 +175,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
         child: ListView(
           padding: const EdgeInsets.only(bottom: 32),
           children: [
+            const LargeTitleHeader('Heute'),
             // Abrufstatus.
             if (model.isSyncing || model.lastError != null || (model.lastReport?.errors.isNotEmpty ?? false))
               FormSection(
@@ -210,7 +212,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                       if (InsightInbox.unreadCount(settings.insights, now: DateTime.now()) case final unread
                           when unread > 0)
                         CoachChip(text: '$unread neu', color: theme.colorScheme.primary),
-                      const Icon(Icons.chevron_right),
+                      const DisclosureChevron(),
                     ],
                   ),
                   onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const AIScreen())),
@@ -319,7 +321,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                               ],
                             ),
                           ),
-                          const Icon(Icons.chevron_right),
+                          const DisclosureChevron(),
                         ],
                       ),
                     ),

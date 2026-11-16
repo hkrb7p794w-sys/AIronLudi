@@ -340,35 +340,35 @@ class _AIScreenState extends ConsumerState<AIScreen> {
                 ListTile(
                   leading: const Icon(Icons.soup_kitchen_outlined),
                   title: const Text('Rezeptideen für die Woche'),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const DisclosureChevron(),
                   onTap: () =>
                       Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const RecipesScreen())),
                 ),
                 ListTile(
                   leading: const Icon(Icons.chat_outlined),
                   title: const Text('Prompt-Bibliothek für externe KI'),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const DisclosureChevron(),
                   onTap: () =>
                       Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PromptLibraryScreen())),
                 ),
                 ListTile(
                   leading: const Icon(Icons.ios_share),
                   title: const Text('Daten für eine externe KI exportieren'),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const DisclosureChevron(),
                   onTap: () =>
                       Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const CoachExportScreen())),
                 ),
                 ListTile(
                   leading: const Icon(Icons.download),
                   title: const Text('Antwort einer externen KI übernehmen'),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const DisclosureChevron(),
                   onTap: () =>
                       Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const CoachImportScreen())),
                 ),
                 ListTile(
                   leading: const Icon(Icons.settings_outlined),
                   title: const Text('KI-Einstellungen'),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const DisclosureChevron(),
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
                       builder: (_) => Scaffold(

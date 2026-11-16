@@ -155,7 +155,7 @@ class _DataSourcesScreenState extends ConsumerState<DataSourcesScreen> {
             children: [
               ListTile(
                 title: const Text('Welche Anbieter gehen?'),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const DisclosureChevron(),
                 onTap: () =>
                     Navigator.of(context)
                         .push(MaterialPageRoute<void>(builder: (_) => const IntegrationMatrixScreen())),

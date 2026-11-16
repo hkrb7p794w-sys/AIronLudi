@@ -81,7 +81,7 @@ class _GarminDiagnosticsScreenState extends ConsumerState<GarminDiagnosticsScree
                 ListTile(
                   title: Text(response.endpoint, style: const TextStyle(fontFamily: 'monospace', fontSize: 13)),
                   subtitle: Text('${response.body.length} Bytes · ${time.format(response.fetchedAt)}'),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const DisclosureChevron(),
                   onTap: () =>
                       Navigator.of(context)
                           .push(MaterialPageRoute<void>(builder: (_) => RawResponseScreen(record: response))),

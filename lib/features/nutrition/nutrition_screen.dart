@@ -11,6 +11,7 @@ import '../../data/repositories/meal_repository.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/large_title.dart';
 import '../evidence/evidence_views.dart';
 import '../recipes/recipe_views.dart';
 import 'bls_views.dart';
@@ -208,6 +209,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     final settings = ref.watch(coachSettingsProvider);
     final controller = _controller;
     final isToday = controller.day == controller.today;
+    final title = isToday ? 'Ernährung' : DateFormat('EEE, d. MMM', 'de_DE').format(controller.day.referenceDate);
     final searching = _query.text.trim().isNotEmpty;
     return Scaffold(
       appBar: AppBar(
@@ -220,7 +222,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                   border: InputBorder.none,
                 ),
               )
-            : Text(isToday ? 'Ernährung' : DateFormat('EEE, d. MMM', 'de_DE').format(controller.day.referenceDate)),
+            : CollapsingTitle(child: Text(title)),
         actions: [
           IconButton(
             tooltip: _searching ? 'Suche schließen' : 'Suchen',
@@ -242,6 +244,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                 if (searching)
                   ..._searchResults()
                 else ...[
+                  LargeTitleHeader(title),
                   _DayStrip(
                     selected: controller.day,
                     today: controller.today,
@@ -271,7 +274,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                     ListTile(
                       leading: const Icon(Icons.calendar_month_outlined),
                       title: const Text('Woche und Auswertung'),
-                      trailing: const Icon(Icons.chevron_right),
+                      trailing: const DisclosureChevron(),
                       onTap: () => _push(
                         (_) => NutritionWeekScreen(
                           summary: _weekSummary,
@@ -284,20 +287,20 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                     ListTile(
                       leading: const Icon(Icons.restaurant),
                       title: const Text('Eigene Rezepte und Meal-Prep'),
-                      trailing: const Icon(Icons.chevron_right),
+                      trailing: const DisclosureChevron(),
                       onTap: () =>
                           _push((_) => OwnRecipesScreen(log: (recipe, grams) => _logOwnRecipe(recipe, grams: grams))),
                     ),
                     ListTile(
                       leading: const Icon(Icons.monitor_weight_outlined),
                       title: const Text('Gewichtsverlauf'),
-                      trailing: const Icon(Icons.chevron_right),
+                      trailing: const DisclosureChevron(),
                       onTap: () => _push((_) => const WeightTrendScreen()),
                     ),
                     ListTile(
                       leading: const Icon(Icons.soup_kitchen_outlined),
                       title: const Text('Rezeptideen für die kommende Woche'),
-                      trailing: const Icon(Icons.chevron_right),
+                      trailing: const DisclosureChevron(),
                       onTap: () => _push((_) => const RecipesScreen()),
                     ),
                   ],
@@ -721,7 +724,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
       ListTile(
         leading: const Icon(Icons.event_available),
         title: const Text('Gewichtstrend und Verbrauch ansehen'),
-        trailing: const Icon(Icons.chevron_right),
+        trailing: const DisclosureChevron(),
         onTap: () => _push((_) => const WeightTrendScreen()),
       ),
       ListTile(
@@ -1430,7 +1433,7 @@ class NutritionDashboardEditor extends ConsumerWidget {
                   change((value) => value.move(fromOffsets: {from}, toOffset: to > from ? to + 1 : to)),
               children: [
                 for (final card in dashboard.order)
-                  SwitchListTile(
+                  SwitchListTile.adaptive(
                     key: ValueKey(card),
                     secondary: const Icon(Icons.drag_handle),
                     title: Text(card.label),

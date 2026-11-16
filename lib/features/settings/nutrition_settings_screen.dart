@@ -130,7 +130,7 @@ class NutritionSettingsScreen extends ConsumerWidget {
                 'ist. Die Zeiten gelten in der aktuellen Zeitzone, auch auf Reisen.',
             children: [
               for (final category in MealReminderSettings.categories) ...[
-                SwitchListTile(
+                SwitchListTile.adaptive(
                   title: Text(category.label),
                   value: reminders.meals[category]?.enabled ?? false,
                   onChanged: (on) => changeMeal(
@@ -155,7 +155,7 @@ class NutritionSettingsScreen extends ConsumerWidget {
           FormSection(
             header: 'Erinnerung',
             children: [
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 title: const Text('Abends um 20 Uhr „Tag auswerten“'),
                 value: reminders.nutritionReview,
                 onChanged: (on) => settings.reminders = reminders.copy()..nutritionReview = on,
@@ -171,7 +171,7 @@ class NutritionSettingsScreen extends ConsumerWidget {
               ListTile(
                 title: const Text('Sperrbildschirm'),
                 subtitle: Text(store.boolValue(SettingsKeys.mealsLiveActivity) ? 'Mahlzeiten heute: an' : 'Aus'),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const DisclosureChevron(),
                 onTap: () =>
                     Navigator.of(context)
                         .push(MaterialPageRoute<void>(builder: (_) => const LockScreenSettingsScreen())),

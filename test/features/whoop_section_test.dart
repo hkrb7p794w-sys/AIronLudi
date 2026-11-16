@@ -11,6 +11,7 @@ import 'package:aironludi/services/http/http_transport.dart';
 import 'package:aironludi/services/providers.dart';
 import 'package:aironludi/services/whoop/whoop_service.dart';
 import 'package:coach_core/coach_core.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -52,7 +53,7 @@ void main() {
   testWidgets('nicht verbunden: Verbinden ohne Worker meldet den Hinweis', (tester) async {
     await start(tester);
     unawaited(
-      Navigator.of(tester.element(find.byType(NavigationBar))).push(
+      Navigator.of(tester.element(find.byType(CupertinoTabBar))).push(
         MaterialPageRoute<void>(
           builder: (_) => const Scaffold(body: SingleChildScrollView(child: WhoopSection())),
         ),
@@ -87,7 +88,7 @@ void main() {
       },
     );
     unawaited(
-      Navigator.of(tester.element(find.byType(NavigationBar))).push(
+      Navigator.of(tester.element(find.byType(CupertinoTabBar))).push(
         MaterialPageRoute<void>(
           builder: (_) => const Scaffold(body: SingleChildScrollView(child: WhoopSection())),
         ),

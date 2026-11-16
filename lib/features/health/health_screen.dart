@@ -161,7 +161,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                   Row(
                     children: [
                       Expanded(child: MorningReportHeader(report: report)),
-                      Icon(Icons.chevron_right, color: secondary),
+                      const DisclosureChevron(),
                     ],
                   ),
                   if (report.findings.isNotEmpty)

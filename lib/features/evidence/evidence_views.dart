@@ -144,7 +144,7 @@ class EvidenceLibraryScreen extends ConsumerWidget {
             children: [
               ListTile(
                 title: Text('Eigene Quellen (${settings.userSources.length})'),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const DisclosureChevron(),
                 onTap: () =>
                     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const UserSourcesScreen())),
               ),
@@ -354,7 +354,7 @@ class _UserSourceEditorState extends State<UserSourceEditor> {
             header: 'Themen',
             children: [
               for (final topic in UserSourceTopic.values)
-                SwitchListTile(
+                SwitchListTile.adaptive(
                   title: Text(topic.label),
                   value: _topics.contains(topic),
                   onChanged: (on) => setState(() => on ? _topics.add(topic) : _topics.remove(topic)),
