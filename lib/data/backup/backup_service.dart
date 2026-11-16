@@ -6,19 +6,30 @@ import 'package:drift/drift.dart';
 import 'package:path/path.dart' as p;
 
 import '../db/database.dart';
+import '../repositories/json_bytes.dart';
+import '../repositories/meal_repository.dart';
+import '../settings/coach_settings.dart';
 import '../settings/settings_store.dart';
 
 /// Ergebnis des Einspielens.
 final class RestoreResult {
-  const RestoreResult({this.gym = 0, this.meals = 0, this.foods = 0, this.settings = 0});
+  const RestoreResult({this.gym = 0, this.meals = 0, this.foods = 0, this.settings = 0, this.extras});
 
   final int gym;
   final int meals;
   final int foods;
   final int settings;
 
-  String get text =>
-      '$gym Krafteinheiten, $meals Mahlzeiten und $foods Lebensmittel ergänzt, $settings Einstellungen übernommen.';
+  /// Nur Android-Sicherung: Pläne, eigene Übungen, Favoriten, Rezepte und Gewichte (statt Einstellungen).
+  final int? extras;
+
+  String get text => switch (extras) {
+    final extras? =>
+      '$gym Krafteinheiten, $meals Mahlzeiten, $foods Lebensmittel und $extras Pläne, Übungen, Favoriten, Rezepte und '
+          'Gewichte ergänzt.',
+    null =>
+      '$gym Krafteinheiten, $meals Mahlzeiten und $foods Lebensmittel ergänzt, $settings Einstellungen übernommen.',
+  };
 }
 
 /// Datensicherung: erstellt eine `AppBackup`-Datei aus Einstellungen und Datenbank und spielt sie zusammenführend ein
@@ -170,6 +181,133 @@ final class BackupService {
     });
     final settings = await _settings.restore(backup.settings);
     return RestoreResult(gym: gymCount, meals: mealCount, foods: foodCount, settings: settings);
+  }
+
+  /// Sicherung der bisherigen Android-App einspielen (`KotlinBackup`). Wie [restore] zusammenführend: Vorhandenes
+  /// bleibt, Trainings und Mahlzeiten über ihre Kennung, Lebensmittel über ihren Schlüssel, Pläne, eigene Übungen,
+  /// Favoriten und Rezepte über ihre Kennung, Gewichte je Tag. Einstellungen nur, wo hier noch nichts eingerichtet
+  /// ist (Körperwerte ohne Gewicht, Rezept-Wünsche im Standard, keine Mahlzeiten-Erinnerung an). Ziel und Tempo
+  /// kommen aus der Einrichtung, damit die Schutzgrenzen gelten.
+  Future<RestoreResult> restoreKotlin(KotlinBackup backup, CoachSettings settings) async {
+    var (gymCount, mealCount, foodCount, other) = (0, 0, 0, 0);
+    await _db.transaction(() async {
+      final gymIDs = {for (final row in await _db.select(_db.gymSessionRecords).get()) row.id};
+      for (final session in backup.sessions) {
+        if (!gymIDs.add(session.id)) continue;
+        await _db
+            .into(_db.gymSessionRecords)
+            .insert(
+              GymSessionRecordsCompanion.insert(
+                id: session.id,
+                dayKey: session.day.iso,
+                start: session.start,
+                payload: encodeJson(session.toJson()),
+              ),
+            );
+        gymCount += 1;
+      }
+      final mealIDs = {for (final row in await _db.select(_db.mealRecords).get()) row.id};
+      for (final meal in backup.meals) {
+        if (!mealIDs.add(meal.id)) continue;
+        await _db
+            .into(_db.mealRecords)
+            .insert(
+              MealRecordsCompanion.insert(
+                id: meal.id,
+                dayKey: meal.day.iso,
+                createdAt: meal.createdAt,
+                categoryRaw: meal.category.rawValue,
+                title: meal.title,
+                hint: meal.hint,
+                itemsPayload: encodeJson([for (final item in meal.items) item.toJson()]),
+              ),
+            );
+        mealCount += 1;
+      }
+      final foodKeys = {for (final row in await _db.select(_db.foodRecords).get()) row.key};
+      final now = DateTime.now();
+      for (final item in backup.foods) {
+        final key = MealRepository.foodKey(item);
+        if (!foodKeys.add(key)) continue;
+        await _db
+            .into(_db.foodRecords)
+            .insert(
+              FoodRecordsCompanion.insert(
+                key: key,
+                name: item.name,
+                payload: encodeJson(item.toJson()),
+                lastUsed: now,
+                useCount: 1,
+              ),
+            );
+        foodCount += 1;
+      }
+    });
+
+    // Gym: Pläne und eigene Übungen ergänzen, Pause und „Bildschirm anlassen“ wie in der alten App.
+    final gym = settings.gym;
+    for (final exercise in backup.customExercises) {
+      if (gym.customExercises.any((other) => other.id == exercise.id)) continue;
+      gym.customExercises.add(exercise);
+      other += 1;
+    }
+    for (final routine in backup.routines) {
+      if (gym.routines.any((existing) => existing.id == routine.id)) continue;
+      gym.routines.add(routine);
+      other += 1;
+    }
+    if (backup.restSeconds case final rest? when rest > 0) {
+      gym
+        ..restCompound = rest
+        ..restIsolation = rest;
+    }
+    if (backup.keepScreenOn case final on?) gym.keepsScreenOn = on;
+    settings.gym = gym;
+
+    final favorites = [...settings.favoriteMeals];
+    for (final favorite in backup.favorites) {
+      if (favorites.any((existing) => existing.id == favorite.id)) continue;
+      favorites.add(favorite);
+      other += 1;
+    }
+    settings.favoriteMeals = favorites;
+    final recipes = [...settings.ownRecipes];
+    for (final recipe in backup.ownRecipes) {
+      if (recipes.any((existing) => existing.id == recipe.id)) continue;
+      recipes.add(recipe);
+      other += 1;
+    }
+    settings.ownRecipes = recipes;
+    final weights = [...settings.weights];
+    for (final entry in backup.weights) {
+      if (weights.any((existing) => existing.day == entry.day && existing.source == entry.source)) continue;
+      weights.add(entry);
+      other += 1;
+    }
+    weights.sort((a, b) => a.day.compareTo(b.day));
+    settings.weights = weights;
+
+    if (backup.body case final body? when settings.nutrition.weightKilograms == null) {
+      final nutrition = settings.nutrition.copy()
+        ..weightKilograms = body.weightKilograms
+        ..heightCentimeters = body.heightCentimeters
+        ..age = body.age
+        ..isFemale = body.isFemale
+        ..activityFactor = body.activityFactor
+        ..bodyFatPercent = body.bodyFatPercent;
+      if (body.diet case final diet?) nutrition.diet = diet;
+      settings.nutrition = nutrition;
+    }
+    if (backup.recipePreferences case final preferences?
+        when jsonEncode(settings.recipes.toJson()) == jsonEncode(RecipePreferences().toJson())) {
+      settings.recipes = preferences;
+    }
+    if (backup.reminders case final meals? when !settings.reminders.meals.anyEnabled) {
+      final reminders = settings.reminders.copy()..meals = meals;
+      if (backup.reviewReminder case final review?) reminders.nutritionReview = review;
+      settings.reminders = reminders;
+    }
+    return RestoreResult(gym: gymCount, meals: mealCount, foods: foodCount, extras: other);
   }
 
   static T? _decode<T>(List<int> bytes, T? Function(Object?) read) {

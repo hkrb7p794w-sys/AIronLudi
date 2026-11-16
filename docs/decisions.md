@@ -587,3 +587,19 @@ Auf Wunsch des Nutzers; die Swift-App kennt nur einen Benutzer. Tests: `packages
   alten App sichern, alte App deinstallieren, neue App installieren, Sicherung einspielen – Letzteres erst, wenn die
   Flutter-App die Kotlin-Sicherung lesen kann (offen, `docs/anleitung.md` B2). Ab jetzt darf der Schlüssel nicht mehr
   wechseln.
+
+## 2026-11-16 – Sicherung der Android-App einlesen
+
+- `KotlinBackup` (coach_core) liest `AppData` der Kotlin-App (Coach-App `android/core/.../Model.kt`, kotlinx mit
+  `encodeDefaults`). Mahlzeit-Positionen, eigene Rezepte und Lebensmittel haben dasselbe JSON wie hier und werden
+  direkt gelesen; Trainings, Pläne und eigene Übungen werden umgesetzt (Satz `warmup` → `SetKind.warmup`, Gruppe =
+  deutscher Name wie `MuscleGroup.rawValue`, Routine-Kennung als `workoutKey` `routine-<id>`, Pause aus
+  `settings.restSeconds`). Kennungen werden wie in der App großgeschrieben (Kotlin schreibt UUIDs klein), damit
+  erneutes Einspielen nichts doppelt anlegt.
+- **Zusammenführend** wie `restore`: Vorhandenes bleibt. Einstellungen nur, wo noch nichts eingerichtet ist
+  (Körperwerte ohne Gewicht, Rezept-Wünsche im Standard, keine Mahlzeiten-Erinnerung an). **Ziel und Tempo werden
+  nicht übernommen** – sie laufen über die Einrichtung und damit über die Schutzgrenzen (`GoalRules`).
+- Nicht übernommen (Hinweis nach dem Einspielen): laufendes Training, Tagestypen (gibt es hier nicht), Rezeptideen der
+  Woche, wartende KI-Auswertungen.
+- Die Testdatei ist von Hand nach den Datenklassen gebaut (Gradle-Lauf der Kotlin-App in der Sitzung nicht möglich);
+  ein Abgleich mit einer echten Sicherung steht beim Gerätetest an.
