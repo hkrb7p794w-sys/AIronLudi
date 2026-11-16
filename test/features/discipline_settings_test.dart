@@ -10,6 +10,7 @@ import 'package:aironludi/services/gym/rest_alarm.dart';
 import 'package:aironludi/services/providers.dart';
 import 'package:aironludi/ui/sport_style.dart';
 import 'package:coach_core/coach_core.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -39,9 +40,9 @@ void main() {
       ) as Widget,
     );
     await tester.pumpAndSettle();
-    final container = ProviderScope.containerOf(tester.element(find.byType(NavigationBar)));
+    final container = ProviderScope.containerOf(tester.element(find.byType(CupertinoTabBar)));
     unawaited(
-      Navigator.of(tester.element(find.byType(NavigationBar))).push(MaterialPageRoute<void>(builder: (_) => screen)),
+      Navigator.of(tester.element(find.byType(CupertinoTabBar))).push(MaterialPageRoute<void>(builder: (_) => screen)),
     );
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pumpAndSettle();
@@ -178,7 +179,7 @@ void main() {
           ),
     );
     unawaited(
-      Navigator.of(tester.element(find.byType(NavigationBar, skipOffstage: false)))
+      Navigator.of(tester.element(find.byType(CupertinoTabBar, skipOffstage: false)))
           .push(MaterialPageRoute<void>(builder: (_) => const GarminDiagnosticsScreen())),
     );
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));

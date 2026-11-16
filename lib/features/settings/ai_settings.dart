@@ -51,7 +51,7 @@ class AISettingsSection extends ConsumerWidget {
           ),
         ListTile(
           title: const Text('Anbieter und Nutzung'),
-          trailing: const Icon(Icons.chevron_right),
+          trailing: const DisclosureChevron(),
           onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const AIUsageScreen())),
         ),
       ],

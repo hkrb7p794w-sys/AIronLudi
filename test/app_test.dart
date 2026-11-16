@@ -6,6 +6,7 @@ import 'package:aironludi/data/storage.dart';
 import 'package:aironludi/services/providers.dart';
 import 'package:coach_core/coach_core.dart';
 import 'package:drift/native.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,7 +44,7 @@ void main() {
     await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
     await tester.pumpAndSettle();
 
-    Finder tabLabel(String label) => find.descendant(of: find.byType(NavigationBar), matching: find.text(label));
+    Finder tabLabel(String label) => find.descendant(of: find.byType(CupertinoTabBar), matching: find.text(label));
     for (final label in ['Heute', 'Aktivitäten', 'Training', 'Ernährung']) {
       expect(tabLabel(label), findsOneWidget);
     }

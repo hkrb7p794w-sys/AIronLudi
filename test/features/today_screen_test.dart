@@ -3,7 +3,7 @@ import 'package:aironludi/features/today/today_screen.dart';
 import 'package:aironludi/features/today/week_overview.dart';
 import 'package:aironludi/services/providers.dart';
 import 'package:coach_core/coach_core.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -17,7 +17,7 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
     await tester.pumpAndSettle();
-    final container = ProviderScope.containerOf(tester.element(find.byType(NavigationBar)));
+    final container = ProviderScope.containerOf(tester.element(find.byType(CupertinoTabBar)));
     final settings = container.read(coachSettingsProvider);
     final profile = UserProfile(
       mode: ProfileMode.personal,

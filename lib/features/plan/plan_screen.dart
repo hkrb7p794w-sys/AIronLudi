@@ -244,7 +244,7 @@ class _PlanUnitRow extends StatelessWidget {
           ? const Icon(Icons.check_circle, color: Colors.green, semanticLabel: 'erledigt')
           : unit.decision == PlannedUnitDecision.open
           ? const Icon(Icons.help_outline, color: Colors.orange, semanticLabel: 'Entscheidung offen')
-          : const Icon(Icons.chevron_right),
+          : const DisclosureChevron(),
     ),
   );
 }

@@ -55,7 +55,7 @@ class AccountSettingsSection extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text('@${info.username}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                const Icon(Icons.chevron_right),
+                const DisclosureChevron(),
               ],
             ),
             onTap: () =>
@@ -374,7 +374,7 @@ class _RecoveryCodeScreenState extends State<RecoveryCodeScreen> {
           ),
           FormSection(
             children: [
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 title: const Text('Ich habe den Code sicher aufbewahrt'),
                 value: _saved,
                 onChanged: (on) => setState(() => _saved = on),
@@ -547,7 +547,7 @@ class _AccountDetailScreenState extends ConsumerState<AccountDetailScreen> {
                   'Sportart, Dauer, Strecke, Höhenmeter, Sätze. Puls, Kalorien, Gewicht und Schlaf bleiben auf deinem '
                   'Gerät. Ältere Trainings werden nicht nachträglich geteilt.',
               children: [
-                SwitchListTile(
+                SwitchListTile.adaptive(
                   title: const Text('Trainings automatisch teilen'),
                   value: ref.read(socialAutoShareProvider).isEnabled,
                   onChanged: (on) async {
@@ -616,7 +616,7 @@ class _AccountDetailScreenState extends ConsumerState<AccountDetailScreen> {
             children: [
               ListTile(
                 title: const Text('Passwort ändern'),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const DisclosureChevron(),
                 onTap: () =>
                     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const ChangePasswordScreen())),
               ),

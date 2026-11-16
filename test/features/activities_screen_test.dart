@@ -7,6 +7,7 @@ import 'package:aironludi/features/activities/activity_detail_screen.dart';
 import 'package:aironludi/features/activities/post_workout_section.dart';
 import 'package:aironludi/services/providers.dart';
 import 'package:coach_core/coach_core.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -30,7 +31,7 @@ Future<ProviderContainer> _start(WidgetTester tester, List<GarminActivity> activ
   addTearDown(tester.view.reset);
   await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
   await tester.pumpAndSettle();
-  final container = ProviderScope.containerOf(tester.element(find.byType(NavigationBar)));
+  final container = ProviderScope.containerOf(tester.element(find.byType(CupertinoTabBar)));
   unawaited(container.read(activityRepositoryProvider).upsertAll(activities));
   await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
   await tester.pump();
@@ -44,7 +45,7 @@ void main() {
       _run(1, now.subtract(const Duration(days: 2))),
       _run(2, now.subtract(const Duration(days: 200)), name: 'Alter Lauf'),
     ]);
-    await tester.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text('Aktivitäten')));
+    await tester.tap(find.descendant(of: find.byType(CupertinoTabBar), matching: find.text('Aktivitäten')));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await tester.pumpAndSettle();
     expect(find.byType(ActivitiesScreen), findsOneWidget);
@@ -79,7 +80,7 @@ void main() {
     final start = DateTime(now.year, now.month, now.day, now.hour >= 1 ? now.hour - 1 : 0);
     final container = await _start(tester, const []);
     unawaited(
-      Navigator.of(tester.element(find.byType(NavigationBar))).push(
+      Navigator.of(tester.element(find.byType(CupertinoTabBar))).push(
         MaterialPageRoute<void>(
           builder: (_) => Scaffold(
             body: ListView(
@@ -127,7 +128,7 @@ void main() {
         .reportStore
         .store(ActivityReportBuilder.build(activity, fit), today: CalendarDay.today());
     unawaited(
-      Navigator.of(tester.element(find.byType(NavigationBar)))
+      Navigator.of(tester.element(find.byType(CupertinoTabBar)))
           .push(MaterialPageRoute<void>(builder: (_) => ActivityDetailScreen(activity: activity))),
     );
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));

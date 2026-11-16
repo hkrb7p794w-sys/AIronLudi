@@ -364,7 +364,7 @@ class _MorningReportScreenState extends ConsumerState<MorningReportScreen> {
                 ),
                 ListTile(
                   title: const Text('Schlaf-Coach'),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const DisclosureChevron(),
                   onTap: () =>
                       Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const SleepCoachScreen())),
                 ),

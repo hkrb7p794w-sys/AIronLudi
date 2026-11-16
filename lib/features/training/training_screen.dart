@@ -9,6 +9,7 @@ import '../../data/repositories/gym_repository.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/large_title.dart';
 import '../../ui/sport_style.dart';
 import '../gym/gym_providers.dart';
 import '../gym/gym_screen.dart';
@@ -107,7 +108,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
     final season = settings.season;
     final estimate = RaceEstimate(config: season, tests: settings.tests, today: today);
     return Scaffold(
-      appBar: AppBar(title: const Text('Training')),
+      appBar: AppBar(title: const CollapsingTitle(child: Text('Training'))),
       body: RefreshIndicator(
         onRefresh: () async {
           await ref.read(appModelProvider).syncNow();
@@ -116,6 +117,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
         child: ListView(
           padding: const EdgeInsets.only(bottom: 32),
           children: [
+            const LargeTitleHeader('Training'),
             FormSection(
               children: [
                 _HubRow(
@@ -340,7 +342,7 @@ class _HubRow extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: secondary),
+            const DisclosureChevron(),
           ],
         ),
       ),

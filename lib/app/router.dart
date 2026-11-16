@@ -8,6 +8,7 @@ import '../features/onboarding/onboarding_screen.dart';
 import '../features/today/today_screen.dart';
 import '../features/training/training_screen.dart';
 import '../services/providers.dart';
+import '../ui/large_title.dart';
 import 'root_shell.dart';
 
 /// Pfad des Reiters; jeder Reiter hat einen eigenen Navigationsstapel (wie `TabView` + `NavigationStack`).
@@ -39,16 +40,36 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state, shell) => RootShell(shell: shell),
         branches: [
           StatefulShellBranch(
-            routes: [GoRoute(path: tabPath(AppTab.today), builder: (context, state) => const TodayScreen())],
+            routes: [
+              GoRoute(
+                path: tabPath(AppTab.today),
+                builder: (context, state) => const LargeTitleScope(child: TodayScreen()),
+              ),
+            ],
           ),
           StatefulShellBranch(
-            routes: [GoRoute(path: tabPath(AppTab.activities), builder: (context, state) => const ActivitiesScreen())],
+            routes: [
+              GoRoute(
+                path: tabPath(AppTab.activities),
+                builder: (context, state) => const LargeTitleScope(child: ActivitiesScreen()),
+              ),
+            ],
           ),
           StatefulShellBranch(
-            routes: [GoRoute(path: tabPath(AppTab.training), builder: (context, state) => const TrainingScreen())],
+            routes: [
+              GoRoute(
+                path: tabPath(AppTab.training),
+                builder: (context, state) => const LargeTitleScope(child: TrainingScreen()),
+              ),
+            ],
           ),
           StatefulShellBranch(
-            routes: [GoRoute(path: tabPath(AppTab.nutrition), builder: (context, state) => const NutritionScreen())],
+            routes: [
+              GoRoute(
+                path: tabPath(AppTab.nutrition),
+                builder: (context, state) => const LargeTitleScope(child: NutritionScreen()),
+              ),
+            ],
           ),
         ],
       ),

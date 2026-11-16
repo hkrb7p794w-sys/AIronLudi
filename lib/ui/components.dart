@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -149,7 +150,8 @@ class AppChip extends StatelessWidget {
   );
 }
 
-/// Gruppierter Abschnitt wie `Section` in einem `Form`: Überschrift, Inhalt in einer Karte, Fußnote.
+/// Gruppierter Abschnitt wie `Section` in einem `Form`: Überschrift, Inhalt in einer Karte mit Trennlinien zwischen
+/// den Zeilen (eingerückt bis zum Text, wie bei iOS), Fußnote.
 class FormSection extends StatelessWidget {
   const FormSection({super.key, this.header, this.footer, required this.children});
 
@@ -157,35 +159,65 @@ class FormSection extends StatelessWidget {
   final String? footer;
   final List<Widget> children;
 
+  /// Einzug der Trennlinie: bis zum Text, bei Zeilen mit Symbol hinter das Symbol.
+  static double _indent(Widget child) {
+    final hasLeading = switch (child) {
+      ListTile(:final leading) => leading != null,
+      SwitchListTile(:final secondary) => secondary != null,
+      CheckboxListTile(:final secondary) => secondary != null,
+      RadioListTile(:final secondary) => secondary != null,
+      _ => false,
+    };
+    return hasLeading ? 58 : 16;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final muted = theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant);
+    final rows = [
+      for (final (index, child) in children.indexed) ...[
+        if (index > 0) Divider(indent: _indent(child), height: 0.5, thickness: 0.5),
+        child,
+      ],
+    ];
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (header case final header?)
             Padding(
-              padding: const EdgeInsets.only(left: 4, bottom: 6),
-              child: Text(header.toUpperCase(), style: muted?.copyWith(letterSpacing: 0.4)),
+              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 7),
+              child: Text(header.toUpperCase(), style: muted),
             ),
           if (children.isNotEmpty)
             Card(
               margin: EdgeInsets.zero,
               clipBehavior: Clip.antiAlias,
-              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: rows),
             ),
           if (footer case final footer?)
             Padding(
-              padding: const EdgeInsets.fromLTRB(4, 6, 4, 0),
+              padding: const EdgeInsets.fromLTRB(16, 7, 16, 0),
               child: Text(footer, style: muted),
             ),
         ],
       ),
     );
   }
+}
+
+/// Grauer Pfeil am Zeilenende (`NavigationLink`).
+class DisclosureChevron extends StatelessWidget {
+  const DisclosureChevron({super.key});
+
+  @override
+  Widget build(BuildContext context) => Icon(
+    CupertinoIcons.chevron_forward,
+    size: 17,
+    color: Theme.of(context).brightness == Brightness.dark ? const Color(0x4DEBEBF5) : const Color(0x4D3C3C43),
+  );
 }
 
 /// Zeile mit Titel und Wert (wie `LabeledContent`).

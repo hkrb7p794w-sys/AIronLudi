@@ -4,6 +4,7 @@ import 'package:aironludi/features/gym/gym_library.dart';
 import 'package:aironludi/features/gym/gym_providers.dart';
 import 'package:aironludi/services/providers.dart';
 import 'package:coach_core/coach_core.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,14 +18,14 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
     await tester.pumpAndSettle();
-    final container = ProviderScope.containerOf(tester.element(find.byType(NavigationBar)));
+    final container = ProviderScope.containerOf(tester.element(find.byType(CupertinoTabBar)));
     container.read(coachSettingsProvider).profile = UserProfile(
       mode: ProfileMode.personal,
       onboardingDone: true,
       sports: const [TrainingSport.strength],
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text('Training')));
+    await tester.tap(find.descendant(of: find.byType(CupertinoTabBar), matching: find.text('Training')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Gym'));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));

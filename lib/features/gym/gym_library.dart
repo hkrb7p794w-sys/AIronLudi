@@ -89,14 +89,14 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
           MuscleGroupChips(selection: _filter, onChanged: (group) => setState(() => _filter = group)),
           FormSection(
             children: [
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 title: const Text('Nur mit meiner Ausstattung'),
                 value: _onlyAvailable,
                 onChanged: (value) => setState(() => _onlyAvailable = value),
               ),
               ListTile(
                 title: const Text('Meine Ausstattung'),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const DisclosureChevron(),
                 onTap: () =>
                     Navigator.of(context)
                         .push(MaterialPageRoute<void>(builder: (_) => const EquipmentSettingsScreen())),
@@ -119,7 +119,7 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
                   for (final exercise in inGroup)
                     ExerciseLabel(
                       exercise: exercise,
-                      trailing: const Icon(Icons.chevron_right),
+                      trailing: const DisclosureChevron(),
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
                           builder: (_) => ExerciseDetailScreen(exerciseID: exercise.id, gym: widget.gym),
@@ -328,7 +328,7 @@ class EquipmentSettingsScreen extends ConsumerWidget {
             header: 'Geräte',
             children: [
               for (final item in Equipment.values)
-                SwitchListTile(
+                SwitchListTile.adaptive(
                   title: Text(item.label),
                   value: gym.equipment.contains(item),
                   onChanged: (on) => change((gym) => on ? gym.equipment.add(item) : gym.equipment.remove(item)),
@@ -356,7 +356,7 @@ class EquipmentSettingsScreen extends ConsumerWidget {
                 ),
               ),
               for (final plate in plateOptions)
-                SwitchListTile(
+                SwitchListTile.adaptive(
                   title: Text('Scheibe ${GermanFormat.number(plate)} kg'),
                   value: gym.plates.contains(plate),
                   onChanged: (on) => change((gym) {
@@ -705,7 +705,7 @@ class _RoutineEditorState extends ConsumerState<RoutineEditor> {
           onChanged: (value) => item.restSeconds = value,
         ),
         if (index < items.length - 1)
-          SwitchListTile(
+          SwitchListTile.adaptive(
             title: Text('Supersatz mit ${items[index + 1].name}'),
             value: item.supersetWithNext,
             onChanged: (value) => setState(() => item.supersetWithNext = value),
@@ -951,7 +951,7 @@ class _GymPlanScreenState extends ConsumerState<GymPlanScreen> {
         header: 'Schwerpunkt (optional)',
         children: [
           for (final group in [...GymCoach.majorGroups, MuscleGroup.biceps, MuscleGroup.triceps, MuscleGroup.core])
-            SwitchListTile(
+            SwitchListTile.adaptive(
               title: Text(group.rawValue),
               value: _request.focus.contains(group),
               onChanged: (on) => setState(() => on ? _request.focus.add(group) : _request.focus.remove(group)),
@@ -976,7 +976,7 @@ class _GymPlanScreenState extends ConsumerState<GymPlanScreen> {
       FormSection(
         footer: 'Außerdem fließen deine letzten Gewichte, die Beobachtungen aus dem Verlauf und deine anderen Sportarten ein.',
         children: [
-          SwitchListTile(
+          SwitchListTile.adaptive(
             title: const Text('Übungen aus meinen Trainingsplänen bevorzugen'),
             value: _request.keepFavorites,
             onChanged: (value) => setState(() => _request.keepFavorites = value),
@@ -1005,7 +1005,7 @@ class _GymPlanScreenState extends ConsumerState<GymPlanScreen> {
         footer: 'Gilt nur für diesen Plan. Deine Standard-Ausstattung bleibt in den Einstellungen unverändert.',
         children: [
           for (final item in Equipment.values)
-            SwitchListTile(
+            SwitchListTile.adaptive(
               title: Text(item.label),
               value: _usable.contains(item),
               onChanged: (on) => setState(() {
@@ -1081,7 +1081,7 @@ class _GymPlanScreenState extends ConsumerState<GymPlanScreen> {
       FormSection(
         footer: 'Quelle: $_source. Ohne „Ersetzen“ kommen die Pläne zu deinen bestehenden hinzu.',
         children: [
-          SwitchListTile(
+          SwitchListTile.adaptive(
             title: const Text('Bisherige Trainingspläne ersetzen'),
             value: _replaceExisting,
             onChanged: (value) => setState(() => _replaceExisting = value),

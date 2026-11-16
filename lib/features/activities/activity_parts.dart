@@ -182,7 +182,7 @@ class FeedRow extends StatelessWidget {
                 ],
               ),
             ),
-            if (onTap != null) Icon(Icons.chevron_right, color: secondary),
+            if (onTap != null) const DisclosureChevron(),
           ],
         ),
       ),

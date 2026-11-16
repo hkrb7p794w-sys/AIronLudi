@@ -12,6 +12,7 @@ import 'package:coach_core/coach_core.dart'
         MealShare,
         RoutineLink,
         TrainingSport;
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -296,13 +297,17 @@ class _RootShellState extends ConsumerState<RootShell> {
               ],
             )
           : shell,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: shell.currentIndex,
+      // Tab-Leiste wie bei iOS (`TabView`): Symbol über kleiner Beschriftung, Akzentfarbe für den aktiven Reiter.
+      bottomNavigationBar: CupertinoTabBar(
+        currentIndex: shell.currentIndex,
+        height: 50,
+        iconSize: 26,
+        activeColor: Theme.of(context).colorScheme.primary,
         // Erneutes Tippen auf den aktiven Reiter springt an den Anfang seines Stapels.
-        onDestinationSelected: (index) => shell.goBranch(index, initialLocation: index == shell.currentIndex),
-        destinations: [
-          const NavigationDestination(icon: Icon(Icons.wb_sunny_outlined), label: 'Heute'),
-          NavigationDestination(
+        onTap: (index) => shell.goBranch(index, initialLocation: index == shell.currentIndex),
+        items: [
+          const BottomNavigationBarItem(icon: Icon(CupertinoIcons.sun_max), label: 'Heute'),
+          BottomNavigationBarItem(
             icon: Badge(
               isLabelVisible: incoming > 0,
               label: Text('$incoming'),
@@ -310,8 +315,8 @@ class _RootShellState extends ConsumerState<RootShell> {
             ),
             label: 'Aktivitäten',
           ),
-          const NavigationDestination(icon: Icon(Icons.monitor_heart_outlined), label: 'Training'),
-          const NavigationDestination(icon: Icon(Icons.restaurant), label: 'Ernährung'),
+          const BottomNavigationBarItem(icon: Icon(CupertinoIcons.heart_circle), label: 'Training'),
+          const BottomNavigationBarItem(icon: Icon(Icons.restaurant), label: 'Ernährung'),
         ],
       ),
     );

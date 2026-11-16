@@ -64,7 +64,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget _area(String title, String symbol, IconData icon, List<Widget> Function() sections) => ListTile(
     leading: Icon(icon),
     title: Text(title),
-    trailing: const Icon(Icons.chevron_right),
+    trailing: const DisclosureChevron(),
     onTap: () => _push(_AreaScreen(title: title, controller: _controller, sections: sections)),
   );
 
@@ -101,7 +101,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 leading: const Icon(Icons.switch_account),
                 title: Text(ref.watch(currentUserProvider).title, style: const TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: const Text('Benutzer dieses Geräts: wechseln, hinzufügen'),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const DisclosureChevron(),
                 onTap: () => _push(const UsersScreen()),
               ),
             ],
@@ -161,14 +161,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   FormSection(
                     header: 'Quellen',
                     children: [
-                      SwitchListTile(
+                      SwitchListTile.adaptive(
                         title: const Text('Quellen bei Empfehlungen zeigen'),
                         value: settings.showsEvidence,
                         onChanged: (on) => settings.showsEvidence = on,
                       ),
                       ListTile(
                         title: const Text('Quellen und Regeln'),
-                        trailing: const Icon(Icons.chevron_right),
+                        trailing: const DisclosureChevron(),
                         onTap: () => _push(const EvidenceLibraryScreen()),
                       ),
                     ],
@@ -178,7 +178,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     children: [
                       ListTile(
                         title: const Text('Begleiter & Rangliste'),
-                        trailing: const Icon(Icons.chevron_right),
+                        trailing: const DisclosureChevron(),
                         onTap: () => _push(const MotivationSettingsScreen()),
                       ),
                     ],
@@ -198,7 +198,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       children: [
                         ListTile(
                           title: const Text('Saison & Rennen'),
-                          trailing: const Icon(Icons.chevron_right),
+                          trailing: const DisclosureChevron(),
                           onTap: () => _push(const SeasonSettingsScreen()),
                         ),
                       ],
@@ -210,14 +210,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ListTile(
                 leading: const Icon(Icons.restaurant),
                 title: const Text('Ernährung'),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const DisclosureChevron(),
                 onTap: () => _push(const NutritionSettingsScreen()),
               ),
               ListTile(
                 leading: const Icon(Icons.phone_iphone),
                 title: const Text('Sperrbildschirm'),
                 subtitle: const Text('Live-Aktivitäten für Gym und Ernährung'),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const DisclosureChevron(),
                 onTap: () => _push(const LockScreenSettingsScreen()),
               ),
               _area(
@@ -229,7 +229,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     children: [
                       ListTile(
                         title: const Text('Schlaf'),
-                        trailing: const Icon(Icons.chevron_right),
+                        trailing: const DisclosureChevron(),
                         onTap: () => _push(const SleepCoachScreen()),
                       ),
                     ],
@@ -240,7 +240,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     children: [
                       ListTile(
                         title: const Text('Datenquellen und Vorrang'),
-                        trailing: const Icon(Icons.chevron_right),
+                        trailing: const DisclosureChevron(),
                         onTap: () => _push(const DataSourcesScreen()),
                       ),
                     ],
@@ -258,22 +258,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     children: [
                       ListTile(
                         title: const Text('Datensicherung'),
-                        trailing: const Icon(Icons.chevron_right),
+                        trailing: const DisclosureChevron(),
                         onTap: () => _push(const BackupScreen()),
                       ),
                       ListTile(
                         title: const Text('Eigene Quellen'),
-                        trailing: const Icon(Icons.chevron_right),
+                        trailing: const DisclosureChevron(),
                         onTap: () => _push(const UserSourcesScreen()),
                       ),
                       ListTile(
                         title: const Text('Daten für KI exportieren'),
-                        trailing: const Icon(Icons.chevron_right),
+                        trailing: const DisclosureChevron(),
                         onTap: () => _push(const CoachExportScreen()),
                       ),
                       ListTile(
                         title: const Text('KI-Antwort importieren'),
-                        trailing: const Icon(Icons.chevron_right),
+                        trailing: const DisclosureChevron(),
                         onTap: () => _push(const CoachImportScreen()),
                       ),
                     ],
@@ -292,12 +292,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     children: [
                       ListTile(
                         title: const Text('Garmin-Diagnose'),
-                        trailing: const Icon(Icons.chevron_right),
+                        trailing: const DisclosureChevron(),
                         onTap: () => _push(const GarminDiagnosticsScreen()),
                       ),
                       ListTile(
                         title: const Text('HealthKit'),
-                        trailing: const Icon(Icons.chevron_right),
+                        trailing: const DisclosureChevron(),
                         onTap: () => _push(const HealthDiagnosticsScreen()),
                       ),
                     ],

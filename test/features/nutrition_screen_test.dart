@@ -3,6 +3,7 @@ import 'package:aironludi/data/storage.dart';
 import 'package:aironludi/features/nutrition/nutrition_screen.dart';
 import 'package:aironludi/services/providers.dart';
 import 'package:coach_core/coach_core.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,7 +14,7 @@ void main() {
   Future<void> openNutrition(WidgetTester tester) async {
     await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
     await tester.pumpAndSettle();
-    await tester.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text('Ernährung')));
+    await tester.tap(find.descendant(of: find.byType(CupertinoTabBar), matching: find.text('Ernährung')));
     await tester.pumpAndSettle();
   }
 

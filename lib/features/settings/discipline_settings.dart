@@ -38,14 +38,14 @@ class DisciplineSettingsSection extends ConsumerWidget {
           ListTile(
             leading: Icon(AppSymbols.of('dumbbell.fill')),
             title: const Text('Gym'),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const DisclosureChevron(),
             onTap: () => _push(context, const GymSettingsScreen()),
           ),
         for (final sport in endurance)
           ListTile(
             leading: Icon(AppSymbols.of(sport.symbol)),
             title: Text(sport.shortLabel),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const DisclosureChevron(),
             onTap: () => _push(context, EnduranceSettingsScreen(sport: sport)),
           ),
       ],
@@ -126,14 +126,14 @@ class GymSettingsScreen extends ConsumerWidget {
               rest('Grundübungen', gym.restCompound, (gym, seconds) => gym.restCompound = seconds),
               rest('Isolationsübungen', gym.restIsolation, (gym, seconds) => gym.restIsolation = seconds),
               rest('Nach Aufwärmsätzen', gym.restWarmup, (gym, seconds) => gym.restWarmup = seconds),
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 title: const Text('Pause nach dem Satz sofort starten'),
                 value: gym.autoStartsRest,
                 onChanged: (value) => change((gym) => gym.autoStartsRest = value),
               ),
               ListTile(
                 title: const Text('Pausen und Notizen je Übung'),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const DisclosureChevron(),
                 onTap: () => _push(context, const ExerciseSettingsScreen()),
               ),
               _Choice<RestSound>(
@@ -145,7 +145,7 @@ class GymSettingsScreen extends ConsumerWidget {
                   unawaited(ref.read(restSoundPlayerProvider).play(sound));
                 },
               ),
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 title: const Text('Vibration am Pausenende'),
                 value: gym.restHaptic,
                 onChanged: (value) => change((gym) => gym.restHaptic = value),
@@ -173,7 +173,7 @@ class GymSettingsScreen extends ConsumerWidget {
                 'und 75 %. Schwere Isolationsübungen: ein Satz. Ist der Muskel schon gearbeitet, genügt ein '
                 'Einstiegssatz. Aufwärmsätze zählen nicht zum Volumen.',
             children: [
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 title: const Text('Aufwärmsätze vorschlagen'),
                 value: gym.suggestsWarmUp,
                 onChanged: (value) => change((gym) => gym.suggestsWarmUp = value),
@@ -184,7 +184,7 @@ class GymSettingsScreen extends ConsumerWidget {
             children: [
               ListTile(
                 title: const Text('Ausstattung, Stange und Scheiben'),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const DisclosureChevron(),
                 onTap: () => _push(context, const EquipmentSettingsScreen()),
               ),
             ],
@@ -195,7 +195,7 @@ class GymSettingsScreen extends ConsumerWidget {
                 'freiwillig, das Abhaken bleibt ein Tipp. Bleiben in allen Sätzen 4 oder mehr übrig, schlägt die App '
                 'sofort mehr Gewicht vor.',
             children: [
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 title: const Text('Wiederholungen in Reserve abfragen'),
                 value: gym.tracksRIR,
                 onChanged: (value) => change((gym) => gym.tracksRIR = value),
@@ -208,12 +208,12 @@ class GymSettingsScreen extends ConsumerWidget {
                 'Sperrbildschirm stehen Pause und nächster Satz, mit „Satz erledigt“ zum Antippen (Live-Aktivität bzw. '
                 'Mitteilung; in den Systemeinstellungen unter AIronLudi abschaltbar).',
             children: [
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 title: const Text('Bildschirm anlassen'),
                 value: gym.keepsScreenOn,
                 onChanged: (value) => change((gym) => gym.keepsScreenOn = value),
               ),
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 title: const Text('Pause auf dem Sperrbildschirm'),
                 value: gym.liveActivity,
                 onChanged: (value) => change((gym) => gym.liveActivity = value),
@@ -222,7 +222,7 @@ class GymSettingsScreen extends ConsumerWidget {
                 ListTile(
                   title: const Text('Ansicht auf dem Sperrbildschirm'),
                   subtitle: Text(gym.liveActivityLayout.label),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const DisclosureChevron(),
                   onTap: () => _push(context, const LockScreenSettingsScreen()),
                 ),
             ],
@@ -235,13 +235,13 @@ class GymSettingsScreen extends ConsumerWidget {
                 '$hours Stunden als eigenes Krafttraining hochgeladen (abschaltbar). Nur mit Garmin-Konto; nutzt die '
                 'Schnittstelle von „Sätze bearbeiten“ in Garmin Connect.',
             children: [
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 title: const Text('Mit Garmin Connect abgleichen'),
                 value: gym.uploadsToGarmin,
                 onChanged: (value) => change((gym) => gym.uploadsToGarmin = value),
               ),
               if (gym.uploadsToGarmin)
-                SwitchListTile(
+                SwitchListTile.adaptive(
                   title: const Text('Ohne Uhr als eigene Aktivität hochladen'),
                   value: gym.garminFallbackUpload,
                   onChanged: (value) => change((gym) => gym.garminFallbackUpload = value),
@@ -367,7 +367,7 @@ class _ExerciseSettingsScreenState extends ConsumerState<ExerciseSettingsScreen>
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: const DisclosureChevron(),
       onTap: () => _push(context, ExerciseSettingsDetailScreen(exercise: exercise)),
     );
   }
@@ -574,7 +574,7 @@ class EnduranceSettingsScreen extends ConsumerWidget {
               footer: season ? 'Am Abend vor dem Schwimmen: Badesachen, Brille, Schloss.' : 'Herzfrequenz am Handgelenk ist im Wasser ungenau – Schwimmen bewertet die App nach Dauer und Plan.',
               children: [
                 if (season)
-                  SwitchListTile(
+                  SwitchListTile.adaptive(
                     title: const Text('Ausrüstung am Vorabend (18 Uhr)'),
                     value: settings.reminders.equipment,
                     onChanged: (value) => settings.reminders = settings.reminders.copy()..equipment = value,
@@ -652,6 +652,7 @@ class HeartRateRow extends StatelessWidget {
         title: Text(title),
         subtitle: const Text('automatisch'),
         trailing: TextButton(
+          style: TextButton.styleFrom(textStyle: Theme.of(context).textTheme.bodyMedium),
           onPressed: () => onChanged((min + max) ~/ 2 + 10),
           child: const Text('eigenen Wert setzen'),
         ),

@@ -340,7 +340,7 @@ class _MotivationSettingsScreenState extends ConsumerState<MotivationSettingsScr
                 'freundlich und erinnert dich an Einheiten. Er richtet sich nach denselben Regeln wie die Empfehlung: '
                 'Bei schlechter Erholung lobt er das Ausruhen. Das Foto bleibt auf diesem Gerät.',
             children: [
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 title: const Text('Begleiter anzeigen'),
                 value: companion.enabled,
                 onChanged: (on) => _companion((companion) => companion.enabled = on),

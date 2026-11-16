@@ -510,7 +510,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               'Beratung.',
           children: [
             for (final flag in HealthFlag.values)
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 title: Text(flag.label),
                 value: _draft.health.contains(flag),
                 onChanged: (on) => setState(() {

@@ -618,6 +618,18 @@ Auf Wunsch des Nutzers; die Swift-App kennt nur einen Benutzer. Tests: `packages
   Flutter-App aus (`AndroidConnectLink`, gleiche Regeln wie Einladungen: ein Haupt-Token wird nie durch einen Link
   für einen anderen Server ersetzt). Bisher war das Schema nur im Manifest angemeldet.
 
+## 2026-11-16 – Design wie die Swift-App
+
+- Rückmeldung des Nutzers: Seit der Umstellung sah die App anders aus (Material 3 mit oranger Grundfarbe). Die
+  Swift-App nutzt den SwiftUI-Standard ohne eigene Akzentfarbe, also `systemBlue`, gruppierte Listen
+  (`systemGroupedBackground`, `secondarySystemGroupedBackground`), iOS-Schriftgrößen und die iOS-Tab-Leiste.
+- `AppTheme` bildet das zentral nach (Farben aus den Human Interface Guidelines, „Color“), statt jede Seite einzeln
+  umzubauen: `FormSection` zeichnet Trennlinien wie `Form`, `CupertinoTabBar` ersetzt `NavigationBar`, die vier
+  Hauptseiten zeigen große Überschriften (`LargeTitleScope`), Pfeile am Zeilenende sind grau (`DisclosureChevron`).
+- Gilt auf beiden Plattformen gleich, damit die App überall gleich aussieht; nur die Schalter sind adaptiv
+  (`SwitchListTile.adaptive`: iOS-Schalter auf dem iPhone, Material-Schalter unter Android). Schrift ist die des
+  Systems (SF Pro auf dem iPhone, Roboto unter Android).
+
 ## 2026-11-16 – Update-Hinweis der Android-App (neu, kein Swift-Vorbild)
 
 - Die Android-App kommt nicht aus dem Play Store und aktualisiert sich nicht selbst; still installieren erlaubt
