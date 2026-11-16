@@ -1,7 +1,17 @@
 import 'dart:async';
 
 import 'package:coach_core/coach_core.dart'
-    show AccountInvite, CookLink, CookPartnerLink, CookReleaseLink, LeagueInvite, MealShare, RoutineLink, TrainingSport;
+    show
+        AccountInvite,
+        AndroidConnectLink,
+        CookLink,
+        CookPartnerLink,
+        CookReleaseLink,
+        InviteDecision,
+        LeagueInvite,
+        MealShare,
+        RoutineLink,
+        TrainingSport;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -177,6 +187,12 @@ class _RootShellState extends ConsumerState<RootShell> {
         return;
       }
     }
+    // „In der App verbinden“ von der Android-Download-Seite: ironludi://connect?worker=…&token=… (nur KI-Zugang).
+    if (AndroidConnectLink.fromUri(uri) case final connect?) {
+      ref.read(incomingLinkProvider.notifier).consume();
+      unawaited(_connectWorker(connect));
+      return;
+    }
     if (LeagueInvite.fromUri(uri) case final league?) {
       ref.read(incomingLinkProvider.notifier).consume();
       unawaited(
@@ -196,6 +212,23 @@ class _RootShellState extends ConsumerState<RootShell> {
     } else {
       unawaited(presentAccountAuth(context, AccountAuthMode.register, invite: invite));
     }
+  }
+
+  Future<void> _connectWorker(AndroidConnectLink link) async {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final ai = ref.read(aiClientProvider);
+    final String message;
+    switch (link.decision(currentURL: ai.workerURL, currentToken: ai.storedToken)) {
+      case InviteDecision.useInviteToken:
+        await ai.configure(url: link.workerURL, token: link.token);
+        message = 'KI-Zugang verbunden.';
+      case InviteDecision.keepCurrentToken:
+        message = 'KI-Zugang ist schon verbunden.';
+      case InviteDecision.rejectOtherServer:
+        message =
+            'Dieser Link gehört zu einem anderen Server (${link.host}). Dein eigener KI-Zugang bleibt unverändert.';
+    }
+    messenger?.showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _completeWhoop(Uri uri) async {

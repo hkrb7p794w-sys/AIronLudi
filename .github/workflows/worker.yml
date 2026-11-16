@@ -52,6 +52,7 @@ jobs:
       GH_MODELS_TOKEN: ${{ secrets.GH_MODELS_TOKEN }}
       WHOOP_CLIENT_ID: ${{ secrets.WHOOP_CLIENT_ID }}
       WHOOP_CLIENT_SECRET: ${{ secrets.WHOOP_CLIENT_SECRET }}
+      RELEASES_READ_TOKEN: ${{ secrets.RELEASES_READ_TOKEN }}
     steps:
       - name: Secrets prüfen
         id: secrets
@@ -78,6 +79,8 @@ jobs:
           if [ -n "$WHOOP_CLIENT_ID" ] && [ -n "$WHOOP_CLIENT_SECRET" ]; then
             names="$names"$'\n'"WHOOP_CLIENT_ID"$'\n'"WHOOP_CLIENT_SECRET"
           fi
+          # Android-APK aus dem privaten Release-Repo (android.ts, docs/einrichtung.md).
+          [ -n "$RELEASES_READ_TOKEN" ] && names="$names"$'\n'"RELEASES_READ_TOKEN"
           { echo "names<<EOF"; echo "$names"; echo "EOF"; } >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@v7

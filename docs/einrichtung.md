@@ -63,10 +63,28 @@ schließt beide aus.
 | `COACH_APP_TOKEN` | App-Token |
 | `GEMINI_API_KEY`, `GROQ_API_KEY`, `CEREBRAS_API_KEY`, `MISTRAL_API_KEY`, `GH_MODELS_TOKEN` | KI-Keys (Abschnitt 2) |
 | `WHOOP_CLIENT_ID`, `WHOOP_CLIENT_SECRET` | optional, Abschnitt 6 |
+| `RELEASES_TOKEN`, `RELEASES_READ_TOKEN` | Android-Download über das private Repo (Abschnitt unten) |
 | `ANDROID_KEYSTORE_B64`, `ANDROID_KEYSTORE_PASSWORD` | Signaturschlüssel der Android-App (Keystore vom 16.11.2026, Alias `aironludi`). **Nicht mehr wechseln:** Jede spätere Version muss mit genau diesem Schlüssel signiert sein, sonst lässt sie sich nicht als Update installieren. Datei und Passwort sicher aufbewahren |
 
 Danach *Actions › Worker › Run workflow*. Fehlt ein Secret, endet der Lauf grün mit „Deploy übersprungen – fehlende
 Secrets: …“.
+
+### Android-Download über ein privates Repo
+
+Die Android-APK (für alle Prozessortypen, über 100 MB) ist zu groß für Workers KV (höchstens 25 MiB je Datei). Sie
+liegt deshalb als Release in einem **privaten** Repo; die Download-Seite des Workers holt sie von dort und reicht
+sie durch. Für die Leute ändert sich nichts (gleicher Link, keine GitHub-Anmeldung). Die iPhone-IPA (rund 16 MB)
+bleibt in KV.
+
+1. Neues **privates** Repo `aironludi-releases` anlegen (leer, ohne README reicht). Anderer Name: Repo-Variable
+   `RELEASES_REPO` = `<owner>/<name>` setzen.
+2. Zwei Fine-grained Tokens (*GitHub › Settings › Developer settings › Fine-grained tokens › Generate new token*),
+   beide mit *Repository access: Only select repositories* › nur `aironludi-releases`:
+   - `RELEASES_TOKEN`: *Permissions › Contents: Read and write* → als Secret in **AIronLudi** (lädt hoch).
+   - `RELEASES_READ_TOKEN`: *Permissions › Contents: Read-only* → als Secret in **AIronLudi** (der Worker-Lauf
+     überträgt es an den Worker).
+3. *Actions › Worker › Run workflow*, danach beim nächsten Android-Build auf `main` (mit `DEPLOY_ANDROID=true`)
+   landet die APK im privaten Repo. Es bleiben die letzten drei Versionen.
 
 ## 5. App mit dem Worker verbinden (dein Gerät)
 

@@ -219,7 +219,16 @@ final class LeagueInvite {
   String? get host => urlHost(workerURL);
 
   /// Was eine Einladung mit dem gespeicherten Zugang machen darf.
-  InviteDecision decision({required String currentURL, required String? currentToken}) {
+  InviteDecision decision({required String currentURL, required String? currentToken}) =>
+      inviteDecision(host: host, currentURL: currentURL, currentToken: currentToken);
+
+  /// Gemeinsame Regel für Einladungen und den Android-Link: Ohne Zugang gilt der aus dem Link; beim selben Server
+  /// bleibt der vorhandene; ein Haupt-Token wird nie durch einen Link für einen anderen Server ersetzt.
+  static InviteDecision inviteDecision({
+    required String? host,
+    required String currentURL,
+    required String? currentToken,
+  }) {
     if (currentToken == null || currentToken.isEmpty) return InviteDecision.useInviteToken;
     if (urlHost(currentURL) == host) return InviteDecision.keepCurrentToken;
     return GuestToken.isGuest(currentToken) ? InviteDecision.useInviteToken : InviteDecision.rejectOtherServer;
@@ -245,6 +254,34 @@ abstract final class GuestToken {
   static const prefix = 'g1.';
 
   static bool isGuest(String token) => token.startsWith(prefix);
+}
+
+/// „In der App verbinden“ von der Android-Download-Seite: `ironludi://connect?worker=…&token=…` (Schema der
+/// bisherigen Android-App, Seite in `worker/src/android.ts`). Übernimmt nur den KI-Zugang, keine Rangliste.
+final class AndroidConnectLink {
+  const AndroidConnectLink({required this.workerURL, required this.token});
+
+  static const scheme = 'ironludi';
+
+  final String workerURL;
+  final String token;
+
+  static AndroidConnectLink? fromUri(Uri url) {
+    if (url.scheme != scheme || url.host != 'connect') return null;
+    final items = queryItems(url);
+    var worker = (items['worker'] ?? '').trim();
+    while (worker.endsWith('/')) {
+      worker = worker.substring(0, worker.length - 1);
+    }
+    final token = (items['token'] ?? '').trim();
+    if (!worker.startsWith('https://') || urlHost(worker) == null || token.isEmpty) return null;
+    return AndroidConnectLink(workerURL: worker, token: token);
+  }
+
+  String? get host => urlHost(workerURL);
+
+  InviteDecision decision({required String currentURL, required String? currentToken}) =>
+      LeagueInvite.inviteDecision(host: host, currentURL: currentURL, currentToken: currentToken);
 }
 
 /// Link zur Android-Download-Seite mit Gastzugang im Anker: Der Browser schickt den Anker nicht an den Server, die

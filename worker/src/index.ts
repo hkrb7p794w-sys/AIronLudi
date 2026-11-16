@@ -79,7 +79,10 @@ export async function handle(request: Request, env: Env, deps: Deps = defaultDep
 
   const sidestore = await handleSideStore(request, env.COACH_APP_TOKEN, env.RELEASES);
   if (sidestore) return sidestore;
-  const android = await handleAndroid(request, env.COACH_APP_TOKEN, env.RELEASES);
+  const android = await handleAndroid(request, env.COACH_APP_TOKEN, env.RELEASES, {
+    token: env.RELEASES_READ_TOKEN,
+    fetch: deps.fetch,
+  });
   if (android) return android;
 
   if (request.method === "GET" && pathname === "/v1/health") {

@@ -603,3 +603,17 @@ Auf Wunsch des Nutzers; die Swift-App kennt nur einen Benutzer. Tests: `packages
   Woche, wartende KI-Auswertungen.
 - Die Testdatei ist von Hand nach den Datenklassen gebaut (Gradle-Lauf der Kotlin-App in der Sitzung nicht möglich);
   ein Abgleich mit einer echten Sicherung steht beim Gerätetest an.
+
+## 2026-11-16 – Android-APK über ein privates Release-Repo
+
+- Die universelle APK (alle Prozessortypen, auf Wunsch des Nutzers keine Beschränkung auf arm64) ist rund 109 MB groß,
+  Workers KV nimmt höchstens 25 MiB je Wert. Statt R2 (verlangt vermutlich ein Zahlungsmittel) oder öffentlichen
+  GitHub-Releases (APK auffindbar) liegt sie als Release in einem privaten Repo (`aironludi-releases`, Variable
+  `RELEASES_REPO`). AIronLudi bleibt öffentlich, damit die macOS-Minuten kostenlos bleiben.
+- `android.json` in KV bekommt `asset` (`repo`, `id`); der Worker holt die Datei mit `RELEASES_READ_TOKEN` über die
+  GitHub-API und folgt der Weiterleitung auf die signierte Adresse **ohne** Token. Stände ohne `asset` kommen wie
+  bisher aus KV. Die letzten drei Releases bleiben (Rückweg). Neuer Dateiname `AIronLudi.apk`, der alte Pfad
+  `IronLudi-Gym.apk` funktioniert weiter. Die IPA (rund 16 MB) bleibt in KV.
+- `ironludi://connect?worker=…&token=…` (Knopf „In der App verbinden“ der Download-Seite) wertet jetzt auch die
+  Flutter-App aus (`AndroidConnectLink`, gleiche Regeln wie Einladungen: ein Haupt-Token wird nie durch einen Link
+  für einen anderen Server ersetzt). Bisher war das Schema nur im Manifest angemeldet.

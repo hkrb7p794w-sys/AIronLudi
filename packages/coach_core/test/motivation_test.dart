@@ -323,6 +323,37 @@ void main() {
       expect(url.fragment, 'zugang=g1.abcdefghijk2.0f');
     });
 
+    test('„In der App verbinden“ von der Android-Seite (ironludi://connect)', () {
+      // So baut die Seite den Link: Adresse per encodeURIComponent, Token aus dem Anker wie er ist.
+      final link = AndroidConnectLink.fromUri(
+        Uri.parse('ironludi://connect?worker=https%3A%2F%2Fw.example.dev&token=g1.abcdefghijk2.0f'),
+      )!;
+      expect(link.workerURL, 'https://w.example.dev');
+      expect(link.token, 'g1.abcdefghijk2.0f');
+      expect(link.host, 'w.example.dev');
+      expect(
+        AndroidConnectLink.fromUri(Uri.parse('ironludi://connect?worker=https://w.example.dev/&token=t'))?.workerURL,
+        'https://w.example.dev',
+      );
+      expect(AndroidConnectLink.fromUri(Uri.parse('ironludi://connect?worker=http://w.example.dev&token=t')), isNull);
+      expect(AndroidConnectLink.fromUri(Uri.parse('ironludi://connect?worker=https://w.example.dev')), isNull);
+      expect(AndroidConnectLink.fromUri(Uri.parse('coach://connect?worker=https://w.example.dev&token=t')), isNull);
+      // Gleiche Regeln wie Einladungen: Das Haupt-Token geht nie an einen anderen Server.
+      expect(link.decision(currentURL: '', currentToken: null), InviteDecision.useInviteToken);
+      expect(
+        link.decision(currentURL: 'https://w.example.dev', currentToken: 'haupt'),
+        InviteDecision.keepCurrentToken,
+      );
+      expect(
+        link.decision(currentURL: 'https://anders.example', currentToken: 'haupt'),
+        InviteDecision.rejectOtherServer,
+      );
+      expect(
+        link.decision(currentURL: 'https://anders.example', currentToken: 'g1.x.y'),
+        InviteDecision.useInviteToken,
+      );
+    });
+
     test('eine Einladung gibt nie das Haupt-Token preis', () {
       const invite = LeagueInvite(workerURL: 'https://fremd.example', token: 'g1.gast.sig', code: 'team-abc234');
       const home = 'https://mein.example';
