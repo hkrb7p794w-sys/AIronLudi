@@ -20,6 +20,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../data/storage.dart';
 import '../features/account/account_views.dart';
+import '../features/endurance/endurance_controller.dart';
 import '../features/gym/gym_controller.dart';
 import '../features/gym/gym_providers.dart';
 import '../features/gym/gym_share_views.dart';
@@ -151,6 +152,8 @@ class _RootShellState extends ConsumerState<RootShell> {
     await model.syncIfDue();
     await model.refreshReminders();
     await widgets.publish();
+    // Ausdauerplan an neue Aktivitäten und Erholungswerte anpassen, Garmin-Kalender abgleichen (falls eingeschaltet).
+    await ref.read(enduranceControllerProvider).refresh();
     // Freundschaftsanfragen (Zahl am Reiter „Aktivitäten“) und neue Trainings für den Feed.
     await ref.read(socialServiceProvider).refresh();
     await ref.read(socialAutoShareProvider).run(isDemo: model.isDemo);

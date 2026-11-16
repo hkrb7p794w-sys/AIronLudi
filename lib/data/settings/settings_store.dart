@@ -52,6 +52,9 @@ abstract final class SettingsKeys {
   static const demo = 'coach.demo';
   static const note = 'coach.note';
 
+  /// Adaptiver Ausdauerplan (Laufen, Rad, Schwimmen) des Benutzers, neu in AIronLudi.
+  static const endurancePlan = 'coach.endurancePlan';
+
   /// Worker-Adresse (gehört zur Sicherung, `AppBackup.isBackedUp`).
   static const workerURL = 'ai.workerURL';
 

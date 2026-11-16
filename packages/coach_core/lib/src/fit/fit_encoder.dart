@@ -12,7 +12,10 @@ enum FitBaseType {
   uint8(0x02, 1),
   uint16(0x84, 2),
   uint32(0x86, 4),
-  uint32z(0x8C, 4);
+  uint32z(0x8C, 4),
+
+  /// Nullterminierter UTF-8-Text; die Größe steht am Feld ([FitField.text]).
+  string(0x07, 1);
 
   const FitBaseType(this.rawValue, this.size);
 
@@ -22,13 +25,35 @@ enum FitBaseType {
 
 /// Ein Feld einer Datennachricht.
 final class FitField {
-  const FitField(this.number, this.type, this.value);
+  const FitField(this.number, this.type, this.value) : bytes = null;
+
+  /// Textfeld mit fester Größe [size] (Byte inklusive Nullterminator); längere Texte werden an einer
+  /// Zeichengrenze gekürzt.
+  FitField.text(this.number, String text, {int size = 64})
+    : type = FitBaseType.string,
+      value = 0,
+      bytes = _textBytes(text, size);
 
   final int number;
   final FitBaseType type;
 
   /// Wert als vorzeichenlose 32-Bit-Zahl.
   final int value;
+
+  /// Rohbytes bei Textfeldern.
+  final List<int>? bytes;
+
+  int get size => bytes?.length ?? type.size;
+
+  static List<int> _textBytes(String text, int size) {
+    final result = <int>[];
+    for (final rune in text.runes) {
+      final encoded = utf8.encode(String.fromCharCode(rune));
+      if (result.length + encoded.length > size - 1) break;
+      result.addAll(encoded);
+    }
+    return [...result, ...List.filled(size - result.length, 0)];
+  }
 }
 
 /// Schreibt FIT-Dateien (Protokoll 2.0, Little Endian) – hier für Krafttrainings, die zurück nach Garmin Connect
@@ -47,7 +72,7 @@ final class FitEncoder {
 
   /// Fügt eine Datennachricht hinzu; die Definition wird bei Bedarf vorher geschrieben.
   void add({required int global, required List<FitField> fields}) {
-    final layout = fields.map((field) => '${field.number}:${field.type.rawValue}').join(',');
+    final layout = fields.map((field) => '${field.number}:${field.type.rawValue}:${field.size}').join(',');
     int? local;
     for (final MapEntry(:key, :value) in _definitions.entries) {
       if (value.global == global && value.layout == layout) {
@@ -64,11 +89,15 @@ final class FitEncoder {
         ..addAll([global & 0xFF, (global >> 8) & 0xFF])
         ..add(fields.length);
       for (final field in fields) {
-        _body.addAll([field.number, field.type.size, field.type.rawValue]);
+        _body.addAll([field.number, field.size, field.type.rawValue]);
       }
     }
     _body.add(local);
     for (final field in fields) {
+      if (field.bytes case final bytes?) {
+        _body.addAll(bytes);
+        continue;
+      }
       for (var index = 0; index < field.type.size; index++) {
         _body.add((field.value >> (8 * index)) & 0xFF);
       }

@@ -137,6 +137,21 @@ von Hand: denselben Link wieder öffnen.
 
 ---
 
+## Ausdauerplan: Laufen, Rad/Zwift, Schwimmen
+
+1. *Training › Ausdauerplan › Plan erstellen:* **Auf ein Ziel** (Wettkampf, Datum, optional Zielzeit h:mm) oder
+   **Für einen Zeitraum** (4, 8 oder 12 Wochen). Disziplinen, Trainingstage, Tag der langen Einheit und Zeit je
+   Woche wählen. Schwellenwerte (Lauf-Pace, FTP, CSS, Schwellenpuls) eintragen, soweit bekannt – daraus werden die
+   Ziele je Schritt.
+2. Der Plan passt sich jeden Tag selbst an (nach dem Abruf): härteres Training als geplant, ausgefallene Einheiten
+   und schlechte Erholungswerte. Was sich geändert hat und warum, steht unter **Anpassungen**.
+3. **An die Uhr:** In einer Einheit **Einheit an Uhr senden** (Garmin-Konto unter *Einstellungen › Training und
+   Fitness › Garmin-Konto* nötig) – oder *Automatisch in den Garmin-Kalender* einschalten: Die nächsten 14 Tage
+   stehen dann im Garmin-Kalender und werden bei jeder Planänderung ersetzt.
+4. **Zwift:** Bei Rad-Einheiten **Für Zwift exportieren (.zwo)**, Datei am PC nach
+   `Dokumente\Zwift\Workouts\<Zwift-ID>\` kopieren. In Zwift unter
+   *Training › Eigene Workouts*. **FIT-Datei teilen** gibt es für alle Einheiten.
+
 ## Für dich als Betreiber:in: KI-Worker in der App eintragen
 
 Nur auf deinem eigenen Gerät (alle anderen nutzen den Einladungs- bzw. Android-Link):

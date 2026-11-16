@@ -11,6 +11,8 @@ import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/large_title.dart';
 import '../../ui/sport_style.dart';
+import '../endurance/endurance_controller.dart';
+import '../endurance/endurance_screens.dart';
 import '../gym/gym_providers.dart';
 import '../gym/gym_screen.dart';
 import '../health/health_screen.dart';
@@ -86,6 +88,11 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
     ref.listen(appModelProvider.select((model) => model.lastSync), (_, _) => unawaited(_reload()));
     final settings = ref.watch(coachSettingsProvider);
     final running = ref.watch(gymControllerProvider).active?.title;
+    final endurancePlan = ref.watch(enduranceControllerProvider).plan;
+    final enduranceSummary = switch (endurancePlan?.slotsOn(CalendarDay.today()).firstOrNull) {
+      final slot? => slot.current.isRest ? 'Ruhetag' : slot.current.type.label,
+      null => endurancePlan == null ? null : 'heute frei',
+    };
     final today = CalendarDay.today();
     final controller = _controller;
     final gym = [for (final record in _gym) GymItem.fromSession(record.session)];
@@ -129,6 +136,14 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                   onTap: () => _open(
                     (_) => settings.profile.mode == ProfileMode.season ? const PlanScreen() : const MyWeekScreen(),
                   ),
+                ),
+                _HubRow(
+                  title: 'Ausdauerplan',
+                  symbol: 'figure.run',
+                  color: Colors.deepOrange,
+                  value: enduranceSummary ?? 'Erstellen',
+                  caption: 'Laufen, Rad/Zwift, Schwimmen – passt sich an',
+                  onTap: () => _open((_) => const EnduranceScreen()),
                 ),
                 // Früher eigener Reiter; „Training starten“ (App-Icon, Kurzbefehl, Widget) öffnet diesen Bereich direkt.
                 if (settings.profile.trains(TrainingSport.strength))

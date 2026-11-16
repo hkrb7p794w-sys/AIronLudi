@@ -643,3 +643,42 @@ Auf Wunsch des Nutzers; die Swift-App kennt nur einen Benutzer. Tests: `packages
   Version (`update.lastCheck`, `update.dismissedVersion`) sind Gerätestand und gehören nicht zur Sicherung.
 - iPhone: nichts Neues, Updates meldet weiterhin SideStore. Fehler (kein Netz, alter Worker, keine Version) bleiben still.
 
+
+## 2026-11-16 – Adaptiver Ausdauerplan (Laufen, Rad/Zwift, Schwimmen)
+
+- **Neue Funktion ohne Swift-Gegenstück** (Auftrag des Nutzers): Trainingsplan auf ein Ziel (5 km bis Langdistanz,
+  Radrennen, Schwimmwettkampf; Datum, optionale Zielzeit) oder für einen Zeitraum (4/8/12 Wochen, Grundlage oder
+  Formsteigerung). Bestehende Funktionen (Saisonplan, eigener Wochenplan) bleiben unverändert; der Plan ist ein
+  zusätzlicher Eintrag „Ausdauerplan“ im Reiter Training.
+- **Regeln entscheiden** (`TrainingPlanEngine` in `coach_core`, deterministisch, Tests in `endurance_test.dart`):
+  - Periodisierung: Grundlage → Aufbau → Spitze → Tapering → Wettkampfwoche, 3:1 mit Entlastungswoche; Tapering je
+    Distanz 1–3 Wochen (Mujika & Padilla 2003, Bosquet et al. 2007: 40–60 % weniger Umfang bei gleicher
+    Intensität). Umfang steigt höchstens 5 Prozentpunkte je Woche (unter der üblichen 10-%-Grenze).
+  - Intensität nach Zonen relativ zur Schwelle: Rad % FTP (Coggan), Laufen/Schwimmen % der Schwellen- bzw.
+    CSS-Geschwindigkeit, ersatzweise % Schwellenpuls (Friel). Ohne Werte nur Zonen als Notiz.
+  - Belastung als Training Stress Score (TSS, rTSS, sTSS, hrTSS), Fitness/Ermüdung/Form nach dem
+    Impulse-Response-Modell (CTL 42, ATL 7 Tage). Ohne Messwerte eine Schätzung je Stunde und Sportart.
+  - Anpassung jeden Tag vom ursprünglichen Plan aus (entfällt der Grund, gilt wieder der Plan): ausgefallene
+    Schlüsseleinheit einmal je Woche nachholen, ohne harte Tage zu stapeln (ausgefallener Grundlagenumfang wird
+    bewusst nicht nachgeholt); deutlich mehr Belastung als geplant (> 25 TSS bzw. 30 %) entschärft die nächste
+    Einheit, **gleich welcher Disziplin**; Form unter −30 nimmt Intensität heraus; Erholung heute über
+    `RecoveryEvaluator` (gleiche Ampel wie „Heute“) plus Body Battery beim Aufwachen (< 25 Ruhetag, < 40 locker).
+    Wettkämpfe ändert die App nie selbst. Jede Änderung steht mit Grund im Anpassungsverlauf.
+  - Health ist optional: Die Tageswerte kommen zusammengeführt aus Garmin, Health und WHOOP; ohne Werte entfällt
+    nur die Erholungsregel.
+- **Export und Synchronisation** (`WorkoutExport`, `WorkoutExporterService`):
+  - Garmin: über den Garmin-Connect-Kalender wie schon `GarminWorkoutService` (inoffizielle `workout-service`-
+    Schnittstelle), jetzt mit Zielen je Schritt (`pace.zone`, `power.zone`, `heart.rate.zone`). Die offizielle
+    „Garmin Training API“ setzt eine Partner-Freigabe durch Garmin voraus und kommt daher nicht in Frage.
+    Automatischer Abgleich (abschaltbar, Standard aus) hält die nächsten 14 Tage aktuell: Fingerabdruck je
+    Einheit, geänderte werden ersetzt, zu Ruhetagen gewordene gelöscht.
+  - FIT-Workout-Datei (`file_id` Typ 5, `workout`, `workout_step` mit Wiederholungen und Zielen) zum Teilen;
+    `FitEncoder` kann dafür jetzt Textfelder.
+  - Zwift: `.zwo` (Leistung als Anteil der FTP, `IntervalsT` für Intervalle) zum Teilen. Zwift bietet keine
+    öffentliche Schnittstelle zum Hochladen; die Datei kommt in `Dokumente/Zwift/Workouts/<Zwift-ID>/`.
+- **Mehrbenutzer-Trennung:** Der Plan liegt unter `coach.endurancePlan` in der Datenbank des Benutzers und trägt den
+  `username`; `EndurancePlan.fromJson` und `EndurancePlanStore` weisen fremde Pläne ab, `WorkoutExporterService`
+  arbeitet nur mit Plänen seines Benutzers und mit dessen Garmin-Anmeldung (Schlüssel im sicheren Speicher je
+  Benutzer). Kennungen der übertragenen Workouts und der Anpassungsverlauf gehören zum Plan. Folge: Eine Sicherung
+  bringt den Plan nur beim gleichen Benutzernamen zurück – sonst wird neu geplant.
+- **Vorschläge für Schwellen** nur im Modus Saisonplan aus `SeasonConfig` (keine Saisonwerte für andere Personen).
