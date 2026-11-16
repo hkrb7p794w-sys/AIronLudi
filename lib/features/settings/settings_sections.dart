@@ -77,7 +77,7 @@ class ReminderSettingsSection extends ConsumerWidget {
         'Erinnerungen zu einer Disziplin (Schwimm-Ausrüstung, Tag auswerten, Schlafenszeit) stehen dort.',
       ].join('\n'),
       children: [
-        SwitchListTile(
+        SwitchListTile.adaptive(
           title: const Text('An Trainingstagen erinnern'),
           value: reminders.enabled,
           onChanged: (on) => change((value) => value.enabled = on),
@@ -97,12 +97,12 @@ class ReminderSettingsSection extends ConsumerWidget {
               }
             },
           ),
-        SwitchListTile(
+        SwitchListTile.adaptive(
           title: const Text('Morgens um 8 Uhr Morning Report'),
           value: reminders.morningReport,
           onChanged: (on) => change((value) => value.morningReport = on),
         ),
-        SwitchListTile(
+        SwitchListTile.adaptive(
           title: const Text('Sonntags „Nächste Woche planen“'),
           value: reminders.weekPlanning,
           onChanged: (on) => change((value) => value.weekPlanning = on),
@@ -252,7 +252,7 @@ class HealthImportSection extends ConsumerWidget {
               'doppelt. Die HRV übernimmt die App nur ohne Garmin, weil Apple sie anders misst (SDNN statt RMSSD).',
           children: available
               ? [
-                  SwitchListTile(
+                  SwitchListTile.adaptive(
                     title: Text(
                       Platform.isAndroid ? 'Daten aus Health Connect übernehmen' : 'Daten aus Apple Health übernehmen',
                     ),
@@ -432,7 +432,7 @@ class _PersonalGoalsSettingsScreenState extends ConsumerState<PersonalGoalsSetti
                 ),
                 ListTile(
                   title: const Text('Datenquellen und Vorrang'),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const DisclosureChevron(),
                   onTap: () =>
                       Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const DataSourcesScreen())),
                 ),

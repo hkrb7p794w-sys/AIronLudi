@@ -242,7 +242,7 @@ class _RecipeTile extends StatelessWidget {
         ),
       ),
       subtitle: Text(detail),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: const DisclosureChevron(),
       onTap: () =>
           Navigator.of(context)
               .push(MaterialPageRoute<void>(builder: (_) => RecipeDetailScreen(recipe: recipe.recipe))),

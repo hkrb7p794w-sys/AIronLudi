@@ -173,7 +173,7 @@ class _CookPlanScreenState extends ConsumerState<CookPlanScreen> {
                 ),
               ListTile(
                 title: const Text('Gemeinsam kochen: Personen und Freigaben'),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const DisclosureChevron(),
                 onTap: () => _push((_) => CookPartnersScreen(controller: controller, recipes: widget.recipes)),
               ),
             ],
@@ -287,7 +287,7 @@ class _CookPlanScreenState extends ConsumerState<CookPlanScreen> {
                         '${plan.amount.label} · ${plan.people.map((person) => person.name).join(' und ')} · '
                         '${plan.minutes} min',
                       ),
-                      trailing: const Icon(Icons.chevron_right),
+                      trailing: const DisclosureChevron(),
                       onTap: () => _push((_) => CookPlanDetailScreen(controller: controller, planID: plan.id)),
                     ),
                   ),
@@ -812,22 +812,22 @@ class _CookPartnersScreenState extends ConsumerState<CookPartnersScreen> {
                   decoration: const InputDecoration(hintText: 'Dein Name für die andere Person'),
                 ),
               ),
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 title: const Text('Tagesziele (Kalorien, Makros)'),
                 value: _fields.targets,
                 onChanged: (value) => _setField((fields) => fields.targets = value),
               ),
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 title: const Text('Ernährungsweise'),
                 value: _fields.diet,
                 onChanged: (value) => _setField((fields) => fields.diet = value),
               ),
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 title: const Text('Allergene und Unverträglichkeiten'),
                 value: _fields.allergens,
                 onChanged: (value) => _setField((fields) => fields.allergens = value),
               ),
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 title: const Text('Was ich nicht mag'),
                 value: _fields.dislikes,
                 onChanged: (value) => _setField((fields) => fields.dislikes = value),

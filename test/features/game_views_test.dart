@@ -6,6 +6,7 @@ import 'package:aironludi/features/social/social_views.dart';
 import 'package:aironludi/services/providers.dart';
 import 'package:aironludi/services/social/game_service.dart';
 import 'package:coach_core/coach_core.dart' hide Badge;
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,7 +20,7 @@ Future<ProviderContainer> _start(WidgetTester tester) async {
   await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
   await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
   await tester.pumpAndSettle();
-  return ProviderScope.containerOf(tester.element(find.byType(NavigationBar)));
+  return ProviderScope.containerOf(tester.element(find.byType(CupertinoTabBar)));
 }
 
 void main() {
@@ -43,7 +44,7 @@ void main() {
       stats: GameStats()..workouts = 6,
     );
     unawaited(
-      Navigator.of(tester.element(find.byType(NavigationBar)))
+      Navigator.of(tester.element(find.byType(CupertinoTabBar)))
           .push(MaterialPageRoute<void>(builder: (_) => const Scaffold(body: GameScreen()))),
     );
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
@@ -60,7 +61,7 @@ void main() {
   testWidgets('Freunde ohne Konto auch auf der Seite Wettkampf: Hinweis', (tester) async {
     await _start(tester);
     unawaited(
-      Navigator.of(tester.element(find.byType(NavigationBar)))
+      Navigator.of(tester.element(find.byType(CupertinoTabBar)))
           .push(MaterialPageRoute<void>(builder: (_) => const FriendsScreen(initialPage: FriendsPage.game))),
     );
     await tester.pumpAndSettle();

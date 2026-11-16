@@ -180,7 +180,7 @@ class NowSection extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.self_improvement),
             title: Text('Mobility für heute · ${settings.mobility.minutes} min'),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const DisclosureChevron(),
             onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const MobilityScreen())),
           ),
         // Wochenfokus gehört zum Saisonplan und nicht in ein eigenes Profil.

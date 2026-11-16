@@ -193,7 +193,7 @@ class WeekOverviewScreen extends ConsumerWidget {
                   ),
                 ListTile(
                   title: const Text('Alle Aktivitäten'),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const DisclosureChevron(),
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(builder: (_) => const ActivitiesScreen(initialScope: ActivitiesScope.mine)),
                   ),

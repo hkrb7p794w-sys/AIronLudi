@@ -28,11 +28,7 @@ class PromptLibraryScreen extends ConsumerWidget {
             footer: 'Jede Vorlage hängt die passenden Daten und Arbeitsregeln an: nur aus den Daten, Lücken benennen.',
             children: [
               for (final template in PromptLibrary.builtIn)
-                ListTile(
-                  title: Text(template.title),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => open(template),
-                ),
+                ListTile(title: Text(template.title), trailing: const DisclosureChevron(), onTap: () => open(template)),
             ],
           ),
           FormSection(
@@ -180,7 +176,7 @@ class _PromptDetailScreenState extends ConsumerState<PromptDetailScreen> {
                 : null,
             children: [
               for (final category in ExportCategory.values)
-                SwitchListTile(
+                SwitchListTile.adaptive(
                   title: Text('${category.label} (${counts[category] ?? 0})'),
                   value: _categories.contains(category),
                   onChanged: (on) {
@@ -353,7 +349,7 @@ class _PromptEditorState extends ConsumerState<PromptEditor> {
             header: 'Daten',
             children: [
               for (final category in ExportCategory.values)
-                SwitchListTile(
+                SwitchListTile.adaptive(
                   title: Text(category.label),
                   value: _categories.contains(category),
                   onChanged: (on) => setState(() => on ? _categories.add(category) : _categories.remove(category)),

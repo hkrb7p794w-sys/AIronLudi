@@ -186,7 +186,7 @@ class _GymScreenState extends ConsumerState<GymScreen> {
                   if (_records.length > 3)
                     ListTile(
                       title: Text('Alle ${_records.length} Einheiten'),
-                      trailing: const Icon(Icons.chevron_right),
+                      trailing: const DisclosureChevron(),
                       onTap: () => _push((_) => const GymHistoryScreen()),
                     ),
                 ],
@@ -387,7 +387,7 @@ class _HubTile extends StatelessWidget {
     leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
     title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
     subtitle: Text(caption),
-    trailing: const Icon(Icons.chevron_right),
+    trailing: const DisclosureChevron(),
     onTap: onTap,
   );
 }
@@ -412,7 +412,7 @@ class SessionRow extends StatelessWidget {
         children: [
           if (record.savedToHealth)
             const Icon(Icons.favorite, size: 14, color: Colors.pink, semanticLabel: 'In Health'),
-          const Icon(Icons.chevron_right),
+          const DisclosureChevron(),
         ],
       ),
       onTap: onTap,

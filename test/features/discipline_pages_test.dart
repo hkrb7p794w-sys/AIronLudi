@@ -2,6 +2,7 @@
 import 'package:aironludi/features/training/discipline_pages.dart';
 import 'package:aironludi/services/providers.dart';
 import 'package:coach_core/coach_core.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,9 +15,9 @@ Future<ProviderContainer> _openTraining(WidgetTester tester, {UserProfile? profi
   addTearDown(tester.view.reset);
   await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
   await tester.pumpAndSettle();
-  final container = ProviderScope.containerOf(tester.element(find.byType(NavigationBar)));
+  final container = ProviderScope.containerOf(tester.element(find.byType(CupertinoTabBar)));
   if (profile != null) container.read(coachSettingsProvider).profile = profile;
-  await tester.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text('Training')));
+  await tester.tap(find.descendant(of: find.byType(CupertinoTabBar), matching: find.text('Training')));
   await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
   await tester.pumpAndSettle();
   return container;

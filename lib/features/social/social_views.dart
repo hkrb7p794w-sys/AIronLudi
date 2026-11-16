@@ -697,7 +697,7 @@ class _FriendListState extends ConsumerState<FriendList> {
               for (final person in friends.friends)
                 ListTile(
                   title: _PersonLabel(person: person),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const DisclosureChevron(),
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
                       builder: (_) => PersonScreen(username: person.username, displayName: person.displayName),
@@ -727,7 +727,7 @@ class _FriendListState extends ConsumerState<FriendList> {
               ListTile(
                 leading: const Icon(Icons.person_add_alt),
                 title: const Text('Jemanden ohne Konto einladen'),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const DisclosureChevron(),
                 onTap: () =>
                     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const AccountDetailScreen())),
               ),

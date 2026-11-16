@@ -225,7 +225,7 @@ class _CoachExportScreenState extends ConsumerState<CoachExportScreen> {
             footer: 'Profil und Ziel sind immer dabei. Ohne Einträge im Zeitraum bleibt ein Bereich leer.',
             children: [
               for (final category in ExportCategory.values)
-                SwitchListTile(
+                SwitchListTile.adaptive(
                   title: Text(category.label),
                   subtitle: Text('${counts[category] ?? 0} Einträge · ${category.detail}'),
                   value: _categories.contains(category),
@@ -256,7 +256,7 @@ class _CoachExportScreenState extends ConsumerState<CoachExportScreen> {
                 ),
               ),
               if (_format == ExportFormat.markdown)
-                SwitchListTile(
+                SwitchListTile.adaptive(
                   title: const Text('Antwortformat für den Import beilegen'),
                   value: _withImportFormat,
                   onChanged: (on) {
@@ -475,7 +475,7 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
               ? 'Achtung: Deine bisherigen Trainingspläne werden gelöscht; übrig bleiben nur die übernommenen.'
               : 'Für jeden Trainingsplan einzeln: bestehende gleichnamige ersetzen, zusätzlich anlegen oder weglassen.',
           children: [
-            SwitchListTile(
+            SwitchListTile.adaptive(
               title: const Text('Alle bisherigen Trainingspläne löschen'),
               value: _selection.replaceAllRoutines,
               onChanged: (on) => setState(() => _selection.replaceAllRoutines = on),
@@ -521,7 +521,7 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
           header: 'Wochenplan',
           footer: 'Nur die Tage mit Änderungen; abgewählte Tage bleiben wie bisher.',
           children: [
-            SwitchListTile(
+            SwitchListTile.adaptive(
               title: const Text('Wochenplan übernehmen'),
               value: _selection.schedule,
               onChanged: (on) => setState(() => _selection.schedule = on),

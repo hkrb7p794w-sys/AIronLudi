@@ -7,6 +7,7 @@ import 'package:aironludi/features/motivation/motivation_views.dart';
 import 'package:aironludi/services/motivation/companion_photo.dart';
 import 'package:aironludi/services/providers.dart';
 import 'package:coach_core/coach_core.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -21,7 +22,7 @@ Future<ProviderContainer> _start(WidgetTester tester) async {
   await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
   await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
   await tester.pump(const Duration(milliseconds: 100));
-  return ProviderScope.containerOf(tester.element(find.byType(NavigationBar)));
+  return ProviderScope.containerOf(tester.element(find.byType(CupertinoTabBar)));
 }
 
 void main() {
@@ -66,7 +67,7 @@ void main() {
   testWidgets('Einstellungen: Begleiter einschalten, Art wählen; Liga-Code prüfen', (tester) async {
     final container = await _start(tester);
     unawaited(
-      Navigator.of(tester.element(find.byType(NavigationBar)))
+      Navigator.of(tester.element(find.byType(CupertinoTabBar)))
           .push(MaterialPageRoute<void>(builder: (_) => const MotivationSettingsScreen())),
     );
     await tester.pumpAndSettle();

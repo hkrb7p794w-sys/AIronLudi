@@ -606,7 +606,7 @@ class _LinkedGymSectionState extends ConsumerState<_LinkedGymSection> {
             ),
         ListTile(
           title: const Text('Einheit in der App öffnen'),
-          trailing: const Icon(Icons.chevron_right),
+          trailing: const DisclosureChevron(),
           onTap: () =>
               Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => SessionDetailScreen(record: record))),
         ),

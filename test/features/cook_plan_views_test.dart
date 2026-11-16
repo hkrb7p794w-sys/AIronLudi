@@ -8,6 +8,7 @@ import 'package:aironludi/features/recipes/cook_plan_controller.dart';
 import 'package:aironludi/features/recipes/cook_plan_views.dart';
 import 'package:aironludi/features/recipes/recipe_views.dart';
 import 'package:coach_core/coach_core.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -68,13 +69,13 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
     await tester.pumpAndSettle();
-    return ProviderScope.containerOf(tester.element(find.byType(NavigationBar)));
+    return ProviderScope.containerOf(tester.element(find.byType(CupertinoTabBar)));
   }
 
   testWidgets('Kochen planen: Einstieg, Menge, Partner-Ansicht, Freigeben ohne Worker', (tester) async {
     await start(tester);
     unawaited(
-      Navigator.of(tester.element(find.byType(NavigationBar)))
+      Navigator.of(tester.element(find.byType(CupertinoTabBar)))
           .push(MaterialPageRoute<void>(builder: (_) => const RecipesScreen())),
     );
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
@@ -114,7 +115,7 @@ void main() {
     final controller = CookPlanController()..cookPlans = [_plan()];
     final plan = controller.cookPlans.single;
     unawaited(
-      Navigator.of(tester.element(find.byType(NavigationBar))).push(
+      Navigator.of(tester.element(find.byType(CupertinoTabBar))).push(
         MaterialPageRoute<void>(
           builder: (_) => CookPlanDetailScreen(controller: controller, planID: plan.id),
         ),

@@ -122,7 +122,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                   ListTile(
                     leading: const Icon(Icons.kitchen_outlined),
                     title: const Text('Was koche ich daraus? (Foto)'),
-                    trailing: const Icon(Icons.chevron_right),
+                    trailing: const DisclosureChevron(),
                     onTap: () =>
                         Navigator.of(context)
                             .push(MaterialPageRoute<void>(builder: (_) => const PantryRecipesScreen())),
@@ -135,7 +135,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                   ListTile(
                     leading: const Icon(Icons.people_outline),
                     title: const Text('Kochen planen: für wen, wie viel'),
-                    trailing: const Icon(Icons.chevron_right),
+                    trailing: const DisclosureChevron(),
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
                         builder: (_) => CookPlanScreen(
@@ -234,7 +234,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                     ListTile(
                       leading: const Icon(Icons.shopping_cart_outlined),
                       title: const Text('Einkaufsliste für den Zeitraum'),
-                      trailing: const Icon(Icons.chevron_right),
+                      trailing: const DisclosureChevron(),
                       onTap: () => Navigator.of(context)
                           .push(MaterialPageRoute<void>(builder: (_) => ShoppingListScreen(controller: controller))),
                     ),
@@ -303,7 +303,7 @@ class _RecipeDaySection extends StatelessWidget {
                 '${recipe.meal.label} · ${recipe.minutes} min · ${_rounded(recipe.totals[Nutrient.kcal])} kcal · '
                 '${_rounded(recipe.totals[Nutrient.protein])} g Protein',
               ),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: const DisclosureChevron(),
               onTap: () =>
                   Navigator.of(context)
                       .push(MaterialPageRoute<void>(builder: (_) => RecipeDetailScreen(recipe: recipe))),
@@ -687,7 +687,7 @@ class _RecipePreferencesScreenState extends ConsumerState<RecipePreferencesScree
             header: 'Allergene und Unverträglichkeiten',
             children: [
               for (final allergen in Allergen.values)
-                SwitchListTile(
+                SwitchListTile.adaptive(
                   title: Text(allergen.label),
                   value: recipes.allergens.contains(allergen),
                   onChanged: (on) => _change((recipes) {
@@ -719,12 +719,12 @@ class _RecipePreferencesScreenState extends ConsumerState<RecipePreferencesScree
                 less: recipes.maxMinutes > 10 ? () => _change((recipes) => recipes.maxMinutes -= 5) : null,
                 more: recipes.maxMinutes < 90 ? () => _change((recipes) => recipes.maxMinutes += 5) : null,
               ),
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 title: const Text('Snack pro Tag'),
                 value: recipes.snacks,
                 onChanged: (on) => _change((recipes) => recipes.snacks = on),
               ),
-              SwitchListTile(
+              SwitchListTile.adaptive(
                 title: const Text('Abends für den nächsten Mittag mitkochen'),
                 value: recipes.mealPrep,
                 onChanged: (on) => _change((recipes) => recipes.mealPrep = on),
