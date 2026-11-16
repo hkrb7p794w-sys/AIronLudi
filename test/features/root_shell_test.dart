@@ -1,12 +1,18 @@
-// Wurzel der App: Speicherwarnung, Schnellaktionen am App-Icon, Bildschirm an während einer Einheit.
+// Wurzel der App: Speicherwarnung, Update-Hinweis, Schnellaktionen am App-Icon, Bildschirm an während einer Einheit.
+import 'dart:convert';
+
 import 'package:aironludi/app/app.dart';
 import 'package:aironludi/app/day_change.dart';
 import 'package:aironludi/app/deep_links.dart';
 import 'package:aironludi/data/secure/secret_store.dart';
 import 'package:aironludi/data/settings/preferences.dart';
+import 'package:aironludi/data/settings/settings_store.dart';
 import 'package:aironludi/data/storage.dart';
 import 'package:aironludi/features/gym/gym_providers.dart';
+import 'package:aironludi/services/ai/ai_client.dart';
+import 'package:aironludi/services/http/http_transport.dart';
 import 'package:aironludi/services/providers.dart';
+import 'package:aironludi/services/update/app_update_service.dart';
 import 'package:coach_core/coach_core.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +27,10 @@ import 'package:shared_preferences_platform_interface/shared_preferences_async_p
 void main() {
   setUpAll(() => initializeDateFormatting('de_DE'));
 
-  Future<(Widget, ProviderContainer, FakeQuickActionsService, List<bool>)> build({bool temporary = false}) async {
+  Future<(Widget, ProviderContainer, FakeQuickActionsService, List<bool>)> build({
+    bool temporary = false,
+    String? update,
+  }) async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockStreamHandler(
       const EventChannel('com.llfbandit.app_links/events'),
       MockStreamHandler.inline(onListen: (_, _) {}),
@@ -41,6 +50,17 @@ void main() {
         : opened;
     final quick = FakeQuickActionsService();
     final awake = <bool>[];
+    // Android mit Worker: der Worker meldet [update] als neueste Version.
+    if (update != null) await storage.settings.setString(SettingsKeys.workerURL, 'https://w.example.dev');
+    final updateTransport = FakeHttpTransport(
+      (request) => HttpResponse(
+        200,
+        utf8.encode(
+          '{"versionName": "$update", "versionCode": 10057, "url": "https://w.example.dev/android/abc/", '
+          '"notes": "Commit abc1234, Build 57."}',
+        ),
+      ),
+    );
     final container = ProviderContainer(
       overrides: [
         preferencesProvider.overrideWithValue(preferences),
@@ -48,6 +68,19 @@ void main() {
         midnightTimerProvider.overrideWithValue(false),
         quickActionsProvider.overrideWithValue(quick),
         screenAwakeProvider.overrideWithValue((on) async => awake.add(on)),
+        if (update != null)
+          appUpdateServiceProvider.overrideWith(
+            (ref) => AppUpdateService(
+              ai: AIClient(
+                secrets: Secrets.memory({SecretKey.aiAppToken: 'g1.abcdefghijk2.0f'}),
+                settings: ref.watch(settingsStoreProvider),
+                transport: updateTransport,
+              ),
+              settings: ref.watch(settingsStoreProvider),
+              installedBuild: () async => 10050,
+              isAndroid: true,
+            ),
+          ),
       ],
     );
     container.read(coachSettingsProvider).profile = UserProfile(
@@ -74,6 +107,23 @@ void main() {
     expect(ai.storedToken, 'g1.abcdefghijk2.0f');
     expect(find.text('KI-Zugang verbunden.'), findsOneWidget);
     expect(container.read(incomingLinkProvider), isNull);
+  });
+
+  testWidgets('Android: neuere Version als Hinweis oben, „Später“ blendet ihn aus', (tester) async {
+    final (app, container, _, _) = await tester.runAsync(
+      () => build(update: '2.0.57'),
+    ) as (Widget, ProviderContainer, FakeQuickActionsService, List<bool>);
+    await tester.pumpWidget(app);
+    await tester.runAsync(() => container.read(appUpdateServiceProvider).check());
+    await tester.pumpAndSettle();
+    expect(find.text('Neue Version 2.0.57 verfügbar'), findsOneWidget);
+    expect(find.text('Commit abc1234, Build 57.'), findsOneWidget);
+    expect(find.text('Jetzt laden'), findsOneWidget);
+
+    await tester.tap(find.text('Später'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Neue Version'), findsNothing);
   });
 
   testWidgets('Speicher nicht geöffnet: Warnung oben', (tester) async {
