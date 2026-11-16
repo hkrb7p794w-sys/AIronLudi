@@ -562,3 +562,19 @@ Auf Wunsch des Nutzers; die Swift-App kennt nur einen Benutzer. Tests: `packages
   gestellter Wecker ist ein System-Wecker und bleibt beim Wechsel bestehen. Apple Health / Health Connect sind Daten
   des Geräts: Ein neuer Benutzer startet mit ausgeschaltetem Import und sollte ihn nur einschalten, wenn es seine
   Daten sind.
+
+## 2026-11-16 – Worker zieht nach AIronLudi
+
+- Auf Wunsch des Nutzers erfolgen **alle Änderungen nur noch in AIronLudi**. Der Worker wurde dafür unverändert aus
+  Coach-App (`d29c61f`) übernommen (`worker/`, `.github/workflows/worker.yml`, `worker-smoke.yml`,
+  `.github/scripts/worker-smoke.mjs`). Name (`coach-ai`), Bindungen (KV, D1, Workers AI) und Secrets bleiben, damit
+  Adresse, Konten, Ranglisten, Gastzugänge und die SideStore-Quelle weiter gelten. Coach-App bleibt als Altbestand
+  zum Lesen; ihr Worker-Workflow läuft nur bei Änderungen an ihrem `worker/` und darf deshalb nicht mehr angefasst
+  werden. Eine Git-Anbindung bei Cloudflare („Workers Builds“) muss der Nutzer trennen (`docs/einrichtung.md`).
+- Neue Aufgabe `pantry_recipes` (Kühlschrank-Foto, `docs/worker-pantry-recipes.md`): Bildmodelle zuerst (Gemini,
+  GitHub Models, Mistral, Groq-Vision, Workers AI), Cerebras ausgelassen (keine Fotos). Der Worker prüft nur die Form
+  (Liste, höchstens vier Gerichte); Ernährungsweise, Allergene und die Zahl fehlender Zutaten prüft die App.
+- **WHOOP zentral:** eine Developer-App der Betreiberin bzw. des Betreibers im Worker; jede Person verbindet nur ihr
+  eigenes WHOOP-Konto (eigene Tokens). So wie die Swift-App es vorsah.
+- **Lücke festgehalten:** Die Flutter-App liest die Sicherung der Kotlin-App „IronLudi“ noch nicht. Bis das
+  nachgerüstet ist, sollen Android-Nutzer:innen nicht umsteigen (`docs/anleitung.md`, B2).

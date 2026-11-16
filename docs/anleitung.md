@@ -1,0 +1,149 @@
+# AIronLudi installieren – Anleitungen
+
+Drei Wege, je nach Ausgangslage:
+
+- **A – iPhone, neu:** Die Person hatte noch keine Coach-/AIronLudi-App.
+- **B – Umstieg von der bisherigen App:** iPhone (Swift-App „AIronLudi“/„Coach“) bzw. Android (Kotlin-App „IronLudi“).
+- **C – Android, neu.**
+
+Alles läuft über den KI-Worker der Betreiberin bzw. des Betreibers (Einrichtung: [`einrichtung.md`](einrichtung.md)).
+Niemand sonst braucht ein Konto bei Cloudflare, GitHub oder einem KI-Anbieter. Die Links, die du bekommst, sind
+**privat** – nicht weitergeben.
+
+> **Solange die neue App noch getestet wird** (Repo-Variablen `DEPLOY_SIDESTORE`/`DEPLOY_ANDROID` nicht auf `true`),
+> liefern SideStore-Quelle und Android-Download-Seite noch die **alte** App. Die neue gibt es dann nur so:
+> iPhone – Datei `AIronLudi.ipa` aus dem neuesten Release unter
+> <https://github.com/hkrb7p794w-sys/AIronLudi/releases> (in Safari laden, dann SideStore › **My Apps** › **+** › Datei
+> wählen); Android – Artefakt `AIronLudi-<Laufnummer>` des letzten Laufs „Android“ in GitHub Actions (nur für die
+> Betreiberin bzw. den Betreiber, ZIP entpacken, APK aufs Handy).
+
+---
+
+## A – iPhone, neu
+
+**Vorher bereitlegen:** iPhone mit Code-Sperre und iOS 18 oder neuer, USB-Kabel, WLAN, eine **eigene Apple-ID**
+(kostenlos reicht), einmalig einen **Windows-PC oder Mac**. Von der Betreiberin bzw. dem Betreiber zwei Links:
+**SideStore-Link** und **Einladungslink**. Dauer: 30–45 Minuten.
+
+### 1. SideStore installieren (einmal, mit Computer)
+
+1. **Am iPhone:** im App Store **LocalDevVPN** installieren, öffnen, **Connect**, VPN erlauben.
+2. **Am Computer:**
+   - *Windows:* iTunes von Apple installieren (<https://www.apple.com/itunes/download/win64>, sonst die App
+     „Apple-Geräte“ aus dem Microsoft Store) und **iloader**
+     (<https://github.com/nab138/iloader/releases/latest/download/iloader-windows-x64.msi>).
+   - *Mac:* nur **iloader** (<https://github.com/nab138/iloader/releases/latest>, Datei für macOS, in „Programme“
+     ziehen; bei „nicht überprüfter Entwickler“: Rechtsklick › Öffnen).
+3. iPhone per USB anschließen, am iPhone **Vertrauen** und Code eingeben.
+4. **iloader** öffnen › mit der Apple-ID anmelden › iPhone wählen › **Install SideStore (Stable)** › warten bis
+   „Success“. Das Kabel kann ab.
+
+### 2. Am iPhone freischalten
+
+1. *Einstellungen › Allgemein › VPN & Geräteverwaltung* › die Apple-ID › **Vertrauen**.
+2. *Einstellungen › Datenschutz & Sicherheit › Entwicklermodus* einschalten, Neustart, **Einschalten** bestätigen.
+3. **LocalDevVPN** › Connect (bei allen SideStore-Schritten verbunden lassen).
+4. **SideStore** öffnen, mit derselben Apple-ID anmelden, *My Apps* › bei SideStore **7 DAYS** antippen.
+5. *Sources* › **+** › **SideStore-Link** einfügen › Quelle öffnen › bei **AIronLudi** auf **Installieren**.
+6. *SideStore › Settings:* **Background Refresh** an, Mitteilungen erlauben.
+
+### 3. AIronLudi einrichten
+
+1. AIronLudi öffnen, Einrichtung durchgehen (Sportarten, Ziel, Körperdaten). Apple Health erlauben, wenn die Uhr
+   Daten liefern soll – es geht auch ohne.
+2. Den **Einladungslink** antippen (Nachrichten/WhatsApp) › AIronLudi übernimmt KI-Zugang und Rangliste.
+3. *Optional:* *Einstellungen › Konto › Konto erstellen* (für Freunde, Feed, Wettkämpfe; Wiederherstellungscode
+   notieren).
+4. *Optional:* Garmin unter *Einstellungen › Training und Fitness › Garmin-Konto*, WHOOP darunter (siehe
+   [`einrichtung.md`](einrichtung.md), Abschnitte 6 und 7).
+5. *Empfohlen:* *Einstellungen › KI und Automatisierung › Datensicherung* › Ordner in iCloud Drive wählen.
+6. *Optional:* Widgets (Homescreen lange drücken › **+** › AIronLudi) und *Einstellungen › Sperrbildschirm*
+   (Live-Aktivitäten für Gym und Ernährung).
+
+**Laufend:** Mit kostenloser Apple-ID läuft die App **7 Tage**. Mindestens einmal pro Woche SideStore öffnen
+(LocalDevVPN verbunden) › *My Apps* › **Refresh All**. Updates meldet SideStore; *My Apps* › **Update** – die Daten
+bleiben.
+
+---
+
+## B – Umstieg von der bisherigen App
+
+### B1 – iPhone (bisherige Swift-App)
+
+Die neue App hat dieselbe Kennung und ersetzt die alte in SideStore. Sie liest die alte Datenbank aber **nicht**
+direkt – deine Daten ziehen über eine **Sicherungsdatei** um. Deshalb unbedingt in dieser Reihenfolge:
+
+1. **In der alten App sichern:** *Einstellungen › KI und Automatisierung › Datensicherung* ›
+   **„Sicherung teilen oder in ‚Dateien‘ sichern“** › *In Dateien sichern* › z. B. *iCloud Drive* ›
+   Datei `IronLudi-Sicherung-<Datum>.json` sichern. (Ist dort schon ein Ordner für die automatische Sicherung
+   gewählt, liegt dort zusätzlich `IronLudi-Sicherung.json`.)
+2. **Neue App installieren:** SideStore › *My Apps* › bei AIronLudi **Update**, sobald die neue Version in der Quelle
+   ist – bzw. während der Testphase die `AIronLudi.ipa` wie oben im Kasten beschrieben.
+3. **Sicherung einspielen:** Beim ersten Start auf dem ersten Bildschirm oben **„Sicherung einspielen“** › die Datei aus
+   Schritt 1 wählen. (Später geht das auch unter *Einstellungen › KI und Automatisierung › Datensicherung ›
+   Sicherung einspielen*.) Übernommen werden Gym-Einheiten, Mahlzeiten, Lebensmittel und alle Einstellungen;
+   Garmin-Werte holt die App beim nächsten Abruf neu.
+4. **Zugänge prüfen:** Die Sicherung enthält aus Sicherheitsgründen keine Schlüssel. Meist übernimmt die neue App
+   KI-Zugang, Garmin und Konto aus dem Schlüsselbund; falls nicht:
+   - KI: Einladungslink erneut antippen (bzw. als Betreiber:in *Einstellungen › Technik › KI-Worker*, siehe unten),
+   - Garmin: *Einstellungen › Training und Fitness › Garmin-Konto* neu anmelden,
+   - Konto: *Einstellungen › Konto › Anmelden*.
+5. Widgets und Live-Aktivitäten neu einrichten (*Einstellungen › Sperrbildschirm*).
+
+### B2 – Android (bisherige Kotlin-App „IronLudi“)
+
+> ⚠️ **Noch nicht umsteigen.** Die neue App kann die Sicherung der bisherigen Android-App
+> (`IronLudi-Gym-Sicherung-<Datum>.json`) noch **nicht** einlesen – Trainings, Pläne, Mahlzeiten und Gewichte würden
+> in der neuen App fehlen (sie bleiben zwar auf dem Handy, sind aber nicht sichtbar). Das Einlesen wird nachgerüstet;
+> bis dahin die bisherige App weiter nutzen.
+
+Sobald es geht (dieser Abschnitt wird dann angepasst):
+
+1. In der alten App *Training › Zahnrad › „Sicherung speichern“* (z. B. Google Drive).
+2. Neue App über denselben Android-Link installieren – sie ersetzt die alte (gleicher Signaturschlüssel).
+3. In der neuen App *Einstellungen › KI und Automatisierung › Datensicherung › Sicherung einspielen* › Datei wählen.
+4. Der KI-Zugang aus dem Android-Link wird übernommen; sonst den Link erneut öffnen und „In der App verbinden“.
+
+---
+
+## C – Android, neu
+
+**Von der Betreiberin bzw. dem Betreiber:** ein **Android-Link** (in deren App unter *Einstellungen › Technik ›
+KI-Worker › „Android-Link erstellen“ › „Android-Link teilen“* – je Person ein eigener Link mit eigenem Gastzugang).
+Dauer: etwa 5 Minuten, nur das Handy (Android 8 oder neuer).
+
+1. Link in Chrome öffnen › **„App herunterladen“**.
+2. Heruntergeladene Datei öffnen. Fragt Android nach „unbekannten Apps“: **Einstellungen** › „Dieser Quelle
+   vertrauen“ einschalten › zurück › **Installieren**.
+3. Warnt **Google Play Protect**: *Weitere Details* › **Trotzdem installieren**.
+4. Zurück auf der Seite **„In der App verbinden“** › AIronLudi öffnet sich und übernimmt den KI-Zugang.
+5. Einrichtung durchgehen (Sportarten, Ziel, Körperdaten). Health Connect erlauben, wenn eine Uhr Daten liefern soll –
+   es geht auch ohne.
+6. *Optional:* Konto, Garmin, WHOOP wie bei A3; Sicherung unter *Einstellungen › KI und Automatisierung ›
+   Datensicherung* (Ordner z. B. in Google Drive); laufende Gym-Einheit und „Mahlzeiten heute“ als Mitteilung:
+   *Einstellungen › Sperrbildschirm*.
+
+**Aktualisieren:** denselben Link wieder öffnen und die neue Version genauso installieren – die Daten bleiben.
+
+---
+
+## Für dich als Betreiber:in: KI-Worker in der App eintragen
+
+Nur auf deinem eigenen Gerät (alle anderen nutzen den Einladungs- bzw. Android-Link):
+
+1. *Actions › Worker* in GitHub: im letzten Lauf unter **Summary** steht die Adresse, z. B.
+   `https://coach-ai.<subdomain>.workers.dev`.
+2. AIronLudi › *Einstellungen › Technik › KI-Worker*: Adresse und **App-Token** (der Wert des Secrets
+   `COACH_APP_TOKEN`) eintragen › **Speichern und testen**. Es erscheint ein Gruß der KI mit Anbieter und Modell.
+3. Ab dann gibt es dort **„SideStore-Quelle teilen“** und **„Android-Link erstellen“**; Einladungslinks unter
+   *Einstellungen › Begleiter & Rangliste*.
+
+## Wenn etwas hakt
+
+| Problem | Lösung |
+|---|---|
+| iloader sieht das iPhone nicht | anderes Kabel, iPhone entsperren, „Vertrauen“ erneut bestätigen; Windows: iTunes bzw. „Apple-Geräte“ installiert? |
+| AIronLudi öffnet nicht mehr („nicht verfügbar“) | 7 Tage abgelaufen: LocalDevVPN verbinden › SideStore › My Apps › Refresh |
+| „KI-Worker ist nicht eingerichtet“ | Einladungslink erneut antippen bzw. *Einstellungen › Technik › KI-Worker* prüfen |
+| Android: „App nicht installiert“ beim Update | Die APK ist anders signiert (Secrets `ANDROID_KEYSTORE_*` fehlen beim Build). Nicht deinstallieren, Betreiber:in fragen |
+| Kühlschrank-Rezepte melden einen Fehler | Der Worker ist noch nicht neu bereitgestellt (*Actions › Worker › Run workflow*) |

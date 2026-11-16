@@ -1,0 +1,22 @@
+{
+  "name": "coach-ai-worker",
+  "version": "0.4.0",
+  "private": true,
+  "description": "KI-Weiterleitung der Coach-App (Gemini mit Ausweichmodellen, Groq als zweite Stufe)",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "lint": "biome ci .",
+    "format": "biome check --write .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.2",
+    "@cloudflare/workers-types": "5.20261023.1",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5",
+    "wrangler": "4.152.0"
+  }
+}

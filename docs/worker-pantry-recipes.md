@@ -1,8 +1,8 @@
 # Worker-Aufgabe `pantry_recipes` (Rezepte aus dem Kühlschrank-Foto)
 
-Die App ruft wie bei allen KI-Aufgaben `POST v1/ai/generate` auf. Der Worker liegt in `hkrb7p794w-sys/Coach-App`
-(`worker/`) und muss diese Aufgabe kennen. Art: **planning** (wie `meal_now`), mit Foto – also an einen Anbieter mit
-Bildeingabe (z. B. Gemini oder Mistral, nicht Cerebras/eigener Server ohne Fotos).
+Die App ruft wie bei allen KI-Aufgaben `POST v1/ai/generate` auf. Umgesetzt im Worker dieses Repos
+(`worker/src/recipes.ts`: `pantryRecipesPrompt`, `checkPantryRecipes`; Reihenfolge der Anbieter in
+`worker/src/providers.ts`: zuerst Bildmodelle). Art in der App: **planning** (wie `meal_now`).
 
 ## Anfrage
 
@@ -33,7 +33,7 @@ Bildeingabe (z. B. Gemini oder Mistral, nicht Cerebras/eigener Server ohne Fotos
 - `images` fehlt, wenn die Person ohne neues Foto „Neu vorschlagen“ tippt – dann zählt `erkannt`.
 - `erkannt`, `bestaetigt`, `nicht_da` sind bei der ersten Anfrage leer.
 
-## Vorschlag für den Prompt
+## Inhalt des Prompts (Kurzfassung)
 
 > Du siehst ein Foto von Kühlschrank, Vorratsschrank oder Arbeitsplatte. Erkenne die Lebensmittel (deutsche Namen,
 > Grundform, ohne Marken). Ist `erkannt` nicht leer, gilt diese Liste statt deiner Erkennung; `vorrat` und

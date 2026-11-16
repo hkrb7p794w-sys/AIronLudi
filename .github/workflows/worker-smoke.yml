@@ -1,0 +1,49 @@
+# Prüft die Rezeptideen gegen den bereitgestellten Worker. Nur manuell oder wenn sich diese Prüfung ändert (Linux).
+name: Worker-Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Was geprüft wird
+        type: choice
+        default: smoke
+        options: [smoke, chat-legacy, chat-focused, chat-focused-privat]
+  pull_request:
+    paths: [".github/workflows/worker-smoke.yml", ".github/scripts/worker-smoke.mjs"]
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Worker-Adresse ermitteln
+        id: url
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          sub=$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" | jq -r .result.subdomain)
+          echo "worker=https://coach-ai.$sub.workers.dev" >> "$GITHUB_OUTPUT"
+      - name: Rezeptideen prüfen
+        if: inputs.mode == '' || inputs.mode == 'smoke'
+        env:
+          WORKER_URL: ${{ steps.url.outputs.worker }}
+          COACH_APP_TOKEN: ${{ secrets.COACH_APP_TOKEN }}
+        run: node .github/scripts/worker-smoke.mjs
+      - name: Chat-Qualität prüfen
+        if: startsWith(inputs.mode, 'chat-')
+        env:
+          WORKER_URL: ${{ steps.url.outputs.worker }}
+          COACH_APP_TOKEN: ${{ secrets.COACH_APP_TOKEN }}
+          CHAT_EVAL_MODE: ${{ inputs.mode == 'chat-legacy' && 'legacy' || 'focused' }}
+          CHAT_EVAL_PROVIDER: ${{ inputs.mode == 'chat-focused-privat' && 'privat' || '' }}
+        run: node .github/scripts/chat-eval.mjs
