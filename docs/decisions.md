@@ -630,3 +630,16 @@ Auf Wunsch des Nutzers; die Swift-App kennt nur einen Benutzer. Tests: `packages
   (`SwitchListTile.adaptive`: iOS-Schalter auf dem iPhone, Material-Schalter unter Android). Schrift ist die des
   Systems (SF Pro auf dem iPhone, Roboto unter Android).
 
+## 2026-11-16 – Update-Hinweis der Android-App (neu, kein Swift-Vorbild)
+
+- Die Android-App kommt nicht aus dem Play Store und aktualisiert sich nicht selbst; still installieren erlaubt
+  Android außerhalb des Play Stores nicht. Deshalb ein Hinweis: `AppUpdateService` fragt beim Start und beim
+  Zurückkehren (höchstens alle sechs Stunden) `GET /v1/app/android` und zeigt oben „Neue Version … verfügbar“ mit
+  „Jetzt laden“ (Download-Seite im Browser) und „Später“ (diese Version ausblenden, eine neuere erscheint wieder).
+- Der Endpunkt verlangt eine Anmeldung (Haupt-, Gast- oder Sitzungs-Token) und gibt den geheimen Pfad der
+  Download-Seite heraus. Das ist vertretbar: Gäste haben den Android-Link ohnehin bekommen, Konten entstehen nur mit
+  Einladung. Ohne Anmeldung bleibt der Pfad geheim.
+- Verglichen wird `versionCode` (CI: 10000 + Laufnummer) mit `PackageInfo.buildNumber`. Prüfzeitpunkt und ausgeblendete
+  Version (`update.lastCheck`, `update.dismissedVersion`) sind Gerätestand und gehören nicht zur Sicherung.
+- iPhone: nichts Neues, Updates meldet weiterhin SideStore. Fehler (kein Netz, alter Worker, keine Version) bleiben still.
+

@@ -35,6 +35,7 @@ import 'social/league_service.dart';
 import 'social/social_auto_share.dart';
 import 'social/social_service.dart';
 import 'speech/dictation.dart';
+import 'update/app_update_service.dart';
 import 'whoop/whoop_service.dart';
 
 /// Garmin-Konto (inoffizieller Zugang).
@@ -215,6 +216,26 @@ final appVersionProvider = FutureProvider<String>((ref) async {
   final info = await PackageInfo.fromPlatform();
   return '${info.version} (${info.buildNumber})';
 });
+
+/// Build-Nummer der installierten App (Android: `versionCode`); `null`, wenn sie nicht lesbar ist.
+final installedBuildProvider = Provider<Future<int?> Function()>(
+  (ref) => () async {
+    try {
+      return int.tryParse((await PackageInfo.fromPlatform()).buildNumber);
+    } on Object {
+      return null;
+    }
+  },
+);
+
+/// Update-Hinweis der Android-App (siehe [AppUpdateService]).
+final appUpdateServiceProvider = ChangeNotifierProvider<AppUpdateService>(
+  (ref) => AppUpdateService(
+    ai: ref.watch(aiClientProvider),
+    settings: ref.watch(settingsStoreProvider),
+    installedBuild: ref.watch(installedBuildProvider),
+  ),
+);
 
 /// Bildschirm anlassen (laufende Gym-Einheit); in Tests ohne Wirkung.
 final screenAwakeProvider = Provider<Future<void> Function(bool on)>(
