@@ -113,6 +113,13 @@ jobs:
           TAG="v2.0.$BUILD_NUMBER"
           ASSET_ID=""
           if [ -n "$RELEASES_TOKEN" ]; then
+            # Releases brauchen mindestens einen Commit: ein frisch angelegtes, leeres Repo bekommt eine README.
+            if ! GH_TOKEN="$RELEASES_TOKEN" gh api "repos/$RELEASES_REPO/commits?per_page=1" --silent 2>/dev/null; then
+              GH_TOKEN="$RELEASES_TOKEN" gh api -X PUT "repos/$RELEASES_REPO/contents/README.md" \
+                -f message="Erste Datei für die Android-Releases" \
+                -f content="$(printf '# AIronLudi – Android-Releases\n\nPrivat. Die APK lädt der Worker; bitte nicht von Hand ändern.\n' | base64 -w0)" \
+                --silent
+            fi
             # Universelle APK (alle Prozessortypen) als Release im privaten Repo; KV nimmt höchstens 25 MiB je Wert.
             GH_TOKEN="$RELEASES_TOKEN" gh release create "$TAG" "$APK" --repo "$RELEASES_REPO" \
               --title "AIronLudi $TAG (Android)" --notes "Commit ${GITHUB_SHA::7}, Build $BUILD_NUMBER." --latest
