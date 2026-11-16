@@ -1,0 +1,38 @@
+// Cloudflare Worker „coach-ai“: KI-Weiterleitung für die Coach-App.
+// Secrets (GEMINI_API_KEY, CEREBRAS_API_KEY, GROQ_API_KEY, MISTRAL_API_KEY, GH_MODELS_TOKEN,
+// COACH_APP_TOKEN) setzt der Deploy-Workflow aus GitHub-Secrets.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "coach-ai",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  // IPA und Versionsangaben für die private SideStore-Quelle (Upload durch ios-build.yml).
+  // Ranglisten zwischen Nutzer:innen (nur Namen und Punkte, siehe src/league.ts).
+  "kv_namespaces": [
+    { "binding": "RELEASES", "id": "103715a4f0004a398c9e75637a2edf36" },
+    { "binding": "LEAGUE", "id": "41093b08a16e441ba7ca34b5d423364b" }
+  ],
+  // Konten, Freunde, Feed (siehe src/db.ts). Tabellen legt der Worker selbst an.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "coach-social",
+      "database_id": "308818b6-7a2e-4e17-8297-6ac3a8f343e6"
+    }
+  ],
+  // Workers AI: offene Modelle bei Cloudflare (10.000 Neurons/Tag frei, keine Speicherung, kein Training).
+  "ai": { "binding": "AI" },
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "GEMINI_MODEL": "gemini-3.6-flash",
+    "GROQ_MODEL": "llama-3.3-70b-versatile",
+    "GROQ_VISION_MODEL": "meta-llama/llama-4-scout-17b-16e-instruct",
+    "WORKERS_AI_MODEL": "@cf/google/gemma-4-26b-a4b-it",
+    "CEREBRAS_MODEL": "gpt-oss-120b",
+    "MISTRAL_MODEL": "mistral-medium-latest",
+    "GITHUB_MODEL": "openai/gpt-4.1"
+  }
+}

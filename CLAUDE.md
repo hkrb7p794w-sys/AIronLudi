@@ -14,7 +14,9 @@ der nativen iPhone-App aus `hkrb7p794w-sys/Coach-App` (Swift, Stand `793d408`). 
 | `lib/services/`, `lib/platform/` | Dienste (Garmin, Health, KI, Mitteilungen …) und Plattformbrücken |
 | `lib/features/<bereich>/` | Screens und Controller (Riverpod) je Bereich |
 | `ios/Runner/`, `android/app/` | Native Konfiguration; Widgets/Live-Aktivitäten bleiben nativ (siehe Migrationsplan 4.2) |
+| `worker/` | Cloudflare Worker „coach-ai“ (TypeScript): KI-Weiterleitung, Konten, Freunde, SideStore-Quelle, Android-Download; Prompts in `src/tasks.ts` (seit 16.11.2026 hier statt in Coach-App) |
 | `docs/migrationsplan.md` | Audit und Checkliste – bei jeder PR den Stand (Abschnitt 8) nachführen |
+| `docs/einrichtung.md`, `docs/anleitung.md` | Einrichtung für die Betreiberin bzw. den Betreiber; Installationsanleitungen |
 
 ## Grundregeln
 
@@ -22,7 +24,9 @@ der nativen iPhone-App aus `hkrb7p794w-sys/Coach-App` (Swift, Stand `793d408`). 
   portiert, **mit den Swift-Tests** als Dart-Tests (gleiche Fälle, gleiche Fixtures). Abweichungen nur mit
   Begründung in `docs/decisions.md`.
 - **Regeln entscheiden, KI formuliert.** Tagesampel, Ziele und Progression sind deterministisch und getestet.
-- **KI-Aufrufe und KI-Keys nur im Cloudflare Worker** (bleibt in Coach-App). Garmin-Key und Tokens nur im sicheren
+- **KI-Aufrufe und KI-Keys nur im Cloudflare Worker** (`worker/` in diesem Repo). **Alle Änderungen nur in
+  AIronLudi** (Auftrag des Nutzers vom 16.11.2026) – Coach-App wird nicht mehr geändert, auch nicht der Worker
+  dort. Garmin-Key und Tokens nur im sicheren
   Speicher (`flutter_secure_storage`). Datenschutzmodus „reduziert“ ist Standard.
 - **Keine Secrets im Repo** – das Repo ist öffentlich.
 - **Health ist optional** (Apple Health / Health Connect): jede Funktion hat einen Weg ohne.
@@ -41,6 +45,7 @@ dart format lib test packages
 flutter analyze            # muss „No issues found!“ melden
 flutter test
 cd packages/coach_core && dart test
+cd worker && npm ci && npm run lint && npm run typecheck && npm test   # Node 22
 ```
 
 Flutter-Version: 3.47.9 (in allen Workflows festgelegt).
@@ -49,6 +54,9 @@ Flutter-Version: 3.47.9 (in allen Workflows festgelegt).
 
 - `flutter.yml`: Format, Analyse, Tests (Linux, jeder PR und `main`); Fehler als PR-Kommentar.
 - `android.yml`: Release-APK als Artefakt; Bereitstellung nur mit `vars.DEPLOY_ANDROID == 'true'`.
+- `worker.yml`: Lint, Typen, Tests bei PRs mit Änderungen in `worker/`; Bereitstellung auf `main` bzw. per
+  „Run workflow“, sofern die Secrets gesetzt sind (`docs/einrichtung.md`). `worker-smoke.yml`: Prüfung gegen den
+  bereitgestellten Worker, nur manuell.
 - `ios-build.yml`: unsignierte IPA (pseudo-signiert mit `ldid` und den Entitlements) per Label `ios-build`, auf
   `main` und per „Run workflow“; Bereitstellung nur mit `vars.DEPLOY_SIDESTORE == 'true'`.
 - **PRs merged Claude selbst und automatisch** (Auftrag des Nutzers vom 13.11.2026): sobald `check` und `apk` grün

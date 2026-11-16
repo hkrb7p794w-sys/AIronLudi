@@ -316,7 +316,8 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
    im Repo; die Worker-Adresse steht nicht im Code, sie wird wie bisher in der App eingegeben bzw. per Link übergeben.
    Auf privat stellen geht jederzeit unter Settings › General › Danger Zone.
 3. **App-Identität:** iOS-Bundle-ID `io.github.hkrb7p794w.coach` (ersetzt die Swift-App in SideStore), Android
-   `io.github.hkrb7p794w.gym` (ersetzt die Kotlin-App, gleicher Signaturschlüssel, `versionCode` = 10 000 + Lauf).
+   `io.github.hkrb7p794w.gym` (`versionCode` = 10 000 + Lauf). Seit 16.11.2026 eigener Signaturschlüssel (Alias
+   `aironludi`): Die Kotlin-App muss vor der Installation deinstalliert werden, ein Update über sie geht nicht.
    Umzug der Daten über die Sicherung (`AppBackup`, Format bleibt gleich).
 4. **Auslieferung:** Worker bleibt im Coach-App-Repo. AIronLudi lädt in denselben KV-Speicher hoch (Schlüssel
    `Coach.ipa`, `release.json`, `android.apk`, `android.json`), aber **erst, wenn die Repo-Variablen
@@ -405,9 +406,11 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Hintergrundabruf (`BGAppRefreshTask` bzw. WorkManager, `workmanager`) | erledigt (3n-1) |
 | Alle Teilphasen aus Abschnitt 6 | erledigt (Stand 14.11.2026) |
 | WHOOP-Anbindung (offizielle API v2, OAuth über den Worker): Recovery, HRV, Ruhepuls, Schlaf, Kalorien, Schritte, Trainings; Einstellungen › Training und Fitness › WHOOP | erledigt |
-| Erweiterungen nach der Migration (15.11.2026): Vorrang der Gym-Live-Aktivität vor „Mahlzeiten heute“ (keine doppelten Karten mehr), Einstellungen › Sperrbildschirm (Bereiche Gym/Ernährung, Ansicht der Gym-Karte: nur Pause, nur Übung, beides), Einheit und Trainingsplan teilen (Text plus `coach://routine/…` zum Übernehmen), Rezepte aus dem Kühlschrank-Foto mit Rückfragen, Erinnerung an Mahlzeiten auf dem Sperrbildschirm statt als Mitteilung, „Mahlzeiten heute“ unter Android als lautlose Mitteilung | in PR |
-| Mehrere Benutzer je Gerät, strikt getrennt (eigene Datenbankdatei, Schlüssel und Ordner je Benutzer; Wechsel verwirft den kompletten Zustand), Einstellungen › Benutzer | in PR |
-| Worker-Aufgabe `pantry_recipes` in `hkrb7p794w-sys/Coach-App` ergänzen (Vertrag in `docs/worker-pantry-recipes.md`) | offen – Worker liegt in Coach-App |
+| Erweiterungen nach der Migration (15.11.2026): Vorrang der Gym-Live-Aktivität vor „Mahlzeiten heute“ (keine doppelten Karten mehr), Einstellungen › Sperrbildschirm (Bereiche Gym/Ernährung, Ansicht der Gym-Karte: nur Pause, nur Übung, beides), Einheit und Trainingsplan teilen (Text plus `coach://routine/…` zum Übernehmen), Rezepte aus dem Kühlschrank-Foto mit Rückfragen, Erinnerung an Mahlzeiten auf dem Sperrbildschirm statt als Mitteilung, „Mahlzeiten heute“ unter Android als lautlose Mitteilung | erledigt (#73) |
+| Mehrere Benutzer je Gerät, strikt getrennt (eigene Datenbankdatei, Schlüssel und Ordner je Benutzer; Wechsel verwirft den kompletten Zustand), Einstellungen › Benutzer | erledigt (#73) |
+| Worker nach AIronLudi übernommen (`worker/`, Workflows `worker.yml`, `worker-smoke.yml`), Aufgabe `pantry_recipes` (Kühlschrank-Foto) mit Tests; Einrichtung `docs/einrichtung.md`, Anleitungen `docs/anleitung.md` | in PR |
+| Secrets des Workers in AIronLudi anlegen und Worker von hier bereitstellen; Git-Anbindung bei Cloudflare an Coach-App trennen | offen – durch den Nutzer (`docs/einrichtung.md`, Abschnitt 1) |
+| Sicherung der Kotlin-App „IronLudi“ (`IronLudi-Gym-Sicherung-*.json`) einlesen – Voraussetzung für den Umstieg unter Android | offen |
 | Test auf echten Geräten: Widgets, Live-Aktivitäten, laufende Mitteilung, Wecker, Hintergrundabruf, Schnellaktionen (nur dort prüfbar, CI baut sie) | offen – durch den Nutzer |
 | Umstellung: `vars.DEPLOY_SIDESTORE` bzw. `vars.DEPLOY_ANDROID` auf `true`, dann ersetzt die Flutter-App die Swift- bzw. Kotlin-App (gleiche Bundle-/Application-ID) | offen – Entscheidung des Nutzers |
 | Später möglich: Android-Widgets mit Glance (Ringe, Balken, Konfiguration), Wiederholungen ± in der Android-Mitteilung | Idee |

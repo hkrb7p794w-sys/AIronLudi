@@ -40,7 +40,7 @@ android {
             create("release") {
                 storeFile = file(keystorePath)
                 storePassword = keystorePassword
-                keyAlias = "ironludi"
+                keyAlias = "aironludi"
                 keyPassword = keystorePassword
             }
         }

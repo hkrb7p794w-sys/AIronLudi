@@ -8,7 +8,7 @@ Kotlin-App „IronLudi“.
 App (Flutter, Dart; Regeln in packages/coach_core)
   ├─ HTTPS ─► Garmin Connect Personal API (offiziell, Key im sicheren Speicher)
   ├─ HTTPS ─► Open Food Facts (Barcode)
-  └─ HTTPS ─► Cloudflare Worker aus Coach-App ─► KI-Anbieter (Keys nur im Worker)
+  └─ HTTPS ─► Cloudflare Worker (worker/) ─► KI-Anbieter (Keys nur im Worker)
 ```
 
 ## Stand
@@ -16,6 +16,11 @@ App (Flutter, Dart; Regeln in packages/coach_core)
 Migration läuft. Audit, Checkliste aller Funktionen und Reihenfolge: [`docs/migrationsplan.md`](docs/migrationsplan.md).
 Bis die Flutter-App gleichwertig ist, bleiben die Swift- und die Kotlin-App die genutzten Apps; die CI stellt
 erst nach Freigabe (Repo-Variablen `DEPLOY_SIDESTORE`, `DEPLOY_ANDROID`) für SideStore bzw. die Download-Seite bereit.
+
+## Einrichtung und Installation
+
+- Betreiber:in (Worker, Secrets, Garmin, WHOOP): [`docs/einrichtung.md`](docs/einrichtung.md)
+- Installation für iPhone, Umstieg von der alten App, Android: [`docs/anleitung.md`](docs/anleitung.md)
 
 ## Entwicklung
 

@@ -1,0 +1,63 @@
+# Prüft die Rezeptideen gegen den bereitgestellten Worker. Nur manuell oder wenn sich diese Prüfung ändert (Linux).
+name: Worker-Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Was geprüft wird
+        type: choice
+        default: smoke
+        options: [smoke, chat-legacy, chat-focused, chat-focused-privat]
+  pull_request:
+    paths: [".github/workflows/worker-smoke.yml", ".github/scripts/worker-smoke.mjs"]
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      # Prüft den bereitgestellten Worker – ohne Secrets bzw. ohne erreichbare Subdomain (z. B. bevor die Secrets
+      # aus Coach-App in AIronLudi angelegt sind, docs/einrichtung.md) gibt es nichts zu prüfen.
+      - name: Worker-Adresse ermitteln
+        id: url
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          COACH_APP_TOKEN: ${{ secrets.COACH_APP_TOKEN }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ] || [ -z "$COACH_APP_TOKEN" ]; then
+            echo "::notice::Prüfung übersprungen – Secrets CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID bzw. COACH_APP_TOKEN fehlen (docs/einrichtung.md)"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          sub=$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" | jq -r .result.subdomain) || sub=""
+          if [ -z "$sub" ] || [ "$sub" = "null" ]; then
+            echo "::warning::Prüfung übersprungen – workers.dev-Subdomain nicht lesbar (Cloudflare-Token bzw. Account ID prüfen, docs/einrichtung.md)"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "worker=https://coach-ai.$sub.workers.dev" >> "$GITHUB_OUTPUT"
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+      - name: Rezeptideen prüfen
+        if: steps.url.outputs.ready == 'true' && (inputs.mode == '' || inputs.mode == 'smoke')
+        env:
+          WORKER_URL: ${{ steps.url.outputs.worker }}
+          COACH_APP_TOKEN: ${{ secrets.COACH_APP_TOKEN }}
+        run: node .github/scripts/worker-smoke.mjs
+      - name: Chat-Qualität prüfen
+        if: steps.url.outputs.ready == 'true' && startsWith(inputs.mode, 'chat-')
+        env:
+          WORKER_URL: ${{ steps.url.outputs.worker }}
+          COACH_APP_TOKEN: ${{ secrets.COACH_APP_TOKEN }}
+          CHAT_EVAL_MODE: ${{ inputs.mode == 'chat-legacy' && 'legacy' || 'focused' }}
+          CHAT_EVAL_PROVIDER: ${{ inputs.mode == 'chat-focused-privat' && 'privat' || '' }}
+        run: node .github/scripts/chat-eval.mjs
