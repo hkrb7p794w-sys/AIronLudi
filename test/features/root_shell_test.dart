@@ -114,15 +114,18 @@ void main() {
       () => build(update: '2.0.57'),
     ) as (Widget, ProviderContainer, FakeQuickActionsService, List<bool>);
     await tester.pumpWidget(app);
-    await tester.runAsync(() => container.read(appUpdateServiceProvider).check());
-    await tester.pumpAndSettle();
+    // Der Start ruft die Prüfung selbst auf (`_refresh`); echte Zeit für Datenbank und Antwort.
+    for (var i = 0; i < 40 && find.textContaining('Neue Version').evaluate().isEmpty; i++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.pump();
+    }
     expect(find.text('Neue Version 2.0.57 verfügbar'), findsOneWidget);
     expect(find.text('Commit abc1234, Build 57.'), findsOneWidget);
     expect(find.text('Jetzt laden'), findsOneWidget);
 
     await tester.tap(find.text('Später'));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
-    await tester.pumpAndSettle();
+    await tester.pump();
     expect(find.textContaining('Neue Version'), findsNothing);
   });
 
