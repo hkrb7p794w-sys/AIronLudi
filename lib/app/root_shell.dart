@@ -16,6 +16,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../data/storage.dart';
 import '../features/account/account_views.dart';
@@ -32,6 +33,7 @@ import '../services/activities/live_activities.dart';
 import '../services/background/background_refresh.dart';
 import '../services/providers.dart';
 import '../services/reminders/reminder_service.dart';
+import '../services/update/app_update_service.dart';
 import '../services/whoop/whoop_service.dart';
 import '../services/widgets/widget_providers.dart';
 import 'day_change.dart';
@@ -155,6 +157,8 @@ class _RootShellState extends ConsumerState<RootShell> {
     // Freundschaftsanfragen (Zahl am Reiter „Aktivitäten“) und neue Trainings für den Feed.
     await ref.read(socialServiceProvider).refresh();
     await ref.read(socialAutoShareProvider).run(isDemo: model.isDemo);
+    // Android: neuere Version auf der Download-Seite des Workers?
+    await ref.read(appUpdateServiceProvider).check(isDemo: model.isDemo);
   }
 
   /// Link von außen: Konto-Einladung. Vorher entscheiden: Meldet sich die Person im Fenster an, darf es nicht mitten
@@ -285,11 +289,13 @@ class _RootShellState extends ConsumerState<RootShell> {
     ref.listen(coachSettingsProvider, (_, _) => _updateWorkoutActivity(ref.read(gymControllerProvider)));
     final storage = ref.watch(appStorageProvider);
     final showsStorageWarning = storage.isTemporary && !ref.read(appModelProvider).isDemo;
+    final update = ref.watch(appUpdateServiceProvider).available;
     return Scaffold(
-      body: showsStorageWarning
+      body: showsStorageWarning || update != null
           ? Column(
               children: [
-                const _StorageWarningBanner(),
+                if (showsStorageWarning) const _StorageWarningBanner(),
+                if (update != null && !showsStorageWarning) _UpdateBanner(update: update),
                 Expanded(child: shell),
               ],
             )
@@ -347,4 +353,65 @@ class _StorageWarningBanner extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// Hinweis auf eine neuere Android-Version (`AppUpdateService`): Download-Seite öffnen oder bis zur nächsten Version
+/// ausblenden.
+class _UpdateBanner extends ConsumerWidget {
+  const _UpdateBanner({required this.update});
+
+  final AndroidUpdate update;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+    return SafeArea(
+      bottom: false,
+      child: Container(
+        width: double.infinity,
+        color: scheme.primaryContainer,
+        padding: const EdgeInsets.fromLTRB(12, 8, 4, 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              spacing: 8,
+              children: [
+                Icon(Icons.system_update, size: 18, color: scheme.onPrimaryContainer),
+                Expanded(
+                  child: Text(
+                    'Neue Version ${update.versionName} verfügbar',
+                    style: TextStyle(fontWeight: FontWeight.w600, color: scheme.onPrimaryContainer),
+                  ),
+                ),
+              ],
+            ),
+            if (update.notes case final notes?)
+              Padding(
+                padding: const EdgeInsets.only(left: 26, top: 2),
+                child: Text(
+                  notes,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 13, color: scheme.onPrimaryContainer),
+                ),
+              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => unawaited(ref.read(appUpdateServiceProvider).dismiss()),
+                  child: const Text('Später'),
+                ),
+                FilledButton(
+                  onPressed: () => unawaited(launchUrl(update.url, mode: LaunchMode.externalApplication)),
+                  child: const Text('Jetzt laden'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

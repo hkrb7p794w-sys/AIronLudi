@@ -8,6 +8,8 @@
  * GET /android/<key>/                   – Seite mit Version und Download-Knopf (zum Öffnen auf dem Handy); mit
  *                                         `#zugang=<Gast-Token>` zusätzlich „In der App verbinden“ (KI-Zugang)
  * GET /android/<key>/AIronLudi.apk      – aktuelle App (auch unter dem alten Namen IronLudi-Gym.apk)
+ * GET /v1/app/android                   – mit Anmeldung (Haupt-, Gast- oder Sitzungs-Token, siehe index.ts): neueste
+ *                                         Version und Link zur Download-Seite für den Update-Hinweis der App
  *
  * <key> = die ersten 32 Hex-Zeichen von SHA-256("android:" + COACH_APP_TOKEN). Die iPhone-App zeigt den fertigen Link
  * in den Einstellungen (nur mit Haupt-Token). Die Android-App selbst braucht weder Token noch Internet.
@@ -143,6 +145,35 @@ small,.muted{color:var(--muted)} ol{padding-left:20px} li{margin:6px 0}
 })();
 </script>
 </main></body></html>`;
+}
+
+/** Neueste Version für den Update-Hinweis der App; `url` ist die Download-Seite (ohne Zugang im Anker). */
+export interface AndroidUpdateInfo {
+  versionName: string;
+  versionCode: number;
+  date: string;
+  notes?: string;
+  url: string;
+}
+
+/**
+ * Antwort für GET /v1/app/android (Anmeldung prüft index.ts). Wer angemeldet ist, kennt den Link ohnehin: Gäste haben
+ * ihn als Android-Link bekommen, Konten entstehen nur mit Einladung. `null` ohne hochgeladene Version.
+ */
+export async function androidUpdateInfo(
+  origin: string,
+  token: string,
+  store: ReleaseStore | undefined,
+): Promise<AndroidUpdateInfo | null> {
+  const info = await store?.get("android.json", "json");
+  if (!isRelease(info)) return null;
+  return {
+    versionName: info.versionName,
+    versionCode: info.versionCode,
+    date: info.date,
+    ...(typeof info.notes === "string" ? { notes: info.notes } : {}),
+    url: `${origin}/android/${await androidKey(token)}/`,
+  };
 }
 
 /** Antwort für /android/…, oder `null`, wenn der Pfad nicht dazugehört. */

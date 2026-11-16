@@ -129,7 +129,11 @@ Dauer: etwa 5 Minuten, nur das Handy (Android 8 oder neuer).
    Datensicherung* (Ordner z. B. in Google Drive); laufende Gym-Einheit und „Mahlzeiten heute“ als Mitteilung:
    *Einstellungen › Sperrbildschirm*.
 
-**Aktualisieren:** denselben Link wieder öffnen und die neue Version genauso installieren – die Daten bleiben.
+**Aktualisieren:** Gibt es eine neue Version, zeigt AIronLudi oben **„Neue Version … verfügbar“** (geprüft beim Öffnen,
+höchstens alle sechs Stunden; nur mit verbundenem KI-Zugang). **„Jetzt laden“** öffnet die Download-Seite – die neue
+Version dort genauso installieren wie oben, die Daten bleiben. **„Später“** blendet diese Version aus; die nächste
+erscheint wieder. Ganz von selbst installiert Android Apps außerhalb des Play Stores nicht. Ohne Hinweis geht es auch
+von Hand: denselben Link wieder öffnen.
 
 ---
 

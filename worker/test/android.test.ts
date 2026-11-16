@@ -126,4 +126,39 @@ describe("android", () => {
         .status,
     ).toBe(502);
   });
+
+  it("meldet der App die neueste Version mit Link zur Download-Seite", async () => {
+    const key = await androidKey(env.COACH_APP_TOKEN ?? "");
+    const withKV = {
+      ...env,
+      RELEASES: store({
+        "android.json": { ...info, notes: "Neu: Update-Hinweis" },
+      }) as unknown as KVNamespace,
+    };
+    const url = "https://coach-ai.example.workers.dev/v1/app/android";
+    const guest = await guestToken(env.COACH_APP_TOKEN ?? "", "abcdefghijk2");
+    const response = await handle(
+      new Request(url, { headers: { authorization: `Bearer ${guest}` } }),
+      withKV,
+      fakeDeps([]),
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      versionName: "1.0.12",
+      versionCode: 12,
+      date: "2026-11-02T16:00:00Z",
+      notes: "Neu: Update-Hinweis",
+      url: `https://coach-ai.example.workers.dev/android/${key}/`,
+    });
+
+    // Ohne Anmeldung nichts, auch nicht der geheime Pfad.
+    const anonymous = await handle(new Request(url), withKV, fakeDeps([]));
+    expect(anonymous.status).toBe(401);
+    expect(await anonymous.text()).not.toContain(key);
+    const auth = { authorization: `Bearer ${env.COACH_APP_TOKEN}` };
+    const post = new Request(url, { method: "POST", headers: auth });
+    expect((await handle(post, withKV, fakeDeps([]))).status).toBe(405);
+    const empty = { ...env, RELEASES: store({}) as unknown as KVNamespace };
+    expect((await handle(new Request(url, { headers: auth }), empty, fakeDeps([]))).status).toBe(404);
+  });
 });

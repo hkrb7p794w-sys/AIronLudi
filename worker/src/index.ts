@@ -4,6 +4,7 @@
  *
  * GET  /sidestore/<key>/… – private SideStore-Quelle (siehe sidestore.ts)
  * GET  /android/<key>/…  – private Download-Seite der Android-App (siehe android.ts)
+ * GET  /v1/app/android   – neueste Android-Version für den Update-Hinweis (siehe android.ts), mit Anmeldung
  * GET  /v1/health        – ohne Anmeldung, zeigt Version und welche Anbieter konfiguriert sind
  * /v1/league/…          – Rangliste (siehe league.ts), Authorization: Bearer <COACH_APP_TOKEN>
  * POST /v1/ai/generate   – Authorization: Bearer <COACH_APP_TOKEN> oder Gast-Token (siehe auth.ts)
@@ -21,7 +22,7 @@
 
 import { handleAccount, invitePage, isSessionToken } from "./accounts";
 import { AllProvidersFailed, generate, parseJsonOutput } from "./ai";
-import { handleAndroid } from "./android";
+import { androidUpdateInfo, handleAndroid } from "./android";
 import { authenticate, bearerToken, guestToken, newGuestID, principalKey, tokensMatch } from "./auth";
 import type { SqlDatabase } from "./db";
 import { handleGame } from "./game";
@@ -118,6 +119,16 @@ export async function handle(request: Request, env: Env, deps: Deps = defaultDep
     const principal = await authenticate(request.headers.get("authorization") ?? "", env, deps.now());
     if (!principal) return json(401, { error: "Nicht autorisiert", code: "unauthorized" });
     return (await handleWhoop(request, env, deps)) ?? json(404, { error: "Nicht gefunden" });
+  }
+
+  if (pathname === "/v1/app/android") {
+    if (request.method !== "GET") return json(405, { error: "Nur GET" });
+    if (!env.COACH_APP_TOKEN)
+      return json(503, { error: "Worker ist nicht konfiguriert (COACH_APP_TOKEN fehlt)" });
+    const principal = await authenticate(request.headers.get("authorization") ?? "", env, deps.now());
+    if (!principal) return json(401, { error: "Nicht autorisiert", code: "unauthorized" });
+    const info = await androidUpdateInfo(new URL(request.url).origin, env.COACH_APP_TOKEN, env.RELEASES);
+    return info ? json(200, info) : json(404, { error: "Noch keine Android-Version hochgeladen" });
   }
 
   if (pathname.startsWith("/v1/account/")) {
