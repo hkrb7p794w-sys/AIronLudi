@@ -59,6 +59,23 @@ void main() {
     return (UncontrolledProviderScope(container: container, child: const AIronLudiApp()), container, quick, awake);
   }
 
+  testWidgets('„In der App verbinden“ (ironludi://connect) übernimmt den KI-Zugang', (tester) async {
+    final (app, container, _, _) =
+        await tester.runAsync(build) as (Widget, ProviderContainer, FakeQuickActionsService, List<bool>);
+    await tester.pumpWidget(app);
+    await tester.pumpAndSettle();
+    container
+        .read(incomingLinkProvider.notifier)
+        .open(Uri.parse('ironludi://connect?worker=https%3A%2F%2Fw.example.dev&token=g1.abcdefghijk2.0f'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.pump();
+    final ai = container.read(aiClientProvider);
+    expect(ai.workerURL, 'https://w.example.dev');
+    expect(ai.storedToken, 'g1.abcdefghijk2.0f');
+    expect(find.text('KI-Zugang verbunden.'), findsOneWidget);
+    expect(container.read(incomingLinkProvider), isNull);
+  });
+
   testWidgets('Speicher nicht geöffnet: Warnung oben', (tester) async {
     final (app, _, _, _) = await tester.runAsync(
       () => build(temporary: true),

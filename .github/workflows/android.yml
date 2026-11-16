@@ -66,7 +66,7 @@ jobs:
           ls -lh "$APK"
           SIZE=$(stat -c %s "$APK")
           # Workers KV nimmt höchstens 25 MiB je Wert.
-          if [ "$SIZE" -gt 26000000 ]; then echo "::warning::APK größer als 25 MiB ($SIZE Bytes) – für Workers KV zu groß, Bereitstellung bräuchte Split-APKs"; fi
+          if [ "$SIZE" -gt 26000000 ]; then echo "::notice::APK größer als 25 MiB ($SIZE Bytes) – Bereitstellung über das private Release-Repo (RELEASES_TOKEN)"; fi
           echo "APK_SIZE=$SIZE" >> "$GITHUB_ENV"
           cp "$APK" "$RUNNER_TEMP/AIronLudi.apk"
 
@@ -94,21 +94,36 @@ jobs:
           } > comment.md
           gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -F body=@comment.md > /dev/null
 
-      - name: Bereitstellen (Workers KV, private Download-Seite)
+      - name: Bereitstellen (privates Release-Repo bzw. Workers KV, private Download-Seite)
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && env.SIGNED == 'true' && vars.DEPLOY_ANDROID == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           KV_ID: 103715a4f0004a398c9e75637a2edf36
           BUILD_NUMBER: ${{ github.run_number }}
+          # Fine-grained Token mit „Contents: Read and write“ nur für das private Repo (docs/einrichtung.md).
+          RELEASES_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          RELEASES_REPO: ${{ vars.RELEASES_REPO || format('{0}/aironludi-releases', github.repository_owner) }}
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
             echo "::warning::Cloudflare-Secrets fehlen – keine Bereitstellung"
             exit 0
           fi
-          if [ "$APK_SIZE" -gt 26000000 ]; then echo "::error::APK zu groß für Workers KV"; exit 1; fi
           APK="$RUNNER_TEMP/AIronLudi.apk"
-          python3 - "$APK" <<'PY'
+          TAG="v2.0.$BUILD_NUMBER"
+          ASSET_ID=""
+          if [ -n "$RELEASES_TOKEN" ]; then
+            # Universelle APK (alle Prozessortypen) als Release im privaten Repo; KV nimmt höchstens 25 MiB je Wert.
+            GH_TOKEN="$RELEASES_TOKEN" gh release create "$TAG" "$APK" --repo "$RELEASES_REPO" \
+              --title "AIronLudi $TAG (Android)" --notes "Commit ${GITHUB_SHA::7}, Build $BUILD_NUMBER." --latest
+            ASSET_ID=$(GH_TOKEN="$RELEASES_TOKEN" gh api "repos/$RELEASES_REPO/releases/tags/$TAG" \
+              --jq '.assets[] | select(.name == "AIronLudi.apk") | .id')
+            [ -n "$ASSET_ID" ] || { echo "::error::APK im Release nicht gefunden"; exit 1; }
+          elif [ "$APK_SIZE" -gt 26000000 ]; then
+            echo "::error::APK zu groß für Workers KV – Secret RELEASES_TOKEN und privates Repo $RELEASES_REPO einrichten (docs/einrichtung.md)"
+            exit 1
+          fi
+          python3 - "$APK" "$RELEASES_REPO" "$ASSET_ID" <<'PY'
           import datetime, json, os, sys
           build = int(os.environ["BUILD_NUMBER"])
           info = {
@@ -117,10 +132,21 @@ jobs:
               "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
               "size": os.path.getsize(sys.argv[1]),
           }
+          if sys.argv[3]:
+              info["asset"] = {"repo": sys.argv[2], "id": int(sys.argv[3])}
           json.dump(info, open("android.json", "w", encoding="utf-8"))
           PY
           cat android.json
           WRANGLER="npx --yes wrangler@4.152.0"
-          $WRANGLER kv key put --namespace-id "$KV_ID" --remote android.apk --path "$APK"
+          if [ -z "$ASSET_ID" ]; then
+            $WRANGLER kv key put --namespace-id "$KV_ID" --remote android.apk --path "$APK"
+          fi
           # Zuletzt die Versionsangaben, damit die Seite nie auf eine fehlende APK zeigt.
           $WRANGLER kv key put --namespace-id "$KV_ID" --remote android.json --path android.json
+          if [ -n "$ASSET_ID" ]; then
+            # Nur die letzten drei Versionen behalten (Rückweg bei einem fehlerhaften Update).
+            GH_TOKEN="$RELEASES_TOKEN" gh release list --repo "$RELEASES_REPO" --limit 100 --json tagName \
+              --jq '.[3:][] | .tagName' | while read -r old; do
+              GH_TOKEN="$RELEASES_TOKEN" gh release delete "$old" --repo "$RELEASES_REPO" --yes --cleanup-tag
+            done
+          fi

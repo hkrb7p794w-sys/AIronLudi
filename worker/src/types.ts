@@ -7,6 +7,8 @@ export interface Env {
   /** Fine-grained Token mit „Models: Read-only“ für GitHub Models. */
   GH_MODELS_TOKEN?: string;
   COACH_APP_TOKEN?: string;
+  /** Fine-grained Token mit „Contents: Read-only“ nur für das private Repo mit der Android-APK (android.ts). */
+  RELEASES_READ_TOKEN?: string;
   /** Gesperrte Gast-IDs (siehe auth.ts), durch Komma getrennt. */
   REVOKED_GUESTS?: string;
   /** Workers KV „coach-releases“: IPA und Versionsangaben für die private SideStore-Quelle. */

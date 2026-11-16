@@ -34,7 +34,7 @@ describe("android", () => {
     expect(page.status).toBe(200);
     const html = await page.text();
     expect(html).toContain("Version 1.0.12");
-    expect(html).toContain('href="IronLudi-Gym.apk"');
+    expect(html).toContain('href="AIronLudi.apk"');
     expect(html).toContain("7,0 MB");
     // Verbinden nur über den Anker im Browser; die Seite selbst enthält kein Token.
     expect(html).toContain("ironludi://connect?worker=");
@@ -68,5 +68,62 @@ describe("android", () => {
 
   it("maskiert Text in der Seite", () => {
     expect(downloadPage({ ...info, versionName: "<b>1</b>" })).toContain("&lt;b&gt;1&lt;/b&gt;");
+  });
+
+  it("holt die APK aus dem privaten Release, ohne das Token weiterzugeben", async () => {
+    const key = await androidKey(env.COACH_APP_TOKEN ?? "");
+    const release = { ...info, asset: { repo: "owner/aironludi-releases", id: 42 } };
+    const base = `https://coach-ai.example.workers.dev/android/${key}`;
+    const calls: { url: string; init?: RequestInit }[] = [];
+    const github = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      calls.push({ url, init });
+      if (url.startsWith("https://api.github.com/")) {
+        return new Response(null, {
+          status: 302,
+          headers: { location: "https://objects.example/signed?x=1" },
+        });
+      }
+      return new Response("apk-aus-github", { headers: { "content-length": "14" } });
+    }) as typeof fetch;
+    const withKV = {
+      ...env,
+      RELEASES_READ_TOKEN: "lese-token",
+      RELEASES: store({ "android.json": release }) as unknown as KVNamespace,
+    };
+    const apk = await handle(new Request(`${base}/AIronLudi.apk`), withKV, {
+      ...fakeDeps([]),
+      fetch: github,
+    });
+    expect(apk.status).toBe(200);
+    expect(await apk.text()).toBe("apk-aus-github");
+    expect(apk.headers.get("content-length")).toBe("14");
+    expect(calls[0]?.url).toBe("https://api.github.com/repos/owner/aironludi-releases/releases/assets/42");
+    expect(new Headers(calls[0]?.init?.headers).get("authorization")).toBe("Bearer lese-token");
+    expect(calls[0]?.init?.redirect).toBe("manual");
+    // Die signierte Adresse bekommt kein Token.
+    expect(calls[1]?.url).toBe("https://objects.example/signed?x=1");
+    expect(new Headers(calls[1]?.init?.headers).get("authorization")).toBeNull();
+    // Alter Dateiname geht weiter.
+    expect(
+      (await handle(new Request(`${base}/IronLudi-Gym.apk`), withKV, { ...fakeDeps([]), fetch: github }))
+        .status,
+    ).toBe(200);
+
+    // Ohne Lese-Token bzw. mit kaputter Angabe: klare Antwort statt leerer Datei.
+    const noToken = { ...withKV, RELEASES_READ_TOKEN: undefined };
+    expect((await handle(new Request(`${base}/AIronLudi.apk`), noToken, fakeDeps([]))).status).toBe(503);
+    const broken = {
+      ...withKV,
+      RELEASES: store({
+        "android.json": { ...info, asset: { repo: "../x", id: 1 } },
+      }) as unknown as KVNamespace,
+    };
+    expect((await handle(new Request(`${base}/AIronLudi.apk`), broken, fakeDeps([]))).status).toBe(503);
+    const failing = (async () => new Response("nein", { status: 404 })) as typeof fetch;
+    expect(
+      (await handle(new Request(`${base}/AIronLudi.apk`), withKV, { ...fakeDeps([]), fetch: failing }))
+        .status,
+    ).toBe(502);
   });
 });
