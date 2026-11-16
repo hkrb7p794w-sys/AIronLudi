@@ -578,3 +578,12 @@ Auf Wunsch des Nutzers; die Swift-App kennt nur einen Benutzer. Tests: `packages
   eigenes WHOOP-Konto (eigene Tokens). So wie die Swift-App es vorsah.
 - **Lücke festgehalten:** Die Flutter-App liest die Sicherung der Kotlin-App „IronLudi“ noch nicht. Bis das
   nachgerüstet ist, sollen Android-Nutzer:innen nicht umsteigen (`docs/anleitung.md`, B2).
+
+## 2026-11-16 – Neuer Android-Signaturschlüssel
+
+- Für AIronLudi wurde ein neuer Keystore angelegt (Alias `aironludi`, Commit `e1fce6a` aus einer anderen Sitzung);
+  der Schlüssel der Kotlin-App (Alias `ironludi`) wird nicht verwendet. Folge: Android installiert die neue App
+  nicht als Update über die Kotlin-App „IronLudi“ (gleiche Application-ID, andere Signatur). Umstieg also: in der
+  alten App sichern, alte App deinstallieren, neue App installieren, Sicherung einspielen – Letzteres erst, wenn die
+  Flutter-App die Kotlin-Sicherung lesen kann (offen, `docs/anleitung.md` B2). Ab jetzt darf der Schlüssel nicht mehr
+  wechseln.

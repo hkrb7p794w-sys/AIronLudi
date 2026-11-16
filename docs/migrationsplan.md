@@ -316,7 +316,8 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
    im Repo; die Worker-Adresse steht nicht im Code, sie wird wie bisher in der App eingegeben bzw. per Link übergeben.
    Auf privat stellen geht jederzeit unter Settings › General › Danger Zone.
 3. **App-Identität:** iOS-Bundle-ID `io.github.hkrb7p794w.coach` (ersetzt die Swift-App in SideStore), Android
-   `io.github.hkrb7p794w.gym` (ersetzt die Kotlin-App, gleicher Signaturschlüssel, `versionCode` = 10 000 + Lauf).
+   `io.github.hkrb7p794w.gym` (`versionCode` = 10 000 + Lauf). Seit 16.11.2026 eigener Signaturschlüssel (Alias
+   `aironludi`): Die Kotlin-App muss vor der Installation deinstalliert werden, ein Update über sie geht nicht.
    Umzug der Daten über die Sicherung (`AppBackup`, Format bleibt gleich).
 4. **Auslieferung:** Worker bleibt im Coach-App-Repo. AIronLudi lädt in denselben KV-Speicher hoch (Schlüssel
    `Coach.ipa`, `release.json`, `android.apk`, `android.json`), aber **erst, wenn die Repo-Variablen

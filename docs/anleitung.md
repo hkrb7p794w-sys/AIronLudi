@@ -100,7 +100,9 @@ direkt – deine Daten ziehen über eine **Sicherungsdatei** um. Deshalb unbedin
 Sobald es geht (dieser Abschnitt wird dann angepasst):
 
 1. In der alten App *Training › Zahnrad › „Sicherung speichern“* (z. B. Google Drive).
-2. Neue App über denselben Android-Link installieren – sie ersetzt die alte (gleicher Signaturschlüssel).
+2. **Alte App deinstallieren** (erst nach Schritt 1!), dann die neue über den Android-Link installieren. Ein Update
+   über die alte App geht nicht: Die neue App ist mit einem anderen Schlüssel signiert (Keystore vom 16.11.2026),
+   Android lehnt sie sonst mit „App nicht installiert“ ab.
 3. In der neuen App *Einstellungen › KI und Automatisierung › Datensicherung › Sicherung einspielen* › Datei wählen.
 4. Der KI-Zugang aus dem Android-Link wird übernommen; sonst den Link erneut öffnen und „In der App verbinden“.
 
@@ -145,5 +147,5 @@ Nur auf deinem eigenen Gerät (alle anderen nutzen den Einladungs- bzw. Android-
 | iloader sieht das iPhone nicht | anderes Kabel, iPhone entsperren, „Vertrauen“ erneut bestätigen; Windows: iTunes bzw. „Apple-Geräte“ installiert? |
 | AIronLudi öffnet nicht mehr („nicht verfügbar“) | 7 Tage abgelaufen: LocalDevVPN verbinden › SideStore › My Apps › Refresh |
 | „KI-Worker ist nicht eingerichtet“ | Einladungslink erneut antippen bzw. *Einstellungen › Technik › KI-Worker* prüfen |
-| Android: „App nicht installiert“ beim Update | Die APK ist anders signiert (Secrets `ANDROID_KEYSTORE_*` fehlen beim Build). Nicht deinstallieren, Betreiber:in fragen |
+| Android: „App nicht installiert“ | Auf dem Handy ist noch die alte Kotlin-App (anderer Signaturschlüssel): erst sichern, dann deinstallieren (Abschnitt B2). Kommt die Meldung bei einem Update der **neuen** App, fehlten beim Build die Secrets `ANDROID_KEYSTORE_*` – Betreiber:in fragen |
 | Kühlschrank-Rezepte melden einen Fehler | Der Worker ist noch nicht neu bereitgestellt (*Actions › Worker › Run workflow*) |

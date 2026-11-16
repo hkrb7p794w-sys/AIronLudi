@@ -63,7 +63,7 @@ schließt beide aus.
 | `COACH_APP_TOKEN` | App-Token |
 | `GEMINI_API_KEY`, `GROQ_API_KEY`, `CEREBRAS_API_KEY`, `MISTRAL_API_KEY`, `GH_MODELS_TOKEN` | KI-Keys (Abschnitt 2) |
 | `WHOOP_CLIENT_ID`, `WHOOP_CLIENT_SECRET` | optional, Abschnitt 6 |
-| `ANDROID_KEYSTORE_B64`, `ANDROID_KEYSTORE_PASSWORD` | Signaturschlüssel der Android-App (dieselben Werte wie in Coach-App, damit Updates die alte App ersetzen) |
+| `ANDROID_KEYSTORE_B64`, `ANDROID_KEYSTORE_PASSWORD` | Signaturschlüssel der Android-App (Keystore vom 16.11.2026, Alias `aironludi`). **Nicht mehr wechseln:** Jede spätere Version muss mit genau diesem Schlüssel signiert sein, sonst lässt sie sich nicht als Update installieren. Datei und Passwort sicher aufbewahren |
 
 Danach *Actions › Worker › Run workflow*. Fehlt ein Secret, endet der Lauf grün mit „Deploy übersprungen – fehlende
 Secrets: …“.
