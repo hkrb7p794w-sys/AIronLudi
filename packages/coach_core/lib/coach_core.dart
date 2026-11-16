@@ -128,6 +128,7 @@ export 'src/report/app_backup.dart';
 export 'src/report/coach_export.dart';
 export 'src/report/coach_import.dart';
 export 'src/report/data_export.dart';
+export 'src/report/kotlin_backup.dart';
 export 'src/report/persona_report.dart';
 export 'src/report/prompt_library.dart';
 export 'src/settings/app_settings.dart';

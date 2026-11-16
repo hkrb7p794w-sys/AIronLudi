@@ -92,19 +92,23 @@ direkt – deine Daten ziehen über eine **Sicherungsdatei** um. Deshalb unbedin
 
 ### B2 – Android (bisherige Kotlin-App „IronLudi“)
 
-> ⚠️ **Noch nicht umsteigen.** Die neue App kann die Sicherung der bisherigen Android-App
-> (`IronLudi-Gym-Sicherung-<Datum>.json`) noch **nicht** einlesen – Trainings, Pläne, Mahlzeiten und Gewichte würden
-> in der neuen App fehlen (sie bleiben zwar auf dem Handy, sind aber nicht sichtbar). Das Einlesen wird nachgerüstet;
-> bis dahin die bisherige App weiter nutzen.
+Die neue App liest die Sicherung der bisherigen Android-App (`IronLudi-Gym-Sicherung-<Datum>.json`) ein:
+Trainings, Pläne, eigene Übungen, Mahlzeiten, Favoriten, Lebensmittel, eigene Rezepte, Gewichte, Körperwerte,
+Rezept-Wünsche und Mahlzeiten-Erinnerungen. Nicht übernommen werden ein gerade laufendes Training (vorher beenden),
+Tagestypen (die neue App leitet sie aus Wochenplan und Training ab) und die Rezeptideen der Woche (neu erstellen).
+**Reihenfolge einhalten:**
 
-Sobald es geht (dieser Abschnitt wird dann angepasst):
-
-1. In der alten App *Training › Zahnrad › „Sicherung speichern“* (z. B. Google Drive).
+1. In der alten App ein laufendes Training beenden, dann *Training › Zahnrad › „Sicherung speichern“* (z. B. in
+   Google Drive oder „Downloads“). Prüfen, dass die Datei da ist.
 2. **Alte App deinstallieren** (erst nach Schritt 1!), dann die neue über den Android-Link installieren. Ein Update
    über die alte App geht nicht: Die neue App ist mit einem anderen Schlüssel signiert (Keystore vom 16.11.2026),
    Android lehnt sie sonst mit „App nicht installiert“ ab.
-3. In der neuen App *Einstellungen › KI und Automatisierung › Datensicherung › Sicherung einspielen* › Datei wählen.
-4. Der KI-Zugang aus dem Android-Link wird übernommen; sonst den Link erneut öffnen und „In der App verbinden“.
+3. In der neuen App auf dem ersten Bildschirm oben **„Sicherung einspielen“** (bzw. später *Einstellungen › KI und
+   Automatisierung › Datensicherung › Sicherung einspielen*) › Datei aus Schritt 1 wählen › **Einspielen**. Die App
+   schließt sich danach einmal; neu öffnen.
+4. **Einrichtung abschließen** (Sportarten, Ziel): Die Android-App kannte kein Profil. Körperwerte und Ernährungsweise
+   sind schon eingetragen; Ziel und Tempo wählst du neu, damit die Schutzgrenzen gelten.
+5. KI-Zugang: Android-Link erneut öffnen › **„In der App verbinden“**.
 
 ---
 

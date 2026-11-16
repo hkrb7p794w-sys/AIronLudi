@@ -12,6 +12,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../data/backup/backup_service.dart';
 import '../../data/settings/settings_store.dart';
 import '../../data/storage.dart';
+import '../../services/providers.dart';
 import '../../ui/components.dart';
 
 /// Datensicherung: automatisch in einen Ordner, als Datei teilen, Sicherung einspielen.
@@ -71,9 +72,15 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     final files = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
     final path = files.isEmpty ? null : files.first.path;
     if (path == null || !mounted) return;
+    final bytes = await File(path).readAsBytes();
+    // Sicherung der bisherigen Android-App (eigenes Format) – sonst die der iPhone-App bzw. dieser App.
+    if (KotlinBackup.decode(bytes) case final android?) {
+      await _restoreAndroid(android);
+      return;
+    }
     final AppBackup backup;
     try {
-      backup = AppBackup.decode(await File(path).readAsBytes());
+      backup = AppBackup.decode(bytes);
     } on Object catch (error) {
       await _message('$error');
       return;
@@ -102,6 +109,50 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
           content: Text(
             '${result.text} Damit die Einstellungen gelten, schließt sich AIronLudi jetzt. Öffne die App danach '
             'einfach neu.',
+          ),
+          actions: [
+            FilledButton(onPressed: () => SystemNavigator.pop(animated: true), child: const Text('App schließen')),
+          ],
+        ),
+      );
+    } on Object catch (error) {
+      await _message('Einspielen hat nicht geklappt: $error');
+    }
+  }
+
+  Future<void> _restoreAndroid(KotlinBackup backup) async {
+    if (!mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sicherung der Android-App einspielen?'),
+        content: Text(
+          '${backup.sessions.length} Trainings, ${backup.routines.length} Pläne, ${backup.meals.length} Mahlzeiten, '
+          '${backup.favorites.length} Favoriten, ${backup.ownRecipes.length} eigene Rezepte und '
+          '${backup.weights.length} Gewichte. Vorhandenes bleibt erhalten.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Abbrechen')),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Einspielen')),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      final result = await ref.read(backupServiceProvider).restoreKotlin(backup, ref.read(coachSettingsProvider));
+      if (!mounted) return;
+      final skipped = backup.skipped.isEmpty ? '' : ' Nicht übernommen: ${backup.skipped.join('; ')}.';
+      final onboarding = ref.read(coachSettingsProvider).profile.onboardingDone
+          ? ''
+          : ' Danach die Einrichtung abschließen (Sportarten, Ziel) – die Android-App kannte kein Profil.';
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text('Sicherung eingespielt'),
+          content: Text(
+            '${result.text}$skipped$onboarding Damit alles neu geladen wird, schließt sich AIronLudi jetzt. Öffne '
+            'die App danach einfach neu.',
           ),
           actions: [
             FilledButton(onPressed: () => SystemNavigator.pop(animated: true), child: const Text('App schließen')),

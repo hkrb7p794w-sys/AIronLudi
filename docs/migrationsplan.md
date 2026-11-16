@@ -410,7 +410,7 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Mehrere Benutzer je Gerät, strikt getrennt (eigene Datenbankdatei, Schlüssel und Ordner je Benutzer; Wechsel verwirft den kompletten Zustand), Einstellungen › Benutzer | erledigt (#73) |
 | Worker nach AIronLudi übernommen (`worker/`, Workflows `worker.yml`, `worker-smoke.yml`), Aufgabe `pantry_recipes` (Kühlschrank-Foto) mit Tests; Einrichtung `docs/einrichtung.md`, Anleitungen `docs/anleitung.md` | in PR |
 | Secrets des Workers in AIronLudi anlegen und Worker von hier bereitstellen; Git-Anbindung bei Cloudflare an Coach-App trennen | offen – durch den Nutzer (`docs/einrichtung.md`, Abschnitt 1) |
-| Sicherung der Kotlin-App „IronLudi“ (`IronLudi-Gym-Sicherung-*.json`) einlesen – Voraussetzung für den Umstieg unter Android | offen |
+| Sicherung der Kotlin-App „IronLudi“ (`IronLudi-Gym-Sicherung-*.json`) einlesen (`KotlinBackup`, `BackupService.restoreKotlin`, Erkennung beim Einspielen) – Voraussetzung für den Umstieg unter Android | in PR |
 | Test auf echten Geräten: Widgets, Live-Aktivitäten, laufende Mitteilung, Wecker, Hintergrundabruf, Schnellaktionen (nur dort prüfbar, CI baut sie) | offen – durch den Nutzer |
 | Umstellung: `vars.DEPLOY_SIDESTORE` bzw. `vars.DEPLOY_ANDROID` auf `true`, dann ersetzt die Flutter-App die Swift- bzw. Kotlin-App (gleiche Bundle-/Application-ID) | offen – Entscheidung des Nutzers |
 | Später möglich: Android-Widgets mit Glance (Ringe, Balken, Konfiguration), Wiederholungen ± in der Android-Mitteilung | Idee |
