@@ -76,7 +76,8 @@ liegt deshalb als Release in einem **privaten** Repo; die Download-Seite des Wor
 sie durch. Für die Leute ändert sich nichts (gleicher Link, keine GitHub-Anmeldung). Die iPhone-IPA (rund 16 MB)
 bleibt in KV.
 
-1. Neues **privates** Repo `aironludi-releases` anlegen (leer, ohne README reicht). Anderer Name: Repo-Variable
+1. Neues **privates** Repo `aironludi-releases` anlegen. Ist es leer, legt der Android-Workflow beim ersten Mal
+   selbst eine README an (Releases brauchen mindestens einen Commit). Anderer Name: Repo-Variable
    `RELEASES_REPO` = `<owner>/<name>` setzen.
 2. Zwei Fine-grained Tokens (*GitHub › Settings › Developer settings › Fine-grained tokens › Generate new token*),
    beide mit *Repository access: Only select repositories* › nur `aironludi-releases`:
