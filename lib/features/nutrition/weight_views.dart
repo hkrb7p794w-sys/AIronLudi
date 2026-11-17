@@ -169,6 +169,16 @@ class _WeightTrendScreenState extends ConsumerState<WeightTrendScreen> {
               ],
             ),
           if (forecast != null) _forecastSection(forecast),
+          if (safety != WeightGoalGuard.noTargets)
+            if (_intakeForecast(
+                  settings,
+                  garmin,
+                  body,
+                  expenditure,
+                  entries.lastOrNull?.kilograms ?? body.weightKilograms,
+                )
+                case final intakeForecast?)
+              _intakeForecastSection(intakeForecast, measured: expenditure?.$1.plausible ?? false),
           if (expenditure != null && safety != WeightGoalGuard.noTargets)
             _expenditureSection(expenditure.$1, expenditure.$2, settings, safety),
           if (nutrition.energyAdjustmentKilocalories != 0)
@@ -228,32 +238,24 @@ class _WeightTrendScreenState extends ConsumerState<WeightTrendScreen> {
   }
 
   /// Verbrauch laut Ernährung und Gewicht mit dem Bedarf laut Formel an denselben Tagen.
-  (ExpenditureResult, double)? _expenditure(
-    CoachSettings settings,
-    GarminProfile? garmin,
-    List<WeightEntry> entries,
-    BodyProfile body,
-  ) {
-    final today = _today;
+  Map<CalendarDay, double> _intake() {
     final intake = <CalendarDay, double>{};
     for (final meal in _meals) {
       intake[meal.day] = (intake[meal.day] ?? 0) + (NutritionSummary.totals(meal.items)[Nutrient.kcal] ?? 0);
     }
-    final result = Expenditure.estimate(
-      intake: intake,
-      weights: entries,
-      today: today,
-      basalMetabolicRate: NutritionPlanner.mifflinStJeor(body),
-    );
-    if (result == null) return null;
-    // Formel ohne Ziel und Anpassung: Grundumsatz × Alltag + Training des jeweiligen Tages.
+    return intake;
+  }
+
+  /// Bedarf laut Formel ohne Ziel und Anpassungen (Grundumsatz × Alltag + Training des Tages), Schnitt über die Tage
+  /// mit Einträgen seit [start].
+  double? _formulaMaintenance(CoachSettings settings, GarminProfile? garmin, Iterable<CalendarDay> days) {
     final maintenance = settings.nutrition.copy()
       ..goal = NutritionGoal.maintain
       ..weeklyWeightChangePercent = null
-      ..energyAdjustmentKilocalories = 0;
-    final start = today.adding(-Expenditure.windowDays);
+      ..energyAdjustmentKilocalories = 0
+      ..dayAdjustments = {};
     final values = [
-      for (final day in intake.keys.where((day) => day >= start && day < today))
+      for (final day in days)
         NutritionPlanner.compute(
               activities: _activities.where((activity) => activity.day == day).toList(),
               planItems: const [],
@@ -264,8 +266,90 @@ class _WeightTrendScreenState extends ConsumerState<WeightTrendScreen> {
             ).values[Nutrient.kcal] ??
             0,
     ];
-    if (values.isEmpty) return null;
-    return (result, values.reduce((a, b) => a + b) / values.length);
+    return values.isEmpty ? null : values.reduce((a, b) => a + b) / values.length;
+  }
+
+  (ExpenditureResult, double)? _expenditure(
+    CoachSettings settings,
+    GarminProfile? garmin,
+    List<WeightEntry> entries,
+    BodyProfile body,
+  ) {
+    final today = _today;
+    final intake = _intake();
+    final result = Expenditure.estimate(
+      intake: intake,
+      weights: entries,
+      today: today,
+      basalMetabolicRate: NutritionPlanner.mifflinStJeor(body),
+    );
+    if (result == null) return null;
+    final start = today.adding(-Expenditure.windowDays);
+    final formula = _formulaMaintenance(settings, garmin, intake.keys.where((day) => day >= start && day < today));
+    return formula == null ? null : (result, formula);
+  }
+
+  /// „Wenn du weiter so isst“: gegen den gemessenen Verbrauch, sonst gegen die Formel.
+  IntakeForecastResult? _intakeForecast(
+    CoachSettings settings,
+    GarminProfile? garmin,
+    BodyProfile body,
+    (ExpenditureResult, double)? expenditure,
+    double weight,
+  ) {
+    final today = _today;
+    final intake = _intake();
+    final measured = expenditure != null && expenditure.$1.plausible ? expenditure.$1.kilocalories : null;
+    final start = today.adding(-IntakeForecast.windowDays);
+    final maintenance =
+        measured ?? _formulaMaintenance(settings, garmin, intake.keys.where((day) => day >= start && day < today));
+    if (maintenance == null) return null;
+    return IntakeForecast.compute(intake: intake, maintenance: maintenance, weightKilograms: weight, today: today);
+  }
+
+  Widget _intakeForecastSection(IntakeForecastResult result, {required bool measured}) {
+    final balance = result.dailyBalance.round();
+    return FormSection(
+      header: 'Wenn du weiter so isst',
+      footer:
+          'Geglätteter Schnitt der letzten ${result.days} erfassten Tage gegen deinen ${measured ? 'gemessenen ' : ''}'
+          'Bedarf. Realistisch heißt: höchstens 1 % des Körpergewichts pro Woche ab- bzw. 0,5 % zunehmen – mehr ist '
+          'kein Fett- oder Muskelgewebe, sondern Wasser und Glykogen. Die ersten Tage zeigt die Waage deshalb oft '
+          'mehr oder weniger als hier. Der Körper passt sich an; die App rechnet nicht weiter als 4 Wochen.',
+      children: [
+        ListTile(title: Text(IntakeForecast.sentence(result))),
+        LabeledRow(label: 'Im Schnitt gegessen', value: '${result.averageIntake.round()} kcal'),
+        LabeledRow(label: 'Bedarf', value: '${result.maintenance.round()} kcal'),
+        LabeledRow(
+          label: 'Bilanz',
+          value:
+              '${balance > 0
+                  ? '+'
+                  : balance < 0
+                  ? '−'
+                  : ''}${balance.abs()} kcal pro Tag',
+        ),
+        LabeledRow(
+          label: 'Pro Woche',
+          value:
+              '${result.weeklyKilograms > 0
+                  ? '+'
+                  : result.weeklyKilograms < 0
+                  ? '−'
+                  : ''}'
+              '${GermanFormat.decimal(result.weeklyKilograms.abs())} kg',
+        ),
+        if (result.capped)
+          ListTile(
+            leading: const Icon(Icons.info_outline, color: Colors.orange),
+            title: Text(
+              'Rechnerisch wären es ${GermanFormat.decimal(result.rawWeeklyKilograms.abs())} kg pro Woche. So schnell '
+              'geht es als Körpergewebe nicht – ein großer Teil wäre Wasser, und bei starkem Defizit leidet die '
+              'Muskulatur.',
+            ),
+          ),
+      ],
+    );
   }
 
   Widget _trendSection(

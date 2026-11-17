@@ -124,6 +124,50 @@ class NutritionSettingsScreen extends ConsumerWidget {
             ],
           ),
           FormSection(
+            header: 'Makro-Verteilung',
+            footer:
+                'Ohne eigene Werte richtet sich Protein nach deinem Ziel (${GermanFormat.decimal(nutrition.goal.proteinPerKilogram)} g/kg) '
+                'und Fett nach dem Rest (mindestens 20 %). Kohlenhydrate folgen dem Training. Einzelne Tage passt du im '
+                'Reiter Ernährung unter „Tagesziel anpassen“ an (Refeed, Ruhetag, ±kcal).',
+            children: [
+              SwitchListTile.adaptive(
+                title: const Text('Eigenes Protein'),
+                subtitle: nutrition.proteinPerKilogram == null
+                    ? null
+                    : Text('${GermanFormat.decimal(nutrition.proteinPerKilogram!)} g je kg'),
+                value: nutrition.proteinPerKilogram != null,
+                onChanged: (on) =>
+                    change((value) => value.proteinPerKilogram = on ? value.goal.proteinPerKilogram : null),
+              ),
+              if (nutrition.proteinPerKilogram case final protein?)
+                Slider(
+                  value: protein,
+                  min: NutritionSettings.proteinRange.$1,
+                  max: NutritionSettings.proteinRange.$2,
+                  divisions: 12,
+                  label: '${GermanFormat.decimal(protein)} g/kg',
+                  onChanged: (number) => change((value) => value.proteinPerKilogram = (number * 10).round() / 10),
+                ),
+              SwitchListTile.adaptive(
+                title: const Text('Eigener Fettanteil'),
+                subtitle: nutrition.fatSharePercent == null
+                    ? null
+                    : Text('mindestens ${nutrition.fatSharePercent!.round()} % der Energie'),
+                value: nutrition.fatSharePercent != null,
+                onChanged: (on) => change((value) => value.fatSharePercent = on ? 30 : null),
+              ),
+              if (nutrition.fatSharePercent case final share?)
+                Slider(
+                  value: share,
+                  min: NutritionSettings.fatShareRange.$1,
+                  max: NutritionSettings.fatShareRange.$2,
+                  divisions: 15,
+                  label: '${share.round()} %',
+                  onChanged: (number) => change((value) => value.fatSharePercent = number.roundToDouble()),
+                ),
+            ],
+          ),
+          FormSection(
             header: 'Erinnerungen an Mahlzeiten',
             footer:
                 'Zur gewohnten Zeit kommt eine Mitteilung – aber nur, wenn die Mahlzeit an dem Tag noch nicht erfasst '

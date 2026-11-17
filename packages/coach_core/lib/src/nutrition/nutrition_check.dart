@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import '../calendar/calendar_day.dart';
 import '../profile/goal_rules.dart';
 import '../profile/plan_adjustments.dart';
+import '../util/german_format.dart';
 import 'weight_trend.dart';
 
 /// Wöchentlicher Ernährungs-Check-in (Anregung: MacroFactor, Paket 13): Einmal pro Kalenderwoche erinnert die App
@@ -250,5 +251,103 @@ abstract final class WeightForecast {
       targetDay: weeksToTarget == null ? null : today.adding(weeksToTarget * 7),
       floorKilograms: floor,
     );
+  }
+}
+
+/// Ergebnis der Hochrechnung „Wenn du weiter so isst“.
+final class IntakeForecastResult {
+  const IntakeForecastResult({
+    required this.days,
+    required this.averageIntake,
+    required this.maintenance,
+    required this.weeklyKilograms,
+    required this.rawWeeklyKilograms,
+    required this.capped,
+    required this.horizonDays,
+  });
+
+  /// Erfasste Tage, die eingeflossen sind.
+  final int days;
+
+  /// Geglätteter Schnitt der Zufuhr (kcal pro Tag).
+  final double averageIntake;
+
+  /// Bedarf, gegen den gerechnet wurde (kcal pro Tag).
+  final double maintenance;
+
+  /// Erwartete Änderung pro Woche in kg (negativ = Abnahme), physiologisch begrenzt.
+  final double weeklyKilograms;
+
+  /// Rechnerischer Wert ohne Begrenzung (für den Hinweis).
+  final double rawWeeklyKilograms;
+
+  /// Begrenzt, weil das rechnerische Tempo nicht als Körpergewebe erreichbar bzw. nicht nachhaltig wäre.
+  final bool capped;
+  final int horizonDays;
+
+  double get dailyBalance => averageIntake - maintenance;
+
+  /// Erwartete Änderung bis zum Ende des Zeitraums (kg).
+  double get horizonKilograms => (weeklyKilograms * horizonDays / 7 * 10).roundToDouble() / 10;
+}
+
+/// Hochrechnung aus dem tatsächlich Gegessenen – realistisch statt linear: Schnitt der letzten 14 erfassten Tage, einzelne
+/// Ausreißer auf ±40 % des Medians begrenzt (ein Festessen oder ein vergessener Eintrag kippt die Prognose nicht),
+/// 7.700 kcal je kg Körpergewebe, und höchstens so viel Veränderung, wie als Fett- bzw. Muskelgewebe erreichbar ist:
+/// Abnahme bis 1 %, Zunahme bis 0,5 % des Körpergewichts pro Woche (`GoalRules`). Der Körper passt sich an (Hall et al.
+/// 2011), die Waage zeigt anfangs vor allem Wasser und Glykogen – deshalb keine Hochrechnung über mehr als 4 Wochen.
+abstract final class IntakeForecast {
+  static const windowDays = 14;
+  static const minimumDays = 4;
+  static const outlierShare = 0.4;
+  static const horizonDays = 28;
+
+  /// [intake]: erfasste kcal je Tag; heute zählt nicht (noch offen). Unvollständige Tage (unter der Hälfte des Medians)
+  /// fallen weg.
+  static IntakeForecastResult? compute({
+    required Map<CalendarDay, double> intake,
+    required double maintenance,
+    required double weightKilograms,
+    required CalendarDay today,
+  }) {
+    if (maintenance <= 0 || weightKilograms <= 0) return null;
+    final start = today.adding(-windowDays);
+    final values = [
+      for (final MapEntry(key: day, :value) in intake.entries)
+        if (day >= start && day < today && value > 0) value,
+    ];
+    if (values.isEmpty) return null;
+    final sorted = [...values]..sort();
+    final median = sorted[sorted.length ~/ 2];
+    final complete = values.where((value) => value >= Expenditure.incompleteShare * median).toList();
+    if (complete.length < minimumDays) return null;
+    final low = median * (1 - outlierShare);
+    final high = median * (1 + outlierShare);
+    final average = complete.fold(0.0, (sum, value) => sum + value.clamp(low, high)) / complete.length;
+    final raw = (average - maintenance) * 7 / WeightForecast.kilocaloriesPerKilogram;
+    final maxLoss = GoalRules.maxLossPercentPerWeek / 100 * weightKilograms;
+    final maxGain = GoalRules.maxGainPercentPerWeek / 100 * weightKilograms;
+    final bounded = raw.clamp(-maxLoss, maxGain);
+    return IntakeForecastResult(
+      days: complete.length,
+      averageIntake: average.roundToDouble(),
+      maintenance: maintenance.roundToDouble(),
+      weeklyKilograms: (bounded * 100).roundToDouble() / 100,
+      rawWeeklyKilograms: (raw * 100).roundToDouble() / 100,
+      capped: bounded != raw,
+      horizonDays: horizonDays,
+    );
+  }
+
+  /// Kurzer Satz für Ansicht und KI.
+  static String sentence(IntakeForecastResult result) {
+    final kg = result.horizonKilograms;
+    final amount = GermanFormat.decimal(kg.abs());
+    final change = kg.abs() < 0.2
+        ? 'bleibt dein Gewicht in 4 Wochen etwa gleich'
+        : kg < 0
+        ? 'sind in 4 Wochen etwa $amount kg weniger realistisch'
+        : 'sind in 4 Wochen etwa $amount kg mehr realistisch';
+    return 'Wenn du weiter so isst wie in den letzten ${result.days} erfassten Tagen, $change.';
   }
 }

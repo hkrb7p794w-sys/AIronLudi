@@ -202,7 +202,7 @@ export function nutritionReviewPrompt(input: Record<string, unknown>): string {
     })
     .join("\n");
   return [
-    "Du bist Sporternährungs-Coach für einen Ausdauerathleten (Marathon und Mitteldistanz-Triathlon).",
+    "Du bist Sporternährungs-Coach. Richte dich nach Ziel, Training und Phase der Person unten.",
     `Heute: ${text(input.weekday)}, Uhrzeit ${text(input.time, 10)}. Tagestyp für die Ernährung: ${text(input.dayType)} ` +
       `(${text(input.dayTypeSource)}). Trainingsphase: ${text(input.phase)}.`,
     `Training heute: ${list(input.training).join("; ") || "noch nichts aufgezeichnet"}.`,
