@@ -287,7 +287,10 @@ abstract final class GoalRules {
   /// Einschätzung eines Ruhepuls-Ziels. Nach einem Jahr Laufen sank der Ruhepuls bei Inaktiven im Schnitt um etwa 7
   /// Schläge pro Minute (Hespanhol Junior et al. 2015).
   static String restingHeartRateOutlook({required double? current, required int target}) {
-    if (current == null) return 'Sobald Garmin deinen Ruhepuls liefert, zeigt die App den Verlauf zu deinem Ziel.';
+    if (current == null) {
+      return 'Sobald deine Uhr oder deine Gesundheitsdaten den Ruhepuls liefern, zeigt die App den Verlauf zu deinem '
+          'Ziel.';
+    }
     final difference = current - target;
     if (difference <= 0) return 'Du liegst schon bei oder unter deinem Ziel. Ziel ist jetzt, den Wert zu halten.';
     if (difference <= 7) {

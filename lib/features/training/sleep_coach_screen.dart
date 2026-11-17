@@ -166,7 +166,7 @@ class _SleepCoachScreenState extends ConsumerState<SleepCoachScreen> {
               children: [
                 ListTile(
                   title: Text(
-                    'Für den Schlaf-Coach braucht die App Schlafdaten von mindestens drei Nächten aus Garmin.',
+                    'Für den Schlaf-Coach braucht die App Schlafdaten von mindestens drei Nächten.',
                     style: secondary,
                   ),
                 ),

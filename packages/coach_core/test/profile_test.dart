@@ -237,7 +237,7 @@ void main() {
     });
 
     test('Ausblick zum Ruhepuls', () {
-      expect(GoalRules.restingHeartRateOutlook(current: null, target: 55), contains('Sobald Garmin'));
+      expect(GoalRules.restingHeartRateOutlook(current: null, target: 55), contains('Sobald deine Uhr'));
       expect(GoalRules.restingHeartRateOutlook(current: 54, target: 55), contains('bei oder unter'));
       expect(GoalRules.restingHeartRateOutlook(current: 60, target: 55), contains('Realistisch'));
       expect(GoalRules.restingHeartRateOutlook(current: 75, target: 55), contains('ambitioniert'));
@@ -334,7 +334,7 @@ void main() {
     test('funktioniert ohne Garmin-Werte', () {
       final result = advice(null);
       expect(result.mode, ScheduleAdviceMode.asPlanned);
-      expect(result.detail, contains('noch keine Garmin-Werte'));
+      expect(result.detail, contains('noch keine Erholungswerte'));
     });
 
     test('ohne freien Tag in der Nähe wird nachgeholt', () {

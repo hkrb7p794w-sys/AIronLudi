@@ -421,7 +421,7 @@ class _MotivationSettingsScreenState extends ConsumerState<MotivationSettingsScr
                 ? 'Geteilt werden nur Name, Symbol und Punkte – keine Gesundheitsdaten. Jeder Einladungslink enthält '
                       'einen eigenen Gastzugang zu deinem Worker (KI, Rangliste, geteilte Mahlzeiten), nicht dein '
                       'App-Token. Erstelle für jede Person einen eigenen Link. Jede Person richtet in ihrer App eigenes '
-                      'Profil und Garmin-Konto ein.'
+                      'Profil und eigene Datenquellen ein.'
                 : 'Geteilt werden nur Name, Symbol und Punkte – keine Gesundheitsdaten. Gib zum Einladen den Code '
                       'weiter; Einladungslinks erstellt, wer den Worker betreibt.',
             children: [
@@ -535,7 +535,7 @@ class _JoinLeagueScreenState extends ConsumerState<JoinLeagueScreen> {
         FormSection(
           footer:
               'Tritt nur bei, wenn du die Person kennst und der Server stimmt. Die App nutzt den KI-Worker aus der '
-              'Einladung. Dein Profil, Garmin-Konto und alle Daten bleiben auf deinem Gerät; geteilt werden nur Name '
+              'Einladung. Dein Profil, deine Zugänge und alle Daten bleiben auf deinem Gerät; geteilt werden nur Name '
               'und Punkte.',
           children: [
             const ListTile(title: Text('Du wurdest in eine AIronLudi-Rangliste eingeladen.')),

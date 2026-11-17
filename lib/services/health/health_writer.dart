@@ -5,7 +5,7 @@ import 'package:health/health.dart';
 
 /// Fehler beim Speichern eines Workouts in Health.
 enum WorkoutWriterError implements Exception {
-  unavailable('Apple Health ist auf diesem Gerät nicht verfügbar.'),
+  unavailable('Die Gesundheitsdaten des Telefons sind auf diesem Gerät nicht verfügbar.'),
   notAuthorized('Keine Schreibberechtigung für Workouts. Einstellungen › Health › Datenzugriff › AIronLudi prüfen.');
 
   const WorkoutWriterError(this.message);

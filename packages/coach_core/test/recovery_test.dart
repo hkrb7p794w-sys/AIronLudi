@@ -73,7 +73,7 @@ void main() {
       expect(result.level, RecoveryLevel.pause);
       expect(result.reasons.length, 4);
       expect(result.reasons, contains('kurzer Schlaf (5,5 h)'));
-      expect(result.reasons, contains('Readiness 40 (Garmin-Stufe „Low“)'));
+      expect(result.reasons, contains('Readiness 40 (Stufe „Low“)'));
     });
 
     test('Mittelwert über die Tage vor heute', () {

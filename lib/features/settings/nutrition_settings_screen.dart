@@ -73,7 +73,7 @@ class NutritionSettingsScreen extends ConsumerWidget {
           ),
           FormSection(
             header: 'Körperwerte',
-            footer: 'Leer lassen, um die Werte aus Garmin zu nutzen. Körperfett ohne Angabe: 15 % (Männer) bzw. 25 %.',
+            footer: 'Leer lassen, um die Werte deiner Uhr bzw. Gesundheitsdaten zu nutzen. Körperfett ohne Angabe: 15 % (Männer) bzw. 25 %.',
             children: [
               _OptionalNumberField(
                 title: 'Gewicht',
@@ -121,6 +121,50 @@ class NutritionSettingsScreen extends ConsumerWidget {
                   ],
                 ),
               ),
+            ],
+          ),
+          FormSection(
+            header: 'Makro-Verteilung',
+            footer:
+                'Ohne eigene Werte richtet sich Protein nach deinem Ziel (${GermanFormat.decimal(nutrition.goal.proteinPerKilogram)} g/kg) '
+                'und Fett nach dem Rest (mindestens 20 %). Kohlenhydrate folgen dem Training. Einzelne Tage passt du im '
+                'Reiter Ernährung unter „Tagesziel anpassen“ an (Refeed, Ruhetag, ±kcal).',
+            children: [
+              SwitchListTile.adaptive(
+                title: const Text('Eigenes Protein'),
+                subtitle: nutrition.proteinPerKilogram == null
+                    ? null
+                    : Text('${GermanFormat.decimal(nutrition.proteinPerKilogram!)} g je kg'),
+                value: nutrition.proteinPerKilogram != null,
+                onChanged: (on) =>
+                    change((value) => value.proteinPerKilogram = on ? value.goal.proteinPerKilogram : null),
+              ),
+              if (nutrition.proteinPerKilogram case final protein?)
+                Slider(
+                  value: protein,
+                  min: NutritionSettings.proteinRange.$1,
+                  max: NutritionSettings.proteinRange.$2,
+                  divisions: 12,
+                  label: '${GermanFormat.decimal(protein)} g/kg',
+                  onChanged: (number) => change((value) => value.proteinPerKilogram = (number * 10).round() / 10),
+                ),
+              SwitchListTile.adaptive(
+                title: const Text('Eigener Fettanteil'),
+                subtitle: nutrition.fatSharePercent == null
+                    ? null
+                    : Text('mindestens ${nutrition.fatSharePercent!.round()} % der Energie'),
+                value: nutrition.fatSharePercent != null,
+                onChanged: (on) => change((value) => value.fatSharePercent = on ? 30 : null),
+              ),
+              if (nutrition.fatSharePercent case final share?)
+                Slider(
+                  value: share,
+                  min: NutritionSettings.fatShareRange.$1,
+                  max: NutritionSettings.fatShareRange.$2,
+                  divisions: 15,
+                  label: '${share.round()} %',
+                  onChanged: (number) => change((value) => value.fatSharePercent = number.roundToDouble()),
+                ),
             ],
           ),
           FormSection(
@@ -236,7 +280,7 @@ class _OptionalNumberFieldState extends State<_OptionalNumberField> {
               textAlign: TextAlign.end,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
-                hintText: widget.placeholder == null ? '–' : '${GermanFormat.decimal(widget.placeholder!)} (Garmin)',
+                hintText: widget.placeholder == null ? '–' : '${GermanFormat.decimal(widget.placeholder!)} (Uhr)',
                 border: InputBorder.none,
               ),
               onChanged: (text) => widget.onChanged(text.trim().isEmpty ? null : parseNumber(text)),

@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../app/app_model.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/platform_names.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
 import '../evidence/evidence_views.dart';
@@ -464,7 +465,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       if (_draft.sports.contains(TrainingSport.run))
         FormSection(
           header: 'Aktuell gelaufen',
-          footer: 'Leer lassen: Dann nutzt die App deine Garmin-Daten der letzten Wochen.',
+          footer: 'Leer lassen: Dann nutzt die App die Daten deiner Uhr bzw. Gesundheitsdaten der letzten Wochen.',
           children: [_field(_currentRunKilometers, 'Kilometer pro Woche', keyboard: _decimal)],
         ),
     ],
@@ -647,12 +648,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       DataProvider.garmin when !model.garmin.isConfigured =>
                         'Garmin: nach dem Start unter Einstellungen › Garmin anmelden.',
                       DataProvider.appleHealth =>
-                        'Apple Health: Der Import wird eingeschaltet; das Gerät fragt gleich nach den Daten.',
+                        '$healthStoreName: Der Import wird eingeschaltet; das Gerät fragt gleich nach den Daten.',
                       DataProvider.whoop when !model.isWhoopConnected =>
                         'WHOOP: nach dem Start unter Einstellungen › Training und Fitness › WHOOP verbinden. Bis dahin '
-                            'kommen Schlaf, Ruhepuls und Workouts über Apple Health.',
+                            'kommen Schlaf, Ruhepuls und Workouts über $healthStoreName.',
                       DataProvider.polar =>
-                        '${provider.label}: kommt über Apple Health – schalte dort die Weitergabe an Health ein.',
+                        '${provider.label}: kommt über $healthStoreName – schalte dort die Weitergabe ein.',
                       DataProvider.fitbit => 'Fitbit: derzeit keine Verbindung möglich.',
                       _ => null,
                     }
@@ -665,7 +666,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Die App prüft täglich deine Erholung (Garmin) gegen deinen Wochenplan und schlägt vor, Einheiten zu '
+                'Die App prüft täglich deine Erholung (Uhr bzw. Gesundheitsdaten) gegen deinen Wochenplan und schlägt vor, Einheiten zu '
                 'verschieben oder lockerer zu machen. Ruhetage und Ziele kannst du jederzeit in den Einstellungen '
                 'ändern.',
                 style: muted,

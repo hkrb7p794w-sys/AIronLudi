@@ -185,6 +185,7 @@ abstract final class NutritionPlanner {
         }
         adjustment = math.max(adjustment, 0);
     }
+    final dayAdjustment = settings.adjustmentOn(day);
     final classification = classify(activities);
     var dayType = classification.type;
     var source = hasGarminData ? TargetsSource.garmin : TargetsSource.none;
@@ -194,6 +195,8 @@ abstract final class NutritionPlanner {
     if (recovery == RecoveryLevel.locker && plannedType != null && plannedType > DayType.light) {
       plannedType = DayType.light;
     }
+    // Selbst gewählter Ruhetag: geplante Einheiten zählen nicht mit (aufgezeichnete schon).
+    if (dayAdjustment?.kind == DayAdjustmentKind.rest) plannedType = null;
     if (activities.isEmpty && plannedType != null && plannedType > dayType) {
       dayType = plannedType;
       source = TargetsSource.planned;
@@ -226,7 +229,13 @@ abstract final class NutritionPlanner {
       final dailyKilocalories = weeklyChange / 100 * weight * 7700 / 7;
       adjustPercent = math.max(-25, math.min(15, dailyKilocalories / dayEnergy * 100));
     }
-    final goalPercent = adjustPercent * dayType.goalScale;
+    var goalPercent = adjustPercent * dayType.goalScale;
+    // Refeed: an diesem Tag kein Defizit (Überschuss-Ziele bleiben), die Anpassung aus dem Verlauf nur nach oben.
+    if (dayAdjustment?.kind == DayAdjustmentKind.refeed) {
+      goalPercent = math.max(goalPercent, 0);
+      adjustment = math.max(adjustment, 0);
+    }
+    if (dayAdjustment?.kind == DayAdjustmentKind.custom) adjustment += dayAdjustment!.kilocalories;
     var energy = dayEnergy * (1 + goalPercent / 100) + adjustment;
     // Höchstens ein Viertel Defizit, auch zusammen mit der Anpassung aus dem Gewichtsverlauf.
     energy = math.max(energy, 0.75 * dayEnergy);
@@ -239,18 +248,22 @@ abstract final class NutritionPlanner {
       energy = energyFloor;
       floorApplied = true;
     }
-    final proteinPerKilogram = goal.proteinPerKilogram;
+    final proteinPerKilogram = settings.proteinPerKilogram ?? goal.proteinPerKilogram;
     final referenceWeight = GoalRules.referenceWeightKilograms(profile);
     var protein = proteinPerKilogram * referenceWeight;
     // Die Energie entscheidet: Kohlenhydrate nach Tagestyp, aber nur so viele, dass Fett mindestens 20 % behält
-    // (ACSM 2016); höchstens bis zur Untergrenze der Spanne gekürzt.
-    final fatMinimum = 0.20 * energy / 9;
-    final fatMaximum = 0.35 * energy / 9;
+    // (ACSM 2016); höchstens bis zur Untergrenze der Spanne gekürzt. Ein eigener Fettanteil (20–35 %) wird als
+    // Untergrenze gesetzt, der Rest geht an die Kohlenhydrate. Am Refeed-Tag kommt das Plus über Kohlenhydrate.
+    final fatShare = dayAdjustment?.kind == DayAdjustmentKind.refeed ? null : settings.fatSharePercent;
+    final fatMinimum = (fatShare ?? 20) / 100 * energy / 9;
+    final fatMaximum = math.max(0.35 * energy / 9, fatMinimum);
     final carbRoom = (energy - 4 * protein - 9 * fatMinimum) / 4;
     var carbs = math.min(
       dayType.carbsPerKilogram * referenceWeight,
       math.max(carbRoom, dayType.minimumCarbsPerKilogram * referenceWeight),
     );
+    // Refeed: der ganze Spielraum über dem Mindestfett geht in die Kohlenhydrate (Glykogen auffüllen).
+    if (dayAdjustment?.kind == DayAdjustmentKind.refeed) carbs = math.max(carbs, carbRoom);
     final rest = energy - 4 * protein - 4 * carbs;
     var fat = math.min(math.max(rest / 9, fatMinimum), fatMaximum);
     if (rest / 9 > fatMaximum) carbs += (rest - fat * 9) / 4;

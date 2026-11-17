@@ -184,7 +184,7 @@ final class HealthImportService extends ChangeNotifier {
 
     final detailed = await _detailWorkouts(now);
     await _settings.setDate(lastImportKey, now);
-    final buffer = StringBuffer('$daysUpdated Tage, $added neue Workouts aus Apple Health');
+    final buffer = StringBuffer('$daysUpdated Tage, $added neue Workouts aus den Gesundheitsdaten');
     if (detailed > 0) buffer.write(', $detailed mit Verlauf');
     if (problems.isNotEmpty) buffer.write(' · nicht lesbar: ${problems.join(', ')}');
     lastResult = buffer.toString();

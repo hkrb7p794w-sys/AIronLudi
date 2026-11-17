@@ -100,6 +100,7 @@ void main() {
     await tester.tap(find.text('Ernährung').last);
     await tester.pumpAndSettle();
     final breakfast = find.widgetWithText(SwitchListTile, 'Frühstück');
+    await tester.dragUntilVisible(breakfast, find.byType(ListView).last, const Offset(0, -200));
     await tester.ensureVisible(breakfast);
     await tester.pumpAndSettle();
     await tester.tap(breakfast);

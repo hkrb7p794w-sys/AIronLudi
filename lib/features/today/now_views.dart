@@ -39,10 +39,13 @@ String shortDate(CalendarDay day) => '${day.day.toString().padLeft(2, '0')}.${da
 /// „Jetzt dran“: immer die erste Karte auf „Heute“, in beiden Modi gleich. Heutige Einheiten mit Soll, Ampel, eine
 /// Zeile „warum“ und – wenn Regel und Plan sich widersprechen – beides mit der Entscheidung (Port von `NowSection`).
 class NowSection extends ConsumerWidget {
-  const NowSection({super.key, required this.snapshot, required this.focus});
+  const NowSection({super.key, required this.snapshot, required this.focus, this.openDone});
 
   final TodaySnapshot snapshot;
   final TodayFocus focus;
+
+  /// Ansicht der Aufzeichnung zu einer erledigten Einheit (`null` = keine gefunden).
+  final Widget? Function(TodayFocusItem item)? openDone;
 
   static WorkoutPlan? watchPlan(TodayFocusItem item, {required bool season}) {
     final sport = item.sport == null ? null : WorkoutSport.of(item.sport!);
@@ -167,7 +170,18 @@ class NowSection extends ConsumerWidget {
         if (focus.items.isEmpty)
           ListTile(title: Text(season ? 'Heute nichts Festes.' : 'Heute nichts geplant.', style: secondary)),
         for (final item in focus.items) ...[
-          FocusItemRow(item: item),
+          FocusItemRow(
+            item: item,
+            onOpen: switch (item.status) {
+              SessionStatus.done || SessionStatus.partial || SessionStatus.substituted => switch (openDone?.call(
+                item,
+              )) {
+                final screen? => () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen)),
+                null => null,
+              },
+              _ => null,
+            },
+          ),
           // Auf Wunsch an die Uhr; die Schwimmeinheiten des Saisonplans legt weiterhin das Add-on an.
           if (watchPlan(item, season: season) case final plan? when loggedIn && item.status != SessionStatus.done)
             SendToWatchButton(plan: plan, day: snapshot.plan.today),
@@ -231,9 +245,12 @@ class _IconLine extends StatelessWidget {
 
 /// Eine heutige Einheit: Sportart, Titel, Soll bzw. Soll/Ist, Status; Antippen zeigt den Ablauf.
 class FocusItemRow extends StatefulWidget {
-  const FocusItemRow({super.key, required this.item});
+  const FocusItemRow({super.key, required this.item, this.onOpen});
 
   final TodayFocusItem item;
+
+  /// Erledigt mit Aufzeichnung: Antippen öffnet sie (wie unter „Aktivitäten“) statt den Ablauf aufzuklappen.
+  final VoidCallback? onOpen;
 
   @override
   State<FocusItemRow> createState() => _FocusItemRowState();
@@ -248,7 +265,7 @@ class _FocusItemRowState extends State<FocusItemRow> {
     final secondary = TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant);
     final status = item.status;
     return InkWell(
-      onTap: item.detail.isEmpty ? null : () => setState(() => _expanded = !_expanded),
+      onTap: widget.onOpen ?? (item.detail.isEmpty ? null : () => setState(() => _expanded = !_expanded)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Column(
@@ -277,6 +294,7 @@ class _FocusItemRowState extends State<FocusItemRow> {
                 ),
                 if (status != null && status != SessionStatus.open && status != SessionStatus.planned)
                   SessionStatusBadge(status: status),
+                if (widget.onOpen != null) const DisclosureChevron(),
               ],
             ),
             if (_expanded && item.detail.isNotEmpty) Text(item.detail, style: secondary.copyWith(fontSize: 13)),

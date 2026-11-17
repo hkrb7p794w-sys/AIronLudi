@@ -24,9 +24,9 @@ Future<ProviderContainer> _openTraining(WidgetTester tester, {UserProfile? profi
 }
 
 Future<void> _openRow(WidgetTester tester, String title) async {
-  final row = find.text(title).last;
-  await tester.scrollUntilVisible(row, 300, scrollable: find.byType(Scrollable).first);
-  await tester.tap(row);
+  await tester.scrollUntilVisible(find.text(title), 300, scrollable: find.byType(Scrollable).first);
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(title).last);
   await tester.pumpAndSettle();
 }
 
@@ -36,6 +36,7 @@ void main() {
   testWidgets('Saisonplan: Disziplinen und Ziele', (tester) async {
     final container = await _openTraining(tester, profile: UserProfile(mode: ProfileMode.season, onboardingDone: true));
     final settings = container.read(coachSettingsProvider);
+    await tester.scrollUntilVisible(find.text('DISZIPLINEN'), 300, scrollable: find.byType(Scrollable).first);
     expect(find.text('DISZIPLINEN'), findsOneWidget);
     expect(find.text('Meine Sportarten'.toUpperCase()), findsNothing);
 
@@ -76,6 +77,7 @@ void main() {
         sports: const [TrainingSport.run, TrainingSport.bike, TrainingSport.strength],
       ),
     );
+    await tester.scrollUntilVisible(find.text('MEINE SPORTARTEN'), 300, scrollable: find.byType(Scrollable).first);
     expect(find.text('DISZIPLINEN'), findsNothing);
     expect(find.text('Almere'), findsNothing);
     await _openRow(tester, 'Laufen');

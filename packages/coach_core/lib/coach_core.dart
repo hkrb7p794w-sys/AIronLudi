@@ -20,6 +20,7 @@ export 'src/app/app_route.dart';
 export 'src/calendar/calendar_day.dart';
 export 'src/coach/chat_context.dart';
 export 'src/coach/coaching_note.dart';
+export 'src/coach/daily_strain.dart';
 export 'src/coach/fitness_form.dart';
 export 'src/coach/heart_rate_zones.dart';
 export 'src/coach/personal_note.dart';

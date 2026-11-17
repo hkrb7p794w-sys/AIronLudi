@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_model.dart';
 import '../../ui/components.dart';
+import '../../ui/platform_names.dart';
 
 /// Hauptziel (eins) und Nebenziele (bis zu zwei, optional).
 class GoalsPicker extends StatelessWidget {
@@ -127,9 +128,9 @@ class TrackerPicker extends StatelessWidget {
 
   static String note(DataProvider provider) => switch (provider) {
     DataProvider.garmin => 'Direkt verbinden: Anmeldung mit dem Garmin-Konto.',
-    DataProvider.appleHealth => 'Direkt verbinden: Import aus Apple Health einschalten.',
+    DataProvider.appleHealth => 'Direkt verbinden: Import aus $healthStoreName einschalten.',
     DataProvider.whoop => 'Direkt verbinden: Anmeldung bei WHOOP (Recovery, HRV, Schlaf, Trainings).',
-    DataProvider.polar => 'Noch keine direkte Verbindung – Trainings kommen über Apple Health (Polar Flow).',
+    DataProvider.polar => 'Noch keine direkte Verbindung – Trainings kommen über $healthStoreName (Polar Flow).',
     DataProvider.fitbit =>
       'Derzeit nicht möglich: Fitbit schreibt nicht in Apple Health, die Web-API ist abgeschaltet.',
   };
@@ -164,7 +165,7 @@ class TrackerPicker extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: SelectionCard(
-                title: provider == DataProvider.appleHealth ? 'Apple Watch / Apple Health' : provider.label,
+                title: provider == DataProvider.appleHealth ? healthStoreName : provider.label,
                 detail: note(provider),
                 symbol: symbol(provider),
                 color: accent,

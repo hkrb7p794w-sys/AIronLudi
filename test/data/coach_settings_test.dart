@@ -96,6 +96,53 @@ void main() {
     });
   });
 
+  test(
+    'Geänderter Wochenplan verwirft Wochenpläne und Ausnahmen ab dieser Woche (alter Gym-Tag bleibt nicht stehen)',
+    () {
+      final monday = CalendarDay(2026, 11, 16);
+      final settings = CoachSettings(store, clock: () => DateTime(2026, 11, 16, 20));
+      final old = WeekSchedule()
+          .withSlots(const [SessionSlot(TrainingSport.strength, SessionIntensity.hard)], Weekday.monday)
+          .withSlots(const [SessionSlot(TrainingSport.strength, SessionIntensity.hard)], Weekday.tuesday);
+      settings.profile = UserProfile(mode: ProfileMode.personal, onboardingDone: true)..schedule = old;
+      final adjustments = settings.planAdjustments
+        ..setWeekPlan(old, base: WeekSchedule(), inWeekOf: monday)
+        ..setWeekPlan(old, base: WeekSchedule(), inWeekOf: monday.adding(-7));
+      settings.planAdjustments = adjustments;
+      expect(settings.schedule(monday).slots(Weekday.monday), isNotEmpty);
+
+      // Andere Felder ändern lässt die Wochenpläne stehen.
+      settings.profile = settings.profile..sports = const [TrainingSport.strength];
+      expect(settings.planAdjustments.weekPlan(monday), isNotNull);
+
+      final updated = old.withSlots(const [], Weekday.monday);
+      settings.profile = settings.profile..schedule = updated;
+      expect(settings.schedule(monday).slots(Weekday.monday), isEmpty);
+      expect(settings.schedule(monday).slots(Weekday.tuesday), isNotEmpty);
+      expect(settings.planAdjustments.weekPlan(monday), isNull);
+      expect(settings.planAdjustments.weekPlan(monday.adding(-7)), isNotNull); // Vergangenes bleibt
+    },
+  );
+
+  test(
+    'Muskelaufbau mit Nebenziel Fettabbau: alte Profile bekommen beim Laden Rekomposition statt Überschuss',
+    () async {
+      final today = CalendarDay.today();
+      final goals = PersonalGoals(
+        primary: TrainingGoal.muscleGain,
+        secondary: const [TrainingGoal.fatLoss],
+        since: today,
+      );
+      final stored = UserProfile(mode: ProfileMode.personal, onboardingDone: true, goal: FitnessGoal.buildMuscle)
+        ..goals = goals;
+      await store.setJson(SettingsKeys.profile, stored.toJson());
+      final settings = CoachSettings(store);
+      expect(settings.profile.goal, FitnessGoal.loseAndBuild);
+      expect(settings.nutrition.goal, NutritionGoal.recomposition);
+      expect((await reload()).profile.goal, FitnessGoal.loseAndBuild);
+    },
+  );
+
   test('Testwert setzt Saison und Verlauf', () async {
     final settings = CoachSettings(store);
     const day = CalendarDay(2026, 12, 7);

@@ -139,6 +139,55 @@ final class BodyProfile {
   int get hashCode => Object.hash(weightKilograms, heightCentimeters, age, isFemale);
 }
 
+/// Art einer Anpassung für einen einzelnen Tag.
+enum DayAdjustmentKind implements RawEnum {
+  /// Refeed: an diesem Tag kein Defizit, zusätzliche Energie vor allem als Kohlenhydrate.
+  refeed('refeed', 'Refeed-Tag'),
+
+  /// Ruhetag: Ziele wie an einem Tag ohne Training, auch wenn eine Einheit geplant ist.
+  rest('ruhetag', 'Ruhetag'),
+
+  /// Eigene Änderung der Energie (±kcal).
+  custom('eigene', 'Eigene Anpassung');
+
+  const DayAdjustmentKind(this.rawValue, this.label);
+
+  @override
+  final String rawValue;
+  final String label;
+}
+
+/// Anpassung der Tagesziele für genau einen Tag.
+final class DayAdjustment {
+  const DayAdjustment({required this.kind, this.kilocalories = 0});
+
+  /// Grenze einer eigenen Anpassung je Tag.
+  static const maxKilocalories = 500.0;
+
+  final DayAdjustmentKind kind;
+
+  /// Nur bei [DayAdjustmentKind.custom]: Änderung in kcal (±500).
+  final double kilocalories;
+
+  Map<String, Object?> toJson() => {'kind': kind.rawValue, if (kind == DayAdjustmentKind.custom) 'kcal': kilocalories};
+
+  static DayAdjustment? fromJson(Object? json) {
+    if (json is! Map) return null;
+    final kind = enumFromRaw(DayAdjustmentKind.values, json['kind']);
+    if (kind == null) return null;
+    return DayAdjustment(
+      kind: kind,
+      kilocalories: (jsonDouble(json['kcal']) ?? 0).clamp(-maxKilocalories, maxKilocalories),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) => other is DayAdjustment && other.kind == kind && other.kilocalories == kilocalories;
+
+  @override
+  int get hashCode => Object.hash(kind, kilocalories);
+}
+
 /// Einstellungen der Ernährung (Schlüssel `coach.nutrition`). Körperwerte sind optional: ohne Eintrag gelten die
 /// Garmin-Werte.
 final class NutritionSettings {
@@ -164,6 +213,30 @@ final class NutritionSettings {
 
   /// Schwangerschaft/Stillzeit oder Essstörung: keine Gewichts- oder Kalorienziele (`GoalRules`).
   bool weightTargetsWithheld = false;
+
+  /// Eigenes Protein in g je kg Referenzgewicht (1,2–2,4); ohne Angabe nach Ziel.
+  double? proteinPerKilogram;
+
+  /// Bevorzugter Fettanteil an der Energie in % (20–35, ACSM 2016); ohne Angabe ergibt er sich aus dem Rest.
+  double? fatSharePercent;
+
+  /// Anpassungen einzelner Tage (Schlüssel: ISO-Datum). Ältere als 14 Tage fallen beim Speichern weg.
+  Map<String, DayAdjustment> dayAdjustments = {};
+
+  static const proteinRange = (1.2, 2.4);
+  static const fatShareRange = (20.0, 35.0);
+
+  DayAdjustment? adjustmentOn(CalendarDay day) => dayAdjustments[day.iso];
+
+  /// Anpassung für einen Tag setzen (`null` = entfernen); alte Einträge werden aufgeräumt.
+  void setAdjustment(DayAdjustment? adjustment, {required CalendarDay day}) {
+    final cutoff = day.adding(-14).iso;
+    dayAdjustments = {
+      for (final entry in dayAdjustments.entries)
+        if (entry.key.compareTo(cutoff) >= 0 && entry.key != day.iso) entry.key: entry.value,
+      day.iso: ?adjustment,
+    };
+  }
 
   /// Tag der zuletzt als Körpergewicht übernommenen Wägung.
   CalendarDay? lastAppliedWeighInDay;
@@ -198,6 +271,10 @@ final class NutritionSettings {
     'weightTargetsWithheld': weightTargetsWithheld,
     'lastAppliedWeighInDay': ?lastAppliedWeighInDay?.toJson(),
     'lastCheckInDay': ?lastCheckInDay?.toJson(),
+    'proteinPerKilogram': ?proteinPerKilogram,
+    'fatSharePercent': ?fatSharePercent,
+    if (dayAdjustments.isNotEmpty)
+      'dayAdjustments': {for (final entry in dayAdjustments.entries) entry.key: entry.value.toJson()},
   };
 
   /// Tolerant wie in Swift: fehlende oder ungültige Felder bekommen den Standard.
@@ -217,7 +294,17 @@ final class NutritionSettings {
       ..energyAdjustmentKilocalories = (jsonDouble(json['energyAdjustmentKilocalories']) ?? 0).clamp(-500, 500)
       ..weightTargetsWithheld = json['weightTargetsWithheld'] == true
       ..lastAppliedWeighInDay = _day(json['lastAppliedWeighInDay'])
-      ..lastCheckInDay = _day(json['lastCheckInDay']);
+      ..lastCheckInDay = _day(json['lastCheckInDay'])
+      ..proteinPerKilogram = jsonDouble(json['proteinPerKilogram'])?.clamp(proteinRange.$1, proteinRange.$2)
+      ..fatSharePercent = jsonDouble(json['fatSharePercent'])?.clamp(fatShareRange.$1, fatShareRange.$2);
+    final rawDays = json['dayAdjustments'];
+    if (rawDays is Map) {
+      settings.dayAdjustments = {
+        for (final entry in rawDays.entries)
+          if (entry.key is String && CalendarDay.tryParse(entry.key as String) != null)
+            entry.key as String: ?DayAdjustment.fromJson(entry.value),
+      };
+    }
     return settings;
   }
 

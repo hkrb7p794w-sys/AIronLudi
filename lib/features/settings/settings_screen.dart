@@ -9,6 +9,7 @@ import '../../app/user_providers.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/platform_names.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
 import '../account/account_views.dart';
@@ -111,7 +112,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             header: 'Profil',
             footer: season
                 ? 'Mit einem persönlichen Profil wählst du Sportarten, Ziel und Wochenplan selbst; der Saisonplan wird '
-                      'dann nicht mehr verwendet. Garmin-Daten, Gym-Einheiten und Mahlzeiten bleiben erhalten.'
+                      'dann nicht mehr verwendet. Werte deiner Datenquellen, Gym-Einheiten und Mahlzeiten bleiben erhalten.'
                 : 'Plan, Ernährung und Empfehlungen passen sich an dein Profil an.',
             children: [
               if (season) ...[
@@ -296,7 +297,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         onTap: () => _push(const GarminDiagnosticsScreen()),
                       ),
                       ListTile(
-                        title: const Text('HealthKit'),
+                        title: Text(healthStoreName),
                         trailing: const DisclosureChevron(),
                         onTap: () => _push(const HealthDiagnosticsScreen()),
                       ),

@@ -11,6 +11,7 @@ import '../../data/db/database.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/platform_names.dart';
 
 /// Zeigt, was Garmin tatsächlich liefert: Fehler des letzten Abrufs, befüllte Tageswerte und die Feldnamen jeder
 /// Rohantwort. Damit lässt sich die Zuordnung an echte Daten anpassen (Port von `GarminDiagnosticsView`).
@@ -178,12 +179,12 @@ class _HealthDiagnosticsScreenState extends ConsumerState<HealthDiagnosticsScree
     };
     final version = ref.watch(appVersionProvider).value ?? '?';
     return Scaffold(
-      appBar: AppBar(title: const Text('HealthKit')),
+      appBar: AppBar(title: Text(healthStoreName)),
       body: ListView(
         padding: const EdgeInsets.only(bottom: 32),
         children: [
           FormSection(
-            header: 'HealthKit',
+            header: healthStoreName,
             footer: 'Fragt Lesezugriff auf Workouts, Schlaf und Herzfrequenz sowie Schreibzugriff für Workouts an.',
             children: [
               ListTile(
@@ -209,7 +210,7 @@ class _HealthDiagnosticsScreenState extends ConsumerState<HealthDiagnosticsScree
                         alignment: Alignment.centerLeft,
                         child: SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2)),
                       )
-                    : const Text('HealthKit prüfen'),
+                    : Text('$healthStoreName prüfen'),
                 textColor: Theme.of(context).colorScheme.primary,
                 onTap: _check,
               ),

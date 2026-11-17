@@ -116,8 +116,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                 _WeekHeader(controller: controller, week: week),
                 FormSection(
                   header: 'Einheiten',
-                  footer:
-                      'Erledigt-Haken kommen aus Garmin und den Krafteinheiten der App. Testwerte unter Einstellungen.',
+                  footer: 'Erledigt-Haken kommen aus deinen Aktivitäten (Uhr, Gesundheitsdaten) und den Krafteinheiten der App. Testwerte unter Einstellungen.',
                   children: [
                     for (final unit in controller.units)
                       _PlanUnitRow(

@@ -335,7 +335,7 @@ class _MorningReportScreenState extends ConsumerState<MorningReportScreen> {
               header: 'Werte der Nacht',
               footer:
                   'Eingeordnet gegen deinen üblichen Bereich der letzten 30 Tage (ab 7 Tagen mit Werten), HRV gegen '
-                  'Garmins Baseline. Stress vom Vortag.',
+                  'die Baseline deiner Uhr. Stress vom Vortag.',
               children: [for (final item in report.items) MorningReportRow(item: item)],
             ),
             FormSection(
@@ -384,8 +384,7 @@ class _MorningReportScreenState extends ConsumerState<MorningReportScreen> {
             if (report.missing.isNotEmpty)
               FormSection(
                 header: 'Fehlt heute',
-                footer:
-                    'Fehlende Werte werden nicht geschätzt. Body Battery, Stress und Readiness gibt es nur von Garmin.',
+                footer: 'Fehlende Werte werden nicht geschätzt. Body Battery, Stress und Readiness liefern nur Uhren mit diesen Werten.',
                 children: [
                   ListTile(
                     title: Text(report.missing.join(', '), style: TextStyle(color: secondary)),

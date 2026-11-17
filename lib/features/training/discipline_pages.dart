@@ -685,7 +685,7 @@ class BikeScreen extends ConsumerWidget {
         children: [
           KilometersSection(controller: controller, sport: ActivitySport.bike, color: Colors.orange),
           TestTrendSection(title: 'FTP · Zwift-Test', kind: TestKind.ftp, format: (value) => '${value.toInt()} W'),
-          VO2Section(title: 'VO2max Rad (Garmin)', trend: controller.vo2Bike),
+          VO2Section(title: 'VO2max Rad (Uhr)', trend: controller.vo2Bike),
           PaceTableSection(
             title: 'Zonen aus FTP ${season.ftpWatts} W',
             rows: BikeZones.rows(season.ftpWatts),
@@ -765,7 +765,7 @@ class RunScreen extends ConsumerWidget {
             format: (value) => '${PlanTokens.mmss(value.toInt())} /km',
             lowerIsBetter: true,
           ),
-          VO2Section(title: 'VO2max Laufen (Garmin)', trend: controller.vo2Run),
+          VO2Section(title: 'VO2max Laufen (Uhr)', trend: controller.vo2Run),
           if (predictions != null) _RacePredictionSection(predictions: predictions),
           PaceTableSection(
             title: 'Paces',
@@ -837,7 +837,7 @@ class _RacePredictionSection extends StatelessWidget {
     ];
     return FormSection(
       header: 'Prognose der Uhr',
-      footer: 'Garmins Schätzung aus VO2max und Trainingsverlauf – eine Orientierung, kein Testergebnis.',
+      footer: 'Schätzung deiner Uhr aus VO2max und Trainingsverlauf – eine Orientierung, kein Testergebnis.',
       children: [
         for (final (label, seconds, pace) in rows)
           ListTile(
@@ -1101,7 +1101,7 @@ class PersonalSportScreen extends StatelessWidget {
       children: [
         KilometersSection(controller: controller, sport: sport.garminSport, color: sport.color),
         if (sport == TrainingSport.run) ...[
-          VO2Section(title: 'VO2max Laufen (Garmin)', trend: controller.vo2Run),
+          VO2Section(title: 'VO2max Laufen (Uhr)', trend: controller.vo2Run),
           DecouplingSection(
             title: 'Aerobe Kopplung (Pa:HR)',
             sport: DecouplingSport.run,
@@ -1115,7 +1115,7 @@ class PersonalSportScreen extends StatelessWidget {
           ),
         ],
         if (sport == TrainingSport.bike) ...[
-          VO2Section(title: 'VO2max Rad (Garmin)', trend: controller.vo2Bike),
+          VO2Section(title: 'VO2max Rad (Uhr)', trend: controller.vo2Bike),
           DecouplingSection(title: 'Aerobe Kopplung (Pw:HR)', sport: DecouplingSport.ride, controller: controller),
         ],
       ],

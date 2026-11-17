@@ -67,7 +67,7 @@ class RecoveryScreen extends StatelessWidget {
               children: [
                 ListTile(
                   title: Text(
-                    'Noch keine Garmin-Werte. Ziehe nach unten, um abzurufen.',
+                    'Noch keine Werte deiner Datenquellen. Ziehe nach unten, um abzurufen.',
                     style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
                   ),
                 ),
@@ -78,8 +78,8 @@ class RecoveryScreen extends StatelessWidget {
             FormSection(
               header: 'Werte von heute',
               footer:
-                  'Training Readiness, Trainingsstatus und Endurance Score gibt es nur mit dem Garmin-Konto '
-                  '(Einstellungen); die Personal API liefert sie nicht.',
+                  'Training Readiness, Trainingsstatus und Endurance Score liefern nur Uhren mit diesen Werten '
+                  '(Garmin-Konto in den Einstellungen).',
               children: [
                 Padding(
                   padding: const EdgeInsets.all(10),

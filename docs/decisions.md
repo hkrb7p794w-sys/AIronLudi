@@ -709,3 +709,31 @@ Auf Wunsch des Nutzers; die Swift-App kennt nur einen Benutzer. Tests: `packages
 - Bekannte Wettkämpfe stehen beim Erstellen oben zur Auswahl (vorausgewählt der nächste), „Anderes Ziel“ bleibt.
   Der Name des Wettkampfs wird im Plan gespeichert (`eventName`). Ändert sich das Ziel in der App, zeigt die
   Übersicht „Neues Ziel …“ mit dem Weg zu einem neuen Plan; ersetzt wird nichts automatisch.
+
+## 2026-11-17 – Rückmeldung: Fehler, geräteunabhängige Texte, Ernährung, Belastung und Übersichten
+
+- **Fehler „Entfernen“ im Wochenplan:** Der Menüeintrag hatte den Wert `null`; Flutter wertet `null` als Abbruch
+  (`onSelected` wird nicht aufgerufen). Jetzt eigene Aktionswerte; gleicher Fehler bei „Freies Training“ im Gym.
+- **Veraltete Trainingstage:** Folge des obigen Fehlers (der Tag wurde nie entfernt). Zusätzlich verwirft ein neuer
+  dauerhafter Wochenplan Wochenpläne und Ausnahmen ab der laufenden Woche (`PlanAdjustments.dropFrom`), weil sie sich
+  auf den alten Stand bezogen – Abweichung von Swift, dort blieben sie stehen.
+- **Fettabbau ohne Überschuss:** `Personalization.fitnessGoal` bildete „Muskelaufbau + Nebenziel Fettabbau“ auf
+  Überschuss ab; jetzt Rekomposition wie schon bei „Kraftsteigerung + Fettabbau“. Gespeicherte Profile werden beim
+  Laden korrigiert (Ernährungsziel neu berechnet).
+- **Geräteunabhängige Texte:** Werte kommen aus Garmin, WHOOP oder den Gesundheitsdaten des Telefons; Texte sprechen
+  von Uhr, Datenquellen bzw. Gesundheitsdaten. „Garmin“ bleibt, wo das Garmin-Konto ausdrücklich genutzt wird
+  (Anmeldung, Personal API, Diagnose, Garmin-Kalender, Krafteinheiten-Abgleich, Herkunft einzelner Werte). Der
+  Gesundheitsspeicher heißt unter Android „Health Connect“ (`healthStoreName`).
+- **Ernährung:** Anpassungen für einzelne Tage (Refeed: kein Defizit, Plus als Kohlenhydrate; Ruhetag; ±500 kcal) und
+  eigene Makros (Protein 1,2–2,4 g/kg, Fettanteil 20–35 %, ACSM 2016) – die Schutzgrenzen in `NutritionPlanner`
+  (höchstens 25 % Defizit, Energieverfügbarkeit ≥ 30 kcal/kg FFM) bleiben vorrangig.
+- **Realistische Hochrechnung** (`IntakeForecast`): Schnitt der letzten 14 erfassten Tage, Ausreißer auf ±40 % des
+  Medians begrenzt, höchstens 1 % Abnahme bzw. 0,5 % Zunahme des Körpergewichts pro Woche (`GoalRules`), nicht über 4
+  Wochen, mit Hinweis auf Wasser/Glykogen (Hall et al. 2011). Die KI darf keine eigenen Gewichtsprognosen mehr nennen
+  (Worker: `GROUNDING_SYSTEM`, Chat); die Ernährungs-Auswertung setzt keinen Triathleten mehr voraus.
+- **„Meine Belastung heute“** (`DailyStrainRules`): erledigte Punkte (TSS wie im Ausdauerplan) plus geplante (Ausdauerplan,
+  sonst Schätzung je Sportart und Intensität des Wochenplans) gegen den üblichen Tag (CTL, mindestens 25); ohne Verlauf
+  feste Stufen 40/80/120. Ampel aus derselben Erholungsbewertung wie „Jetzt dran“; „Pause“ streicht Geplantes. Auf
+  „Heute“ und im Reiter Training.
+- **Weniger Text im Reiter Training:** Kacheln statt Listenzeilen mit Erklärtext, Trainingszeit der letzten 8 Wochen als
+  gestapeltes Balkendiagramm; Details erst beim Antippen.

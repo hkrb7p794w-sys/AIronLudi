@@ -45,6 +45,19 @@ void main() {
       Personalization.fitnessGoal(PersonalGoals(primary: TrainingGoal.muscleGain, since: today)),
       FitnessGoal.buildMuscle,
     );
+    // Muskelaufbau mit Nebenziel Fettabbau ist Rekomposition, kein Überschuss (Rückmeldung 17.11.2026).
+    final recomposition = PersonalGoals(
+      primary: TrainingGoal.muscleGain,
+      secondary: const [TrainingGoal.fatLoss],
+      since: today,
+    );
+    expect(Personalization.fitnessGoal(recomposition), FitnessGoal.loseAndBuild);
+    final profile = UserProfile(mode: ProfileMode.personal)..goals = recomposition;
+    profile.goal = Personalization.fitnessGoal(recomposition);
+    const body = BodyProfile(weightKilograms: 80, heightCentimeters: 181, age: 22, isFemale: false);
+    final assessment = GoalRules.assess(profile, body);
+    expect(assessment.nutritionGoal, NutritionGoal.recomposition);
+    expect(assessment.notes.join(' '), isNot(contains('Überschuss')));
     expect(
       Personalization.fitnessGoal(PersonalGoals(primary: TrainingGoal.competition, since: today)),
       FitnessGoal.improveFitness,

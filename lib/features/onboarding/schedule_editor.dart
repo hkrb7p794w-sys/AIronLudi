@@ -115,6 +115,21 @@ class _DayEditorRow extends StatelessWidget {
   }
 }
 
+/// Auswahl im Menü einer Einheit.
+sealed class _SlotAction {
+  const _SlotAction();
+}
+
+final class _SetIntensity extends _SlotAction {
+  const _SetIntensity(this.intensity);
+
+  final SessionIntensity intensity;
+}
+
+final class _RemoveSlot extends _SlotAction {
+  const _RemoveSlot();
+}
+
 class _SlotChip extends StatelessWidget {
   const _SlotChip({required this.slot, required this.onChanged});
 
@@ -132,14 +147,22 @@ class _SlotChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = slot.sport.color;
-    return PopupMenuButton<SessionIntensity?>(
+    // Kein `null` als Menüwert: Flutter wertet `null` als Abbruch und ruft `onSelected` dann nicht auf.
+    return PopupMenuButton<_SlotAction>(
       tooltip: slot.chipLabel,
-      onSelected: (intensity) => onChanged(intensity == null ? null : SessionSlot(slot.sport, intensity)),
+      onSelected: (action) => onChanged(switch (action) {
+        _SetIntensity(:final intensity) => SessionSlot(slot.sport, intensity),
+        _RemoveSlot() => null,
+      }),
       itemBuilder: (_) => [
         for (final intensity in _intensities)
-          CheckedPopupMenuItem(value: intensity, checked: intensity == slot.intensity, child: Text(intensity.label)),
-        const PopupMenuItem(
-          value: null,
+          CheckedPopupMenuItem<_SlotAction>(
+            value: _SetIntensity(intensity),
+            checked: intensity == slot.intensity,
+            child: Text(intensity.label),
+          ),
+        const PopupMenuItem<_SlotAction>(
+          value: _RemoveSlot(),
           child: Text('Entfernen', style: TextStyle(color: Colors.red)),
         ),
       ],

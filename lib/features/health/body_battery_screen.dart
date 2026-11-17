@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/storage.dart';
 import '../../ui/components.dart';
+import '../../ui/platform_names.dart';
 
 /// Body Battery: aktueller Stand, Tagesverlauf, 30 Tage und Zusammenhang mit Schlaf und Stress (Port von
 /// `BodyBatteryView`).
@@ -54,8 +55,8 @@ class _BodyBatteryScreenState extends ConsumerState<BodyBatteryScreen> {
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    'Body Battery gibt es nur von Garmin-Uhren. Melde dich in den Einstellungen mit dem Garmin-Konto an '
-                    'und ziehe nach unten zum Abrufen. Apple Health hat keinen vergleichbaren Wert.',
+                    'Body Battery liefern nur Uhren mit dieser Messung. Verbinde deine Uhr in den Einstellungen und '
+                    'ziehe nach unten zum Abrufen; $healthStoreName hat keinen vergleichbaren Wert.',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: secondary),
                   ),
@@ -82,7 +83,7 @@ class _BodyBatteryScreenState extends ConsumerState<BodyBatteryScreen> {
               ),
             FormSection(
               header: 'Schlaf und Stress',
-              footer: 'Vergleich deiner eigenen Tage, keine Ursache. Werte der Uhr (Garmin).',
+              footer: 'Vergleich deiner eigenen Tage, keine Ursache. Werte deiner Uhr.',
               children: [
                 if (summary.relations.isEmpty)
                   ListTile(

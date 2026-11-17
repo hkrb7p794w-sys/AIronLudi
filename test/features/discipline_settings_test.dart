@@ -198,7 +198,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('1.2 (34)'), findsOneWidget);
     expect(find.text(HealthAccessDiagnosis.notDetermined.title), findsOneWidget);
-    await tester.tap(find.text('HealthKit prüfen'));
+    await tester.tap(find.text('Apple Health prüfen'));
     await tester.pumpAndSettle();
     expect(find.text(HealthAccessDiagnosis.missingEntitlement.title), findsOneWidget);
   });

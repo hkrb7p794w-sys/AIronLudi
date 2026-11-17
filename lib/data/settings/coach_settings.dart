@@ -79,6 +79,20 @@ final class CoachSettings extends ChangeNotifier {
       _profile = ProfileMigration.initialProfile(hasExistingData: existing);
       if (existing) _persist(SettingsKeys.profile, _profile.toJson());
     }
+    _savedSchedule = _profile.schedule;
+    // Ältere Profile mit „Muskelaufbau + Fettabbau“ hatten fälschlich Überschuss statt Rekomposition: Richtung aus den
+    // Zielen neu ableiten und an die Ernährung weitergeben.
+    if (_profile.goals case final goals? when _profile.mode == ProfileMode.personal) {
+      final direction = Personalization.fitnessGoal(goals);
+      if (direction != _profile.goal) {
+        _profile.goal = direction;
+        _persist(SettingsKeys.profile, _profile.toJson());
+        final updated = _nutrition.copy();
+        GoalRules.apply(GoalRules.assess(_profile, updated.profile(null, on: today)), updated);
+        _nutrition = updated;
+        _persist(SettingsKeys.nutrition, updated.toJson());
+      }
+    }
     // Die Mitglieds-ID muss stabil bleiben, sonst entstehen doppelte Einträge in der Rangliste.
     if (storedLeague == null) _persist(SettingsKeys.league, _league.toJson());
   }
@@ -150,8 +164,18 @@ final class CoachSettings extends ChangeNotifier {
   UserProfile get profile => _profile;
   set profile(UserProfile value) {
     _profile = value;
+    // Neuer dauerhafter Wochenplan: Wochenpläne und Ausnahmen ab dieser Woche bezogen sich auf den alten Stand und
+    // würden ihn sonst weiter anzeigen (z. B. ein entfernter Trainingstag als „Jetzt dran“). Das Profil wird oft an
+    // Ort und Stelle geändert, deshalb zählt der zuletzt gespeicherte Wochenplan.
+    if (value.schedule != _savedSchedule) {
+      _savedSchedule = value.schedule;
+      if (_planAdjustments.dropFrom(_today)) _persist(SettingsKeys.adjustments, _planAdjustments.toJson());
+    }
     _changed(SettingsKeys.profile, value.toJson());
   }
+
+  /// Wochenplan beim letzten Speichern des Profils.
+  late WeekSchedule _savedSchedule;
 
   late PlanAdjustments _planAdjustments;
 

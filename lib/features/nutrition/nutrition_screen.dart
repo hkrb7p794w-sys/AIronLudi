@@ -411,7 +411,19 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     final targets = controller.targets;
     switch (card) {
       case NutritionCard.budget:
-        return [if (targets != null) _BudgetSection(targets: targets, totals: controller.totals)];
+        return [
+          if (targets != null)
+            _BudgetSection(
+              targets: targets,
+              totals: controller.totals,
+              adjustment: ref.read(coachSettingsProvider).nutrition.adjustmentOn(controller.day),
+              onAdjust: (adjustment) {
+                final settings = ref.read(coachSettingsProvider);
+                settings.nutrition = settings.nutrition.copy()..setAdjustment(adjustment, day: controller.day);
+                unawaited(_reload());
+              },
+            ),
+        ];
       case NutritionCard.summary:
         final shown = _todaysMeals.where((meal) => !meal.isWater).length;
         return [
@@ -924,10 +936,21 @@ class _DayStripState extends State<_DayStrip> {
 
 /// Auf einen Blick: übrige kcal im Ring, Protein/KH/Fett als „noch … g“.
 class _BudgetSection extends StatelessWidget {
-  const _BudgetSection({required this.targets, required this.totals});
+  const _BudgetSection({required this.targets, required this.totals, required this.adjustment, required this.onAdjust});
 
   final NutritionTargets targets;
   final NutrientValues totals;
+
+  /// Anpassung für den angezeigten Tag (Refeed, Ruhetag, eigene kcal).
+  final DayAdjustment? adjustment;
+  final ValueChanged<DayAdjustment?> onAdjust;
+
+  String get _adjustmentText => switch (adjustment) {
+    null => 'Normal',
+    DayAdjustment(kind: DayAdjustmentKind.custom, :final kilocalories) =>
+      '${kilocalories >= 0 ? '+' : '−'}${kilocalories.abs().round()} kcal',
+    final value => value.kind.label,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -953,9 +976,104 @@ class _BudgetSection extends StatelessWidget {
             ],
           ),
         ),
+        ListTile(
+          leading: const Icon(Icons.tune),
+          title: const Text('Tagesziel anpassen'),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(_adjustmentText, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+              const DisclosureChevron(),
+            ],
+          ),
+          onTap: () async {
+            final result = await showModalBottomSheet<(DayAdjustment?,)>(
+              context: context,
+              showDragHandle: true,
+              builder: (_) => DayAdjustmentSheet(initial: adjustment),
+            );
+            if (result != null) onAdjust(result.$1);
+          },
+        ),
       ],
     );
   }
+}
+
+/// Tagesziel für einen Tag anpassen: normal, Refeed, Ruhetag oder eigene ±kcal. Schutzgrenzen gelten weiter.
+class DayAdjustmentSheet extends StatefulWidget {
+  const DayAdjustmentSheet({super.key, required this.initial});
+
+  final DayAdjustment? initial;
+
+  @override
+  State<DayAdjustmentSheet> createState() => _DayAdjustmentSheetState();
+}
+
+class _DayAdjustmentSheetState extends State<DayAdjustmentSheet> {
+  late DayAdjustmentKind? _kind = widget.initial?.kind;
+  late double _kcal = widget.initial?.kind == DayAdjustmentKind.custom ? widget.initial!.kilocalories : 200;
+
+  static String _detail(DayAdjustmentKind? kind) => switch (kind) {
+    null => 'Ziele nach Training, Plan und deinem Ziel.',
+    DayAdjustmentKind.refeed => 'Heute ohne Defizit, das Plus als Kohlenhydrate – z. B. vor einem langen Training.',
+    DayAdjustmentKind.rest => 'Wie ein Tag ohne Training, auch wenn eine Einheit geplant ist.',
+    DayAdjustmentKind.custom => 'Eigene Änderung um bis zu ±500 kcal.',
+  };
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    child: SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final kind in <DayAdjustmentKind?>[null, ...DayAdjustmentKind.values])
+            ListTile(
+              leading: Icon(
+                _kind == kind ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                color: _kind == kind ? Theme.of(context).colorScheme.primary : null,
+              ),
+              title: Text(kind?.label ?? 'Normal'),
+              subtitle: Text(_detail(kind)),
+              onTap: () => setState(() => _kind = kind),
+            ),
+          if (_kind == DayAdjustmentKind.custom)
+            ListTile(
+              title: Text('${_kcal >= 0 ? '+' : '−'}${_kcal.abs().round()} kcal'),
+              subtitle: Slider(
+                value: _kcal,
+                min: -DayAdjustment.maxKilocalories,
+                max: DayAdjustment.maxKilocalories,
+                divisions: 20,
+                onChanged: (value) => setState(() => _kcal = value),
+              ),
+            ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Text(
+              'Gilt nur für diesen Tag. Höchstens ein Viertel Defizit und die Mindest-Energieverfügbarkeit bleiben '
+              'immer bestehen.',
+              style: TextStyle(fontSize: 12),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: FilledButton(
+              onPressed: () => Navigator.of(context).pop((
+                switch (_kind) {
+                  null => null,
+                  DayAdjustmentKind.custom => DayAdjustment(kind: DayAdjustmentKind.custom, kilocalories: _kcal),
+                  final kind => DayAdjustment(kind: kind),
+                },
+              )),
+              child: const Text('Übernehmen'),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _CalorieRing extends StatelessWidget {

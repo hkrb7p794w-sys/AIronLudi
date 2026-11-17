@@ -1,4 +1,5 @@
 // Reiter „Heute“: Jetzt dran, Regel-Notiz, Wochenübersicht mit eigenen Zielen, Auslassen für diese Woche.
+import 'package:aironludi/features/ai/ai_screen.dart';
 import 'package:aironludi/features/today/today_screen.dart';
 import 'package:aironludi/features/today/week_overview.dart';
 import 'package:aironludi/services/providers.dart';
@@ -33,9 +34,21 @@ void main() {
 
     expect(find.byType(TodayScreen), findsOneWidget);
     expect(find.textContaining('JETZT DRAN'), findsOneWidget);
+    expect(find.text('MEINE BELASTUNG HEUTE'), findsOneWidget);
+    expect(find.textContaining('Verbinde in den Einstellungen eine Datenquelle'), findsOneWidget);
+    // „Warum?“ steht in den AI-Empfehlungen; auf „Heute“ nur der erste Punkt als Vorschau.
+    expect(find.text('WARUM?'), findsNothing);
+    await tester.tap(find.text('AI-Empfehlungen'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pumpAndSettle();
+    expect(find.byType(AIScreen), findsOneWidget);
     expect(find.text('WARUM?'), findsOneWidget);
     expect(find.text('Regeln (ohne KI)'), findsOneWidget);
-    expect(find.textContaining('Melde dich in den Einstellungen'), findsOneWidget);
+    Navigator.of(tester.element(find.byType(AIScreen))).pop();
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Diese Woche auslassen'), 200, scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(find.text('Diese Woche auslassen'));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Diese Woche auslassen'));
     await tester.pumpAndSettle();

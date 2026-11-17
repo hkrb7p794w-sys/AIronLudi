@@ -284,7 +284,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
         if (all.isEmpty)
           _Empty(
             title: 'Noch keine Aktivitäten',
-            text: 'Ziehe unter „Heute“ nach unten, um Garmin abzurufen, oder trage ein Training nach.',
+            text: 'Ziehe unter „Heute“ nach unten, um deine Daten abzurufen, oder trage ein Training nach.',
             color: secondary,
           )
         else if (entries.isEmpty)
@@ -374,15 +374,19 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
           for (final item in items)
             if (item.entry case final entry?) ...[
               FeedRow(entry: entry, onTap: entry.activity != null || entry.gym != null ? () => _open(entry) : null),
-              // Eigener geteilter Beitrag: Reaktionen und Kommentare der Freunde direkt darunter.
+              // Eigener geteilter Beitrag: nur eine dezente Zeile, wenn Freunde reagiert oder kommentiert haben.
               if (item.post case final post?)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(60, 0, 8, 4),
-                  child: ReactionBar(post: post),
+                  child: ReactionSummary(post: post),
                 ),
               const Divider(height: 1, indent: 60),
             ] else if (item.post case final post?) ...[
-              PostCard(post: post),
+              InkWell(
+                onTap: () =>
+                    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PostDetailScreen(post: post))),
+                child: PostCard(post: post, compact: true),
+              ),
               const Divider(height: 1),
             ],
           if (social.isLoading)
