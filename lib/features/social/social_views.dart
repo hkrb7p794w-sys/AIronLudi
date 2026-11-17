@@ -171,7 +171,14 @@ class FeedList extends ConsumerWidget {
                   style: TextStyle(color: secondary),
                 ),
               ),
-            for (final post in social.feed) ...[PostCard(post: post), const Divider(height: 1)],
+            for (final post in social.feed) ...[
+              InkWell(
+                onTap: () =>
+                    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PostDetailScreen(post: post))),
+                child: PostCard(post: post, compact: true),
+              ),
+              const Divider(height: 1),
+            ],
             if (social.isLoading)
               const Padding(
                 padding: EdgeInsets.all(16),
@@ -186,9 +193,12 @@ class FeedList extends ConsumerWidget {
 
 /// Ein Beitrag: Person, Zeit, Inhalt, Reaktionen und Kommentare (Port von `PostCard`).
 class PostCard extends ConsumerWidget {
-  const PostCard({super.key, required this.post});
+  const PostCard({super.key, required this.post, this.compact = false});
 
   final SocialPost post;
+
+  /// In Listen: nur eine dezente Zusammenfassung der Reaktionen; Antippen öffnet den Beitrag mit allen Reaktionen.
+  final bool compact;
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
     final ok = await showDialog<bool>(
@@ -292,9 +302,65 @@ class PostCard extends ConsumerWidget {
               icon: const Icon(Icons.download),
               label: const Text('In mein Tagebuch übernehmen'),
             ),
-          ReactionBar(post: post),
+          if (compact) ReactionSummary(post: post) else ReactionBar(post: post),
         ],
       ),
+    );
+  }
+}
+
+/// Dezente Zeile für Listen: vorhandene Reaktionen und Kommentare, sonst nichts. Antippen öffnet den Beitrag.
+class ReactionSummary extends StatelessWidget {
+  const ReactionSummary({super.key, required this.post});
+
+  final SocialPost post;
+
+  @override
+  Widget build(BuildContext context) {
+    if (post.reactions == 0 && post.comments == 0) return const SizedBox.shrink();
+    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
+    return InkWell(
+      onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PostDetailScreen(post: post))),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          spacing: 10,
+          children: [
+            if (post.reactions > 0)
+              Text('${post.topReactions} ${post.reactions}', style: TextStyle(fontSize: 12, color: secondary)),
+            if (post.comments > 0)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: 3,
+                children: [
+                  Icon(Icons.chat_bubble_outline, size: 13, color: secondary),
+                  Text(
+                    '${post.comments}',
+                    semanticsLabel: '${post.comments} Kommentare',
+                    style: TextStyle(fontSize: 12, color: secondary),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Ein Beitrag mit allen Reaktionen und dem Weg zu den Kommentaren.
+class PostDetailScreen extends ConsumerWidget {
+  const PostDetailScreen({super.key, required this.post});
+
+  final SocialPost post;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Nach einer Reaktion aktualisiert der Dienst den Beitrag im Feed: den aktuellen Stand anzeigen.
+    final current = ref.watch(socialServiceProvider).feed.where((item) => item.id == post.id).firstOrNull ?? post;
+    return Scaffold(
+      appBar: AppBar(title: Text(current.mine ? 'Dein Beitrag' : current.author.displayName)),
+      body: ListView(children: [PostCard(post: current)]),
     );
   }
 }

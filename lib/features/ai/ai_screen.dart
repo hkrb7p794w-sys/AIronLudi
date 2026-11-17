@@ -39,10 +39,13 @@ IconData _icon(String symbol) => switch (symbol) {
 /// Bearbeitungsstand; dazu die KI-Analyse auf Anfrage und die übrigen KI-Funktionen. Die Grundlage bleibt intern
 /// (lange drücken › „Worauf beruht das?“) (Port von `AIView`).
 class AIScreen extends ConsumerStatefulWidget {
-  const AIScreen({super.key, this.startAnalysis = false});
+  const AIScreen({super.key, this.startAnalysis = false, this.coachNote});
 
   /// Schnellaktion „KI-Analyse starten“: zur Analyse springen und sie anstoßen, sofern erlaubt.
   final bool startAnalysis;
+
+  /// Coach-Notiz bzw. „Warum?“ von „Heute“, ganz oben (früher eigener Abschnitt auf „Heute“).
+  final Widget? coachNote;
 
   @override
   ConsumerState<AIScreen> createState() => _AIScreenState();
@@ -218,6 +221,7 @@ class _AIScreenState extends ConsumerState<AIScreen> {
         child: ListView(
           padding: const EdgeInsets.only(bottom: 32),
           children: [
+            ?widget.coachNote,
             _CategoryChips(
               selection: _category,
               insights: settings.insights,

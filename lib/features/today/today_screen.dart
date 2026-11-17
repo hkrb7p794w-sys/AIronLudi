@@ -103,6 +103,24 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
     );
   }
 
+  /// Erledigte Einheit unter „Jetzt dran“: dieselbe Ansicht wie unter „Aktivitäten“ (Aufzeichnung bzw. Krafteinheit).
+  Widget? _doneScreen(TodayFocusItem item, CalendarDay today) {
+    final sport = item.sport;
+    if (sport == null) return null;
+    if (sport == TrainingSport.strength) {
+      final record = _gym.where((record) => record.session.day == today).firstOrNull;
+      if (record != null) return SessionDetailScreen(record: record);
+    }
+    final candidates = [
+      for (final activity in _activities)
+        if (activity.day == today && activity.sport == sport.garminSport) activity,
+    ]..sort((a, b) => (b.durationSeconds ?? 0).compareTo(a.durationSeconds ?? 0));
+    return switch (candidates.firstOrNull) {
+      final activity? => ActivityDetailScreen(activity: activity),
+      null => null,
+    };
+  }
+
   /// „Meine Belastung heute“ aus Aktivitäten, Krafteinheiten der App, Plan und derselben Ampel wie „Jetzt dran“.
   DailyStrain _strain(TodaySnapshot snapshot) {
     final settings = ref.read(coachSettingsProvider);
@@ -244,7 +262,20 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                       const DisclosureChevron(),
                     ],
                   ),
-                  onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const AIScreen())),
+                  subtitle: switch (_controller.notePoints.firstOrNull) {
+                    final point? => Text(point, maxLines: 2, overflow: TextOverflow.ellipsis),
+                    null => null,
+                  },
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => AIScreen(
+                        coachNote: ListenableBuilder(
+                          listenable: _controller,
+                          builder: (_, _) => _CoachNoteSection(controller: _controller),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -273,8 +304,12 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                   ),
                   focus: snapshot.focus,
                 ),
-              if (snapshot.focus case final focus?) NowSection(snapshot: snapshot, focus: focus),
-              _CoachNoteSection(controller: _controller),
+              if (snapshot.focus case final focus?)
+                NowSection(
+                  snapshot: snapshot,
+                  focus: focus,
+                  openDone: (item) => _doneScreen(item, snapshot.plan.today),
+                ),
               MissedSessionSection(week: snapshot.sessions, onSaved: _reload),
               SuggestionsSection(suggestions: _suggestions(snapshot)),
               PostWorkoutSection(
