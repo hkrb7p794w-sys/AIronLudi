@@ -54,7 +54,7 @@ abstract final class UnitGuides {
     (keys: ['pull-buoy', 'pull_buoy', 'pull buoy'], term: GuideTerm(name: 'Pull-Buoy', explanation: 'Schwimmhilfe aus Schaumstoff zwischen den Oberschenkeln. Die Beine treiben oben, der Beinschlag ruht – du trainierst gezielt Arme, Zug und Wasserlage.')),
     (keys: ['sighting'], term: GuideTerm(name: 'Sighting', explanation: 'Orientierung im Freiwasser: Alle paar Züge kurz die Augen knapp über die Wasserlinie heben („Krokodilaugen“), Ziel anpeilen, dann zur Seite atmen.')),
     (keys: ['steigernd'], term: GuideTerm(name: 'Steigernd', explanation: 'Von locker zu zügig: innerhalb der Strecke bzw. von Wiederholung zu Wiederholung schneller werden, ohne am Ende zu sprinten.')),
-    (keys: ['runden-taste'], term: GuideTerm(name: 'Runden-Taste', explanation: 'Taste an der Garmin-Uhr, die einen neuen Abschnitt (Runde) startet. So lassen sich Test- und Einschwimmteil später getrennt auswerten.')),
+    (keys: ['runden-taste'], term: GuideTerm(name: 'Runden-Taste', explanation: 'Taste an der Uhr, die einen neuen Abschnitt (Runde) startet. So lassen sich Test- und Einschwimmteil später getrennt auswerten.')),
     (keys: ['zone 2', 'z2'], term: GuideTerm(name: 'Zone 2', explanation: 'Lockere Grundlagenintensität: Du kannst dich noch in ganzen Sätzen unterhalten. Die meisten Einheiten der Woche liegen hier.')),
     (keys: ['schwelle'], term: GuideTerm(name: 'Schwelle', explanation: 'Die höchste Intensität, die du etwa eine Stunde halten kannst – „angenehm hart“: Sprechen geht nur noch in kurzen Worten.')),
     (keys: ['hfmax'], term: GuideTerm(name: 'HFmax', explanation: 'Deine maximale Herzfrequenz. 90–95 % HFmax heißt: sehr hart, nur wenige Minuten haltbar. Die App nutzt deine gemessenen Werte, keine Formel.')),

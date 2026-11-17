@@ -35,7 +35,7 @@ void main() {
     expect(find.textContaining('JETZT DRAN'), findsOneWidget);
     expect(find.text('WARUM?'), findsOneWidget);
     expect(find.text('Regeln (ohne KI)'), findsOneWidget);
-    expect(find.textContaining('Melde dich in den Einstellungen'), findsOneWidget);
+    expect(find.textContaining('Verbinde in den Einstellungen eine Datenquelle'), findsOneWidget);
 
     await tester.tap(find.text('Diese Woche auslassen'));
     await tester.pumpAndSettle();

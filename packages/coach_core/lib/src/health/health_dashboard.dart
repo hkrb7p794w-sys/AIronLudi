@@ -97,10 +97,10 @@ enum HealthWidget implements RawEnum {
 
   /// Woher der Wert kommen kann – für den Hinweis bei fehlenden Daten.
   String get sources => switch (this) {
-    bodyBattery || stress || readiness || recoveryTime => 'nur Garmin',
-    trainingLoad => 'Garmin-Konto oder eigene Aktivitäten',
-    weight => 'Garmin, Apple Health oder eigene Wägungen',
-    _ => 'Garmin oder Apple Health',
+    bodyBattery || stress || readiness || recoveryTime => 'nur Uhren mit dieser Messung',
+    trainingLoad => 'Uhr oder eigene Aktivitäten',
+    weight => 'Waage, Uhr, Gesundheitsdaten oder eigene Wägungen',
+    _ => 'Uhr oder Gesundheitsdaten',
   };
 
   static HealthWidget? fromRaw(Object? raw) => enumFromRaw(values, raw);

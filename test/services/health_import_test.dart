@@ -114,7 +114,7 @@ void main() {
     expect(activities.single.id, isNegative);
     expect(service.weights.single.kilograms, 71.5);
     expect(service.lastImport, now);
-    expect(service.lastResult, startsWith('1 Tage, 1 neue Workouts aus Apple Health'));
+    expect(service.lastResult, startsWith('1 Tage, 1 neue Workouts aus den Gesundheitsdaten'));
     expect(service.lastProblem, 'Nicht lesbar: respiratoryRate');
   });
 

@@ -13,6 +13,7 @@ import '../../data/settings/appearance.dart';
 import '../../platform/notifications.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/platform_names.dart';
 import '../onboarding/personalization_widgets.dart';
 import 'data_sources_screen.dart';
 
@@ -248,8 +249,9 @@ class HealthImportSection extends ConsumerWidget {
           header: Platform.isAndroid ? 'Health Connect' : 'Apple Health / Apple Watch',
           footer:
               'Übernimmt Schlaf mit Phasen, Ruhepuls, Schritte, Kalorien, Atemfrequenz, Sauerstoff, Gewicht und '
-              'Workouts. Garmin hat Vorrang: Health füllt nur Lücken, Workouts, die Garmin schon kennt, kommen nicht '
-              'doppelt. Die HRV übernimmt die App nur ohne Garmin, weil Apple sie anders misst (SDNN statt RMSSD).',
+              'Workouts. Eine verbundene Uhr hat Vorrang: $healthStoreName füllt nur Lücken, Workouts, die die Uhr '
+              'schon kennt, kommen nicht doppelt. Die HRV übernimmt die App nur ohne Uhr, weil sie hier anders '
+              'gemessen wird (SDNN statt RMSSD).',
           children: available
               ? [
                   SwitchListTile.adaptive(
@@ -424,7 +426,7 @@ class _PersonalGoalsSettingsScreenState extends ConsumerState<PersonalGoalsSetti
             ),
             FormSection(
               header: 'Fitness-Tracker',
-              footer: 'Garmin verbindest du unter Einstellungen › Garmin, Apple Health unter „Apple Health“.',
+              footer: 'Uhr, WHOOP und $healthStoreName verbindest du unter Einstellungen › Training und Fitness.',
               children: [
                 Padding(
                   padding: const EdgeInsets.all(16),

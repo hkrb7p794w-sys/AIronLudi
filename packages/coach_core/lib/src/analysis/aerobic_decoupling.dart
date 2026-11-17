@@ -151,7 +151,7 @@ abstract final class AerobicDecoupling {
     if (isRide && minutes < minRideMinutes) return 'kürzer als ${minRideMinutes.toInt()} min';
     if (isRide && activity.averagePower == null) return 'keine Leistungsdaten';
     final share = highZoneShare(activity);
-    if (share == null) return 'keine HF-Zonendaten von Garmin';
+    if (share == null) return 'keine HF-Zonendaten';
     if (share > maxHighZoneShare) return 'zu intensiv (${roundHalfEven(share * 100)} % der Zeit in Zone 4-5)';
     return 'nicht geeignet';
   }

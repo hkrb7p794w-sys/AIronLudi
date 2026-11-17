@@ -144,7 +144,7 @@ void main() {
       expect(automatic.maxHeartRate, 188);
       expect(automatic.maxHeartRateSource, 'bestätigter Messwert (12 Monate)');
       expect(automatic.run.lactateThreshold, 168);
-      expect(automatic.run.source, 'Garmin (Laktatschwelle)');
+      expect(automatic.run.source, 'Uhr (Laktatschwelle)');
       expect(automatic.bike.isApproximate, isTrue);
       expect(automatic.hints.any((hint) => hint.startsWith('Für das Rad')), isTrue);
       final own = HeartRateZoneCalculator.report(

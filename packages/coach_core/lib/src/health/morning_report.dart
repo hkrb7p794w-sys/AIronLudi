@@ -398,7 +398,7 @@ final class MorningReport {
 
   static MorningItem bodyBattery(double? wake, {required PersonalNorm? norm}) {
     if (wake == null) {
-      return _item(MorningMetric.bodyBattery, null, MorningStatus.missing, 'Keine Body Battery (nur Garmin)');
+      return _item(MorningMetric.bodyBattery, null, MorningStatus.missing, 'Keine Body Battery (nicht jede Uhr misst sie)');
     }
     final value = '${wake.toInt()}';
     if (norm != null) {

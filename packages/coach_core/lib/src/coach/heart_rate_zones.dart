@@ -377,7 +377,7 @@ abstract final class HeartRateZoneCalculator {
       (int, String)? best;
       for (final candidate in [
         (observed.confirmed, 'bestätigter Messwert (12 Monate)'),
-        (garminMax, 'Garmin-Einstellung'),
+        (garminMax, 'Einstellung der Uhr'),
       ]) {
         final value = candidate.$1;
         if (value == null) continue;
@@ -402,11 +402,11 @@ abstract final class HeartRateZoneCalculator {
       if (ownValue != null) {
         choice = (ownValue, 'eigener Wert', false);
       } else if (sport == ActivitySport.run && garminThreshold != null) {
-        choice = (garminThreshold, 'Garmin (Laktatschwelle)', false);
+        choice = (garminThreshold, 'Uhr (Laktatschwelle)', false);
       } else if (sport == ActivitySport.bike && ownRun != null) {
         choice = (ownRun, 'eigener Laufwert als Näherung', true);
       } else if (sport == ActivitySport.bike && garminThreshold != null) {
-        choice = (garminThreshold, 'Garmin-Laufwert als Näherung', true);
+        choice = (garminThreshold, 'Laufwert der Uhr als Näherung', true);
       } else if (maxHR != null) {
         choice = ((maxHR * estimateFactor).round(), 'Schätzung (${(estimateFactor * 100).toInt()} % HFmax)', true);
       } else {

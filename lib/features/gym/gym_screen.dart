@@ -12,6 +12,7 @@ import '../../data/storage.dart';
 import '../../services/garmin/garmin_connect_session.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/platform_names.dart';
 import '../evidence/evidence_views.dart';
 import 'active_workout_screen.dart';
 import 'gym_controller.dart';
@@ -104,7 +105,7 @@ class _GymScreenState extends ConsumerState<GymScreen> {
                   ActiveSessionState.unfinished =>
                     'Diese Einheit vom ${DateFormat('d. MMM', 'de_DE').format(active.day.referenceDate)} wurde nicht '
                         'beendet. Öffnen und „Beenden“ tippen, damit sie gespeichert, für die Woche gezählt und an '
-                        'Garmin übertragen wird.',
+                        'deine Datenquellen übertragen wird.',
                   ActiveSessionState.notStarted =>
                     'Noch kein Satz abgehakt – erst mit dem ersten Satz gilt die Einheit als gestartet.',
                   _ => null,
@@ -470,13 +471,13 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
                 LabeledRow(label: 'Dauer', value: _duration(end.difference(session.start))),
               LabeledRow(label: 'Bewegte Last', value: '${GermanFormat.number(session.volumeKg)} kg'),
               if (_record.savedToHealth)
-                const ListTile(
-                  leading: Icon(Icons.favorite, color: Colors.pink),
-                  title: Text('In Apple Health gespeichert', style: TextStyle(color: Colors.pink)),
+                ListTile(
+                  leading: const Icon(Icons.favorite, color: Colors.pink),
+                  title: Text('In $healthStoreName gespeichert', style: const TextStyle(color: Colors.pink)),
                 )
               else
                 ListTile(
-                  title: const Text('In Apple Health speichern'),
+                  title: Text('In $healthStoreName speichern'),
                   enabled: !_working,
                   onTap: () => _run(
                     () => GymController.saveToHealth(

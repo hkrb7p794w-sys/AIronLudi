@@ -53,7 +53,7 @@ sealed class HealthAccessDiagnosis {
     _Plain(name: 'unavailable') => 'Auf diesem Gerät gibt es keine Health-Daten.',
     _Plain(name: 'missingEntitlement') =>
       'Die installierte App hat kein HealthKit-Entitlement (SideStore mit kostenloser Apple-ID '
-          'entfernt es). Die App läuft ohne HealthKit weiter; Garmin-Daten kommen über das Backend.',
+          'entfernt es). Die App läuft ohne HealthKit weiter; Daten anderer Quellen kommen weiter.',
     _Plain(name: 'denied') => 'Bitte in Einstellungen › Apps › Health › Datenzugriff › AIronLudi freigeben.',
     _Plain() => 'Tippe auf „HealthKit prüfen“.',
     HealthWorking(readableWorkouts: final count?) => 'Schreiben erlaubt, $count Workouts der letzten 30 Tage lesbar.',

@@ -539,7 +539,7 @@ class EnduranceSettingsScreen extends ConsumerWidget {
             FormSection(
               header: 'Herzfrequenz',
               footer:
-                  'Ohne eigene Werte nutzt die App die Laktatschwelle von Garmin und den höchsten bestätigten Puls aus '
+                  'Ohne eigene Werte nutzt die App die Laktatschwelle deiner Uhr und den höchsten bestätigten Puls aus '
                   'deinen Einheiten. Schwelle: 30 Minuten am Anschlag, Ø-HF der letzten 20 Minuten. HFmax gilt für '
                   'Laufen und Rad.',
               children: [

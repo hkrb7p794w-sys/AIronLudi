@@ -149,7 +149,7 @@ abstract final class ScheduleAdvisor {
         return ScheduleAdvice(
           mode: ScheduleAdviceMode.asPlanned,
           headline: joined,
-          detail: 'Für heute liegen noch keine Garmin-Werte vor. Richte dich nach deinem Gefühl. $tomorrow',
+          detail: 'Für heute liegen noch keine Erholungswerte vor. Richte dich nach deinem Gefühl. $tomorrow',
           move: null,
           plannedTitles: titles,
           evidenceIDs: const [],

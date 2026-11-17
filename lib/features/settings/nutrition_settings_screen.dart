@@ -73,7 +73,7 @@ class NutritionSettingsScreen extends ConsumerWidget {
           ),
           FormSection(
             header: 'Körperwerte',
-            footer: 'Leer lassen, um die Werte aus Garmin zu nutzen. Körperfett ohne Angabe: 15 % (Männer) bzw. 25 %.',
+            footer: 'Leer lassen, um die Werte deiner Uhr bzw. Gesundheitsdaten zu nutzen. Körperfett ohne Angabe: 15 % (Männer) bzw. 25 %.',
             children: [
               _OptionalNumberField(
                 title: 'Gewicht',
@@ -236,7 +236,7 @@ class _OptionalNumberFieldState extends State<_OptionalNumberField> {
               textAlign: TextAlign.end,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
-                hintText: widget.placeholder == null ? '–' : '${GermanFormat.decimal(widget.placeholder!)} (Garmin)',
+                hintText: widget.placeholder == null ? '–' : '${GermanFormat.decimal(widget.placeholder!)} (Uhr)',
                 border: InputBorder.none,
               ),
               onChanged: (text) => widget.onChanged(text.trim().isEmpty ? null : parseNumber(text)),

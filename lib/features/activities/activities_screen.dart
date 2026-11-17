@@ -284,7 +284,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
         if (all.isEmpty)
           _Empty(
             title: 'Noch keine Aktivitäten',
-            text: 'Ziehe unter „Heute“ nach unten, um Garmin abzurufen, oder trage ein Training nach.',
+            text: 'Ziehe unter „Heute“ nach unten, um deine Daten abzurufen, oder trage ein Training nach.',
             color: secondary,
           )
         else if (entries.isEmpty)

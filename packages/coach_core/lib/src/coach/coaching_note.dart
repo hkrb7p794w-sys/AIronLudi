@@ -132,7 +132,7 @@ abstract final class CoachingNote {
       else if (reason.startsWith('kurzer Schlaf'))
         'kurzer Schlaf'
       else if (reason.startsWith('Readiness'))
-        'Garmin-Readiness niedrig'
+        'Readiness niedrig'
       else
         reason,
   ];

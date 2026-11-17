@@ -106,10 +106,10 @@ abstract final class RecoveryEvaluator {
     if (score != null) {
       if (score < 25) {
         worsen(RecoveryLevel.pause);
-        reasons.add('Readiness ${score.round()} (Garmin-Stufe „Poor“)');
+        reasons.add('Readiness ${score.round()} (Stufe „Poor“)');
       } else if (score < 50) {
         worsen(RecoveryLevel.locker);
-        reasons.add('Readiness ${score.round()} (Garmin-Stufe „Low“)');
+        reasons.add('Readiness ${score.round()} (Stufe „Low“)');
       }
     }
 

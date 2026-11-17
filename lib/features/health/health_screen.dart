@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/platform_names.dart';
 import '../today/now_views.dart';
 import '../training/sleep_coach_screen.dart';
 import '../training/training_pages.dart';
@@ -186,8 +187,8 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                     ),
                     Text(
                       available.isEmpty
-                          ? 'Melde dich mit dem Garmin-Konto an oder schalte Apple Health ein und ziehe nach unten zum '
-                                'Abrufen.'
+                          ? 'Verbinde in den Einstellungen eine Datenquelle (Uhr, WHOOP oder $healthStoreName) und '
+                                'ziehe nach unten zum Abrufen.'
                           : 'Tippe auf „Anpassen“, um Widgets einzublenden oder hinzuzufügen.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: secondary),

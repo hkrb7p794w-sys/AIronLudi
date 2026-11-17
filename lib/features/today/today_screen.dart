@@ -10,6 +10,7 @@ import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/large_title.dart';
+import '../../ui/platform_names.dart';
 import '../activities/activity_detail_screen.dart';
 import '../activities/activity_parts.dart';
 import '../activities/post_workout_section.dart';
@@ -224,8 +225,8 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                 children: [
                   ListTile(
                     title: Text(
-                      'Melde dich in den Einstellungen mit deinem Garmin-Konto an oder schalte den Import aus Apple '
-                      'Health (Apple Watch) ein.',
+                      'Verbinde in den Einstellungen eine Datenquelle – deine Uhr, WHOOP oder $healthStoreName –, '
+                      'damit die App deine Erholung einordnen kann.',
                       style: secondary,
                     ),
                   ),

@@ -13,6 +13,7 @@ import '../../services/garmin/garmin_connect_session.dart';
 import '../../services/gym/garmin_strength_service.dart';
 import '../../services/gym/rest_alarm.dart';
 import '../../services/health/health_writer.dart';
+import '../../ui/platform_names.dart';
 
 /// Einheit im Wochenplan.
 typedef PlannedWorkout = ({CalendarDay day, Workout workout, bool done});
@@ -866,7 +867,7 @@ final class GymController extends ChangeNotifier {
       title: session.title,
       summary: WorkoutFlow.summary(session, now: time),
       records: records,
-      status: 'Gespeichert. Apple Health und Garmin werden abgeglichen …',
+      status: 'Gespeichert. Gesundheitsdaten und Uhr werden abgeglichen …',
       exerciseIDs: [for (final exercise in session.exercises) exercise.exerciseID],
       muscles: MuscleLoad.session(session, custom: gym.customExercises),
       volumeChange: SessionComparison.volumeChangePercent(
@@ -922,13 +923,13 @@ final class GymController extends ChangeNotifier {
     required GymRepository repository,
     required WorkoutSaving writer,
   }) async {
-    if (!await writer.isAvailable) return 'Gespeichert. Apple Health ist auf diesem Gerät nicht verfügbar.';
+    if (!await writer.isAvailable) return 'Gespeichert. $healthStoreName ist auf diesem Gerät nicht verfügbar.';
     try {
       await writer.save(session);
       await repository.setSavedToHealth(session.id, value: true);
-      return 'Gespeichert und in Apple Health eingetragen.';
+      return 'Gespeichert und in $healthStoreName eingetragen.';
     } on Object catch (error) {
-      return 'Gespeichert. Apple Health: $error';
+      return 'Gespeichert. $healthStoreName: $error';
     }
   }
 

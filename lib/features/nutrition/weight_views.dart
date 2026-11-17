@@ -11,6 +11,7 @@ import '../../data/settings/coach_settings.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/platform_names.dart';
 import '../evidence/evidence_views.dart';
 
 String _signed(double value) => (value > 0 ? '+' : (value < 0 ? '−' : '')) + GermanFormat.number(value.abs());
@@ -114,7 +115,7 @@ class _WeightTrendScreenState extends ConsumerState<WeightTrendScreen> {
         children: [
           FormSection(
             header: 'Wägung eintragen',
-            footer: 'Wägungen aus Garmin Connect (Waage oder App) kommen beim Abruf dazu; deine Eingabe hat Vorrang.',
+            footer: 'Wägungen aus deinen Datenquellen (Waage, Uhr, Gesundheitsdaten) kommen beim Abruf dazu; deine Eingabe hat Vorrang.',
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -467,5 +468,5 @@ IconData weightSourceIcon(WeightSource source) => switch (source) {
 String weightSourceLabel(WeightSource source) => switch (source) {
   WeightSource.manual => 'eigene Eingabe',
   WeightSource.garmin => 'Garmin',
-  WeightSource.health => 'Apple Health',
+  WeightSource.health => healthStoreName,
 };

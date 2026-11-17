@@ -238,8 +238,8 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
             header: 'Einspielen',
             footer:
                 'Führt zusammen: Vorhandene Krafteinheiten und Mahlzeiten bleiben, fehlende kommen dazu. Die '
-                'Einstellungen werden durch die der Sicherung ersetzt. Nicht enthalten sind Zugangsdaten (Garmin, '
-                'App-Token) – die gibst du nach einer Neuinstallation neu ein. Garmin- und Health-Werte kommen beim '
+                'Einstellungen werden durch die der Sicherung ersetzt. Nicht enthalten sind Zugangsdaten (Uhr, WHOOP, '
+                'App-Token) – die gibst du nach einer Neuinstallation neu ein. Werte deiner Datenquellen kommen beim '
                 'nächsten Abruf von selbst wieder.',
             children: [
               ListTile(
