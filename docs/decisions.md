@@ -682,3 +682,30 @@ Auf Wunsch des Nutzers; die Swift-App kennt nur einen Benutzer. Tests: `packages
   Benutzer). Kennungen der übertragenen Workouts und der Anpassungsverlauf gehören zum Plan. Folge: Eine Sicherung
   bringt den Plan nur beim gleichen Benutzernamen zurück – sonst wird neu geplant.
 - **Vorschläge für Schwellen** nur im Modus Saisonplan aus `SeasonConfig` (keine Saisonwerte für andere Personen).
+
+## 2026-11-17 – KI-Empfehlungen von einem stärkeren Modell prüfen lassen
+
+- Auftrag des Nutzers: Die Empfehlungen im Bereich „AI“ (heute von frei verfügbaren Modellen über den Worker) sollen
+  beim manuellen Export an eine externe KI (Claude, ChatGPT …) mit dem Auftrag gehen, sie zu prüfen; beim Import
+  entscheidet die Person, was überschrieben wird.
+- **Export:** Mit Antwortformat enthält die Datei den Abschnitt „Empfehlungen der App (bitte prüfen)“: alle offenen,
+  noch gültigen Empfehlungen (höchstens 30, wichtigste zuerst) mit ID (`thema.betreff`), Herkunft (Regeln bzw. KI mit
+  Modell), Priorität, Richtung und Belegen. Neue Felder im Block: `empfehlungen` (mit `id` = ersetzt diese
+  Empfehlung, ohne = neu), `verwerfen` (IDs), `modell`. Gilt automatisch für alle künftigen Empfehlungen.
+- **Import:** Empfehlungen werden als `origin: ki` mit dem Modellnamen aus der Antwort gespeichert (kein neuer
+  Rohwert für `InsightOrigin`, damit Sicherungen mit der Swift-App lesbar bleiben); die Begründung der KI ist der
+  Beleg. Vorschau je Empfehlung mit „Überschreibt: …“ bzw. „Neu“ zum Abhaken, dazu die zu verwerfenden.
+- **Regeln entscheiden:** Empfehlungen der Regeln sind weder zum Überschreiben noch zum Verwerfen vorausgewählt;
+  ausdrücklich angehakt werden sie trotzdem ersetzt (die Person entscheidet). Übernommene Empfehlungen ersetzen
+  widersprechende KI-Empfehlungen, nie Regel-Empfehlungen ohne Haken.
+
+## 2026-11-17 – Ausdauerplan nach den Zielen der App
+
+- Rückmeldung des Nutzers: Beim Erstellen fehlten die Ziele und Wettkämpfe, die in der App schon gepflegt sind.
+- `EnduranceGoals` (coach_core) leitet die Vorgaben ab: Wettkampf aus der Einrichtung (`UserProfile.event`, Art aus
+  `EventKind`, beim Triathlon aus dem Namen), im Modus Saisonplan zusätzlich Marathon und Hauptrennen aus
+  `SeasonConfig` (sonst nie – keine Saisonwerte für andere Personen); Ausdauersportarten aus dem Profil, Tage, langer
+  Tag und Zeit je Woche aus dem Wochenplan; ohne Wettkampf ein Zeitraum-Plan, Schwerpunkt nach dem Hauptziel.
+- Bekannte Wettkämpfe stehen beim Erstellen oben zur Auswahl (vorausgewählt der nächste), „Anderes Ziel“ bleibt.
+  Der Name des Wettkampfs wird im Plan gespeichert (`eventName`). Ändert sich das Ziel in der App, zeigt die
+  Übersicht „Neues Ziel …“ mit dem Weg zu einem neuen Plan; ersetzt wird nichts automatisch.

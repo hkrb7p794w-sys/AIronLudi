@@ -2,6 +2,7 @@
 import 'package:aironludi/app/user_providers.dart';
 import 'package:aironludi/features/endurance/endurance_controller.dart';
 import 'package:aironludi/features/endurance/endurance_screens.dart';
+import 'package:aironludi/services/providers.dart';
 import 'package:coach_core/coach_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,15 +35,34 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(EnduranceScreen), findsOneWidget);
     expect(find.text('Plan erstellen'), findsOneWidget);
+    expect(find.text('Passend zu deinen Zielen und deinem Wochenplan'), findsOneWidget);
 
-    // Erstellen-Bildschirm öffnet sich und prüft die Eingaben.
+    // Ohne Wettkampf in den Zielen: Zeitraum vorgewählt.
     await tester.tap(find.text('Plan erstellen'));
     await tester.pumpAndSettle();
     expect(find.byType(EndurancePlanSetupScreen), findsOneWidget);
-    expect(find.text('Wettkampf'), findsOneWidget);
-    await tester.tap(find.text('Für einen Zeitraum'));
-    await tester.pumpAndSettle();
     expect(find.text('Schwerpunkt'), findsOneWidget);
+    Navigator.of(tester.element(find.byType(EndurancePlanSetupScreen))).pop();
+    await tester.pumpAndSettle();
+
+    // Wettkampf aus der Einrichtung: vorausgewählt mit Datum und Zielzeit, „Anderes Ziel“ bleibt möglich.
+    final settings = container.read(coachSettingsProvider);
+    final raceDay = CalendarDay.today().adding(70);
+    settings.profile = settings.profile
+      ..event = EventGoal(name: 'Stadtlauf', date: raceDay, kind: EventKind.run10k, targetSeconds: 2880);
+    await tester.pumpAndSettle();
+    expect(find.text('Für Stadtlauf am ${GermanFormat.date(raceDay)}'), findsOneWidget);
+    await tester.tap(find.text('Plan erstellen'));
+    await tester.pumpAndSettle();
+    expect(find.text('DEINE WETTKÄMPFE'), findsOneWidget);
+    expect(find.text('Stadtlauf'), findsOneWidget);
+    expect(find.textContaining('10 km · Ziel 0:48 h · Deine Ziele'), findsOneWidget);
+    expect(find.text('0:48'), findsOneWidget);
+    expect(find.text('Art des Wettkampfs'), findsNothing);
+    await tester.tap(find.text('Anderes Ziel'));
+    await tester.pumpAndSettle();
+    expect(find.text('Art des Wettkampfs'), findsOneWidget);
+    expect(find.text('Datum'), findsOneWidget);
     Navigator.of(tester.element(find.byType(EndurancePlanSetupScreen))).pop();
     await tester.pumpAndSettle();
 
@@ -67,6 +87,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Woche 1 von 4'), findsOneWidget);
+    expect(find.text('Neues Ziel: Stadtlauf am ${GermanFormat.date(raceDay)}'), findsOneWidget);
     expect(find.text('HEUTE'), findsOneWidget);
     final slot = container.read(enduranceControllerProvider).plan!.slotsOn(today).single;
     await tester.tap(find.text(slot.current.title).first);

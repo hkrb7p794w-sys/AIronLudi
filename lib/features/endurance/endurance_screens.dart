@@ -63,6 +63,7 @@ class _EnduranceScreenState extends ConsumerState<EnduranceScreen> {
   @override
   Widget build(BuildContext context) {
     final controller = ref.watch(enduranceControllerProvider);
+    ref.watch(coachSettingsProvider); // Ziele und Wettkämpfe aus dem Profil
     final plan = controller.plan;
     return Scaffold(
       appBar: AppBar(
@@ -97,6 +98,10 @@ class _EnduranceScreenState extends ConsumerState<EnduranceScreen> {
           ListTile(
             leading: const SportIcon(symbol: 'figure.run', color: Colors.orange),
             title: const Text('Plan erstellen'),
+            subtitle: switch (_nextGoal()) {
+              final goal? => Text('Für ${goal.name} am ${GermanFormat.date(goal.day)}'),
+              null => const Text('Passend zu deinen Zielen und deinem Wochenplan'),
+            },
             trailing: const DisclosureChevron(),
             onTap: () => _push(context, (_) => const EndurancePlanSetupScreen()),
           ),
@@ -126,7 +131,8 @@ class _EnduranceScreenState extends ConsumerState<EnduranceScreen> {
     final week = plan.weekOf(today) ?? (today < plan.firstDay ? plan.weeks.first : plan.weeks.last);
     final request = plan.request;
     final goal = switch (request.mode) {
-      PlanningMode.goal => '${request.event?.label ?? 'Ziel'} am ${GermanFormat.date(request.eventDay ?? today)}',
+      PlanningMode.goal =>
+        '${request.eventName ?? request.event?.label ?? 'Ziel'} am ${GermanFormat.date(request.eventDay ?? today)}',
       PlanningMode.period => '${request.focus.label} · ${plan.weeks.length} Wochen',
     };
     final todaySlots = plan.slotsOn(today);
@@ -151,6 +157,19 @@ class _EnduranceScreenState extends ConsumerState<EnduranceScreen> {
             if (recovery != null) LabeledRow(label: 'Erholung heute', value: recovery.label),
           ],
         ),
+        if (_changedGoal(plan) case final changed?)
+          FormSection(
+            footer: 'Dein Plan richtet sich noch nach dem bisherigen Ziel.',
+            children: [
+              ListTile(
+                leading: const Icon(Icons.flag_outlined, color: Colors.orange),
+                title: Text('Neues Ziel: ${changed.name} am ${GermanFormat.date(changed.day)}'),
+                subtitle: const Text('Plan dafür erstellen'),
+                trailing: const DisclosureChevron(),
+                onTap: () => _push(context, (_) => EndurancePlanSetupScreen(goal: changed)),
+              ),
+            ],
+          ),
         if (controller.message case final message?) FormSection(children: [ListTile(title: Text(message))]),
         FormSection(
           header: 'Heute',
@@ -233,6 +252,15 @@ class _EnduranceScreenState extends ConsumerState<EnduranceScreen> {
       ],
     );
   }
+
+  List<KnownGoal> _knownGoals() {
+    final settings = ref.read(coachSettingsProvider);
+    return EnduranceGoals.known(settings.profile, settings.season, today: CalendarDay.today());
+  }
+
+  KnownGoal? _nextGoal() => _knownGoals().firstOrNull;
+
+  KnownGoal? _changedGoal(EndurancePlan plan) => EnduranceGoals.changedGoal(plan, _knownGoals());
 
   Future<void> _confirmDelete(BuildContext context, EnduranceController controller) async {
     final confirmed = await showDialog<bool>(
@@ -667,7 +695,10 @@ class _ThresholdsScreenState extends ConsumerState<ThresholdsScreen> {
 
 /// Plan erstellen: Ziel oder Zeitraum, Disziplinen, Tage, Zeit, Schwellen.
 class EndurancePlanSetupScreen extends ConsumerStatefulWidget {
-  const EndurancePlanSetupScreen({super.key});
+  const EndurancePlanSetupScreen({super.key, this.goal});
+
+  /// Vorausgewählter Wettkampf (z. B. nach einer Zieländerung); sonst der nächste aus den Zielen der App.
+  final KnownGoal? goal;
 
   @override
   ConsumerState<EndurancePlanSetupScreen> createState() => _EndurancePlanSetupScreenState();
@@ -688,12 +719,55 @@ class _EndurancePlanSetupScreenState extends ConsumerState<EndurancePlanSetupScr
   String? _error;
   bool _saving = false;
 
+  /// Wettkämpfe aus den Zielen der App (Einrichtung, Saisonplan).
+  List<KnownGoal> _known = const [];
+
+  /// Gewählter bekannter Wettkampf; `null` = anderes Ziel von Hand.
+  KnownGoal? _goal;
+  String _basis = '';
+
   @override
   void initState() {
     super.initState();
     final settings = ref.read(coachSettingsProvider);
     final existing = ref.read(enduranceControllerProvider).plan?.request.thresholds;
-    _fields = ThresholdFields(existing ?? EnduranceController.suggestedThresholds(settings.profile, settings.season));
+    final thresholds = existing ?? EnduranceController.suggestedThresholds(settings.profile, settings.season);
+    _fields = ThresholdFields(thresholds);
+    final today = CalendarDay.today();
+    final profile = settings.profile;
+    _known = EnduranceGoals.known(profile, settings.season, today: today);
+    final preferred = widget.goal ?? _known.where((goal) => goal.event != null).firstOrNull ?? _known.firstOrNull;
+    final suggestion = EnduranceGoals.suggestion(
+      profile,
+      settings.season,
+      username: ref.read(currentUserProvider).username,
+      today: today,
+      thresholds: thresholds,
+      goal: preferred,
+    );
+    _goal = preferred;
+    _mode = preferred == null ? PlanningMode.period : PlanningMode.goal;
+    if (preferred != null) _applyGoal(preferred);
+    _sports
+      ..clear()
+      ..addAll(suggestion.sports);
+    _days
+      ..clear()
+      ..addAll(suggestion.days);
+    _longDay = suggestion.longDay;
+    _hours = (suggestion.weeklyMinutes / 60).clamp(1, 20).toDouble();
+    _focus = suggestion.focus;
+    _basis = EnduranceGoals.explanation(profile, today: today, goal: preferred);
+  }
+
+  void _applyGoal(KnownGoal goal) {
+    _goal = goal;
+    if (goal.event case final event?) _event = event;
+    _eventDay = goal.day;
+    _target.text = switch (goal.targetMinutes) {
+      final minutes? => '${minutes ~/ 60}:${(minutes % 60).toString().padLeft(2, '0')}',
+      null => '',
+    };
   }
 
   @override
@@ -743,6 +817,7 @@ class _EndurancePlanSetupScreenState extends ConsumerState<EndurancePlanSetupScr
       focus: _focus,
       event: _mode == PlanningMode.goal ? _event : null,
       eventDay: _mode == PlanningMode.goal ? _eventDay : null,
+      eventName: _mode == PlanningMode.goal ? _goal?.name : null,
       targetMinutes: _mode == PlanningMode.goal ? target : null,
       thresholds: thresholds,
     );
@@ -780,22 +855,63 @@ class _EndurancePlanSetupScreenState extends ConsumerState<EndurancePlanSetupScr
               ),
             ],
           ),
-          if (_mode == PlanningMode.goal)
+          FormSection(
+            footer: 'Vorgaben aus deinen Zielen und deinem Wochenplan – alles lässt sich ändern. $_basis',
+            children: const [],
+          ),
+          if (_mode == PlanningMode.goal) ...[
+            if (_known.isNotEmpty)
+              FormSection(
+                header: 'Deine Wettkämpfe',
+                footer: 'Aus der Einrichtung bzw. deinem Saisonplan. Ändern unter Einstellungen › Profil.',
+                children: [
+                  for (final goal in _known)
+                    ListTile(
+                      leading: Icon(
+                        _goal?.id == goal.id ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                        color: _goal?.id == goal.id ? Theme.of(context).colorScheme.primary : null,
+                      ),
+                      title: Text(goal.name),
+                      subtitle: Text(
+                        [
+                          GermanFormat.date(goal.day),
+                          goal.event?.label ?? 'Art bitte unten wählen',
+                          if (goal.targetMinutes case final minutes?)
+                            'Ziel ${minutes ~/ 60}:${(minutes % 60).toString().padLeft(2, '0')} h',
+                          goal.source,
+                        ].join(' · '),
+                      ),
+                      onTap: () => setState(() => _applyGoal(goal)),
+                    ),
+                  ListTile(
+                    leading: Icon(
+                      _goal == null ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                      color: _goal == null ? Theme.of(context).colorScheme.primary : null,
+                    ),
+                    title: const Text('Anderes Ziel'),
+                    onTap: () => setState(() => _goal = null),
+                  ),
+                ],
+              ),
             FormSection(
-              header: 'Ziel',
+              header: _goal == null ? 'Ziel' : null,
               footer:
                   'Der Plan läuft vom heutigen Tag bis zum Wettkampf: Grundlage, Aufbau, Spitze, Tapering. Ohne '
                   'Zielzeit plant er mit einer üblichen Dauer.',
               children: [
-                _Choice<EnduranceEvent>(
-                  label: 'Wettkampf',
-                  value: _event,
-                  items: [
-                    for (final event in EnduranceEvent.values) DropdownMenuItem(value: event, child: Text(event.label)),
-                  ],
-                  onChanged: (value) => setState(() => _event = value ?? _event),
-                ),
-                ListTile(title: const Text('Datum'), trailing: Text(GermanFormat.date(_eventDay)), onTap: _pickDay),
+                if (_goal == null || _goal!.event == null)
+                  _Choice<EnduranceEvent>(
+                    key: ValueKey('event-${_goal?.id}'),
+                    label: 'Art des Wettkampfs',
+                    value: _event,
+                    items: [
+                      for (final event in EnduranceEvent.values)
+                        DropdownMenuItem(value: event, child: Text(event.label)),
+                    ],
+                    onChanged: (value) => setState(() => _event = value ?? _event),
+                  ),
+                if (_goal == null)
+                  ListTile(title: const Text('Datum'), trailing: Text(GermanFormat.date(_eventDay)), onTap: _pickDay),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   child: TextField(
@@ -805,8 +921,8 @@ class _EndurancePlanSetupScreenState extends ConsumerState<EndurancePlanSetupScr
                   ),
                 ),
               ],
-            )
-          else
+            ),
+          ] else
             FormSection(
               header: 'Zeitraum',
               children: [

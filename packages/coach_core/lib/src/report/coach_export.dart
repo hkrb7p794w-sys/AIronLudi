@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 
+import '../ai/insights.dart';
 import '../analysis/activity_details.dart';
 import '../analysis/activity_report.dart';
 import '../calendar/calendar_day.dart';
@@ -41,6 +42,8 @@ final class CoachExportInput {
     required this.weights,
     this.userSources = const [],
     this.reports = const [],
+    this.insights = const [],
+    this.now,
   });
 
   final UserProfile profile;
@@ -57,6 +60,26 @@ final class CoachExportInput {
 
   /// Vollständige Berichte aus den Aufzeichnungen der Uhr (Runden, Auswertung), soweit übertragen.
   List<ActivityReport> reports;
+
+  /// Empfehlungen aus dem Bereich „AI“ (Regeln und KI), die die externe KI prüfen und verbessern soll.
+  final List<Insight> insights;
+
+  /// Zeitpunkt des Exports (welche Empfehlungen noch gelten); ohne Angabe gibt es keinen Abschnitt dazu.
+  final DateTime? now;
+
+  /// Offene, noch gültige Empfehlungen (neu oder gelesen), wichtigste zuerst.
+  List<Insight> get openInsights {
+    final time = now;
+    if (time == null) return const [];
+    final open = [
+      for (final insight in insights)
+        if (insight.isCurrent(time) &&
+            (insight.status == InsightStatus.newInsight || insight.status == InsightStatus.read))
+          insight,
+    ];
+    mergeSort(open, compare: (a, b) => a.priority.compareTo(b.priority));
+    return open.take(30).toList();
+  }
 }
 
 final class ExportPreset {
@@ -91,6 +114,7 @@ abstract final class CoachExport {
       '# AIronLudi – Trainingsdaten ${from.iso} bis ${to.iso}',
       '',
       ...instructions(input),
+      ...recommendations(input),
       ...profile(input),
       ...metrics(sorted(input.metrics.where((m) => inRange(m.day)), (a, b) => a.day.compareTo(b.day))),
       ...activities(
@@ -146,7 +170,14 @@ abstract final class CoachExport {
             '[{"sport": "run", "intensitaet": "easy"}]}',
         '  },',
       ],
-      '  "hinweise": ["Kurzer Hinweis, der in der App angezeigt wird"]',
+      '  "hinweise": ["Kurzer Hinweis, der in der App angezeigt wird"],',
+      '  "empfehlungen": [',
+      '    {"id": "erholung.schlaf", "thema": "erholung", "betreff": "schlaf", "titel": "Vor harten Tagen 8 h schlafen",',
+      '     "text": "Konkrete Empfehlung in 1–3 Sätzen.", "richtung": "mehr", "prioritaet": 1, "gueltig_tage": 14,',
+      '     "begruendung": "Welche Daten oben das belegen"}',
+      '  ],',
+      '  "verwerfen": ["training.bankdruecken"],',
+      '  "modell": "Name des Modells, z. B. Claude oder ChatGPT"',
       '}',
       '```',
       '',
@@ -160,6 +191,36 @@ abstract final class CoachExport {
       else
         '- Mein Ausdauerplan ist ein fester Saisonplan; schlage dafür keine Wochenplan-Änderungen vor.',
       '- Ernährungsziele berechnet die App selbst (mit Schutzgrenzen); Vorschläge dazu bitte nur als Text.',
+      '- `empfehlungen`: deine Empfehlungen für den Bereich „AI“ der App. Mit der `id` einer Empfehlung aus '
+          '„Empfehlungen der App“ ersetzt du diese (bestätigen, korrigieren oder schärfen); ohne `id` ist sie neu. '
+          '`thema`: ${InsightTopic.values.map((topic) => topic.rawValue).join(', ')}. `richtung`: '
+          '${InsightDirection.values.map((direction) => direction.rawValue).join(', ')}. `prioritaet` 1 (wichtig) '
+          'bis 3, `gueltig_tage` 1–30.',
+      '- `verwerfen`: IDs von Empfehlungen der App, die du für falsch oder überholt hältst.',
+      '- Ich entscheide in der App je Empfehlung, was übernommen und was überschrieben wird.',
+      '',
+    ];
+  }
+
+  /// Empfehlungen der App zur Prüfung durch die externe KI. Die bisherigen KI-Empfehlungen stammen von kleineren,
+  /// frei verfügbaren Modellen über den Worker – ein stärkeres Modell soll sie bestätigen, korrigieren oder ersetzen.
+  static List<String> recommendations(CoachExportInput input) {
+    final open = input.openInsights;
+    if (open.isEmpty) return [];
+    return [
+      '## Empfehlungen der App (bitte prüfen)',
+      '',
+      'Diese Empfehlungen zeigt die App gerade an. „Regeln“ sind feste, getestete Regeln der App; „KI“ stammt von '
+          'einem kleineren, frei verfügbaren Modell. Prüfe jede gegen die Daten unten: Bestätige oder verbessere sie '
+          'unter `empfehlungen` mit derselben `id`, nenne falsche oder überholte unter `verwerfen` und ergänze, was '
+          'fehlt.',
+      '',
+      for (final insight in open) ...[
+        '- `${insight.id}` (${insight.origin == InsightOrigin.rules ? 'Regeln' : 'KI${insight.model == null ? '' : ', ${insight.model}'}'}, '
+            'Priorität ${insight.priority}, Richtung ${insight.direction.rawValue}'
+            '${insight.uncertain ? ', unsichere Datenlage' : ''}): **${insight.title}** – ${insight.text}',
+        if (insight.basis.isNotEmpty) '  - Belege: ${insight.basis.take(4).join('; ')}',
+      ],
       '',
     ];
   }

@@ -582,6 +582,7 @@ final class TrainingPlanRequest {
     this.focus = PeriodFocus.fitness,
     this.event,
     this.eventDay,
+    this.eventName,
     this.targetMinutes,
     this.thresholds = const AthleteThresholds(),
   });
@@ -605,6 +606,9 @@ final class TrainingPlanRequest {
   final PeriodFocus focus;
   final EnduranceEvent? event;
   final CalendarDay? eventDay;
+
+  /// Name des Wettkampfs aus den Zielen der App (z. B. „Challenge Almere“); ohne Namen gilt die Art.
+  final String? eventName;
 
   /// Zielzeit des Wettkampfs in Minuten.
   final int? targetMinutes;
@@ -631,6 +635,7 @@ final class TrainingPlanRequest {
     focus: focus,
     event: event,
     eventDay: eventDay,
+    eventName: eventName,
     targetMinutes: targetMinutes,
     thresholds: thresholds ?? this.thresholds,
   );
@@ -647,6 +652,7 @@ final class TrainingPlanRequest {
     'focus': focus.rawValue,
     'event': ?event?.rawValue,
     'eventDay': ?eventDay?.iso,
+    'eventName': ?eventName,
     'targetMinutes': ?targetMinutes,
     'thresholds': thresholds.toJson(),
   };
@@ -673,6 +679,7 @@ final class TrainingPlanRequest {
       focus: enumFromRaw(PeriodFocus.values, json['focus']) ?? PeriodFocus.fitness,
       event: enumFromRaw(EnduranceEvent.values, json['event']),
       eventDay: json['eventDay'] is String ? CalendarDay.tryParse(json['eventDay'] as String) : null,
+      eventName: json['eventName'] is String ? json['eventName'] as String : null,
       targetMinutes: (json['targetMinutes'] as num?)?.toInt(),
       thresholds: AthleteThresholds.fromJson(json['thresholds']),
     );

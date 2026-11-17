@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:collection/collection.dart';
 
+import '../ai/insights.dart';
 import '../gym/exercise_library.dart';
 import '../gym/gym_coach.dart';
 import '../gym/routine.dart';
@@ -42,13 +43,22 @@ final class ImportPreview {
   ScheduleScope scheduleScope = ScheduleScope.permanent;
   List<String> notes = [];
 
+  /// Empfehlungen der externen KI für den Bereich „AI“ (gleiche ID wie eine bestehende = ersetzt sie).
+  List<Insight> insights = [];
+
+  /// IDs bestehender Empfehlungen, die die externe KI für falsch oder überholt hält.
+  List<String> dismiss = [];
+
+  /// Name des Modells laut Antwort (sonst „Externe KI“).
+  String model = CoachImport.externalModel;
+
   /// Was die Regeln geändert oder verworfen haben.
   List<String> corrections = [];
 
   /// Hinweise der Regeln zum Ergebnis (z. B. Wochenvolumen, Plan-Prüfung).
   List<String> ruleNotes = [];
 
-  bool get isEmpty => routines.isEmpty && schedule == null && notes.isEmpty;
+  bool get isEmpty => routines.isEmpty && schedule == null && notes.isEmpty && insights.isEmpty && dismiss.isEmpty;
 }
 
 /// Fehler beim Lesen der KI-Antwort.
@@ -105,11 +115,18 @@ final class ImportSelection {
   /// Indizes der übernommenen Hinweise.
   Set<int> notes = {};
 
+  /// IDs der übernommenen Empfehlungen (eine bestehende mit derselben ID wird überschrieben).
+  Set<String> insights = {};
+
+  /// IDs bestehender Empfehlungen, die als verworfen markiert werden.
+  Set<String> dismiss = {};
+
   /// Vorschlag: gleichnamige Routinen ersetzen, neue hinzufügen; Wochenplan und Hinweise wie von der KI.
   static ImportSelection defaults(
     ImportPreview preview, {
     required List<Routine> existing,
     WeekSchedule? currentSchedule,
+    List<Insight> existingInsights = const [],
   }) {
     final selection = ImportSelection();
     final names = {for (final routine in existing) routine.name};
@@ -124,6 +141,17 @@ final class ImportSelection {
       selection.scheduleDays = CoachImport.changedDays(schedule, from: currentSchedule ?? WeekSchedule()).toSet();
     }
     selection.notes = {for (var index = 0; index < preview.notes.length; index++) index};
+    // Empfehlungen: übernehmen, außer sie überschreiben eine noch gültige Empfehlung der Regeln (Regeln entscheiden –
+    // überschreiben geht trotzdem, aber nur ausdrücklich). Verwerfen nur bei KI-Empfehlungen vorausgewählt.
+    final byID = {for (final insight in existingInsights) insight.id: insight};
+    selection.insights = {
+      for (final insight in preview.insights)
+        if (byID[insight.id]?.origin != InsightOrigin.rules) insight.id,
+    };
+    selection.dismiss = {
+      for (final id in preview.dismiss)
+        if (byID[id] case final existing? when existing.origin == InsightOrigin.ai) id,
+    };
     return selection;
   }
 
@@ -135,6 +163,9 @@ final class ImportSelection {
 /// Ausstattung, Grenzen für Sätze, Wiederholungen, Pausen und Gewicht, Wochenvolumen; Wochenplan nur im eigenen
 /// Plan. Nichts wird übernommen, bevor die Vorschau bestätigt ist.
 abstract final class CoachImport {
+  /// Modellname, wenn die Antwort keinen nennt.
+  static const externalModel = 'Externe KI';
+
   static JsonValue? _parse(String text) {
     try {
       return JsonValue(jsonDecode(text));
@@ -165,7 +196,11 @@ abstract final class CoachImport {
     for (final block in blocks) {
       if (block.tag != 'json' && block.tag.isNotEmpty) continue;
       final json = _parse(block.body);
-      if (json != null && (json['routinen'] != null || json['wochenplan'] != null || json['hinweise'] != null)) {
+      if (json != null &&
+          (json['routinen'] != null ||
+              json['wochenplan'] != null ||
+              json['hinweise'] != null ||
+              json['empfehlungen'] != null)) {
         return json;
       }
     }
@@ -178,6 +213,7 @@ abstract final class CoachImport {
     required UserProfile profile,
     required Set<Equipment> equipment,
     required List<ExerciseInfo> custom,
+    DateTime? now,
   }) {
     final json = block(text);
     final preview = ImportPreview();
@@ -266,7 +302,99 @@ abstract final class CoachImport {
         .take(10)
         .map((note) => textPrefix(note, 400))
         .toList();
+
+    if (json['modell']?.stringValue case final model? when model.trim().isNotEmpty) {
+      preview.model = textPrefix(model.trim(), 40);
+    }
+    preview.insights = insights(
+      json,
+      model: preview.model,
+      now: now ?? DateTime.now(),
+      corrections: preview.corrections,
+    );
+    preview.dismiss = <String>{
+      for (final entry in json['verwerfen']?.arrayValue ?? const <JsonValue>[])
+        if (entry.stringValue case final id? when id.contains('.')) id.trim(),
+    }.take(30).toList();
     return preview;
+  }
+
+  /// Empfehlungen aus `empfehlungen`. Mit `id` („thema.betreff“) ersetzen sie die Empfehlung mit dieser ID; die
+  /// Begründung der KI steht als Beleg dabei. Unvollständige Einträge fallen mit Hinweis weg.
+  static List<Insight> insights(
+    JsonValue json, {
+    required String model,
+    required DateTime now,
+    List<String>? corrections,
+  }) {
+    final result = <Insight>[];
+    final seen = <String>{};
+    for (final item in (json['empfehlungen']?.arrayValue ?? const <JsonValue>[]).take(20)) {
+      final id = item['id']?.stringValue?.trim() ?? '';
+      final dot = id.indexOf('.');
+      final topic =
+          enumFromRaw(InsightTopic.values, item['thema']?.stringValue) ??
+          (dot > 0 ? enumFromRaw(InsightTopic.values, id.substring(0, dot)) : null);
+      final title = item['titel']?.stringValue?.trim() ?? '';
+      final text = item['text']?.stringValue?.trim() ?? '';
+      if (topic == null || title.isEmpty || text.isEmpty) {
+        corrections?.add('Empfehlung „${title.isEmpty ? id : title}“ ignoriert: Thema, Titel oder Text fehlt.');
+        continue;
+      }
+      // Die ID gewinnt, damit die Empfehlung wirklich die gemeinte ersetzt.
+      final subject = dot > 0 && id.substring(0, dot) == topic.rawValue
+          ? id.substring(dot + 1)
+          : item['betreff']?.stringValue ?? title;
+      final reason = item['begruendung']?.stringValue?.trim() ?? '';
+      final insight = Insight(
+        topic: topic,
+        subject: subject,
+        title: textPrefix(title, 80),
+        text: textPrefix(text, 400),
+        direction: enumFromRaw(InsightDirection.values, item['richtung']?.stringValue) ?? InsightDirection.check,
+        priority: item['prioritaet']?.clampedInt(1, 3) ?? 2,
+        origin: InsightOrigin.ai,
+        created: now,
+        validUntil: now.add(Duration(days: item['gueltig_tage']?.clampedInt(1, 30) ?? 14)),
+        basis: [if (reason.isNotEmpty) textPrefix(reason, 400) else 'Import aus $model'],
+        model: model,
+      );
+      if (!seen.add(insight.id)) continue;
+      result.add(insight);
+    }
+    return result;
+  }
+
+  /// Empfehlungen nach der Auswahl: gewählte Verwerfungen markieren, gewählte Empfehlungen übernehmen (eine
+  /// bestehende mit gleicher ID wird überschrieben, auch wenn sie von den Regeln stammt – nur auf ausdrücklichen
+  /// Wunsch); Widersprüche zu übernommenen Empfehlungen werden ersetzt.
+  static List<Insight> applyInsights(
+    ImportPreview preview, {
+    required ImportSelection selection,
+    required List<Insight> existing,
+    required DateTime now,
+  }) {
+    var result = [
+      for (final insight in existing)
+        if (selection.dismiss.contains(insight.id) && preview.dismiss.contains(insight.id))
+          insight.copyWith(status: InsightStatus.dismissed, statusChanged: () => now)
+        else
+          insight,
+    ];
+    for (final incoming in preview.insights) {
+      if (!selection.insights.contains(incoming.id)) continue;
+      result = [
+        for (final insight in result)
+          if (insight.id != incoming.id &&
+              !(insight.contradicts(incoming) &&
+                  insight.isCurrent(now) &&
+                  insight.origin == InsightOrigin.ai &&
+                  insight.status != InsightStatus.dismissed))
+            insight,
+        incoming,
+      ];
+    }
+    return InsightInbox.prune(result, now: now);
   }
 
   /// ID aus der Bibliothek; sonst Übung gleichen Namens (Groß-/Kleinschreibung egal).
@@ -366,5 +494,7 @@ abstract final class CoachImport {
       selection.replaceAllRoutines ||
       preview.routines.any((routine) => selection.choice(routine) != RoutineChoice.skip) ||
       (selection.schedule && preview.schedule != null && selection.scheduleDays.isNotEmpty) ||
-      selection.notes.isNotEmpty;
+      selection.notes.isNotEmpty ||
+      preview.insights.any((insight) => selection.insights.contains(insight.id)) ||
+      preview.dismiss.any(selection.dismiss.contains);
 }

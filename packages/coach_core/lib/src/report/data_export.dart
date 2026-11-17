@@ -124,7 +124,7 @@ abstract final class DataExport {
       'Enthalten: ${_ordered(categories).map((category) => category.label).join(', ')}',
       'Fehlende Werte stehen als „–“ da und bedeuten: nicht gemessen.',
       '',
-      if (withImportFormat) ...CoachExport.instructions(input),
+      if (withImportFormat) ...[...CoachExport.instructions(input), ...CoachExport.recommendations(input)],
       ...CoachExport.profile(input),
     ];
     if (categories.contains(ExportCategory.recovery)) {

@@ -275,6 +275,18 @@ class _AIScreenState extends ConsumerState<AIScreen> {
                   ListTile(
                     title: Text(note, style: TextStyle(fontSize: 13, color: secondary)),
                   ),
+                if ([...groups.newItems, ...groups.open].any((insight) => insight.origin == InsightOrigin.ai))
+                  ListTile(
+                    leading: const Icon(Icons.fact_check_outlined),
+                    title: const Text('Von Claude oder ChatGPT prüfen lassen'),
+                    subtitle: const Text(
+                      'Export mit allen offenen Empfehlungen und Prüfauftrag; die Antwort danach übernehmen – du '
+                      'wählst, was überschrieben wird.',
+                    ),
+                    trailing: const DisclosureChevron(),
+                    onTap: () =>
+                        Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const CoachExportScreen())),
+                  ),
                 if (controller.missing.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
@@ -532,6 +544,20 @@ class InsightBasisSheet extends StatelessWidget {
               LabeledRow(label: 'Betreff', value: insight.subject),
             ],
           ),
+          if (insight.origin == InsightOrigin.ai && insight.model != CoachImport.externalModel)
+            const FormSection(
+              children: [
+                ListTile(
+                  dense: true,
+                  leading: Icon(Icons.fact_check_outlined),
+                  title: Text(
+                    'Tipp: Ein stärkeres Modell (Claude, ChatGPT) kann diese Empfehlung prüfen. „AI“ › „Daten für '
+                    'eine externe KI exportieren“ legt sie mit Prüfauftrag bei; die Antwort übernimmst du über '
+                    '„Antwort einer externen KI übernehmen“.',
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );
