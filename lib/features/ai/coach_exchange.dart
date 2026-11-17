@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:coach_core/coach_core.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,6 +44,8 @@ Future<CoachExportInput> loadExportInput(WidgetRef ref) async {
     weights: ref.read(appModelProvider).allWeights,
     userSources: settings.userSources,
     reports: ref.read(garminSyncServiceProvider).reportStore.load().values.toList(),
+    insights: settings.insights,
+    now: DateTime.now(),
   );
 }
 
@@ -258,6 +261,13 @@ class _CoachExportScreenState extends ConsumerState<CoachExportScreen> {
               if (_format == ExportFormat.markdown)
                 SwitchListTile.adaptive(
                   title: const Text('Antwortformat für den Import beilegen'),
+                  subtitle: switch (input?.openInsights.length ?? 0) {
+                    0 => null,
+                    final count => Text(
+                      'Mit Prüfauftrag für $count offene Empfehlung${count == 1 ? '' : 'en'} aus „AI“ – die externe '
+                      'KI bestätigt, verbessert oder verwirft sie.',
+                    ),
+                  },
                   value: _withImportFormat,
                   onChanged: (on) {
                     _withImportFormat = on;
@@ -372,11 +382,13 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
         profile: settings.profile,
         equipment: settings.gym.equipment,
         custom: settings.gym.customExercises,
+        now: DateTime.now(),
       );
       setState(() {
         _selection = ImportSelection.defaults(
           checked,
           existing: settings.gym.routines,
+          existingInsights: settings.insights,
           currentSchedule: checked.scheduleScope == ScheduleScope.nextWeek
               ? settings.schedule(_nextMonday)
               : settings.profile.schedule,
@@ -411,6 +423,15 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
     }
     final notes = CoachImport.notes(preview, selection: _selection);
     if (notes.isNotEmpty) settings.importedNotes = ImportedNotes(day: CalendarDay.today(), texts: notes);
+    if (preview.insights.isNotEmpty || preview.dismiss.isNotEmpty) {
+      final updated = CoachImport.applyInsights(
+        preview,
+        selection: _selection,
+        existing: settings.insights,
+        now: DateTime.now(),
+      );
+      if (!listEquals(updated, settings.insights)) settings.insights = updated;
+    }
     setState(() => _applied = true);
   }
 
@@ -571,6 +592,8 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
               ),
           ],
         ),
+      if (preview.insights.isNotEmpty) _insightSection(preview, settings.insights),
+      if (preview.dismiss.isNotEmpty) _dismissSection(preview, settings.insights),
       if (preview.corrections.isNotEmpty || preview.ruleNotes.isNotEmpty)
         FormSection(
           header: 'Geprüft von den Regeln',
@@ -602,5 +625,71 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
         ],
       ),
     ];
+  }
+
+  static String _origin(Insight insight) => insight.origin == InsightOrigin.rules
+      ? 'Regeln der App'
+      : 'KI${insight.model == null ? '' : ' (${insight.model})'}';
+
+  /// Empfehlungen der externen KI: je Eintrag übernehmen oder nicht; ersetzt sie eine bestehende, steht diese dabei.
+  Widget _insightSection(ImportPreview preview, List<Insight> existing) {
+    final byID = {for (final insight in existing) insight.id: insight};
+    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
+    return FormSection(
+      header: 'Empfehlungen von ${preview.model}',
+      footer:
+          'Angehakte Empfehlungen erscheinen im Bereich „AI“; eine bestehende mit gleichem Thema wird überschrieben. '
+          'Empfehlungen der Regeln sind nicht vorausgewählt – sie beruhen auf festen, geprüften Regeln.',
+      children: [
+        for (final insight in preview.insights)
+          CheckboxListTile(
+            value: _selection.insights.contains(insight.id),
+            onChanged: (on) => setState(
+              () => on ?? false ? _selection.insights.add(insight.id) : _selection.insights.remove(insight.id),
+            ),
+            title: Text(insight.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 2,
+              children: [
+                Text(insight.text),
+                if (byID[insight.id] case final old?)
+                  Text(
+                    'Überschreibt: „${old.title}“ (${_origin(old)})',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: old.origin == InsightOrigin.rules ? Colors.orange : secondary,
+                    ),
+                  )
+                else
+                  Text('Neu', style: TextStyle(fontSize: 12, color: secondary)),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// Bestehende Empfehlungen, die die externe KI für falsch oder überholt hält.
+  Widget _dismissSection(ImportPreview preview, List<Insight> existing) {
+    final byID = {for (final insight in existing) insight.id: insight};
+    final known = [for (final id in preview.dismiss) ?byID[id]];
+    return FormSection(
+      header: 'Als falsch oder überholt markiert',
+      footer: known.isEmpty
+          ? 'Keine dieser Empfehlungen gibt es (noch) in der App.'
+          : 'Angehakte Empfehlungen werden verworfen; du findest sie unter „Umgesetzt und verworfen“.',
+      children: [
+        for (final insight in known)
+          CheckboxListTile(
+            value: _selection.dismiss.contains(insight.id),
+            onChanged: (on) => setState(
+              () => on ?? false ? _selection.dismiss.add(insight.id) : _selection.dismiss.remove(insight.id),
+            ),
+            title: Text(insight.title),
+            subtitle: Text(_origin(insight)),
+          ),
+      ],
+    );
   }
 }

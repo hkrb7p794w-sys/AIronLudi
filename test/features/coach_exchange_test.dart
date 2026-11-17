@@ -68,6 +68,54 @@ void main() {
     expect(find.textContaining('Kein Block'), findsOneWidget);
   });
 
+  testWidgets('Import: Empfehlungen einer externen KI wählen, überschreiben und verwerfen', (tester) async {
+    final container = await _open(tester, const CoachImportScreen());
+    final settings = container.read(coachSettingsProvider);
+    final now = DateTime.now();
+    Insight make(InsightTopic topic, String subject, String title, InsightOrigin origin) => Insight(
+      topic: topic,
+      subject: subject,
+      title: title,
+      text: 'alt',
+      direction: InsightDirection.more,
+      origin: origin,
+      created: now,
+      validUntil: now.add(const Duration(days: 7)),
+      basis: const ['Fakt'],
+      model: origin == InsightOrigin.ai ? 'llama' : null,
+    );
+    settings.insights = [
+      make(InsightTopic.recovery, 'schlaf', 'Mehr schlafen', InsightOrigin.ai),
+      make(InsightTopic.nutrition, 'protein', 'Protein erhöhen', InsightOrigin.rules),
+      make(InsightTopic.training, 'bankdruecken', 'Bankdrücken steigern', InsightOrigin.ai),
+    ];
+    await tester.enterText(
+      find.byType(TextField),
+      '```ironludi\n{"modell": "Claude", "empfehlungen": ['
+      '{"id": "erholung.schlaf", "titel": "8 h vor harten Tagen", "text": "neu", "richtung": "mehr"},'
+      '{"id": "ernaehrung.protein", "titel": "Protein 1,8 g/kg", "text": "neu", "richtung": "mehr"}],'
+      '"verwerfen": ["training.bankdruecken"]}\n```',
+    );
+    await tester.pump();
+    await _tap(tester, find.text('Prüfen'));
+    expect(find.text('EMPFEHLUNGEN VON CLAUDE'), findsOneWidget);
+    expect(find.text('Überschreibt: „Mehr schlafen“ (KI (llama))'), findsOneWidget);
+    expect(find.text('Überschreibt: „Protein erhöhen“ (Regeln der App)'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('ALS FALSCH ODER ÜBERHOLT MARKIERT'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Bankdrücken steigern'), findsOneWidget);
+    await _tap(tester, find.text('Auswahl übernehmen'));
+    expect(find.text('Übernommen'), findsOneWidget);
+    final byID = {for (final insight in settings.insights) insight.id: insight};
+    expect(byID['erholung.schlaf']?.title, '8 h vor harten Tagen');
+    expect(byID['erholung.schlaf']?.model, 'Claude');
+    expect(byID['ernaehrung.protein']?.title, 'Protein erhöhen'); // Regel nicht vorausgewählt
+    expect(byID['training.bankdruecken']?.status, InsightStatus.dismissed);
+  });
+
   testWidgets('Prompt-Bibliothek: Vorlage, eigener Prompt', (tester) async {
     final container = await _open(tester, const PromptLibraryScreen());
     final first = PromptLibrary.builtIn.first;
