@@ -11,6 +11,8 @@ import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/large_title.dart';
 import '../../ui/sport_style.dart';
+import '../../ui/strain_card.dart';
+import '../../ui/week_minutes_chart.dart';
 import '../endurance/endurance_controller.dart';
 import '../endurance/endurance_screens.dart';
 import '../gym/gym_providers.dart';
@@ -80,6 +82,33 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
     );
   }
 
+  /// „Meine Belastung heute“ wie unter „Heute“ (Ampel aus den Tageswerten und der Form).
+  DailyStrain _strain(CalendarDay today, {required List<FormPoint> formPoints}) {
+    final settings = ref.read(coachSettingsProvider);
+    final endurance = ref.read(enduranceControllerProvider).plan;
+    final days = [..._days]..sort((a, b) => b.day.compareTo(a.day));
+    final state = RecoveryEvaluator.today(days: days, form: formPoints, today: today);
+    final strengthRecorded = _activities.any(
+      (activity) => activity.day == today && activity.sport == ActivitySport.strength,
+    );
+    final gymMinutes = strengthRecorded
+        ? 0.0
+        : _gym
+              .where((record) => record.session.day == today && record.session.end != null)
+              .fold<double>(0, (sum, record) => sum + record.session.end!.difference(record.session.start).inMinutes);
+    return DailyStrainRules.compute(
+      activities: _activities,
+      plannedToday: settings.profile.mode == ProfileMode.personal
+          ? settings.schedule(today).slots(Weekday.values[today.weekdayIndex])
+          : const [],
+      enduranceToday: endurance?.slotsOn(today) ?? const [],
+      recovery: state.isKnown ? state.recommendation : null,
+      today: today,
+      gymMinutesToday: gymMinutes,
+      thresholds: endurance?.request.thresholds ?? const AthleteThresholds(),
+    );
+  }
+
   void _open(Widget Function(BuildContext context) builder) =>
       unawaited(Navigator.of(context).push(MaterialPageRoute<void>(builder: builder)));
 
@@ -125,7 +154,13 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
           padding: const EdgeInsets.only(bottom: 32),
           children: [
             const LargeTitleHeader('Training'),
-            FormSection(
+            DailyStrainCard(strain: _strain(today, formPoints: form)),
+            WeekMinutesChart(
+              minutes: TrainingTrends.weeklyMinutes(activities: _activities, gym: gym, today: today, weeks: 8),
+              today: today,
+              onTap: () => _open((_) => TrendsScreen(activities: _activities, gym: gym)),
+            ),
+            _HubGrid(
               children: [
                 _HubRow(
                   title: 'Plan',
@@ -222,7 +257,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
               ],
             ),
             if (settings.profile.mode == ProfileMode.season) ...[
-              FormSection(
+              _HubGrid(
                 header: 'Disziplinen',
                 children: [
                   _HubRow(
@@ -251,7 +286,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                   ),
                 ],
               ),
-              FormSection(
+              _HubGrid(
                 header: 'Ziele',
                 children: [
                   _HubRow(
@@ -273,7 +308,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                 ],
               ),
             ] else
-              FormSection(
+              _HubGrid(
                 header: 'Meine Sportarten',
                 children: [
                   for (final sport in settings.profile.sports)
@@ -303,8 +338,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
   }
 }
 
-/// Zeile der Übersicht: Symbol, Bereich, aktueller Kernwert. Auf schmalen Bildschirmen steht der Wert unter dem
-/// Titel, damit nichts abgeschnitten wird.
+/// Kachel der Übersicht: Symbol, Kernwert groß, Bereich klein; Details erst beim Antippen.
 class _HubRow extends StatelessWidget {
   const _HubRow({
     required this.title,
@@ -326,40 +360,88 @@ class _HubRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
-        child: Row(
-          spacing: 12,
-          children: [
-            SportIcon(symbol: symbol, color: color),
-            Expanded(
-              child: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-            ),
-            Flexible(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+    final theme = Theme.of(context);
+    final secondary = theme.colorScheme.onSurfaceVariant;
+    return Semantics(
+      button: true,
+      label: '$title: $value, $caption',
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 6,
+            children: [
+              Row(
                 children: [
-                  Text(
-                    value,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontWeight: FontWeight.w600, color: valueColor),
-                  ),
-                  Text(
-                    caption,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 11, color: secondary),
-                  ),
+                  SportIcon(symbol: symbol, color: color, size: 26),
+                  const Spacer(),
+                  const DisclosureChevron(),
                 ],
               ),
-            ),
-            const DisclosureChevron(),
-          ],
+              // Ohne Kernwert steht der Bereich groß und die Erklärung klein darunter – kein einsamer Strich.
+              Text(
+                value.isEmpty || value == '–' ? title : value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: valueColor),
+              ),
+              Text(
+                value.isEmpty || value == '–' ? caption : title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 12, color: secondary),
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+/// Kacheln in zwei Spalten (drei ab Tablet-Breite) statt einer Liste mit Erklärtexten.
+class _HubGrid extends StatelessWidget {
+  const _HubGrid({this.header, required this.children});
+
+  final String? header;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = Theme.of(context).textTheme.bodySmall
+        ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (header case final header?)
+            Padding(
+              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 7),
+              child: Text(header.toUpperCase(), style: muted),
+            ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final columns = constraints.maxWidth >= 600 ? 3 : 2;
+              const gap = 10.0;
+              final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
+              return Wrap(
+                spacing: gap,
+                runSpacing: gap,
+                children: [
+                  for (final child in children)
+                    SizedBox(
+                      width: width,
+                      child: Card(margin: EdgeInsets.zero, clipBehavior: Clip.antiAlias, child: child),
+                    ),
+                ],
+              );
+            },
+          ),
+        ],
       ),
     );
   }

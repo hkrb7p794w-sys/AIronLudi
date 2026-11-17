@@ -11,11 +11,13 @@ import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/large_title.dart';
 import '../../ui/platform_names.dart';
+import '../../ui/strain_card.dart';
 import '../activities/activity_detail_screen.dart';
 import '../activities/activity_parts.dart';
 import '../activities/post_workout_section.dart';
 import '../ai/ai_screen.dart';
 import '../ai/chat_screen.dart';
+import '../endurance/endurance_controller.dart';
 import '../evidence/evidence_views.dart';
 import '../game/game_views.dart';
 import '../gym/gym_providers.dart';
@@ -98,6 +100,32 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
       settings: ref.read(coachSettingsProvider),
       gymDays: [for (final record in _gym) record.session.day, ...running],
       gym: _gymItems,
+    );
+  }
+
+  /// „Meine Belastung heute“ aus Aktivitäten, Krafteinheiten der App, Plan und derselben Ampel wie „Jetzt dran“.
+  DailyStrain _strain(TodaySnapshot snapshot) {
+    final settings = ref.read(coachSettingsProvider);
+    final today = snapshot.plan.today;
+    final endurance = ref.read(enduranceControllerProvider).plan;
+    final strengthRecorded = _activities.any(
+      (activity) => activity.day == today && activity.sport == ActivitySport.strength,
+    );
+    final gymMinutes = strengthRecorded
+        ? 0.0
+        : _gym
+              .where((record) => record.session.day == today && record.session.end != null)
+              .fold<double>(0, (sum, record) => sum + record.session.end!.difference(record.session.start).inMinutes);
+    return DailyStrainRules.compute(
+      activities: _activities,
+      plannedToday: settings.profile.mode == ProfileMode.personal
+          ? settings.schedule(today).slots(Weekday.values[today.weekdayIndex])
+          : const [],
+      enduranceToday: endurance?.slotsOn(today) ?? const [],
+      recovery: snapshot.metrics == null ? null : snapshot.recommendation,
+      today: today,
+      gymMinutesToday: gymMinutes,
+      thresholds: endurance?.request.thresholds ?? const AthleteThresholds(),
     );
   }
 
@@ -220,7 +248,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                 ),
               ],
             ),
-            if (!model.garmin.isConfigured && !model.health.isEnabled)
+            if (!model.garmin.isConfigured && !model.health.isEnabled && !model.isWhoopConnected)
               FormSection(
                 children: [
                   ListTile(
@@ -233,6 +261,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                 ],
               ),
             if (snapshot != null) ...[
+              DailyStrainCard(strain: _strain(snapshot)),
               // Morning Report bis 12 Uhr ganz oben; danach über „Gesundheit“ im Reiter Training.
               if (DateTime.now().hour < 12)
                 MorningReportCard(

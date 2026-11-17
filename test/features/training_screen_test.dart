@@ -39,6 +39,9 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await tester.pumpAndSettle();
 
+    // Kacheln liegen unter Belastungskarte und Wochendiagramm.
+    expect(find.text('MEINE BELASTUNG HEUTE'), findsOneWidget);
+    await _scrollTo(tester, 'Erholung');
     expect(find.text('Erholung'), findsOneWidget);
     expect(find.text('60 ms'), findsOneWidget);
     await tester.tap(find.text('Erholung'));
@@ -56,6 +59,7 @@ void main() {
       ('Wochenbericht', WeeklyReportScreen),
       ('Herzfrequenz', HeartRateScreen),
     ]) {
+      await _scrollTo(tester, title);
       await tester.tap(find.text(title));
       await tester.pumpAndSettle();
       expect(find.byType(type), findsOneWidget, reason: title);
@@ -63,6 +67,7 @@ void main() {
       await tester.pumpAndSettle();
     }
 
+    await _scrollTo(tester, 'Schlaf-Coach');
     await tester.tap(find.text('Schlaf-Coach'));
     await tester.pumpAndSettle();
     expect(find.byType(SleepCoachScreen), findsOneWidget);
@@ -72,4 +77,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(settings.sleep.reminder, isTrue);
   });
+}
+
+Future<void> _scrollTo(WidgetTester tester, String text) async {
+  await tester.scrollUntilVisible(find.text(text), 200, scrollable: find.byType(Scrollable).first);
+  await tester.pumpAndSettle();
 }

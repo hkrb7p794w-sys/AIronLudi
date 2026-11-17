@@ -37,6 +37,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.descendant(of: find.byType(CupertinoTabBar), matching: find.text('Training')));
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Gym'), 200, scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Gym'));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await tester.pumpAndSettle();

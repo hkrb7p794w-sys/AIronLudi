@@ -33,6 +33,8 @@ void main() {
 
     expect(find.byType(TodayScreen), findsOneWidget);
     expect(find.textContaining('JETZT DRAN'), findsOneWidget);
+    expect(find.text('MEINE BELASTUNG HEUTE'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('WARUM?'), 200, scrollable: find.byType(Scrollable).first);
     expect(find.text('WARUM?'), findsOneWidget);
     expect(find.text('Regeln (ohne KI)'), findsOneWidget);
     expect(find.textContaining('Verbinde in den Einstellungen eine Datenquelle'), findsOneWidget);
