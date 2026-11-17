@@ -698,3 +698,14 @@ Auf Wunsch des Nutzers; die Swift-App kennt nur einen Benutzer. Tests: `packages
 - **Regeln entscheiden:** Empfehlungen der Regeln sind weder zum Überschreiben noch zum Verwerfen vorausgewählt;
   ausdrücklich angehakt werden sie trotzdem ersetzt (die Person entscheidet). Übernommene Empfehlungen ersetzen
   widersprechende KI-Empfehlungen, nie Regel-Empfehlungen ohne Haken.
+
+## 2026-11-17 – Ausdauerplan nach den Zielen der App
+
+- Rückmeldung des Nutzers: Beim Erstellen fehlten die Ziele und Wettkämpfe, die in der App schon gepflegt sind.
+- `EnduranceGoals` (coach_core) leitet die Vorgaben ab: Wettkampf aus der Einrichtung (`UserProfile.event`, Art aus
+  `EventKind`, beim Triathlon aus dem Namen), im Modus Saisonplan zusätzlich Marathon und Hauptrennen aus
+  `SeasonConfig` (sonst nie – keine Saisonwerte für andere Personen); Ausdauersportarten aus dem Profil, Tage, langer
+  Tag und Zeit je Woche aus dem Wochenplan; ohne Wettkampf ein Zeitraum-Plan, Schwerpunkt nach dem Hauptziel.
+- Bekannte Wettkämpfe stehen beim Erstellen oben zur Auswahl (vorausgewählt der nächste), „Anderes Ziel“ bleibt.
+  Der Name des Wettkampfs wird im Plan gespeichert (`eventName`). Ändert sich das Ziel in der App, zeigt die
+  Übersicht „Neues Ziel …“ mit dem Weg zu einem neuen Plan; ersetzt wird nichts automatisch.

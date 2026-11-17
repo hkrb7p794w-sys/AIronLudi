@@ -31,6 +31,7 @@ export 'src/coach/template_item.dart';
 export 'src/coach/trends.dart';
 export 'src/coach/weekly_report.dart';
 export 'src/coach/weekly_review.dart';
+export 'src/endurance/endurance_goals.dart';
 export 'src/endurance/endurance_plan.dart';
 export 'src/endurance/endurance_workouts.dart';
 export 'src/endurance/training_load.dart';

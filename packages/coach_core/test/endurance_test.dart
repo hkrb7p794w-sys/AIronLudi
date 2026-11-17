@@ -578,6 +578,110 @@ void main() {
       expect(WorkoutExport.summary(bike)[1], '3 × (Belastung 10 min · 238–263 W / Erholung 3 min · 113–138 W)');
     });
   });
+
+  group('Ziele aus der App', () {
+    final today = CalendarDay(2026, 11, 17);
+
+    test('Wettkampf aus der Einrichtung mit Zielzeit, Tage und Zeit aus dem Wochenplan', () {
+      final schedule = WeekSchedule()
+          .withSlots(const [SessionSlot(TrainingSport.run)], Weekday.tuesday)
+          .withSlots(const [SessionSlot(TrainingSport.strength)], Weekday.wednesday)
+          .withSlots(const [SessionSlot(TrainingSport.run, SessionIntensity.hard)], Weekday.thursday)
+          .withSlots(const [SessionSlot(TrainingSport.run, SessionIntensity.long)], Weekday.saturday);
+      final profile = UserProfile(
+        sports: const [TrainingSport.run, TrainingSport.strength],
+        event: EventGoal(
+          name: 'Berlin-Halbmarathon',
+          date: CalendarDay(2027, 4, 4),
+          kind: EventKind.halfMarathon,
+          targetSeconds: 6300,
+        ),
+        schedule: schedule,
+      );
+      final known = EnduranceGoals.known(profile, SeasonConfig.standard, today: today);
+      expect(known.single.name, 'Berlin-Halbmarathon');
+      expect(known.single.event, EnduranceEvent.halfMarathon);
+      expect(known.single.targetMinutes, 105);
+      expect(known.single.source, 'Deine Ziele');
+      final request = EnduranceGoals.suggestion(profile, SeasonConfig.standard, username: 'anna', today: today);
+      expect(request.mode, PlanningMode.goal);
+      expect(request.event, EnduranceEvent.halfMarathon);
+      expect(request.eventDay, CalendarDay(2027, 4, 4));
+      expect(request.eventName, 'Berlin-Halbmarathon');
+      expect(request.targetMinutes, 105);
+      expect(request.sports, [EnduranceSport.run]);
+      expect(request.days, [Weekday.tuesday, Weekday.thursday, Weekday.saturday]);
+      expect(request.longDay, Weekday.saturday);
+      expect(request.weeklyMinutes, 210); // 45 + 60 + 100 → auf halbe Stunden
+      expect(TrainingPlanEngine.validate(request), isNull);
+      final plan = TrainingPlanEngine.generate(request, now: now, id: 'G');
+      final restored = EndurancePlan.fromJson(jsonDecode(jsonEncode(plan.toJson())), username: 'anna')!;
+      expect(restored.request.eventName, 'Berlin-Halbmarathon');
+    });
+
+    test('Saisonplan: Marathon und Almere nur im Saisonmodus, vergangene fallen weg', () {
+      final season = SeasonConfig.standard;
+      final own = EnduranceGoals.known(UserProfile.seasonPlan, season, today: today);
+      expect(own.map((goal) => goal.name), ['Marathon', 'Challenge Almere']);
+      expect(own.first.event, EnduranceEvent.marathon);
+      expect(own.first.targetMinutes, (325 * 42.195 / 60).round());
+      expect(own.last.event, EnduranceEvent.triMiddle);
+      expect(own.last.targetMinutes, 330);
+      expect(
+        EnduranceGoals.known(UserProfile.seasonPlan, season, today: CalendarDay(2027, 6, 1)).single.name,
+        'Challenge Almere',
+      );
+      expect(EnduranceGoals.known(UserProfile(), season, today: today), isEmpty);
+    });
+
+    test('Triathlon nach Name, anderer Wettkampf nach Sportart, ohne Wettkampf Zeitraum nach Ziel', () {
+      EnduranceEvent? kind(String name, {EventKind type = EventKind.triathlon, List<TrainingSport>? sports}) =>
+          EnduranceGoals.eventOf(
+            EventGoal(name: name, date: CalendarDay(2027, 6, 1), kind: type),
+            UserProfile(sports: sports ?? const [TrainingSport.run]),
+          );
+      expect(kind('Ironman 70.3 Zell am See'), EnduranceEvent.triMiddle);
+      expect(kind('Ironman Frankfurt'), EnduranceEvent.triFull);
+      expect(kind('Stadttriathlon Sprint'), EnduranceEvent.triSprint);
+      expect(kind('Kölner Triathlon'), EnduranceEvent.triOlympic);
+      expect(kind('Ötztaler', type: EventKind.other, sports: const [TrainingSport.bike]), EnduranceEvent.bikeEvent);
+      expect(kind('Irgendwas', type: EventKind.other, sports: const [TrainingSport.bike, TrainingSport.run]), isNull);
+
+      final health = UserProfile(
+        sports: const [TrainingSport.bike, TrainingSport.swim],
+        goals: PersonalGoals(primary: TrainingGoal.health, since: today),
+      );
+      final request = EnduranceGoals.suggestion(health, SeasonConfig.standard, username: 'anna', today: today);
+      expect(request.mode, PlanningMode.period);
+      expect(request.focus, PeriodFocus.base);
+      expect(request.sports, [EnduranceSport.bike, EnduranceSport.swim]);
+      expect(request.days, [Weekday.tuesday, Weekday.thursday, Weekday.saturday, Weekday.sunday]);
+      expect(request.weeklyMinutes, 180);
+      expect(EnduranceGoals.firstClock('Finish in 5:30–6:00 h'), 330);
+    });
+
+    test('Ziel in der App geändert: Hinweis auf den neuen Wettkampf', () {
+      final first = UserProfile(
+        event: EventGoal(name: '10 km Stadtlauf', date: CalendarDay(2027, 3, 1), kind: EventKind.run10k),
+      );
+      final plan = TrainingPlanEngine.generate(
+        EnduranceGoals.suggestion(first, SeasonConfig.standard, username: 'anna', today: today),
+        now: now,
+        id: 'C',
+      );
+      expect(
+        EnduranceGoals.changedGoal(plan, EnduranceGoals.known(first, SeasonConfig.standard, today: today)),
+        isNull,
+      );
+      final changed = UserProfile(
+        event: EventGoal(name: 'Marathon Hamburg', date: CalendarDay(2027, 4, 25), kind: EventKind.marathon),
+      );
+      expect(
+        EnduranceGoals.changedGoal(plan, EnduranceGoals.known(changed, SeasonConfig.standard, today: today))?.name,
+        'Marathon Hamburg',
+      );
+    });
+  });
 }
 
 int _int(List<int> bytes) {
