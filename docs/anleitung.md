@@ -171,4 +171,5 @@ Nur auf deinem eigenen Gerät (alle anderen nutzen den Einladungs- bzw. Android-
 | AIronLudi öffnet nicht mehr („nicht verfügbar“) | 7 Tage abgelaufen: LocalDevVPN verbinden › SideStore › My Apps › Refresh |
 | „KI-Worker ist nicht eingerichtet“ | Einladungslink erneut antippen bzw. *Einstellungen › Technik › KI-Worker* prüfen |
 | Android: „App nicht installiert“ | Auf dem Handy ist noch die alte Kotlin-App (anderer Signaturschlüssel): erst sichern, dann deinstallieren (Abschnitt B2). Kommt die Meldung bei einem Update der **neuen** App, fehlten beim Build die Secrets `ANDROID_KEYSTORE_*` – Betreiber:in fragen |
+| Foto-Analyse meldet „KI nicht erreichbar … (Fehlercode 502)“ | Kein Bildmodell hat geantwortet. Betreiber:in: Unter *Settings › Secrets and variables › Actions* alle KI-Keys anlegen (`GROQ_API_KEY`, `MISTRAL_API_KEY`, `CEREBRAS_API_KEY`, `GH_MODELS_TOKEN`, `GEMINI_API_KEY` – dieselben Werte wie bisher), dann *Actions › Worker › Run workflow*. `…/v1/health` zeigt, welche Anbieter aktiv sind |
 | Kühlschrank-Rezepte melden einen Fehler | Der Worker ist noch nicht neu bereitgestellt (*Actions › Worker › Run workflow*) |
