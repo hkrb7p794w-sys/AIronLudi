@@ -141,6 +141,16 @@ final class PlanAdjustments {
     _weekPlans.removeWhere((plan) => plan.week == week);
   }
 
+  /// Eigene Wochenpläne und Ausnahmen ab der Woche von [day] entfernen – nach einer Änderung des dauerhaften
+  /// Wochenplans, auf dessen alten Stand sie sich bezogen. Liefert, ob etwas entfernt wurde.
+  bool dropFrom(CalendarDay day) {
+    final week = monday(day);
+    final before = _changes.length + _weekPlans.length;
+    _changes.removeWhere((change) => change.week >= week);
+    _weekPlans.removeWhere((plan) => plan.week >= week);
+    return _changes.length + _weekPlans.length != before;
+  }
+
   /// Ausnahmen vergangener Wochen entfernen (sie wirken nicht mehr).
   void prune({required CalendarDay before}) {
     final week = monday(before);

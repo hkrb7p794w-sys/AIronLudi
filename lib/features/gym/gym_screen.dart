@@ -357,11 +357,12 @@ class _TodaySection extends StatelessWidget {
               style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
             ),
           ),
-        PopupMenuButton<Workout?>(
-          onSelected: start,
+        // Freies Training als eigener Wert: ein Eintrag ohne Wert (`null`) würde nie ausgewählt.
+        PopupMenuButton<(Workout?,)>(
+          onSelected: (choice) => start(choice.$1),
           itemBuilder: (_) => [
-            for (final workout in gym.plan.workouts) PopupMenuItem(value: workout, child: Text(workout.name)),
-            const PopupMenuItem(child: Text('Freies Training')),
+            for (final workout in gym.plan.workouts) PopupMenuItem(value: (workout,), child: Text(workout.name)),
+            const PopupMenuItem(value: (null,), child: Text('Freies Training')),
           ],
           child: ListTile(
             title: Text('Andere Einheit starten', style: TextStyle(color: theme.colorScheme.primary)),

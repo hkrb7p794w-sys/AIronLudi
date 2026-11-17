@@ -224,7 +224,8 @@ abstract final class Personalization {
     final fatLoss = goals.has(TrainingGoal.fatLoss);
     return switch (goals.primary) {
       TrainingGoal.fatLoss => builds ? FitnessGoal.loseAndBuild : FitnessGoal.loseWeight,
-      TrainingGoal.muscleGain => FitnessGoal.buildMuscle,
+      // Muskelaufbau mit Nebenziel Fettabbau: Rekomposition (kleines Defizit), kein Überschuss.
+      TrainingGoal.muscleGain => fatLoss ? FitnessGoal.loseAndBuild : FitnessGoal.buildMuscle,
       TrainingGoal.strength => fatLoss ? FitnessGoal.loseAndBuild : FitnessGoal.buildMuscle,
       TrainingGoal.endurance ||
       TrainingGoal.competition => fatLoss ? FitnessGoal.loseWeight : FitnessGoal.improveFitness,
