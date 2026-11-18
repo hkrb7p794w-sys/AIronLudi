@@ -12,6 +12,7 @@ import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/large_title.dart';
+import '../../ui/liquid.dart';
 import '../evidence/evidence_views.dart';
 import '../recipes/recipe_views.dart';
 import '../settings/nutrition_settings_screen.dart';
@@ -1175,7 +1176,7 @@ class _MacroBar extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 3),
-        LinearProgressIndicator(value: line.progress, color: line.isOver ? Colors.red : null),
+        LiquidProgressBar(value: line.progress, color: line.isOver ? Colors.red : null),
       ],
     ),
   );
@@ -1327,7 +1328,7 @@ class _TargetsSection extends StatelessWidget {
                   trailing: Text('$actualText / ${target == null ? '–' : format(target)} ${nutrient.unit}'),
                   subtitle: percent == null
                       ? null
-                      : LinearProgressIndicator(
+                      : LiquidProgressBar(
                           value: (percent > 100 ? 100 : percent) / 100,
                           color: nutrient.isUpperLimit
                               ? (percent > 100 ? Colors.red : Colors.orange)

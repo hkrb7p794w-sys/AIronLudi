@@ -8,6 +8,7 @@ import '../../data/storage.dart';
 import '../../services/garmin/garmin_workout_service.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/liquid.dart';
 import '../../ui/sport_style.dart';
 import '../evidence/evidence_views.dart';
 import 'plan_controller.dart';
@@ -201,7 +202,7 @@ class _WeekHeader extends StatelessWidget {
                     Text('${controller.doneCount} von ${controller.requiredCount}', style: TextStyle(color: secondary)),
                   ],
                 ),
-                LinearProgressIndicator(value: controller.doneCount / controller.requiredCount),
+                LiquidProgressBar(value: controller.doneCount / controller.requiredCount),
               ],
             ),
           ),

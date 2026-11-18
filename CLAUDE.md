@@ -10,6 +10,7 @@ der nativen iPhone-App aus `hkrb7p794w-sys/Coach-App` (Swift, Stand `793d408`). 
 |---|---|
 | `packages/coach_core/` | Reine Logik **ohne Flutter** (Port von `CoachCore`), testbar mit `dart test` |
 | `lib/app/` | App-Widget, Router (`go_router`, vier Reiter), Theme, Deep Links |
+| `lib/ui/` | Gemeinsame Bausteine; Designsystem „Clean Liquid Design“ in `liquid.dart` (Glas, Radien, Bewegung, Tab-Leiste) |
 | `lib/data/` | Datenbank (drift), Einstellungen, sicherer Speicher, Repositories |
 | `lib/services/`, `lib/platform/` | Dienste (Garmin, Health, KI, Mitteilungen …) und Plattformbrücken |
 | `lib/features/<bereich>/` | Screens und Controller (Riverpod) je Bereich |

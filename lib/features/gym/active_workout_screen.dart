@@ -10,6 +10,7 @@ import '../../data/settings/settings_store.dart';
 import '../../data/storage.dart';
 import '../../services/gym/rest_alarm.dart';
 import '../../services/providers.dart';
+import '../../ui/liquid.dart';
 import 'exercise_picker.dart';
 import 'gym_controller.dart';
 import 'gym_providers.dart';
@@ -1069,7 +1070,7 @@ class _RestPanel extends ConsumerWidget {
                 ),
               ],
             ),
-            LinearProgressIndicator(value: (remaining / total).clamp(0, 1)),
+            LiquidProgressBar(value: (remaining / total).clamp(0, 1)),
             Row(
               spacing: 10,
               children: [

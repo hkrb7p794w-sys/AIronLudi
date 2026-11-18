@@ -36,6 +36,7 @@ import '../services/reminders/reminder_service.dart';
 import '../services/update/app_update_service.dart';
 import '../services/whoop/whoop_service.dart';
 import '../services/widgets/widget_providers.dart';
+import '../ui/liquid.dart';
 import 'day_change.dart';
 import 'deep_links.dart';
 
@@ -300,26 +301,16 @@ class _RootShellState extends ConsumerState<RootShell> {
               ],
             )
           : shell,
-      // Tab-Leiste wie bei iOS (`TabView`): Symbol über kleiner Beschriftung, Akzentfarbe für den aktiven Reiter.
-      bottomNavigationBar: CupertinoTabBar(
+      // Schwebende Glas-Leiste mit den vier Reitern (`TabView`): Symbol über kleiner Beschriftung, gleitende Auswahl.
+      bottomNavigationBar: LiquidTabBar(
         currentIndex: shell.currentIndex,
-        height: 50,
-        iconSize: 26,
-        activeColor: Theme.of(context).colorScheme.primary,
         // Erneutes Tippen auf den aktiven Reiter springt an den Anfang seines Stapels.
         onTap: (index) => shell.goBranch(index, initialLocation: index == shell.currentIndex),
         items: [
-          const BottomNavigationBarItem(icon: Icon(CupertinoIcons.sun_max), label: 'Heute'),
-          BottomNavigationBarItem(
-            icon: Badge(
-              isLabelVisible: incoming > 0,
-              label: Text('$incoming'),
-              child: const Icon(Icons.directions_run),
-            ),
-            label: 'Aktivitäten',
-          ),
-          const BottomNavigationBarItem(icon: Icon(CupertinoIcons.heart_circle), label: 'Training'),
-          const BottomNavigationBarItem(icon: Icon(Icons.restaurant), label: 'Ernährung'),
+          const LiquidTabItem(icon: CupertinoIcons.sun_max, label: 'Heute'),
+          LiquidTabItem(icon: Icons.directions_run, label: 'Aktivitäten', badge: incoming),
+          const LiquidTabItem(icon: CupertinoIcons.heart_circle, label: 'Training'),
+          const LiquidTabItem(icon: Icons.restaurant, label: 'Ernährung'),
         ],
       ),
     );

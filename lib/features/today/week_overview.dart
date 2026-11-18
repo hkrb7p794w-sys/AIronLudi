@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/liquid.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
 import '../activities/activities_screen.dart';
@@ -234,7 +235,7 @@ class _WeekSection extends StatelessWidget {
                     ),
                   ],
                 ),
-                LinearProgressIndicator(
+                LiquidProgressBar(
                   value: item.percent / 100,
                   color: item.done >= item.target.minimum ? Colors.green : null,
                 ),

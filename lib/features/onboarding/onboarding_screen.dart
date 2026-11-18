@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../app/app_model.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/liquid.dart';
 import '../../ui/platform_names.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
@@ -689,7 +690,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           children: [
             Semantics(
               label: 'Schritt ${_step.index + 1} von $total',
-              child: LinearProgressIndicator(value: (_step.index + 1) / total),
+              child: LiquidProgressBar(value: (_step.index + 1) / total),
             ),
             const SizedBox(height: 8),
             SizedBox(

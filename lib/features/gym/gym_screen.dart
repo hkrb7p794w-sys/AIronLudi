@@ -12,6 +12,7 @@ import '../../data/storage.dart';
 import '../../services/garmin/garmin_connect_session.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/liquid.dart';
 import '../../ui/platform_names.dart';
 import '../evidence/evidence_views.dart';
 import 'active_workout_screen.dart';
@@ -928,7 +929,7 @@ class _VolumeSection extends StatelessWidget {
               children: [
                 SizedBox(width: 90, child: Text(group.rawValue)),
                 Expanded(
-                  child: LinearProgressIndicator(
+                  child: LiquidProgressBar(
                     value: (count > 14 ? 14 : count) / 14,
                     color: count == 0 ? Colors.red : (count >= MuscleVolume.goodLower ? Colors.green : Colors.orange),
                   ),

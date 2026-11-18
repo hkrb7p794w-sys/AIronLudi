@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/settings/appearance.dart';
+import '../ui/liquid.dart';
 import 'deep_links.dart';
 import 'router.dart';
 import 'theme.dart';
@@ -26,6 +27,8 @@ class AIronLudiApp extends ConsumerWidget {
       supportedLocales: const [Locale('de', 'DE')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       routerConfig: router,
+      // Grundschicht unter allen Seiten, Dialogen und Sheets: Verlauf mit Lichtflecken.
+      builder: (context, child) => LiquidBackground(child: child ?? const SizedBox.shrink()),
     );
   }
 }
