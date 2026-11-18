@@ -117,12 +117,11 @@ class NowSection extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(focus.headline, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                        Text(
-                          focus.level == null
-                              ? 'Noch keine Erholungswerte für heute'
-                              : 'Erholung: ${focus.level!.label}',
-                          style: secondary,
-                        ),
+                        // Nur, wenn es nicht die Überschrift wiederholt („Normal trainieren“ / „Erholung: Normal trainieren“).
+                        if (focus.level == null)
+                          Text('Noch keine Erholungswerte für heute', style: secondary)
+                        else if (focus.level!.label != focus.headline)
+                          Text('Erholung: ${focus.level!.label}', style: secondary),
                       ],
                     ),
                   ),

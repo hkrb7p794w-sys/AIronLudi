@@ -105,9 +105,10 @@ abstract final class TodayKpis {
   static Kpi recovery(DailyMetrics? metrics, RecoveryLevel? level) {
     final ruled = _levelStatus(level);
     final (score, caption) = switch ((metrics?.trainingReadiness, metrics?.bodyBatteryAtWake)) {
-      (final readiness?, _) => (readiness, level?.label ?? 'Erholungswert'),
+      // Unter dem Ring die Herkunft, nicht die Empfehlung – die steht schon in „Jetzt dran“.
+      (final readiness?, _) => (readiness, 'Erholungswert'),
       (_, final battery?) => (battery, 'Body Battery'),
-      _ => (null, level?.label ?? 'keine Daten'),
+      _ => (null, level == null ? 'keine Daten' : 'Tagesampel'),
     };
     if (score != null) {
       final measured = score >= 67
