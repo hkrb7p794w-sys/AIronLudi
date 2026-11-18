@@ -65,7 +65,7 @@ void main() {
     await tester.enterText(find.byType(TextField), 'ohne Block');
     await tester.pump();
     await _tap(tester, find.text('Prüfen'));
-    expect(find.textContaining('Kein Block'), findsOneWidget);
+    expect(find.textContaining('Kein Plan im App-Format'), findsOneWidget);
   });
 
   testWidgets('Import: Empfehlungen einer externen KI wählen, überschreiben und verwerfen', (tester) async {
@@ -114,6 +114,43 @@ void main() {
     expect(byID['erholung.schlaf']?.model, 'Claude');
     expect(byID['ernaehrung.protein']?.title, 'Protein erhöhen'); // Regel nicht vorausgewählt
     expect(byID['training.bankdruecken']?.status, InsightStatus.dismissed);
+  });
+
+  testWidgets('Import: Trainingsplan von Claude mit Namen, englischen Schlüsseln und Kommas kommt an', (tester) async {
+    final container = await _open(tester, const CoachImportScreen());
+    final settings = container.read(coachSettingsProvider);
+    final before = settings.gym.routines.length;
+    await tester.enterText(
+      find.byType(TextField),
+      'Klar! Hier ist dein neuer Plan:\n\n```json\n{\n  "routines": [\n'
+      '    {"name": "Claude Ganzkörper A", "exercises": [\n'
+      '      {"name": "Kniebeugen", "sets": 4, "reps": "6-8"},\n'
+      '      {"name": "Bankdrücken (Langhantel)", "sets": 3, "reps": "8-10"},\n'
+      '      "Klimmzüge",\n'
+      '    ]},\n  ],\n  "weekly_plan": {"monday": "Ganzkörper Krafttraining", "thursday": "Laufen locker"}\n}\n```\n'
+      'Viel Erfolg!',
+    );
+    await tester.pump();
+    await _tap(tester, find.text('Prüfen'));
+    expect(find.text('Claude Ganzkörper A'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('„Kniebeugen“ als Kniebeuge übernommen.'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('„Kniebeugen“ als Kniebeuge übernommen.'), findsOneWidget);
+    // Der Knopf zum Übernehmen bleibt unten sichtbar, auch bei langer Vorschau.
+    expect(find.widgetWithText(FilledButton, 'Auswahl übernehmen'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Auswahl übernehmen'));
+    await tester.pumpAndSettle();
+    final routines = settings.gym.routines;
+    expect(routines.length, before + 1);
+    final imported = routines.singleWhere((routine) => routine.name == 'Claude Ganzkörper A');
+    expect(imported.items.map((item) => item.exerciseID), ['kniebeuge', 'bankdruecken', 'klimmzug']);
+    expect(imported.items.first.sets, 4);
+    expect(settings.profile.schedule.slots(Weekday.thursday).single.sport, TrainingSport.run);
+    expect(find.text('Trainingspläne ansehen'), findsOneWidget);
+    expect(find.text('Wochenplan ansehen'), findsOneWidget);
   });
 
   testWidgets('Prompt-Bibliothek: Vorlage, eigener Prompt', (tester) async {

@@ -371,7 +371,11 @@ abstract final class GymCoach {
           ),
         );
       }
-      if (items.isNotEmpty) routines.add(Routine(name: name, items: items));
+      if (items.isNotEmpty) {
+        routines.add(Routine(name: name, items: items));
+      } else {
+        corrections.add('Trainingsplan „$name“ nicht übernommen: keine bekannte Übung darin.');
+      }
     }
 
     final notes = [

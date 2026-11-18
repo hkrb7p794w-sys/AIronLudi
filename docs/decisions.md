@@ -737,3 +737,19 @@ Auf Wunsch des Nutzers; die Swift-App kennt nur einen Benutzer. Tests: `packages
   „Heute“ und im Reiter Training.
 - **Weniger Text im Reiter Training:** Kacheln statt Listenzeilen mit Erklärtext, Trainingszeit der letzten 8 Wochen als
   gestapeltes Balkendiagramm; Details erst beim Antippen.
+
+## 2026-11-18 – Import von KI-Antworten nachsichtig lesen
+
+- Rückmeldung: Ein Trainingsplan aus Claude kam nicht an. Nachgestellt mit typischen Antworten: Übungsnamen statt IDs
+  („Bankdrücken (Langhantel)“, „Kniebeugen“, „Klimmzüge“) wurden entfernt und die Routine **still** verworfen; JSON mit
+  Kommentaren, Kommas vor Klammern oder „“ war „ungültig“; englische Schlüssel, JSON ohne Codeblock oder ein Block auf
+  einer Zeile wurden nicht gefunden; „Übernehmen“ stand unter einer langen Vorschau außer Sicht.
+- `ImportJson`: Codeblöcke mit ```/~~~ (mit oder ohne Sprache), sonst ganzer Text bzw. größtes `{…}`; Kommentare,
+  überzählige Kommas und typografische Anführungszeichen werden repariert; Schlüssel-Synonyme Deutsch/Englisch
+  (`routines`, `exercises`, `sets`, `reps: "6-8"`, `weekly_plan`, `monday` …), Übungen als Text, Tage als Text.
+- `CoachImport.resolve`: genaue ID, gleicher Name, englische Namen (Bench Press …), ohne Klammerzusatz, Wortstämme
+  (Plural, Umlaut), sonst die Übung, deren Namenswörter alle vorkommen. Jede Zuordnung steht in der Vorschau
+  („„Kniebeugen“ als Kniebeuge übernommen“); eine Routine ohne bekannte Übung wird gemeldet.
+- Die Regeln bleiben unverändert: nur Übungen der eigenen Ausstattung, Grenzen für Sätze/Wiederholungen/Pausen, im
+  Saisonplan kein Wochenplan (mit Hinweis). Neu in der App: „Aus Datei laden“, fester Knopf „Auswahl übernehmen“ und
+  nach dem Übernehmen Wege zu Trainingsplänen und Wochenplan.
