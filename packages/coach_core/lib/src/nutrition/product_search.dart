@@ -1,9 +1,12 @@
+import '../calendar/calendar_day.dart';
 import '../json/json_value.dart';
 import 'bls.dart';
 import 'food_search.dart';
 import 'meal.dart';
+import 'meal_category.dart';
 import 'nutrient.dart';
 import 'open_food_facts.dart';
+import 'quick_log.dart';
 
 /// Herkunft eines Treffers der Produktsuche.
 enum ProductSource {
@@ -24,6 +27,7 @@ final class FoodProduct {
     required this.source,
     required this.per100g,
     required this.item,
+    required this.defaultGrams,
     this.brand,
     this.servingGrams,
     this.servingText,
@@ -34,6 +38,7 @@ final class FoodProduct {
     name: food.name,
     source: ProductSource.bls,
     per100g: food.per100g,
+    defaultGrams: 100,
     item: ({double grams = 100}) => food.item(grams: grams),
   );
 
@@ -45,6 +50,7 @@ final class FoodProduct {
     per100g: product.per100g,
     servingGrams: product.servingGrams,
     servingText: product.servingText,
+    defaultGrams: product.servingGrams ?? 100,
     item: ({double grams = 100}) => product.item(grams: grams),
   );
 
@@ -55,6 +61,8 @@ final class FoodProduct {
     per100g: food.per100g,
     servingGrams: food.portion?.grams,
     servingText: food.portion?.name,
+    // Zuletzt gegessene Menge.
+    defaultGrams: food.grams > 0 ? food.grams : food.portion?.grams ?? 100,
     item: ({double grams = 100}) => food.copy()
       ..id = newUuid()
       ..grams = grams,
@@ -69,6 +77,9 @@ final class FoodProduct {
   /// Portion laut Packung bzw. eigenem Eintrag (g), z. B. 45 g für einen Riegel.
   final double? servingGrams;
   final String? servingText;
+
+  /// Menge für „+“: zuletzt gegessen (eigene), Packungsportion (Markenprodukte), sonst 100 g.
+  final double defaultGrams;
 
   /// Position für die Mahlzeit mit dieser Menge.
   final MealItem Function({double grams}) item;
@@ -116,6 +127,51 @@ final class ProductFilter {
 
 /// Produktsuche über eigene Lebensmittel, den BLS (offline) und Open Food Facts (online, Markenprodukte).
 abstract final class ProductSearch {
+  /// Vorschläge ohne Suchbegriff: einzelne Lebensmittel, die um diese Zeit (gleiche Mahlzeit) am häufigsten gegessen
+  /// wurden, mit der zuletzt gegessenen Menge; aufgefüllt mit dem Häufigsten der anderen Mahlzeiten. Wasser zählt nicht.
+  static List<MealItem> picks(
+    List<MealEntry> entries, {
+    required MealCategory category,
+    required CalendarDay today,
+    int lookbackDays = 60,
+    int limit = 8,
+  }) {
+    final start = today.adding(-lookbackDays);
+    ({int count, DateTime last, MealItem item}) merge(
+      ({int count, DateTime last, MealItem item})? old,
+      MealEntry entry,
+      MealItem item,
+    ) => old == null
+        ? (count: 1, last: entry.date, item: item)
+        : (
+            count: old.count + 1,
+            last: entry.date.isAfter(old.last) ? entry.date : old.last,
+            item: entry.date.isAfter(old.last) ? item : old.item,
+          );
+    final same = <String, ({int count, DateTime last, MealItem item})>{};
+    final other = <String, ({int count, DateTime last, MealItem item})>{};
+    for (final entry in entries) {
+      if (entry.day < start || entry.day > today) continue;
+      for (final item in entry.items) {
+        if (item.name.trim().isEmpty || item.grams <= 0 || FoodSearch.normalized(item.name) == 'wasser') continue;
+        final key = FoodSearch.normalized(item.name);
+        final groups = entry.category == category ? same : other;
+        groups[key] = merge(groups[key], entry, item);
+      }
+    }
+    int byUse(({int count, DateTime last, MealItem item}) a, ({int count, DateTime last, MealItem item}) b) {
+      final byCount = b.count.compareTo(a.count);
+      return byCount != 0 ? byCount : b.last.compareTo(a.last);
+    }
+
+    final ranked = [...(same.values.toList()..sort(byUse)), ...(other.values.toList()..sort(byUse))];
+    final seen = <String>{};
+    return [
+      for (final group in ranked)
+        if (seen.add(FoodSearch.normalized(group.item.name))) group.item,
+    ].take(limit).toList();
+  }
+
   /// Open Food Facts erst ab drei Zeichen (Suchanfragen sind dort auf etwa 10 je Minute begrenzt).
   static const onlineMinimumLength = 3;
 

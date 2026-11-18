@@ -82,4 +82,38 @@ void main() {
     expect(protein.every((product) => (product.per100g[Nutrient.protein] ?? 0) >= 15), isTrue);
     expect(ProductSearch.local('  ', own: own, filter: const ProductFilter()), isEmpty);
   });
+
+  test('Vorschläge: um diese Zeit Häufiges zuerst, mit der letzten Menge; Wasser zählt nicht', () {
+    final today = CalendarDay(2026, 11, 19);
+    MealItem food(String name, double grams) => MealItem(
+      name: name,
+      grams: grams,
+      source: MealItemSource.manual,
+      per100g: NutrientValues({Nutrient.kcal: 100}),
+    );
+    MealEntry entry(int daysAgo, MealCategory category, List<MealItem> items) {
+      final day = today.adding(-daysAgo);
+      return MealEntry(
+        day: day,
+        date: DateTime(day.year, day.month, day.day, 12),
+        category: category,
+        title: items.first.name,
+        items: items,
+      );
+    }
+
+    final entries = [
+      entry(3, MealCategory.lunch, [food('Skyr', 150), food('Wasser', 500)]),
+      entry(2, MealCategory.lunch, [food('Skyr', 200), food('Haferflocken', 60)]),
+      entry(1, MealCategory.lunch, [food('Banane', 120)]),
+      entry(1, MealCategory.dinner, [food('Nudeln', 125), food('Nudeln', 125)]),
+      entry(5, MealCategory.dinner, [food('Nudeln', 100)]),
+      entry(90, MealCategory.lunch, [food('Alt', 100)]),
+    ];
+    final picks = ProductSearch.picks(entries, category: MealCategory.lunch, today: today);
+    expect(picks.map((item) => item.name), ['Skyr', 'Banane', 'Haferflocken', 'Nudeln']);
+    expect(picks.first.grams, 200);
+    expect(FoodProduct.own(picks.first).defaultGrams, 200);
+    expect(ProductSearch.picks(entries, category: MealCategory.lunch, today: today, limit: 2), hasLength(2));
+  });
 }

@@ -485,21 +485,6 @@ final class NutritionController extends ChangeNotifier {
     }
   }
 
-  /// Position aus der Produktsuche: zum offenen Entwurf hinzufügen oder als neue Mahlzeit beginnen. Markenprodukte
-  /// merkt sich die App wie nach einem Scan (gleicher Schlüssel `barcode:…`).
-  Future<void> addItem(MealItem item) async {
-    await _work(() async {
-      if (item.barcode != null) await _meals.storeFood(item.copy());
-      final fresh = item.copy()..id = newUuid();
-      final existing = draft;
-      if (existing != null) {
-        existing.items = [...existing.items, fresh];
-      } else {
-        draft = MealDraft(title: fresh.name, category: category(_clock()), hint: '', items: [fresh]);
-      }
-    });
-  }
-
   Future<void> lookup(String barcode, List<StoredFood> foods) async {
     await _work(() async {
       final key = 'barcode:$barcode';

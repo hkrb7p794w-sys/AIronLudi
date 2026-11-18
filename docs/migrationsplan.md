@@ -419,6 +419,7 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Import von KI-Antworten nachsichtig (Namen statt IDs, englische Schlüssel, reparierbares JSON, Datei laden, fester Übernehmen-Knopf, Wege zum Plan) | erledigt |
 | Import von Wochenplänen als Markdown-Tabelle (.md-Datei), „Diese Woche“ nur für die laufende Woche | erledigt |
 | Heute entschlackt: Ringe für Schlaf, Erholung und Strain (0–21) mit Ampelfarben, Training heute mit Strain je Einheit, Bereiche ein-/ausblendbar (auch AI); weitere Sportarten (Bouldern, Klettern, Yoga, HIIT …); „Wochenplan importieren“ unter Training › Plan; eigene Makroziele (Gramm/Prozent, Ruhetage); Produktsuche (eigene, BLS, Open Food Facts) | erledigt |
+| Erfassen mit Suche zuerst: Vorschläge zur Mahlzeit, „+“ in den Korb, mehrere Lebensmittel auf einmal eintragen, andere Wege als Reiter | in PR |
 | Test auf echten Geräten: Widgets, Live-Aktivitäten, laufende Mitteilung, Wecker, Hintergrundabruf, Schnellaktionen (nur dort prüfbar, CI baut sie) | offen – durch den Nutzer |
 | Umstellung: `vars.DEPLOY_SIDESTORE` bzw. `vars.DEPLOY_ANDROID` auf `true`, dann ersetzt die Flutter-App die Swift- bzw. Kotlin-App (gleiche Bundle-/Application-ID) | offen – Entscheidung des Nutzers |
 | Später möglich: Android-Widgets mit Glance (Ringe, Balken, Konfiguration), Wiederholungen ± in der Android-Mitteilung | Idee |
