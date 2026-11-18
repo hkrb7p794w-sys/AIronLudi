@@ -1,7 +1,10 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:coach_core/coach_core.dart';
 import 'package:collection/collection.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,6 +16,8 @@ import 'package:share_plus/share_plus.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../gym/gym_screen.dart';
+import '../plan/my_week_screen.dart';
 
 /// Daten der App für Export und Prompts (Port von `ExportInput.make`).
 Future<CoachExportInput> loadExportInput(WidgetRef ref) async {
@@ -334,6 +339,11 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
   String? _error;
   bool _applied = false;
 
+  final _scroll = ScrollController();
+
+  /// Was beim letzten Übernehmen dabei war (für die Wege dorthin).
+  ({bool routines, bool schedule, bool notes, bool insights})? _appliedParts;
+
   @override
   void initState() {
     super.initState();
@@ -352,6 +362,7 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
 
   @override
   void dispose() {
+    _scroll.dispose();
     _text.dispose();
     super.dispose();
   }
@@ -372,6 +383,19 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
   static String _itemText(RoutineItem item) {
     final weight = item.weightKg == null ? '' : ', ${GermanFormat.number(item.weightKg!)} kg';
     return '${item.name}: ${item.sets} × ${item.lowerReps}–${item.upperReps}, Pause ${item.restSeconds} s$weight';
+  }
+
+  /// Antwort als Datei (z. B. aus Claude heruntergeladen oder über „Teilen“ gesichert): Text übernehmen und prüfen.
+  Future<void> _loadFile() async {
+    final files = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['md', 'txt', 'json', 'markdown'],
+    );
+    final path = files.isEmpty ? null : files.first.path;
+    if (path == null || !mounted) return;
+    final bytes = await File(path).readAsBytes();
+    _text.text = utf8.decode(bytes, allowMalformed: true);
+    _check();
   }
 
   void _check() {
@@ -407,6 +431,16 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
 
   void _apply(ImportPreview preview) {
     final settings = ref.read(coachSettingsProvider);
+    _appliedParts = (
+      routines:
+          _selection.replaceAllRoutines ||
+          preview.routines.any((routine) => _selection.choice(routine) != RoutineChoice.skip),
+      schedule: CoachImport.schedule(preview, selection: _selection, current: _currentSchedule) != null,
+      notes: _selection.notes.isNotEmpty,
+      insights:
+          preview.insights.any((insight) => _selection.insights.contains(insight.id)) ||
+          preview.dismiss.any(_selection.dismiss.contains),
+    );
     if (preview.routines.isNotEmpty) {
       final gym = settings.gym;
       gym.routines = CoachImport.routines(preview, selection: _selection, existing: gym.routines);
@@ -433,19 +467,41 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
       if (!listEquals(updated, settings.insights)) settings.insights = updated;
     }
     setState(() => _applied = true);
+    // Nach oben zu „Übernommen“ mit den Wegen zum Plan.
+    if (_scroll.hasClients) {
+      unawaited(_scroll.animateTo(0, duration: const Duration(milliseconds: 250), curve: Curves.easeOut));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final preview = _preview;
+    final canApply = preview != null && !_applied && CoachImport.hasChanges(preview, selection: _selection);
     return Scaffold(
       appBar: AppBar(title: const Text('KI-Antwort importieren')),
+      // Übernehmen bleibt sichtbar, auch wenn die Vorschau lang ist – sonst bleibt es leicht beim „Prüfen“.
+      bottomNavigationBar: preview == null || _applied
+          ? null
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: FilledButton.icon(
+                  onPressed: canApply ? () => _apply(preview) : null,
+                  icon: const Icon(Icons.download),
+                  label: Text(canApply ? 'Auswahl übernehmen' : 'Nichts ausgewählt'),
+                ),
+              ),
+            ),
       body: ListView(
+        controller: _scroll,
         padding: const EdgeInsets.only(bottom: 32),
         children: [
+          if (_applied) ..._appliedSections(),
           FormSection(
             header: 'Antwort der KI',
-            footer: 'Die ganze Antwort einfügen – die App sucht den Block ```ironludi … ``` darin.',
+            footer:
+                'Die ganze Antwort einfügen oder als Datei laden (z. B. aus Claude heruntergeladen). Die App findet den '
+                'Plan auch, wenn die KI vom Format abweicht – was sie übernimmt, siehst du vor dem Übernehmen.',
             children: [
               Padding(
                 padding: const EdgeInsets.all(12),
@@ -466,6 +522,12 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
                 },
               ),
               ListTile(
+                leading: const Icon(Icons.file_open_outlined),
+                title: const Text('Aus Datei laden'),
+                subtitle: const Text('.md, .txt oder .json'),
+                onTap: () => unawaited(_loadFile()),
+              ),
+              ListTile(
                 enabled: _text.text.trim().isNotEmpty,
                 leading: const Icon(Icons.verified_user_outlined),
                 title: const Text('Prüfen'),
@@ -481,6 +543,58 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
         ],
       ),
     );
+  }
+
+  /// Nach dem Übernehmen: was übernommen wurde und wo es zu finden ist.
+  List<Widget> _appliedSections() {
+    final parts = _appliedParts;
+    void open(Widget screen) => unawaited(Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen)));
+    return [
+      FormSection(
+        header: 'Übernommen',
+        children: [
+          const ListTile(
+            leading: Icon(Icons.check_circle, color: Colors.green),
+            title: Text(
+              'Übernommen',
+              style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
+            ),
+          ),
+          if (parts?.routines ?? false)
+            ListTile(
+              leading: const Icon(Icons.fitness_center),
+              title: const Text('Trainingspläne ansehen'),
+              subtitle: const Text('Training › Gym'),
+              trailing: const DisclosureChevron(),
+              onTap: () => open(const GymScreen()),
+            ),
+          if (parts?.schedule ?? false)
+            ListTile(
+              leading: const Icon(Icons.calendar_month),
+              title: Text(
+                _selection.scheduleScope == ScheduleScope.nextWeek
+                    ? 'Plan der nächsten Woche ansehen'
+                    : 'Wochenplan ansehen',
+              ),
+              subtitle: const Text('Training › Plan'),
+              trailing: const DisclosureChevron(),
+              onTap: () => open(const MyWeekScreen()),
+            ),
+          if (parts?.notes ?? false)
+            const ListTile(
+              leading: Icon(Icons.sticky_note_2_outlined),
+              title: Text('Hinweise'),
+              subtitle: Text('Heute › „Diese Woche, Ziele und Verlauf“'),
+            ),
+          if (parts?.insights ?? false)
+            const ListTile(
+              leading: Icon(Icons.auto_awesome),
+              title: Text('Empfehlungen'),
+              subtitle: Text('Heute › AI-Empfehlungen'),
+            ),
+        ],
+      ),
+    ];
   }
 
   List<Widget> _previewSections(ImportPreview preview) {
@@ -606,23 +720,10 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
         ),
       FormSection(
         footer: preview.isEmpty
-            ? 'Im Block war nichts, was die App übernehmen kann.'
+            ? 'Im Block war nichts, was die App übernehmen kann – die Gründe stehen unter „Geprüft von den Regeln“.'
             : 'Trainingspläne und Wochenplan lassen sich danach wie gewohnt bearbeiten; die Hinweise stehen unter '
                   '„Heute“ › „Diese Woche, Ziele und Verlauf“.',
-        children: [
-          if (_applied)
-            const ListTile(
-              leading: Icon(Icons.check_circle, color: Colors.green),
-              title: Text('Übernommen', style: TextStyle(color: Colors.green)),
-            )
-          else
-            ListTile(
-              enabled: CoachImport.hasChanges(preview, selection: _selection),
-              leading: const Icon(Icons.download),
-              title: const Text('Auswahl übernehmen', style: TextStyle(fontWeight: FontWeight.w600)),
-              onTap: () => _apply(preview),
-            ),
-        ],
+        children: const [],
       ),
     ];
   }
