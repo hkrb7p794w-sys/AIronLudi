@@ -8,6 +8,7 @@ import '../../data/settings/coach_settings.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/liquid.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
 import '../activities/activity_detail_screen.dart';
@@ -407,7 +408,7 @@ class _WeekTotalsSection extends StatelessWidget {
                   ],
                 ),
                 if (total.planned > 0)
-                  LinearProgressIndicator(
+                  LiquidProgressBar(
                     value: (total.actual / total.planned).clamp(0, 1).toDouble(),
                     color: total.sport.color,
                   ),

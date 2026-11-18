@@ -5,6 +5,7 @@ import 'package:aironludi/data/storage.dart';
 import 'package:aironludi/features/training/sleep_coach_screen.dart';
 import 'package:aironludi/features/training/training_pages.dart';
 import 'package:aironludi/services/providers.dart';
+import 'package:aironludi/ui/liquid.dart';
 import 'package:coach_core/coach_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,7 +20,7 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
     await tester.pumpAndSettle();
-    final container = ProviderScope.containerOf(tester.element(find.byType(CupertinoTabBar)));
+    final container = ProviderScope.containerOf(tester.element(find.byType(LiquidTabBar)));
     final today = CalendarDay.today();
     final metrics = container.read(metricsRepositoryProvider);
     for (var offset = 0; offset < 10; offset++) {
@@ -35,7 +36,7 @@ void main() {
     }
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pump();
-    await tester.tap(find.descendant(of: find.byType(CupertinoTabBar), matching: find.text('Training')));
+    await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Training')));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await tester.pumpAndSettle();
 

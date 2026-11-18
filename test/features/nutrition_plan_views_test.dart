@@ -4,8 +4,8 @@ import 'package:aironludi/features/nutrition/meal_share_views.dart';
 import 'package:aironludi/features/nutrition/nutrition_plan_views.dart';
 import 'package:aironludi/features/nutrition/weight_views.dart';
 import 'package:aironludi/services/providers.dart';
+import 'package:aironludi/ui/liquid.dart';
 import 'package:coach_core/coach_core.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -63,7 +63,7 @@ void main() {
   testWidgets('Gewichtsverlauf: Wägung eintragen zählt als Wochen-Check-in', (tester) async {
     await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
     await tester.pumpAndSettle();
-    await tester.tap(find.descendant(of: find.byType(CupertinoTabBar), matching: find.text('Ernährung')));
+    await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Ernährung')));
     await tester.pumpAndSettle();
     final link = find.text('Gewichtsverlauf');
     await tester.scrollUntilVisible(link, 200);
@@ -93,7 +93,7 @@ void main() {
   testWidgets('empfangene Mahlzeit: als neuer Eintrag ins Tagebuch', (tester) async {
     await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
     await tester.pumpAndSettle();
-    final container = ProviderScope.containerOf(tester.element(find.byType(CupertinoTabBar)));
+    final container = ProviderScope.containerOf(tester.element(find.byType(LiquidTabBar)));
     final meal = SharedMeal(title: 'Linsensuppe', items: [item('Linsen', 300, 110)]);
     unawaitedPush(tester, ReceivedMealScreen(preloaded: meal));
     await tester.pumpAndSettle();
@@ -109,5 +109,5 @@ void main() {
 }
 
 void unawaitedPush(WidgetTester tester, Widget page) {
-  Navigator.of(tester.element(find.byType(CupertinoTabBar))).push(MaterialPageRoute<void>(builder: (_) => page));
+  Navigator.of(tester.element(find.byType(LiquidTabBar))).push(MaterialPageRoute<void>(builder: (_) => page));
 }

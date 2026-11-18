@@ -11,6 +11,7 @@ import '../../services/ai/ai_client.dart';
 import '../../services/providers.dart';
 import '../../services/social/game_service.dart';
 import '../../ui/components.dart';
+import '../../ui/liquid.dart';
 import '../../ui/symbols.dart';
 import '../motivation/motivation_views.dart';
 import '../social/social_views.dart';
@@ -244,7 +245,7 @@ class _GameSectionState extends ConsumerState<GameSection> {
                 ),
                 Semantics(
                   label: 'Fortschritt zur nächsten Stufe: ${level.inLevel} von ${level.perLevel} Punkten',
-                  child: LinearProgressIndicator(value: level.perLevel == 0 ? 0 : level.inLevel / level.perLevel),
+                  child: LiquidProgressBar(value: level.perLevel == 0 ? 0 : level.inLevel / level.perLevel),
                 ),
                 if (!streak.activeToday && streak.current > 0)
                   Text(
@@ -509,7 +510,7 @@ class _ChallengeRow extends ConsumerWidget {
                     ),
                   ),
                   Expanded(
-                    child: LinearProgressIndicator(
+                    child: LiquidProgressBar(
                       value: (member.progress.clamp(0, top)) / top,
                       color: member.me ? Theme.of(context).colorScheme.primary : secondary,
                     ),

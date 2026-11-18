@@ -3,6 +3,7 @@ import 'package:aironludi/app/user_providers.dart';
 import 'package:aironludi/features/endurance/endurance_controller.dart';
 import 'package:aironludi/features/endurance/endurance_screens.dart';
 import 'package:aironludi/services/providers.dart';
+import 'package:aironludi/ui/liquid.dart';
 import 'package:coach_core/coach_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,8 +26,8 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
     await tester.pumpAndSettle();
-    final container = ProviderScope.containerOf(tester.element(find.byType(CupertinoTabBar)));
-    await tester.tap(find.descendant(of: find.byType(CupertinoTabBar), matching: find.text('Training')));
+    final container = ProviderScope.containerOf(tester.element(find.byType(LiquidTabBar)));
+    await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Training')));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await tester.pumpAndSettle();
 

@@ -6,8 +6,8 @@ import 'package:aironludi/features/health/body_battery_screen.dart';
 import 'package:aironludi/features/health/mobility_screen.dart';
 import 'package:aironludi/features/health/morning_report_views.dart';
 import 'package:aironludi/services/providers.dart';
+import 'package:aironludi/ui/liquid.dart';
 import 'package:coach_core/coach_core.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -21,12 +21,12 @@ Future<ProviderContainer> _start(WidgetTester tester) async {
   addTearDown(tester.view.reset);
   await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
   await tester.pumpAndSettle();
-  return ProviderScope.containerOf(tester.element(find.byType(CupertinoTabBar)));
+  return ProviderScope.containerOf(tester.element(find.byType(LiquidTabBar)));
 }
 
 Future<void> _push(WidgetTester tester, Widget screen) async {
   unawaited(
-    Navigator.of(tester.element(find.byType(CupertinoTabBar))).push(MaterialPageRoute<void>(builder: (_) => screen)),
+    Navigator.of(tester.element(find.byType(LiquidTabBar))).push(MaterialPageRoute<void>(builder: (_) => screen)),
   );
   await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 150)));
   await tester.pumpAndSettle();

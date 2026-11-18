@@ -2,7 +2,7 @@
 import 'package:aironludi/app/deep_links.dart';
 import 'package:aironludi/features/account/account_views.dart';
 import 'package:aironludi/features/settings/settings_screen.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:aironludi/ui/liquid.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,7 +16,7 @@ Future<ProviderContainer> _start(WidgetTester tester) async {
   addTearDown(tester.view.reset);
   await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
   await tester.pumpAndSettle();
-  return ProviderScope.containerOf(tester.element(find.byType(CupertinoTabBar)));
+  return ProviderScope.containerOf(tester.element(find.byType(LiquidTabBar)));
 }
 
 void main() {

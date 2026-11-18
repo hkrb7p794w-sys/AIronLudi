@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../ui/liquid.dart';
+
 /// iOS-Systemfarben wie in der Swift-App (UIKit-Standard, ohne eigene Akzentfarbe → `systemBlue`).
 /// Quelle: Apple Human Interface Guidelines, „Color“ (Systemfarben und Hintergründe für gruppierte Listen).
 @immutable
@@ -82,8 +84,9 @@ final class IOSColors {
   static IOSColors of(BuildContext context) => Theme.of(context).brightness == Brightness.dark ? dark : light;
 }
 
-/// Designsystem der App: sieht aus wie die Swift-App (SwiftUI-Standard auf iOS) – gruppierte Listen auf grauem
-/// Grund, Akzent `systemBlue`, iOS-Schriftgrößen, keine Material-Wellen (docs/decisions.md, 16.11.2026).
+/// Designsystem der App: „Clean Liquid Design“ (docs/decisions.md, 18.11.2026) – transluzente Glasflächen mit
+/// Lichtkante über einem ruhigen Hintergrund mit weichen Lichtflecken, große Radien, Pillen-Knöpfe, iOS-Schriftgrößen,
+/// Akzent `systemBlue`, keine Material-Wellen. Werte für Radien, Bewegung und Glas: `lib/ui/liquid.dart`.
 abstract final class AppTheme {
   static ThemeData light() => _theme(Brightness.light);
 
@@ -91,6 +94,10 @@ abstract final class AppTheme {
 
   static ThemeData _theme(Brightness brightness) {
     final ios = brightness == Brightness.dark ? IOSColors.dark : IOSColors.light;
+    final liquid = brightness == Brightness.dark ? LiquidTheme.dark : LiquidTheme.light;
+    final dark = brightness == Brightness.dark;
+    // Deckende Fläche für Menüs und Dialoge (ohne eigene Unschärfe), leicht kühl getönt wie das Glas.
+    final floating = dark ? const Color(0xF21A1E28) : const Color(0xF7FAFBFD);
     final scheme = ColorScheme(
       brightness: brightness,
       primary: ios.accent,
@@ -107,19 +114,18 @@ abstract final class AppTheme {
       onError: Colors.white,
       errorContainer: ios.red.withValues(alpha: 0.15),
       onErrorContainer: ios.red,
-      surface: ios.groupedBackground,
+      surface: liquid.base,
       onSurface: ios.label,
       onSurfaceVariant: ios.secondaryLabel,
-      surfaceContainerLowest: ios.secondaryGroupedBackground,
-      surfaceContainerLow: ios.secondaryGroupedBackground,
-      surfaceContainer: ios.secondaryGroupedBackground,
-      surfaceContainerHigh: brightness == Brightness.dark
-          ? ios.tertiaryGroupedBackground
-          : ios.secondaryGroupedBackground,
-      surfaceContainerHighest: ios.fill,
+      surfaceContainerLowest: liquid.glassFill,
+      surfaceContainerLow: liquid.glassFill,
+      surfaceContainer: liquid.glassFill,
+      surfaceContainerHigh: floating,
+      // Füllung für Felder, Spuren und Marken: transluzent, damit das Glas durchscheint.
+      surfaceContainerHighest: dark ? const Color(0x24FFFFFF) : const Color(0x143C4B66),
       surfaceTint: Colors.transparent,
-      outline: ios.opaqueSeparator,
-      outlineVariant: ios.opaqueSeparator,
+      outline: dark ? const Color(0x40FFFFFF) : const Color(0x333C4B66),
+      outlineVariant: dark ? const Color(0x1FFFFFFF) : const Color(0x1F3C4B66),
       shadow: Colors.black,
       scrim: Colors.black,
       inverseSurface: brightness == Brightness.dark ? Colors.white : const Color(0xFF1C1C1E),
@@ -128,34 +134,47 @@ abstract final class AppTheme {
     );
     final base = ThemeData(colorScheme: scheme, brightness: brightness, useMaterial3: true);
     final text = _textTheme(base.textTheme, ios);
-    const rowShape = RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10)));
-    const buttonShape = RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12)));
+    final cardShape = RoundedRectangleBorder(
+      borderRadius: LiquidRadii.cardAll,
+      side: BorderSide(color: liquid.edgeTop.withValues(alpha: liquid.edgeTop.a * 0.6), width: 1),
+    );
+    const buttonShape = StadiumBorder();
+    // Knöpfe leuchten beim Drücken sanft auf statt Tintenwellen.
+    final pressGlow = WidgetStateProperty.resolveWith<Color?>(
+      (states) => states.contains(WidgetState.pressed) ? Colors.white.withValues(alpha: dark ? 0.12 : 0.22) : null,
+    );
     const buttonText = TextStyle(fontSize: 17, fontWeight: FontWeight.w600, letterSpacing: -0.4);
     const plainButtonText = TextStyle(fontSize: 17, fontWeight: FontWeight.w400, letterSpacing: -0.4);
     return base.copyWith(
-      scaffoldBackgroundColor: ios.groupedBackground,
-      canvasColor: ios.groupedBackground,
+      extensions: [liquid],
+      // Seiten sind durchsichtig: den Hintergrund mit Lichtflecken malt der Seitenübergang (LiquidBackground).
+      scaffoldBackgroundColor: Colors.transparent,
+      canvasColor: liquid.base,
       textTheme: text,
       // Keine Tintenwellen: Tippen hebt nur leicht hervor, wie bei iOS.
       splashFactory: NoSplash.splashFactory,
       splashColor: Colors.transparent,
-      highlightColor: ios.label.withValues(alpha: 0.08),
+      highlightColor: ios.label.withValues(alpha: dark ? 0.08 : 0.05),
       hoverColor: Colors.transparent,
-      dividerColor: ios.separator,
+      dividerColor: liquid.track,
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
-          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.android: LiquidPageTransitionsBuilder(),
+          TargetPlatform.iOS: LiquidPageTransitionsBuilder(),
+          TargetPlatform.linux: LiquidPageTransitionsBuilder(),
+          TargetPlatform.macOS: LiquidPageTransitionsBuilder(),
+          TargetPlatform.windows: LiquidPageTransitionsBuilder(),
+          TargetPlatform.fuchsia: LiquidPageTransitionsBuilder(),
         },
       ),
       cupertinoOverrideTheme: CupertinoThemeData(
         brightness: brightness,
         primaryColor: ios.accent,
-        scaffoldBackgroundColor: ios.groupedBackground,
-        barBackgroundColor: ios.tabBar,
+        scaffoldBackgroundColor: liquid.base,
+        barBackgroundColor: liquid.glassFillStrong,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: ios.groupedBackground,
+        backgroundColor: Colors.transparent,
         foregroundColor: ios.accent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
@@ -166,12 +185,12 @@ abstract final class AppTheme {
         titleTextStyle: text.titleMedium?.copyWith(color: ios.label, fontWeight: FontWeight.w600),
       ),
       cardTheme: CardThemeData(
-        color: ios.secondaryGroupedBackground,
+        color: liquid.glassFill,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         shadowColor: Colors.transparent,
-        shape: rowShape,
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        shape: cardShape,
+        margin: const EdgeInsets.symmetric(horizontal: LiquidSpacing.page, vertical: 8),
       ),
       listTileTheme: ListTileThemeData(
         tileColor: Colors.transparent,
@@ -185,16 +204,16 @@ abstract final class AppTheme {
         horizontalTitleGap: 14,
         minLeadingWidth: 28,
       ),
-      dividerTheme: DividerThemeData(color: ios.separator, thickness: 0.5, space: 0.5),
+      dividerTheme: DividerThemeData(color: liquid.track, thickness: 0.5, space: 0.5),
       iconTheme: IconThemeData(color: ios.accent),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           shape: buttonShape,
           textStyle: buttonText,
           minimumSize: const Size(44, 50),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
           elevation: 0,
-        ),
+        ).copyWith(overlayColor: pressGlow, backgroundBuilder: _sheen),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -205,7 +224,7 @@ abstract final class AppTheme {
           elevation: 0,
           shadowColor: Colors.transparent,
           minimumSize: const Size(44, 44),
-        ),
+        ).copyWith(overlayColor: pressGlow),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         // SwiftUI `.bordered`: getönte Fläche statt Rahmen.
@@ -216,7 +235,8 @@ abstract final class AppTheme {
           foregroundColor: ios.accent,
           side: BorderSide.none,
           minimumSize: const Size(44, 44),
-        ),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        ).copyWith(overlayColor: pressGlow),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(textStyle: plainButtonText, foregroundColor: ios.accent),
@@ -225,11 +245,14 @@ abstract final class AppTheme {
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: ios.accent,
         foregroundColor: Colors.white,
-        elevation: 2,
-        shape: const CircleBorder(),
+        elevation: 0,
+        focusElevation: 0,
+        hoverElevation: 0,
+        highlightElevation: 0,
+        shape: const StadiumBorder(),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: ios.fill,
+        backgroundColor: dark ? const Color(0x1AFFFFFF) : const Color(0x99FFFFFF),
         selectedColor: ios.accent.withValues(alpha: 0.2),
         side: BorderSide.none,
         shape: const StadiumBorder(),
@@ -241,21 +264,22 @@ abstract final class AppTheme {
         style: ButtonStyle(
           backgroundColor: WidgetStateProperty.resolveWith(
             (states) => states.contains(WidgetState.selected)
-                ? (brightness == Brightness.dark ? const Color(0xFF636366) : Colors.white)
-                : ios.fill,
+                ? (dark ? const Color(0x47FFFFFF) : Colors.white)
+                : (dark ? const Color(0x14FFFFFF) : const Color(0x0F3C4B66)),
           ),
           foregroundColor: WidgetStatePropertyAll(ios.label),
           side: const WidgetStatePropertyAll(BorderSide.none),
-          shape: const WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
-          ),
+          shape: const WidgetStatePropertyAll(StadiumBorder()),
+          animationDuration: LiquidMotion.medium,
           textStyle: WidgetStatePropertyAll(text.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
           visualDensity: VisualDensity.compact,
         ),
       ),
       switchTheme: SwitchThemeData(
         trackColor: WidgetStateProperty.resolveWith(
-          (states) => states.contains(WidgetState.selected) ? ios.green : ios.fill,
+          (states) => states.contains(WidgetState.selected)
+              ? ios.green
+              : (dark ? const Color(0x33FFFFFF) : const Color(0x293C4B66)),
         ),
         thumbColor: const WidgetStatePropertyAll(Colors.white),
         trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
@@ -269,14 +293,14 @@ abstract final class AppTheme {
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: ios.accent,
-        linearTrackColor: ios.fill,
+        linearTrackColor: liquid.track,
         circularTrackColor: Colors.transparent,
-        linearMinHeight: 4,
-        borderRadius: const BorderRadius.all(Radius.circular(2)),
+        linearMinHeight: 6,
+        borderRadius: const BorderRadius.all(Radius.circular(3)),
       ),
       sliderTheme: SliderThemeData(
         activeTrackColor: ios.accent,
-        inactiveTrackColor: ios.fill,
+        inactiveTrackColor: liquid.track,
         thumbColor: Colors.white,
         trackHeight: 4,
         overlayColor: Colors.transparent,
@@ -293,47 +317,56 @@ abstract final class AppTheme {
         selectionHandleColor: ios.accent,
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: brightness == Brightness.dark ? const Color(0xFF2C2C2E) : const Color(0xFFF2F2F2),
+        backgroundColor: floating,
         surfaceTintColor: Colors.transparent,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(14))),
+        barrierColor: Colors.black.withValues(alpha: dark ? 0.45 : 0.22),
+        shape: RoundedRectangleBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(LiquidRadii.sheet)),
+          side: BorderSide(color: liquid.edgeTop.withValues(alpha: liquid.edgeTop.a * 0.5)),
+        ),
         titleTextStyle: text.titleMedium?.copyWith(fontWeight: FontWeight.w600),
         contentTextStyle: text.bodyMedium,
       ),
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: ios.groupedBackground,
+        backgroundColor: floating,
         surfaceTintColor: Colors.transparent,
         showDragHandle: true,
         dragHandleColor: ios.tertiaryLabel,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
+        dragHandleSize: const Size(36, 5),
+        modalBarrierColor: Colors.black.withValues(alpha: dark ? 0.45 : 0.2),
+        shape: RoundedRectangleBorder(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(LiquidRadii.sheet)),
+          side: BorderSide(color: liquid.edgeTop.withValues(alpha: liquid.edgeTop.a * 0.5)),
+        ),
       ),
       popupMenuTheme: PopupMenuThemeData(
-        color: brightness == Brightness.dark ? const Color(0xFF252525) : const Color(0xFFF9F9F9),
+        color: floating,
         surfaceTintColor: Colors.transparent,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+        elevation: 6,
+        shadowColor: liquid.shadow,
+        shape: const RoundedRectangleBorder(borderRadius: LiquidRadii.innerAll),
         textStyle: text.bodyLarge,
       ),
       menuTheme: MenuThemeData(
         style: MenuStyle(
-          backgroundColor: WidgetStatePropertyAll(
-            brightness == Brightness.dark ? const Color(0xFF252525) : const Color(0xFFF9F9F9),
-          ),
+          backgroundColor: WidgetStatePropertyAll(floating),
           surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
-          shape: const WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-          ),
+          shape: const WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: LiquidRadii.innerAll)),
         ),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: brightness == Brightness.dark ? const Color(0xFF2C2C2E) : const Color(0xFF1C1C1E),
+        backgroundColor: dark ? const Color(0xF22A2F3A) : const Color(0xF21C1F27),
         contentTextStyle: text.bodyMedium?.copyWith(color: Colors.white),
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+        elevation: 0,
+        shape: const StadiumBorder(),
       ),
       tabBarTheme: TabBarThemeData(
         labelColor: ios.accent,
         unselectedLabelColor: ios.secondaryLabel,
         indicatorColor: ios.accent,
-        dividerColor: ios.separator,
+        indicatorSize: TabBarIndicatorSize.label,
+        dividerColor: Colors.transparent,
       ),
       badgeTheme: BadgeThemeData(backgroundColor: ios.red, textColor: Colors.white),
       expansionTileTheme: ExpansionTileThemeData(
@@ -345,16 +378,33 @@ abstract final class AppTheme {
     );
   }
 
+  /// Glanz auf gefüllten Knöpfen: oben ein Hauch Weiß, wie Licht auf einer gewölbten Fläche.
+  static Widget _sheen(BuildContext context, Set<WidgetState> states, Widget? child) => DecoratedBox(
+    decoration: ShapeDecoration(
+      shape: const StadiumBorder(),
+      gradient: states.contains(WidgetState.disabled)
+          ? null
+          : LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.white.withValues(alpha: 0.22), Colors.white.withValues(alpha: 0)],
+              stops: const [0, 0.6],
+            ),
+    ),
+    child: child,
+  );
+
   /// Schriftgrößen von iOS (Dynamic Type „Groß“): Fließtext 17, Unterzeile 15, Fußnote 13, Beschriftung 12.
   static TextTheme _textTheme(TextTheme base, IOSColors ios) {
     TextStyle? style(TextStyle? from, double size, FontWeight weight, double spacing) =>
         from?.copyWith(fontSize: size, fontWeight: weight, letterSpacing: spacing, height: 1.25, color: ios.label);
     return base.copyWith(
-      displayLarge: style(base.displayLarge, 48, FontWeight.w700, 0.3),
-      displayMedium: style(base.displayMedium, 40, FontWeight.w700, 0.3),
-      displaySmall: style(base.displaySmall, 34, FontWeight.w700, 0.4),
-      headlineLarge: style(base.headlineLarge, 34, FontWeight.w700, 0.4),
-      headlineMedium: style(base.headlineMedium, 28, FontWeight.w700, 0.4),
+      // Große Zahlen und Titel eng gesetzt wie SF Pro Display.
+      displayLarge: style(base.displayLarge, 48, FontWeight.w700, -1.2),
+      displayMedium: style(base.displayMedium, 40, FontWeight.w700, -1),
+      displaySmall: style(base.displaySmall, 34, FontWeight.w700, -0.8),
+      headlineLarge: style(base.headlineLarge, 34, FontWeight.w700, -0.6),
+      headlineMedium: style(base.headlineMedium, 28, FontWeight.w700, -0.5),
       headlineSmall: style(base.headlineSmall, 22, FontWeight.w700, -0.3),
       titleLarge: style(base.titleLarge, 20, FontWeight.w600, -0.4),
       titleMedium: style(base.titleMedium, 17, FontWeight.w600, -0.4),

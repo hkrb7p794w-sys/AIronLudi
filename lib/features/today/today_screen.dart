@@ -12,6 +12,7 @@ import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/kpi_ring.dart';
 import '../../ui/large_title.dart';
+import '../../ui/liquid.dart';
 import '../../ui/platform_names.dart';
 import '../../ui/strain_card.dart';
 import '../activities/activity_detail_screen.dart';
@@ -268,7 +269,13 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                   ),
                 ],
               ),
-            if (snapshot != null) ..._sections(context, snapshot, settings, today, lastSync),
+            // Module erscheinen nacheinander mit einer weichen Feder.
+            if (snapshot != null)
+              for (final (index, section) in _sections(context, snapshot, settings, today, lastSync).indexed)
+                LiquidAppear(
+                  delay: Duration(milliseconds: 40 * index.clamp(0, 8)),
+                  child: section,
+                ),
             // Ohne geladene Tageswerte bleiben die Empfehlungen erreichbar.
             if (snapshot == null && settings.todayDashboard.shows(TodayModule.ai)) _aiSection(context, settings),
           ],

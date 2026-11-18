@@ -10,6 +10,7 @@ import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../services/widgets/widget_providers.dart';
 import '../../ui/components.dart';
+import '../../ui/liquid.dart';
 
 /// Live-Aktivitäten auf dem Sperrbildschirm an einem Ort: welche Bereiche (Gym, Ernährung) erscheinen dürfen, was die
 /// Karte der Einheit zeigt und ob die Erinnerung an Mahlzeiten dort statt als Mitteilung steht. Während einer Einheit
@@ -86,6 +87,13 @@ class _LockScreenSettingsScreenState extends ConsumerState<LockScreenSettingsScr
             FormSection(
               header: 'Ansicht der Gym-Einheit',
               children: [
+                // Vorschau der gewählten Ansicht mit Beispielwerten.
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+                  child: LiquidSwitcher(
+                    child: LiveActivityPreview(key: ValueKey(gym.liveActivityLayout), layout: gym.liveActivityLayout),
+                  ),
+                ),
                 RadioGroup<WorkoutActivityLayout>(
                   groupValue: gym.liveActivityLayout,
                   onChanged: (layout) {
@@ -122,6 +130,121 @@ class _LockScreenSettingsScreenState extends ConsumerState<LockScreenSettingsScr
           ),
           const SizedBox(height: 24),
         ],
+      ),
+    );
+  }
+}
+
+/// Vorschau der Live-Aktivität einer Gym-Einheit auf dem Sperrbildschirm (Beispielwerte). Das echte Widget bleibt
+/// nativ (ActivityKit bzw. Android-Mitteilung); die Vorschau zeigt nur, welche Teile die gewählte Ansicht enthält.
+class LiveActivityPreview extends StatelessWidget {
+  const LiveActivityPreview({super.key, required this.layout});
+
+  final WorkoutActivityLayout layout;
+
+  @override
+  Widget build(BuildContext context) {
+    // Sperrbildschirm-Karten sind immer dunkel – unabhängig vom Erscheinungsbild der App.
+    const label = TextStyle(fontSize: 13, color: Color(0x99FFFFFF), fontWeight: FontWeight.w500);
+    const accent = Color(0xFF30D158);
+    Widget control(String value, String unit) => Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0x1AFFFFFF),
+          borderRadius: LiquidRadii.innerAll,
+          border: Border.all(color: const Color(0x1FFFFFFF), width: 0.5),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.remove, size: 16, color: Colors.white70),
+            Expanded(
+              child: Text(
+                '$value $unit',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15),
+              ),
+            ),
+            const Icon(Icons.add, size: 16, color: Colors.white70),
+          ],
+        ),
+      ),
+    );
+    return Semantics(
+      label: 'Vorschau: ${layout.label}',
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: LiquidRadii.cardAll,
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xE61C2233), Color(0xF20B0E16)],
+          ),
+          border: Border.all(color: const Color(0x33FFFFFF), width: 1),
+          boxShadow: LiquidTheme.of(context).ambientShadow,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 12,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.fitness_center, size: 16, color: accent),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    layout.showsExercise ? 'Bankdrücken · Satz 2 von 4' : 'Satzpause',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15),
+                  ),
+                ),
+                const Text('Beispiel', style: label),
+              ],
+            ),
+            if (layout.showsTimer)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '1:30',
+                    style: LiquidText.kpi(context, size: layout.showsExercise ? 34 : 48).copyWith(color: Colors.white),
+                  ),
+                  const SizedBox(width: 10),
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 6),
+                    child: Text('Pause', style: label),
+                  ),
+                  const Spacer(),
+                  SizedBox(
+                    width: 90,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(3),
+                      child: const LinearProgressIndicator(
+                        value: 0.6,
+                        minHeight: 6,
+                        color: accent,
+                        backgroundColor: Color(0x26FFFFFF),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            if (layout.showsExercise) Row(spacing: 8, children: [control('80', 'kg'), control('8', 'Wdh')]),
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                gradient: LiquidGradients.linear(accent),
+                borderRadius: BorderRadius.circular(LiquidRadii.pill),
+              ),
+              child: const Text(
+                'Satz erledigt',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -815,3 +815,34 @@ Auf Wunsch des Nutzers; die Swift-App kennt nur einen Benutzer. Tests: `packages
 - **Symbole:** nach Art statt Emojis (Getränk, eiweißreich, fettreich, leicht, kohlenhydratreich). Die
   KI-Erfassung bleibt unverändert erreichbar.
 
+## 2026-11-18 – „Clean Liquid Design“ (löst „Design wie die Swift-App“ ab)
+
+- Auftrag des Nutzers: die ganze App durchgängig in einem cleanen Liquid Design (Glasflächen wie iOS/visionOS,
+  weiche Radien, fließende Bewegung). Das ersetzt die Entscheidung vom 16.11.2026, das SwiftUI-Standardaussehen
+  nachzubilden. Funktionen, Texte, Abläufe und Datenformate bleiben unverändert – es ändert sich nur die Darstellung.
+- Zentral in `lib/ui/liquid.dart` (Werte und Bausteine) und `AppTheme` (Material-Theme mit `LiquidTheme` als
+  Theme-Erweiterung), damit alle Seiten über die gemeinsamen Bausteine umgestellt werden statt einzeln:
+  - Hintergrund: ruhiger Verlauf mit vier weichen Lichtflecken (`LiquidBackground`), hell und dunkel. Seiten sind
+    durchsichtig; den Hintergrund malt der Seitenübergang (`LiquidPageTransitionsBuilder`, sonst der native von iOS)
+    und als Grundschicht `MaterialApp.builder`.
+  - Glas: `LiquidSurface`/`LiquidCard` – transluzente Füllung, Hintergrund-Unschärfe (`BackdropFilter.grouped` in
+    einer `BackdropGroup` je Seite, damit lange Listen nicht für jede Karte neu lesen), 1-px-Lichtkante als Verlauf,
+    sehr weicher Umgebungsschatten. „Kontrast erhöhen“ macht das Glas deckend. `FormSection` (über 500 Abschnitte)
+    und das Karten-Theme nutzen es, so wirkt jede Seite gleich.
+  - Radien 24 (Karten), 14 (innere Flächen), 28 (Sheets, Dialoge), Pillen für Knöpfe, Marken, Segmente und die
+    Tab-Auswahl.
+  - Status bleibt deterministisch und gleich eingeordnet (Ampel, Strain-Stufen, Makros); die Farben erscheinen als
+    leuchtende Verläufe in Ringen (`ProgressRing`, Bogenverlauf mit Glühen), Balken (`StrainBar`,
+    `LiquidProgressBar`) und Symbolen.
+  - Bewegung: Federkurve aus einer echten Federsimulation (`LiquidSpringCurve`); Ringe und Balken füllen sich, Module
+    unter „Heute“ erscheinen nacheinander, die Auswahl der Tab-Leiste gleitet. Bei „Bewegung reduzieren“ entfällt
+    alles (`LiquidMotion.of`). Keine endlos laufenden Animationen (Akku, Tests mit `pumpAndSettle`).
+  - Berührung: Karten, Ringe und Reiter sinken leicht ein und federn zurück (`LiquidPressable`, fängt keine Gesten
+    ab), Knöpfe leuchten beim Drücken auf, gefüllte Knöpfe haben einen Glanz.
+  - Tab-Leiste: schwebende Glas-Kapsel (`LiquidTabBar`) statt `CupertinoTabBar`, gleiche vier Reiter und Abzeichen.
+- Schrift bleibt die des Systems (SF Pro auf dem iPhone, Roboto unter Android); keine gebündelte Schrift (Größe,
+  Lizenzpflege). Kennzahlen mit gleich breiten Ziffern und engerer Laufweite (`LiquidText.kpi`), Labels dezent.
+- Neu: Vorschau der Live-Aktivität unter Einstellungen › Sperrbildschirm (`LiveActivityPreview`, Beispielwerte je
+  gewählter Ansicht). Die echten Widgets und Live-Aktivitäten bleiben nativ (Migrationsplan 4.2) und sind nicht Teil
+  dieser Umstellung.
+

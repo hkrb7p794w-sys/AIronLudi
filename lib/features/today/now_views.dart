@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/liquid.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
 import '../evidence/evidence_views.dart';
@@ -514,7 +515,7 @@ class WeeklyReviewSection extends StatelessWidget {
             spacing: 6,
             children: [
               Text(progress.text, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-              LinearProgressIndicator(
+              LiquidProgressBar(
                 value: progress.fraction.clamp(0, 1),
                 color: progress.fraction >= 1 ? Colors.green : null,
               ),

@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import 'components.dart';
+import 'liquid.dart';
 
 Color strainColor(StrainLevel level) => switch (level) {
   StrainLevel.rest => Colors.grey,
@@ -92,7 +93,7 @@ class StrainBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = strainColor(strain.level);
     final scale = math.max(strain.total, strain.typical * 1.6);
-    final track = Theme.of(context).colorScheme.surfaceContainerHighest;
+    final track = LiquidTheme.of(context).track;
     return Semantics(
       label:
           'Erledigt ${strain.done.round()} Punkte, geplant ${strain.planned.round()}, üblicher Tag '
@@ -102,42 +103,59 @@ class StrainBar extends StatelessWidget {
         builder: (context, constraints) {
           final width = constraints.maxWidth;
           double part(double value) => scale <= 0 ? 0 : value / scale * width;
-          return SizedBox(
-            height: 14,
-            child: Stack(
-              children: [
-                Container(
-                  decoration: BoxDecoration(color: track, borderRadius: BorderRadius.circular(7)),
-                ),
-                Positioned(
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  width: part(strain.total),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.35),
-                      borderRadius: BorderRadius.circular(7),
+          final glow = [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 10, spreadRadius: -2)];
+          // Füllung läuft mit einer Feder auf ihren Wert (Erscheinen und jede Änderung).
+          return TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: LiquidMotion.of(context, LiquidMotion.slow),
+            curve: LiquidMotion.settle,
+            builder: (context, progress, _) => SizedBox(
+              height: 14,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(color: track, borderRadius: BorderRadius.circular(7)),
+                  ),
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: part(strain.total) * progress,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(7),
+                      ),
                     ),
                   ),
-                ),
-                Positioned(
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  width: part(strain.done),
-                  child: Container(
-                    decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(7)),
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: part(strain.done) * progress,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LiquidGradients.linear(color),
+                        borderRadius: BorderRadius.circular(7),
+                        boxShadow: strain.done > 0 ? glow : null,
+                      ),
+                    ),
                   ),
-                ),
-                Positioned(
-                  left: math.min(part(strain.typical), width - 2),
-                  top: -2,
-                  bottom: -2,
-                  width: 2,
-                  child: Container(color: Theme.of(context).colorScheme.onSurface),
-                ),
-              ],
+                  Positioned(
+                    left: math.min(part(strain.typical), width - 2),
+                    top: -2,
+                    bottom: -2,
+                    width: 2,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        borderRadius: BorderRadius.circular(1),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },
