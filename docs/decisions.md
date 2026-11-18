@@ -764,3 +764,36 @@ Auf Wunsch des Nutzers; die Swift-App kennt nur einen Benutzer. Tests: `packages
   (bei „Diese Woche“ ab heute; vergangene Tage bleiben). Ein JSON-Block ändert weiterhin nur die genannten Tage, wie
   es die Export-Anleitung beschreibt; mit `"vollstaendig": true` ersetzt auch er alle Tage. Wochenpläne und Ausnahmen
   ab dieser Woche fallen wie bei jeder Änderung des dauerhaften Plans weg.
+
+## 2026-11-18 – „Heute“ entschlackt, Sportarten, Makroziele, Produktsuche
+
+- **Kennzahlen oben (`TodayKpis`):**
+  - **Schlaf:** Schlafwert der Uhr bzw. WHOOP (grün ab 80, gelb ab 60), sonst die Dauer gegen das Schlafziel.
+  - **Erholung:** WHOOP-Recovery bzw. Training Readiness (grün ab 67, gelb ab 34, wie bei WHOOP), sonst Body
+    Battery beim Aufwachen, sonst nur die Tagesampel. Die Farbe ist nie besser als die Tagesampel der App
+    (Regeln entscheiden).
+  - **Strain 0–21:** `21 × (1 − e^(−Punkte/91))` auf den Trainings-Stress-Punkten von „Meine Belastung heute“,
+    logarithmisch wie bei WHOOP. 100 Punkte (eine Stunde an der Schwelle) ≈ 14. WHOOP liefert den Tages-Strain zwar,
+    er gilt aber nur für WHOOP-Daten; die eigene Skala gilt für alle Quellen gleich und auch für einzelne Einheiten.
+    Farbe aus der Einordnung gegen den üblichen Tag; „hoch“ bei eingeschränkter Erholung ist rot.
+- **Bereiche (`TodayDashboard`, Schlüssel `coach.todayDashboard`):**
+  - Gespeichert werden die ausgeblendeten Bereiche; die Reihenfolge ist fest (Kennzahlen, Training, AI, Vorschläge …).
+  - Standardmäßig aus: Morning Report, Belastungs-Detailkarte, Nach dem Training, Motivation, Hinweise.
+  - Die AI-Empfehlungen lassen sich ganz ausblenden; Export und Import für externe KI bleiben in den Einstellungen.
+  - Der Morning Report bleibt unter Training › Gesundheit.
+- **Sportarten (`ActivityKind`):** feinere Einordnung aus Typ und Name, ohne das gespeicherte `ActivitySport` zu
+  ändern (Datenformat). Bouldern, Klettern, Yoga, HIIT, Rudern, Wandern & Co. zählen als Training, auch ohne Eintrag
+  im Plan; Gehen und Unbekanntes wie bisher nur, wenn geplant. Health: Klettern, Paddeln, Tanzen, Kampfsport und
+  Treppensteigen haben eigene Typen. Namen werden nur am Wortanfang erkannt („Abendrunde“ ist kein Lauf).
+- **Eigene Makroziele:** in Gramm oder Prozent, auf Wunsch eigene Werte für Ruhetage. Die Schutzgrenzen bleiben:
+  - nicht unter dem größten erlaubten Defizit bzw. der Energieverfügbarkeit (sonst Kohlenhydrate und Fett anteilig
+    angehoben);
+  - ohne Gewichtsziel kein Defizit;
+  - mindestens 20 % Fett;
+  - ohne Gewichtsziele (Schutzeinstellung) gilt die automatische Rechnung.
+  Jede Anpassung steht als Hinweis im Reiter Ernährung.
+- **Produktsuche:** eigene Lebensmittel und BLS sofort beim Tippen, Open Food Facts (`de.openfoodfacts.org`,
+  `cgi/search.pl`) erst nach 0,7 s Pause und ab drei Zeichen, je Suchbegriff gemerkt. Grund: Open Food Facts erlaubt
+  nur wenige Suchen je Minute. Filter nach Herkunft, „Viel Protein“ (≥ 15 g/100 g) und „Kalorienarm“
+  (≤ 100 kcal/100 g); Nährwerte je 100 g und je Portion. Übernommene Markenprodukte merkt sich die App wie nach einem
+  Scan.

@@ -55,6 +55,8 @@ void main() {
       ..enabled = true
       ..kind = CompanionKind.daisy
       ..name = 'Daisy';
+    // Motivation ist auf „Heute“ standardmäßig ausgeblendet („Heute anpassen“).
+    settings.todayDashboard = TodayDashboard()..set(TodayModule.motivation, visible: true);
     await tester.pump(const Duration(milliseconds: 100));
     // Sonntags steht der Wochenrückblick davor (`WeeklyReview.isDue`); die Liste baut nur, was sichtbar ist.
     await tester.scrollUntilVisible(find.byType(CompanionSection), 300, scrollable: find.byType(Scrollable).first);

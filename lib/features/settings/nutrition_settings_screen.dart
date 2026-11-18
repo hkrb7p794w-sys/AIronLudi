@@ -7,6 +7,7 @@ import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
 import 'lock_screen_settings.dart';
+import 'macro_goals_section.dart';
 import 'settings_sections.dart';
 
 /// Ziel, Ernährungsweise und Körperwerte für die Tagesziele. Leere Körperwerte = Werte aus Garmin.
@@ -166,6 +167,12 @@ class NutritionSettingsScreen extends ConsumerWidget {
                   onChanged: (number) => change((value) => value.fatSharePercent = number.roundToDouble()),
                 ),
             ],
+          ),
+          MacroGoalsSection(
+            nutrition: nutrition,
+            weightKilograms:
+                nutrition.weightKilograms ?? garmin?.weightKilograms ?? BodyProfile.fallback.weightKilograms,
+            change: change,
           ),
           FormSection(
             header: 'Erinnerungen an Mahlzeiten',

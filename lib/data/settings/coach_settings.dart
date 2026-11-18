@@ -40,6 +40,7 @@ final class CoachSettings extends ChangeNotifier {
     _weights = _store.read(SettingsKeys.weights, (json) => listStrict(json, WeightEntry.fromJson), <WeightEntry>[]);
     _sleep = _store.read(SettingsKeys.sleep, SleepSettings.fromJson, SleepSettings());
     _healthDashboard = _store.read(SettingsKeys.healthDashboard, HealthDashboard.fromJson, HealthDashboard());
+    _todayDashboard = _store.read(SettingsKeys.todayDashboard, TodayDashboard.fromJson, TodayDashboard());
     _sentWorkouts = _store.read(SettingsKeys.sentWorkouts, SentWorkouts.fromJson, SentWorkouts());
     _mobility = _store.read(SettingsKeys.mobility, MobilitySettings.fromJson, MobilitySettings());
     _sources = _store.read(SettingsKeys.sources, SourcePreferences.fromJson, SourcePreferences());
@@ -345,6 +346,15 @@ final class CoachSettings extends ChangeNotifier {
   set healthDashboard(HealthDashboard v) {
     _healthDashboard = v;
     _changed(SettingsKeys.healthDashboard, v.toJson());
+  }
+
+  late TodayDashboard _todayDashboard;
+
+  /// Bereiche auf „Heute“ (ein- und ausblendbar, z. B. die AI-Empfehlungen).
+  TodayDashboard get todayDashboard => _todayDashboard;
+  set todayDashboard(TodayDashboard v) {
+    _todayDashboard = v;
+    _changed(SettingsKeys.todayDashboard, v.toJson());
   }
 
   late SentWorkouts _sentWorkouts;

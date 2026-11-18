@@ -75,6 +75,7 @@ void main() {
       ),
     ];
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('AI-Empfehlungen'), 300, scrollable: find.byType(Scrollable).first);
     expect(find.text('AI-Empfehlungen'), findsOneWidget);
     expect(find.text('1 neu'), findsOneWidget);
 

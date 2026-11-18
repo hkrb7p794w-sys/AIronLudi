@@ -6,9 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/day_change.dart';
 import '../../data/repositories/gym_repository.dart';
+import '../../data/settings/coach_settings.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/kpi_ring.dart';
 import '../../ui/large_title.dart';
 import '../../ui/platform_names.dart';
 import '../../ui/strain_card.dart';
@@ -22,11 +24,13 @@ import '../evidence/evidence_views.dart';
 import '../game/game_views.dart';
 import '../gym/gym_providers.dart';
 import '../gym/gym_screen.dart';
+import '../health/health_screen.dart';
 import '../health/morning_report_views.dart';
 import '../plan/my_week_screen.dart';
 import '../settings/settings_screen.dart';
 import 'now_views.dart';
 import 'today_controller.dart';
+import 'today_dashboard_editor.dart';
 import 'week_overview.dart';
 
 /// Tagesempfehlung, Wochen-Soll/Ist und Rennvorbereitung (Port von `TodayView.swift`).
@@ -205,6 +209,12 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                 .push(MaterialPageRoute<void>(fullscreenDialog: true, builder: (_) => ChatScreen(snapshot: snapshot))),
           ),
           IconButton(
+            tooltip: 'Heute anpassen',
+            icon: const Icon(Icons.tune),
+            onPressed: () =>
+                Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const TodayDashboardEditor())),
+          ),
+          IconButton(
             tooltip: 'Einstellungen',
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => Navigator.of(
@@ -246,39 +256,6 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                     ),
                 ],
               ),
-            // Empfehlungen aus Regeln und KI (früher eigener Reiter „AI“).
-            FormSection(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.auto_awesome),
-                  title: const Text('AI-Empfehlungen'),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    spacing: 6,
-                    children: [
-                      if (InsightInbox.unreadCount(settings.insights, now: DateTime.now()) case final unread
-                          when unread > 0)
-                        CoachChip(text: '$unread neu', color: theme.colorScheme.primary),
-                      const DisclosureChevron(),
-                    ],
-                  ),
-                  subtitle: switch (_controller.notePoints.firstOrNull) {
-                    final point? => Text(point, maxLines: 2, overflow: TextOverflow.ellipsis),
-                    null => null,
-                  },
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => AIScreen(
-                        coachNote: ListenableBuilder(
-                          listenable: _controller,
-                          builder: (_, _) => _CoachNoteSection(controller: _controller),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
             if (!model.garmin.isConfigured && !model.health.isEnabled && !model.isWhoopConnected)
               FormSection(
                 children: [
@@ -291,113 +268,215 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                   ),
                 ],
               ),
-            if (snapshot != null) ...[
-              DailyStrainCard(strain: _strain(snapshot)),
-              // Morning Report bis 12 Uhr ganz oben; danach über „Gesundheit“ im Reiter Training.
-              if (DateTime.now().hour < 12)
-                MorningReportCard(
-                  report: MorningReportBuilder.make(
-                    settings: settings,
-                    days: _days,
-                    activities: _activities,
-                    focus: snapshot.focus,
-                  ),
-                  focus: snapshot.focus,
-                ),
-              if (snapshot.focus case final focus?)
-                NowSection(
-                  snapshot: snapshot,
-                  focus: focus,
-                  openDone: (item) => _doneScreen(item, snapshot.plan.today),
-                ),
-              MissedSessionSection(week: snapshot.sessions, onSaved: _reload),
-              SuggestionsSection(suggestions: _suggestions(snapshot)),
-              PostWorkoutSection(
-                activities: [
-                  for (final activity in _activities)
-                    if (activity.day == today) activity,
-                ],
-                sessions: snapshot.sessions,
-              ),
-              if (settings.profile.mode == ProfileMode.season)
-                if (snapshot.today case final plan?) SeasonOpenSections(today: plan),
-              if (WeeklyReview.isDue(today))
-                if (snapshot.focus case final focus?) ...[
-                  WeeklyReviewSection(
-                    review: WeeklyReview.make(
-                      progress: focus.progress,
-                      week: snapshot.sessions,
-                      activities: _activities,
-                      gym: _gymItems,
-                      today: today,
-                    ),
-                  ),
-                  SuggestionsSection(suggestions: _nextWeek(snapshot), title: 'Vorschlag für nächste Woche'),
-                ],
-              _DoneTodaySection(
-                activities: [
-                  for (final activity in _activities)
-                    if (activity.day == today) activity,
-                ],
-                gym: [
-                  for (final record in _gym)
-                    if (record.session.day == today) record,
-                ],
-              ),
-              MotivationSections(snapshot: snapshot, activities: _activities, gym: _gym, showsLeague: false),
-              TodayHintsSection(snapshot: snapshot, activities: _activities, days: _days),
-              FormSection(
-                header: 'Woche',
-                footer: lastSync == null ? null : 'Letzter Abruf ${_relative(lastSync)}',
-                children: [
-                  InkWell(
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => WeekOverviewScreen(
-                          snapshot: snapshot,
-                          activities: _activities,
-                          gymDays: {for (final record in _gym) record.session.day},
-                        ),
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              spacing: 6,
-                              children: [
-                                if (snapshot.focus?.progress case final progress?) ...[
-                                  Text(progress.text, style: const TextStyle(fontWeight: FontWeight.w600)),
-                                  LinearProgressIndicator(
-                                    value: progress.fraction.clamp(0, 1),
-                                    color: progress.fraction >= 1 ? Colors.green : null,
-                                  ),
-                                ],
-                                const Row(
-                                  spacing: 6,
-                                  children: [
-                                    Icon(Icons.calendar_month_outlined, size: 18),
-                                    Flexible(child: Text('Diese Woche, Ziele und Verlauf')),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          const DisclosureChevron(),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+            if (snapshot != null) ..._sections(context, snapshot, settings, today, lastSync),
+            // Ohne geladene Tageswerte bleiben die Empfehlungen erreichbar.
+            if (snapshot == null && settings.todayDashboard.shows(TodayModule.ai)) _aiSection(context, settings),
           ],
         ),
       ),
     );
+  }
+
+  /// Empfehlungen aus Regeln und KI (früher eigener Reiter „AI“), ganz ausblendbar.
+  Widget _aiSection(BuildContext context, CoachSettings settings) {
+    final theme = Theme.of(context);
+    void open(Widget screen) => unawaited(Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen)));
+    return FormSection(
+      children: [
+        ListTile(
+          leading: const Icon(Icons.auto_awesome),
+          title: const Text('AI-Empfehlungen'),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: 6,
+            children: [
+              if (InsightInbox.unreadCount(settings.insights, now: DateTime.now()) case final unread when unread > 0)
+                CoachChip(text: '$unread neu', color: theme.colorScheme.primary),
+              const DisclosureChevron(),
+            ],
+          ),
+          subtitle: switch (_controller.notePoints.firstOrNull) {
+            final point? => Text(point, maxLines: 2, overflow: TextOverflow.ellipsis),
+            null => null,
+          },
+          onTap: () => open(
+            AIScreen(
+              coachNote: ListenableBuilder(
+                listenable: _controller,
+                builder: (_, _) => _CoachNoteSection(controller: _controller),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Bereiche in fester Reihenfolge, je nach Auswahl unter „Heute anpassen“: oben Schlaf, Erholung und Strain,
+  /// darunter das Training des Tages; alles Weitere lässt sich zuschalten.
+  List<Widget> _sections(
+    BuildContext context,
+    TodaySnapshot snapshot,
+    CoachSettings settings,
+    CalendarDay today,
+    DateTime? lastSync,
+  ) {
+    final dashboard = settings.todayDashboard;
+    bool shows(TodayModule module) => dashboard.shows(module);
+    final theme = Theme.of(context);
+    final strain = _strain(snapshot);
+    final todaysActivities = [
+      for (final activity in _activities)
+        if (activity.day == today) activity,
+    ];
+    void open(Widget screen) => unawaited(Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen)));
+    return [
+      if (shows(TodayModule.kpis))
+        FormSection(
+          footer: snapshot.isFromYesterday ? 'Schlaf und Erholung von gestern – heute noch keine Werte.' : null,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: KpiRing(
+                      kpi: TodayKpis.sleep(snapshot.metrics, targetHours: settings.sleep.targetHours),
+                      onTap: () => open(const HealthScreen()),
+                    ),
+                  ),
+                  Expanded(
+                    child: KpiRing(
+                      kpi: TodayKpis.recovery(
+                        snapshot.metrics,
+                        snapshot.metrics == null ? null : snapshot.recommendation.level,
+                      ),
+                      onTap: () => open(const HealthScreen()),
+                    ),
+                  ),
+                  Expanded(
+                    child: KpiRing(
+                      kpi: TodayKpis.strain(strain),
+                      onTap: () => showModalBottomSheet<void>(
+                        context: context,
+                        showDragHandle: true,
+                        builder: (_) => DailyStrainDetails(strain: strain),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      if (shows(TodayModule.training)) ...[
+        if (snapshot.focus case final focus?)
+          NowSection(snapshot: snapshot, focus: focus, openDone: (item) => _doneScreen(item, snapshot.plan.today)),
+        MissedSessionSection(week: snapshot.sessions, onSaved: _reload),
+        if (settings.profile.mode == ProfileMode.season)
+          if (snapshot.today case final plan?) SeasonOpenSections(today: plan),
+        _DoneTodaySection(
+          activities: todaysActivities,
+          gym: [
+            for (final record in _gym)
+              if (record.session.day == today) record,
+          ],
+          thresholds: ref.read(enduranceControllerProvider).plan?.request.thresholds ?? const AthleteThresholds(),
+        ),
+      ],
+      if (shows(TodayModule.ai)) _aiSection(context, settings),
+      if (shows(TodayModule.suggestions)) SuggestionsSection(suggestions: _suggestions(snapshot)),
+      // Morning Report bis 12 Uhr; danach über „Gesundheit“ im Reiter Training.
+      if (shows(TodayModule.morningReport) && DateTime.now().hour < 12)
+        MorningReportCard(
+          report: MorningReportBuilder.make(
+            settings: settings,
+            days: _days,
+            activities: _activities,
+            focus: snapshot.focus,
+          ),
+          focus: snapshot.focus,
+        ),
+      if (shows(TodayModule.strainDetails)) DailyStrainCard(strain: strain),
+      if (shows(TodayModule.postWorkout)) PostWorkoutSection(activities: todaysActivities, sessions: snapshot.sessions),
+      if (shows(TodayModule.weeklyReview) && WeeklyReview.isDue(today))
+        if (snapshot.focus case final focus?) ...[
+          WeeklyReviewSection(
+            review: WeeklyReview.make(
+              progress: focus.progress,
+              week: snapshot.sessions,
+              activities: _activities,
+              gym: _gymItems,
+              today: today,
+            ),
+          ),
+          SuggestionsSection(suggestions: _nextWeek(snapshot), title: 'Vorschlag für nächste Woche'),
+        ],
+      if (shows(TodayModule.motivation))
+        MotivationSections(snapshot: snapshot, activities: _activities, gym: _gym, showsLeague: false),
+      if (shows(TodayModule.hints)) TodayHintsSection(snapshot: snapshot, activities: _activities, days: _days),
+      if (shows(TodayModule.week))
+        FormSection(
+          header: 'Woche',
+          footer: lastSync == null ? null : 'Letzter Abruf ${_relative(lastSync)}',
+          children: [
+            InkWell(
+              onTap: () => open(
+                WeekOverviewScreen(
+                  snapshot: snapshot,
+                  activities: _activities,
+                  gymDays: {for (final record in _gym) record.session.day},
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+                child: Row(
+                  spacing: 14,
+                  children: [
+                    if (snapshot.focus?.progress case final progress?)
+                      ProgressRing(
+                        fraction: progress.fraction,
+                        color: progress.fraction >= 1
+                            ? Colors.green
+                            : progress.fraction >= 0.5
+                            ? Colors.orange
+                            : theme.colorScheme.primary,
+                        size: 52,
+                        stroke: 6,
+                        child: Text(
+                          '${(progress.fraction.clamp(0, 9.99) * 100).round()} %',
+                          style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 4,
+                        children: [
+                          if (snapshot.focus?.progress case final progress?)
+                            Text(progress.text, style: const TextStyle(fontWeight: FontWeight.w600)),
+                          const Text('Diese Woche, Ziele und Verlauf'),
+                        ],
+                      ),
+                    ),
+                    const DisclosureChevron(),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Center(
+          child: TextButton.icon(
+            icon: const Icon(Icons.tune, size: 18),
+            label: const Text('Heute anpassen'),
+            onPressed: () => open(const TodayDashboardEditor()),
+          ),
+        ),
+      ),
+    ];
   }
 
   static String _relative(DateTime date) {
@@ -455,12 +534,14 @@ class _CoachNoteSection extends ConsumerWidget {
   }
 }
 
-/// Heute erledigt, aus dem gemeinsamen Verlauf: Garmin, Health, Nachgetragenes und Gym (Doppelte einmal).
+/// Heute erledigt, aus dem gemeinsamen Verlauf: Garmin, WHOOP, Health, Nachgetragenes und Gym (Doppelte einmal),
+/// je mit Dauer, Puls und Strain.
 class _DoneTodaySection extends StatelessWidget {
-  const _DoneTodaySection({required this.activities, required this.gym});
+  const _DoneTodaySection({required this.activities, required this.gym, required this.thresholds});
 
   final List<GarminActivity> activities;
   final List<StoredGymSession> gym;
+  final AthleteThresholds thresholds;
 
   @override
   Widget build(BuildContext context) {
@@ -475,6 +556,12 @@ class _DoneTodaySection extends StatelessWidget {
         for (final entry in entries)
           FeedRow(
             entry: entry,
+            // Strain der Einheit auf derselben Skala wie oben (0–21).
+            extra: switch (entry.activity) {
+              final activity? =>
+                'Strain ${GermanFormat.decimal(TodayKpis.strainOf(TrainingLoad.actual(activity, thresholds)))}',
+              null => null,
+            },
             onTap: () {
               final Widget? screen = switch ((entry.activity, entry.gym)) {
                 (final activity?, _) => ActivityDetailScreen(activity: activity),

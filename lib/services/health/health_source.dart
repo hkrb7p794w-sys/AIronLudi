@@ -218,6 +218,14 @@ final class PluginHealthSource implements HealthSource {
     HealthWorkoutActivityType.MIND_AND_BODY => 'yoga',
     HealthWorkoutActivityType.ROWING || HealthWorkoutActivityType.ROWING_MACHINE => 'indoor_rowing',
     HealthWorkoutActivityType.ELLIPTICAL => 'elliptical',
+    // Bouldern landet bei Apple Health und Health Connect unter Klettern.
+    HealthWorkoutActivityType.CLIMBING || HealthWorkoutActivityType.ROCK_CLIMBING => 'rock_climbing',
+    HealthWorkoutActivityType.PADDLE_SPORTS => 'paddling',
+    HealthWorkoutActivityType.DANCING => 'dance',
+    HealthWorkoutActivityType.BOXING ||
+    HealthWorkoutActivityType.KICKBOXING ||
+    HealthWorkoutActivityType.MARTIAL_ARTS => 'boxing',
+    HealthWorkoutActivityType.STAIR_CLIMBING || HealthWorkoutActivityType.STAIR_CLIMBING_MACHINE => 'stair_climbing',
     _ => 'other',
   };
 }

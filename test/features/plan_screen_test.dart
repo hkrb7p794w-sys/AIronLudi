@@ -2,6 +2,7 @@
 import 'dart:io';
 
 import 'package:aironludi/data/storage.dart';
+import 'package:aironludi/features/ai/coach_exchange.dart';
 import 'package:aironludi/features/plan/my_week_screen.dart';
 import 'package:aironludi/features/plan/plan_screen.dart';
 import 'package:aironludi/services/providers.dart';
@@ -80,6 +81,16 @@ void main() {
       ),
     );
     expect(find.byType(MyWeekScreen), findsOneWidget);
+
+    // Ganz oben: Wochenplan importieren öffnet direkt den Import.
+    await tester.tap(find.text('Wochenplan importieren'));
+    await tester.pumpAndSettle();
+    expect(find.byType(CoachImportScreen), findsOneWidget);
+    Navigator.of(tester.element(find.byType(CoachImportScreen))).pop();
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('Mo'), 200, scrollable: find.byType(Scrollable).first);
     expect(find.text('Mo'), findsOneWidget);
 
     await tester.ensureVisible(find.text('Ausführlich').first);

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:collection/collection.dart';
 
 import '../calendar/calendar_day.dart';
+import '../garmin/activity_kind.dart';
 import '../garmin/garmin_activity.dart';
 import '../profile/plan_adjustments.dart';
 import '../profile/week_schedule.dart';
@@ -94,9 +95,11 @@ abstract final class ScoreRules {
   /// Ab diesem Anteil zählt eine Woche für die Serie.
   static const streakShare = 0.8;
 
-  /// Zählt die Aktivität als Training? Spaziergänge und Ähnliches nur, wenn an dem Tag so etwas geplant war.
+  /// Zählt die Aktivität als Training? Spaziergänge und Unbekanntes nur, wenn an dem Tag so etwas geplant war;
+  /// Bouldern, Yoga, HIIT & Co. ([ActivityKind.workout]) immer.
   static bool countsAsTraining(GarminActivity activity, {required bool otherIsPlanned}) =>
-      (activity.durationSeconds ?? 0) >= 900 && (activity.sport != ActivitySport.other || otherIsPlanned);
+      (activity.durationSeconds ?? 0) >= 900 &&
+      (activity.sport != ActivitySport.other || otherIsPlanned || ActivityKind.ofActivity(activity).workout);
 
   static int points(WeekAdherence week) => week.done * pointsPerSession + (week.isComplete ? completeWeekBonus : 0);
 

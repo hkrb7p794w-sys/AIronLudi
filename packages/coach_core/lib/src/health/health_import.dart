@@ -327,6 +327,10 @@ abstract final class HealthImport {
     'yoga' => 'Yoga',
     'indoor_rowing' => 'Rudern',
     'elliptical' => 'Crosstrainer',
+    'rock_climbing' || 'indoor_climbing' => 'Klettern',
+    'bouldering' => 'Bouldern',
+    'paddling' => 'Paddeln',
+    'dance' => 'Tanzen',
     _ => 'Training',
   };
 
