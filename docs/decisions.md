@@ -798,6 +798,23 @@ Auf Wunsch des Nutzers; die Swift-App kennt nur einen Benutzer. Tests: `packages
   (≤ 100 kcal/100 g); Nährwerte je 100 g und je Portion. Übernommene Markenprodukte merkt sich die App wie nach einem
   Scan.
 
+## 2026-11-18 – Erfassen mit Suche zuerst
+
+- Rückmeldung mit Screenshot einer anderen App: Die Lebensmittelsuche soll die Startansicht beim Erfassen sein.
+  Umgesetzt als eigene Gestaltung, keine Nachbildung:
+  - „+“ im Reiter Ernährung öffnet die Suche; Scannen, KI (Foto/Text), Nur kcal und Manuell sind Reiter darüber.
+  - Ohne Suchbegriff: „Vorschläge · Mahlzeit“ (`ProductSearch.picks`) und „Zuletzt verwendet“.
+  - Jede Zeile hat eine Kurzzeile mit kcal, P, K, F und der Menge.
+  - „+“ legt mit der üblichen Menge in den Korb; Antippen öffnet die Mengenwahl.
+  - Unten Korb mit Summe, Suchfeld und „Eintragen (n)“; oben Mahlzeit und Tageskalorien einschließlich Korb.
+- **Vorschläge:** einzelne Lebensmittel, die zur gewählten Mahlzeit in den letzten 60 Tagen am häufigsten gegessen
+  wurden, mit der zuletzt gegessenen Menge; aufgefüllt mit dem Häufigsten der anderen Mahlzeiten. Wasser zählt nicht.
+- **Übliche Menge für „+“:** bei eigenen Lebensmitteln die zuletzt gegessene Menge, bei Markenprodukten die
+  Packungsportion, sonst 100 g.
+- **Eintragen:** direkt als Mahlzeit, mit „Rückgängig“ wie bei der Schnell-Leiste, ohne den Editor.
+- **Symbole:** nach Art statt Emojis (Getränk, eiweißreich, fettreich, leicht, kohlenhydratreich). Die
+  KI-Erfassung bleibt unverändert erreichbar.
+
 ## 2026-11-18 – „Clean Liquid Design“ (löst „Design wie die Swift-App“ ab)
 
 - Auftrag des Nutzers: die ganze App durchgängig in einem cleanen Liquid Design (Glasflächen wie iOS/visionOS,

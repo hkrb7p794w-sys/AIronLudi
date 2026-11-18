@@ -343,7 +343,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
             child: FloatingActionButton(
               tooltip: 'Erfassen',
               shape: const CircleBorder(),
-              onPressed: _showCapture,
+              onPressed: _showLogger,
               child: const Icon(Icons.add, size: 32),
             ),
           ),
@@ -376,7 +376,38 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     );
   }
 
-  /// Erfassen: Foto und Text zusammen, darunter Barcode, manuell und „Nur Kalorien“.
+  /// Erfassen, Suche zuerst: Vorschläge zur Mahlzeit, Korb mit „+“, Eintragen in einem Schritt. Die anderen Wege
+  /// (Scannen, KI mit Foto/Text, Nur kcal, Manuell) stehen dort als Reiter.
+  Future<void> _showLogger() async {
+    final category = NutritionController.category(DateTime.now());
+    final result = await Navigator.of(context).push<FoodLogResult>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => ProductSearchScreen(
+          own: [for (final food in _foods) ?food.item],
+          picks: ProductSearch.picks(MealRepository.entries(_meals), category: category, today: _controller.day),
+          category: category,
+          eaten: _controller.totals,
+          targets: _controller.targets?.values,
+        ),
+      ),
+    );
+    if (!mounted) return;
+    switch (result) {
+      case FoodLogItems(:final items, :final category):
+        final names = items.map((item) => item.name).toList();
+        final title = names.length <= 2 ? names.join(', ') : '${names.take(2).join(', ')} +${names.length - 2}';
+        await _after(_controller.log(title: title, category: category, items: items));
+      case FoodLogOther(other: null):
+        await _showCapture();
+      case FoodLogOther(:final other?):
+        await _handleOther(other);
+      case null:
+        await _reload();
+    }
+  }
+
+  /// KI-Erfassung: Foto und Text zusammen, darunter Barcode, manuell und „Nur Kalorien“.
   Future<void> _showCapture() async {
     final result = await Navigator.of(context).push<CaptureResult>(
       MaterialPageRoute(fullscreenDialog: true, builder: (_) => CaptureScreen(shortcuts: _captureShortcuts)),
@@ -386,35 +417,33 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
       case CaptureAnalyze(:final text, :final photo):
         await _controller.analyze(text, photo: photo, foods: _foods);
         await _reload();
-      case CaptureChoose(other: CaptureOther.manual):
+      case CaptureChoose(:final other):
+        await _handleOther(other);
+      case null:
+        await _reload();
+    }
+  }
+
+  Future<void> _handleOther(CaptureOther other) async {
+    switch (other) {
+      case CaptureOther.manual:
         _controller.newManualDraft();
-      case CaptureChoose(other: CaptureOther.search):
-        final item = await Navigator.of(context).push<MealItem>(
-          MaterialPageRoute(
-            fullscreenDialog: true,
-            builder: (_) => ProductSearchScreen(own: [for (final food in _foods) ?food.item]),
-          ),
-        );
-        if (item != null) {
-          await _controller.addItem(item);
-          await _reload();
-        }
-      case CaptureChoose(other: CaptureOther.barcode):
+      case CaptureOther.search:
+        await _showLogger();
+      case CaptureOther.barcode:
         final code = await Navigator.of(context)
             .push<String>(MaterialPageRoute(fullscreenDialog: true, builder: (_) => const BarcodeEntryScreen()));
         if (code != null) {
           await _controller.lookup(code, _foods);
           await _reload();
         }
-      case CaptureChoose(other: CaptureOther.quick):
+      case CaptureOther.quick:
         final quick = await Navigator.of(context).push<(String, MealCategory, MealItem)>(
           MaterialPageRoute(fullscreenDialog: true, builder: (_) => const QuickEntryScreen()),
         );
         if (quick != null) {
           await _after(_controller.log(title: quick.$1, category: quick.$2, items: [quick.$3]));
         }
-      case null:
-        await _reload();
     }
   }
 
