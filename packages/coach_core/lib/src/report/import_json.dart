@@ -10,7 +10,7 @@ import 'dart:convert';
 /// - Schlüssel auf Deutsch oder Englisch, mit oder ohne Umlaute (`routines`, `übungen`, `sets`, `reps: "8-10"` …).
 abstract final class ImportJson {
   /// Schlüssel, an denen ein Block als Antwort für die App erkannt wird (nach [normalize]).
-  static const knownKeys = {'routinen', 'wochenplan', 'hinweise', 'empfehlungen', 'verwerfen'};
+  static const knownKeys = {'routinen', 'wochenplan', 'diese_woche', 'hinweise', 'empfehlungen', 'verwerfen'};
 
   /// Kandidaten in Reihenfolge: ironludi-Blöcke, andere Blöcke, ganzer Text, größtes Objekt im Text.
   static List<({String tag, String body})> candidates(String text) {
@@ -143,6 +143,9 @@ abstract final class ImportJson {
     'week_plan': 'wochenplan',
     'weekplan': 'wochenplan',
     'woche': 'wochenplan',
+    'this_week': 'diese_woche',
+    'current_week': 'diese_woche',
+    'aktuelle_woche': 'diese_woche',
     'days': 'tage',
     'applies_to': 'gilt_fuer',
     'scope': 'gilt_fuer',

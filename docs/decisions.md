@@ -753,3 +753,10 @@ Auf Wunsch des Nutzers; die Swift-App kennt nur einen Benutzer. Tests: `packages
 - Die Regeln bleiben unverändert: nur Übungen der eigenen Ausstattung, Grenzen für Sätze/Wiederholungen/Pausen, im
   Saisonplan kein Wochenplan (mit Hinweis). Neu in der App: „Aus Datei laden“, fester Knopf „Auswahl übernehmen“ und
   nach dem Übernehmen Wege zu Trainingsplänen und Wochenplan.
+- Nachtrag: Pläne kommen auch als Markdown-Tabelle (.md-Datei aus Claude, ohne JSON). `MarkdownPlan` liest Tabellen
+  mit Wochentagen in der ersten Spalte. Die Überschrift darüber entscheidet: „Diese Woche“ gilt nur für die laufende
+  Woche (neues Feld `diese_woche`, auch im JSON). „Nächste Woche“ gilt für die nächste Woche, sonst dauerhaft.
+  Fließtext und die Spalte „Hinweis“ werden zu Hinweisen. Tabellen ohne Wochentage (z. B. Verlauf je Woche) werden
+  übergangen. Einheiten werden wie beim JSON erkannt, auch mehrere je Tag („Schwimmen + Kraft“). Ruhetage („Frei“,
+  „Regeneration“) bleiben frei. „Krafttraining“ ohne Zusatz ist die normale Krafteinheit, nicht „Kraft leicht“.
+  Ein JSON-Block hat weiter Vorrang.

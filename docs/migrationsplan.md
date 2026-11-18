@@ -414,9 +414,10 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Sicherung der Kotlin-App „IronLudi“ (`IronLudi-Gym-Sicherung-*.json`) einlesen (`KotlinBackup`, `BackupService.restoreKotlin`, Erkennung beim Einspielen) – Voraussetzung für den Umstieg unter Android | erledigt (#76) |
 | Android-Download über ein privates Release-Repo (APK über 100 MB, KV-Grenze 25 MiB), `ironludi://connect` in der App | in PR |
 | Adaptiver Ausdauerplan (Laufen, Rad/Zwift, Schwimmen): Ziel- oder Zeitraum-Plan mit Periodisierung, tägliche Anpassung an Training (disziplinübergreifend, TSS), Ausfälle und Erholung (HRV, Ruhepuls, Schlaf, Body Battery, Readiness); Export als FIT-Workout, Zwift `.zwo`, „An Uhr senden“ und automatischer Garmin-Kalender-Abgleich; strikt je Benutzer (`TrainingPlanEngine`, `WorkoutExporterService`, Reiter Training › Ausdauerplan) | in PR |
-| KI-Empfehlungen extern prüfen lassen: Export mit Prüfauftrag für alle offenen Empfehlungen, Import von `empfehlungen`/`verwerfen` mit Auswahl je Empfehlung (Regeln nur ausdrücklich), Hinweis im Bereich „AI“ | in PR |
+| KI-Empfehlungen extern prüfen lassen: Export mit Prüfauftrag für alle offenen Empfehlungen, Import von `empfehlungen`/`verwerfen` mit Auswahl je Empfehlung (Regeln nur ausdrücklich), Hinweis im Bereich „AI“ | erledigt |
 | Rückmeldung 17.11.2026: „Entfernen“ im Wochenplan, veraltete Trainingstage, Fettabbau ohne Überschuss; Texte geräteunabhängig (Health Connect unter Android); Tagesanpassungen und Makros in der Ernährung, realistische Hochrechnung; „Meine Belastung heute“; Training als Kacheln mit Wochendiagramm | in PR |
-| Import von KI-Antworten nachsichtig (Namen statt IDs, englische Schlüssel, reparierbares JSON, Datei laden, fester Übernehmen-Knopf, Wege zum Plan) | in PR |
+| Import von KI-Antworten nachsichtig (Namen statt IDs, englische Schlüssel, reparierbares JSON, Datei laden, fester Übernehmen-Knopf, Wege zum Plan) | erledigt |
+| Import von Wochenplänen als Markdown-Tabelle (.md-Datei), „Diese Woche“ nur für die laufende Woche | in PR |
 | Test auf echten Geräten: Widgets, Live-Aktivitäten, laufende Mitteilung, Wecker, Hintergrundabruf, Schnellaktionen (nur dort prüfbar, CI baut sie) | offen – durch den Nutzer |
 | Umstellung: `vars.DEPLOY_SIDESTORE` bzw. `vars.DEPLOY_ANDROID` auf `true`, dann ersetzt die Flutter-App die Swift- bzw. Kotlin-App (gleiche Bundle-/Application-ID) | offen – Entscheidung des Nutzers |
 | Später möglich: Android-Widgets mit Glance (Ringe, Balken, Konfiguration), Wiederholungen ± in der Android-Mitteilung | Idee |

@@ -12,6 +12,7 @@ import '../profile/week_schedule.dart';
 import '../util/enum_codec.dart';
 import '../util/text_prefix.dart';
 import 'import_json.dart';
+import 'markdown_plan.dart';
 
 enum RoutineMode implements RawEnum {
   add('ergaenzen'),
@@ -41,6 +42,10 @@ final class ImportPreview {
   RoutineMode routineMode = RoutineMode.add;
   WeekSchedule? schedule;
   ScheduleScope scheduleScope = ScheduleScope.permanent;
+
+  /// Einheiten nur für die laufende Woche (z. B. Tabelle „Diese Woche“), je genanntem Tag; nicht genannte Tage
+  /// bleiben, wie sie sind.
+  Map<Weekday, List<SessionSlot>> currentWeek = {};
   List<String> notes = [];
 
   /// Empfehlungen der externen KI für den Bereich „AI“ (gleiche ID wie eine bestehende = ersetzt sie).
@@ -58,7 +63,13 @@ final class ImportPreview {
   /// Hinweise der Regeln zum Ergebnis (z. B. Wochenvolumen, Plan-Prüfung).
   List<String> ruleNotes = [];
 
-  bool get isEmpty => routines.isEmpty && schedule == null && notes.isEmpty && insights.isEmpty && dismiss.isEmpty;
+  bool get isEmpty =>
+      routines.isEmpty &&
+      schedule == null &&
+      currentWeek.isEmpty &&
+      notes.isEmpty &&
+      insights.isEmpty &&
+      dismiss.isEmpty;
 }
 
 /// Fehler beim Lesen der KI-Antwort.
@@ -114,6 +125,9 @@ final class ImportSelection {
   /// Tage, deren Vorschlag übernommen wird (die anderen bleiben wie bisher).
   Set<Weekday> scheduleDays = {};
 
+  /// Einheiten für die laufende Woche übernehmen.
+  bool currentWeek = true;
+
   /// Indizes der übernommenen Hinweise.
   Set<int> notes = {};
 
@@ -138,7 +152,8 @@ final class ImportSelection {
     selection
       ..replaceAllRoutines = preview.routineMode == RoutineMode.replace
       ..schedule = preview.schedule != null
-      ..scheduleScope = preview.scheduleScope;
+      ..scheduleScope = preview.scheduleScope
+      ..currentWeek = preview.currentWeek.isNotEmpty;
     if (preview.schedule case final schedule?) {
       selection.scheduleDays = CoachImport.changedDays(schedule, from: currentSchedule ?? WeekSchedule()).toSet();
     }
@@ -173,6 +188,10 @@ abstract final class CoachImport {
   static JsonValue block(String text) {
     final found = ImportJson.find(text);
     if (found.json case final json?) return JsonValue(json);
+    // Kein JSON: Wochenplan als Markdown-Tabelle (z. B. eine .md-Datei aus Claude).
+    if (!found.invalidTagged) {
+      if (MarkdownPlan.parse(text) case final table?) return JsonValue(ImportJson.normalize(table));
+    }
     if (found.invalidTagged) throw ImportError.invalidJSON;
     throw ImportError.noBlock;
   }
@@ -238,48 +257,40 @@ abstract final class CoachImport {
         ..ruleNotes.addAll(checked.notes);
     }
 
-    final plan = json['wochenplan'];
-    if (plan != null) {
-      if (profile.mode == ProfileMode.season) {
-        preview.corrections.add('Wochenplan ignoriert: Im Saisonplan stehen die Tage fest.');
-      } else {
+    var plan = json['wochenplan'];
+    var currentWeek = json['diese_woche'];
+    // „gilt_fuer: diese_woche“ ohne eigenen Wochenplan: nur die laufende Woche.
+    if (plan != null && currentWeek == null && _isCurrentWeek(plan['gilt_fuer']?.stringValue)) {
+      currentWeek = plan;
+      plan = null;
+    }
+    if ((plan != null || currentWeek != null) && profile.mode == ProfileMode.season) {
+      preview.corrections.add('Wochenplan ignoriert: Im Saisonplan stehen die Tage fest.');
+    } else {
+      if (plan != null) {
         final scope = _plain(plan['gilt_fuer']?.stringValue ?? '');
         preview.scheduleScope = scope.contains('naechste') || scope.contains('next')
             ? ScheduleScope.nextWeek
             : ScheduleScope.permanent;
         var schedule = profile.schedule;
-        // Tage unter „tage“ oder direkt im Wochenplan; je Tag eine Liste, ein Objekt oder ein Text („Laufen locker“).
-        final days = plan['tage'] ?? plan;
-        const keys = ['mo', 'di', 'mi', 'do', 'fr', 'sa', 'so'];
-        for (var index = 0; index < keys.length; index++) {
-          final value = days[keys[index]];
-          if (value == null) continue;
-          final entries = value.arrayValue ?? [value];
-          final weekday = Weekday.values[index];
-          final slots = <SessionSlot>[];
-          for (final entry in entries.take(3)) {
-            final text = entry.stringValue;
-            if (text != null && RegExp('^(frei|ruhe|ruhetag|rest|off|pause)').hasMatch(_plain(text))) continue;
-            final sportText = text ?? entry['sport']?.stringValue;
-            final sport = _sport(sportText);
-            if (sport == null) {
-              preview.corrections.add('${weekday.long}: Sportart „${sportText ?? '?'}“ unbekannt.');
-              continue;
-            }
-            slots.add(SessionSlot(sport, _intensity(entry['intensitaet']?.stringValue ?? sportText)));
-          }
+        for (final MapEntry(key: weekday, value: slots) in _weekDays(plan, preview.corrections).entries) {
           schedule = schedule.withSlots(slots, weekday);
         }
         preview.schedule = schedule;
-        final planned = {
-          for (final weekday in Weekday.values)
-            for (final slot in schedule.slots(weekday)) slot.sport,
-        };
-        final missing = planned.difference(profile.sports.toSet()).toList()
-          ..sort((a, b) => a.rawValue.compareTo(b.rawValue));
-        for (final sport in missing) {
-          preview.ruleNotes.add('${sport.label} steht im Plan, ist aber nicht in deinem Profil gewählt.');
-        }
+      }
+      if (currentWeek != null) {
+        preview.currentWeek = _weekDays(currentWeek, preview.corrections, prefix: 'Diese Woche, ');
+      }
+      final planned = {
+        for (final weekday in Weekday.values) ...?preview.schedule?.slots(weekday).map((slot) => slot.sport),
+        for (final slots in preview.currentWeek.values) ...slots.map((slot) => slot.sport),
+      };
+      final missing = planned.difference(profile.sports.toSet()).toList()
+        ..sort((a, b) => a.rawValue.compareTo(b.rawValue));
+      for (final sport in missing) {
+        preview.ruleNotes.add('${sport.label} steht im Plan, ist aber nicht in deinem Profil gewählt.');
+      }
+      if (preview.schedule case final schedule?) {
         preview.ruleNotes.addAll(ScheduleCheck.hints(schedule, profile).map((hint) => hint.message));
       }
     }
@@ -490,27 +501,92 @@ abstract final class CoachImport {
     return best?.id ?? trimmed;
   }
 
+  static bool _isCurrentWeek(String? scope) {
+    final value = _plain(scope ?? '');
+    return value.contains('diese') || value.contains('this') || value.contains('aktuell') || value.contains('current');
+  }
+
+  static final _restWords = RegExp(r'\b(frei|ruhe|ruhetag|rest|off|pause|regeneration|erholung|restday)\b');
+
+  /// Einheiten je genanntem Tag aus `tage` (oder direkt aus dem Objekt). Je Tag eine Liste, ein Objekt oder ein Text
+  /// („Lockeres Schwimmen, 45 min“, „Schwimmen + Kraft“); Ruhetage ergeben eine leere Liste.
+  static Map<Weekday, List<SessionSlot>> _weekDays(JsonValue plan, List<String> corrections, {String prefix = ''}) {
+    final days = plan['tage'] ?? plan;
+    const keys = ['mo', 'di', 'mi', 'do', 'fr', 'sa', 'so'];
+    final result = <Weekday, List<SessionSlot>>{};
+    for (var index = 0; index < keys.length; index++) {
+      final value = days[keys[index]];
+      if (value == null) continue;
+      final weekday = Weekday.values[index];
+      final slots = <SessionSlot>[];
+      for (final entry in value.arrayValue ?? [value]) {
+        if (entry.stringValue case final text?) {
+          final parts = text.split(RegExp(r'\s*[+;&]\s*|\s+und\s+|\s+and\s+|\s+dann\s+'));
+          final known = [
+            for (final part in parts)
+              if (_sport(part) case final sport?) SessionSlot(sport, _intensity(part, sport)),
+          ];
+          final whole = _sport(text);
+          if (known.isEmpty && whole != null) known.add(SessionSlot(whole, _intensity(text, whole)));
+          if (known.isEmpty && !_restWords.hasMatch(_plain(text))) {
+            corrections.add('$prefix${weekday.long}: Einheit „$text“ nicht erkannt.');
+          }
+          slots.addAll(known);
+          continue;
+        }
+        final sportText = entry['sport']?.stringValue;
+        final sport = _sport(sportText);
+        if (sport == null) {
+          if (!_restWords.hasMatch(_plain(sportText ?? ''))) {
+            corrections.add('$prefix${weekday.long}: Sportart „${sportText ?? '?'}“ unbekannt.');
+          }
+          continue;
+        }
+        slots.add(SessionSlot(sport, _intensity(entry['intensitaet']?.stringValue ?? sportText, sport)));
+      }
+      result[weekday] = slots.take(3).toList();
+    }
+    return result;
+  }
+
   static TrainingSport? _sport(String? text) {
     final value = _plain(text ?? '');
     bool has(List<String> words) => words.any((word) => value == word || value.split(' ').contains(word));
-    if (has(['run', 'running', 'laufen', 'lauf', 'dauerlauf', 'joggen', 'intervalle', 'intervall', 'tempolauf'])) {
+    if (has([
+      'run', 'running', 'laufen', 'lauf', 'laeufe', 'dauerlauf', 'koppellauf', 'joggen', 'intervalle', 'intervall', //
+      'tempolauf', 'trailrun', 'laufeinheit',
+    ])) {
       return TrainingSport.run;
     }
-    if (has(['bike', 'cycling', 'rad', 'radfahren', 'rennrad', 'zwift', 'spinning', 'ergometer'])) {
+    if (has([
+      'bike', 'cycling', 'ride', 'rad', 'radfahren', 'radfahrt', 'radeinheit', 'radtour', 'rennrad', 'rolle', //
+      'rollentraining', 'zwift', 'spinning', 'ergometer', 'mtb',
+    ])) {
       return TrainingSport.bike;
     }
-    if (has(['swim', 'swimming', 'schwimmen'])) return TrainingSport.swim;
-    if (has(['strength', 'kraft', 'krafttraining', 'gym', 'weights', 'ganzkoerper', 'oberkoerper', 'unterkoerper'])) {
+    if (has(['swim', 'swimming', 'schwimmen', 'schwimmeinheit', 'schwimmtraining', 'kraulen', 'freiwasser'])) {
+      return TrainingSport.swim;
+    }
+    if (has([
+      'strength', 'kraft', 'krafttraining', 'krafteinheit', 'gym', 'weights', 'ganzkoerper', 'oberkoerper', //
+      'unterkoerper', 'athletik', 'stabi',
+    ])) {
       return TrainingSport.strength;
     }
-    if (has(['other', 'anderes', 'yoga', 'mobilitaet', 'mobility', 'stretching', 'wandern', 'hiking'])) {
+    if (has(['other', 'anderes', 'yoga', 'mobilitaet', 'mobility', 'stretching', 'wandern', 'hiking', 'bouldern'])) {
       return TrainingSport.other;
     }
     return null;
   }
 
-  static SessionIntensity _intensity(String? text) {
+  /// Intensität aus dem Text. Krafttraining ohne Zusatz ist die normale Einheit, „leicht“ nur, wenn es dasteht.
+  static SessionIntensity _intensity(String? text, TrainingSport sport) {
     final value = _plain(text ?? '');
+    if (sport == TrainingSport.strength) {
+      return RegExp(r'\b(easy|light|leicht|leichtes|locker|lockeres|technik|mobilitaet)\b').hasMatch(value)
+          ? SessionIntensity.easy
+          : SessionIntensity.hard;
+    }
     if (RegExp('hard|hart|intensiv|intervall|tempo|schwelle|threshold|vo2').hasMatch(value)) {
       return SessionIntensity.hard;
     }
@@ -577,6 +653,21 @@ abstract final class CoachImport {
     return result == current ? null : result;
   }
 
+  /// Plan der laufenden Woche nach der Auswahl: [base] (der Plan dieser Woche, nach einem übernommenen dauerhaften
+  /// Plan) mit den genannten Tagen. `null`, wenn nichts übernommen wird oder sich nichts ändert.
+  static WeekSchedule? currentWeekSchedule(
+    ImportPreview preview, {
+    required ImportSelection selection,
+    required WeekSchedule base,
+  }) {
+    if (!selection.currentWeek || preview.currentWeek.isEmpty) return null;
+    var result = base;
+    for (final MapEntry(key: weekday, value: slots) in preview.currentWeek.entries) {
+      result = result.withSlots(slots, weekday);
+    }
+    return result == base ? null : result;
+  }
+
   /// Übernommene Hinweise in der Reihenfolge der KI.
   static List<String> notes(ImportPreview preview, {required ImportSelection selection}) => [
     for (var index = 0; index < preview.notes.length; index++)
@@ -588,6 +679,7 @@ abstract final class CoachImport {
       selection.replaceAllRoutines ||
       preview.routines.any((routine) => selection.choice(routine) != RoutineChoice.skip) ||
       (selection.schedule && preview.schedule != null && selection.scheduleDays.isNotEmpty) ||
+      (selection.currentWeek && preview.currentWeek.isNotEmpty) ||
       selection.notes.isNotEmpty ||
       preview.insights.any((insight) => selection.insights.contains(insight.id)) ||
       preview.dismiss.any(selection.dismiss.contains);

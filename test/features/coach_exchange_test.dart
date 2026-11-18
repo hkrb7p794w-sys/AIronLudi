@@ -153,6 +153,39 @@ void main() {
     expect(find.text('Wochenplan ansehen'), findsOneWidget);
   });
 
+  testWidgets('Import: Wochenplan als Markdown-Tabelle mit „Diese Woche“ (.md-Datei)', (tester) async {
+    final container = await _open(tester, const CoachImportScreen());
+    final settings = container.read(coachSettingsProvider);
+    const days = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+    await tester.enterText(
+      find.byType(TextField),
+      '# Wochenplan\n\nPhase: Grundlage\n\n## Diese Woche\n\n| Tag | Einheit | Hinweis |\n|---|---|---|\n'
+      '${days.map((day) => '| $day | Lockeres Schwimmen, 45 min | Technik |').join('\n')}\n\n'
+      '## Dauerhafter Wochenplan ab Montag\n\n| Tag | Einheit | Hinweis |\n|---|---|---|\n'
+      '${days.map((day) => '| $day | Krafttraining | – |').join('\n')}\n',
+    );
+    await tester.pump();
+    await _tap(tester, find.text('Prüfen'));
+    await tester.scrollUntilVisible(
+      find.text('Für diese Woche übernehmen'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Für diese Woche übernehmen'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Auswahl übernehmen'));
+    await tester.pumpAndSettle();
+    final today = CalendarDay.today();
+    final weekday = Weekday.values[today.weekdayIndex];
+    expect(
+      settings.profile.schedule.slots(weekday).single,
+      const SessionSlot(TrainingSport.strength, SessionIntensity.hard),
+    );
+    expect(settings.schedule(today).slots(weekday).single, const SessionSlot(TrainingSport.swim));
+    expect(settings.schedule(today.adding(7)).slots(weekday).single.sport, TrainingSport.strength);
+    expect(settings.importedNotes?.texts, contains('Phase: Grundlage'));
+    expect(find.text('Wochenplan ansehen'), findsOneWidget);
+  });
+
   testWidgets('Prompt-Bibliothek: Vorlage, eigener Prompt', (tester) async {
     final container = await _open(tester, const PromptLibraryScreen());
     final first = PromptLibrary.builtIn.first;

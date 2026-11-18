@@ -119,4 +119,123 @@ void main() {
       expect(preview.corrections, contains('Wochenplan ignoriert: Im Saisonplan stehen die Tage fest.'));
     });
   });
+
+  group('Wochenplan als Markdown-Tabelle', () {
+    test('dauerhafter Plan, diese Woche und Hinweise', () {
+      final preview = check(markdownPlan);
+      expect(preview.scheduleScope, ScheduleScope.permanent);
+      final schedule = preview.schedule!;
+      expect(schedule.slots(Weekday.monday), [const SessionSlot(TrainingSport.swim)]);
+      expect(schedule.slots(Weekday.tuesday), isEmpty);
+      expect(schedule.slots(Weekday.wednesday), [const SessionSlot(TrainingSport.strength, SessionIntensity.hard)]);
+      expect(schedule.slots(Weekday.saturday), [const SessionSlot(TrainingSport.bike)]);
+      expect(schedule.slots(Weekday.sunday), [const SessionSlot(TrainingSport.run, SessionIntensity.long)]);
+      expect(preview.currentWeek.keys, [Weekday.wednesday, Weekday.thursday, Weekday.sunday]);
+      expect(preview.currentWeek[Weekday.wednesday], [const SessionSlot(TrainingSport.swim)]);
+      expect(preview.currentWeek[Weekday.thursday], [const SessionSlot(TrainingSport.strength, SessionIntensity.hard)]);
+      expect(preview.currentWeek[Weekday.sunday], [const SessionSlot(TrainingSport.run)]);
+      expect(preview.corrections, isEmpty);
+      expect(preview.notes, contains('Kein Rad diese Woche.'));
+      expect(preview.notes, contains('Phase: Grundlage (4 Wochen), nur locker'));
+      expect(preview.notes, contains('Diese Woche, Mittwoch: Nur Technik'));
+      expect(preview.notes, contains('Samstag: Zone 2'));
+
+      final selection = ImportSelection.defaults(preview, existing: const [], currentSchedule: WeekSchedule());
+      expect(selection.currentWeek, isTrue);
+      expect(CoachImport.hasChanges(preview, selection: selection), isTrue);
+      final week = CoachImport.currentWeekSchedule(preview, selection: selection, base: schedule)!;
+      expect(week.slots(Weekday.monday), schedule.slots(Weekday.monday));
+      expect(week.slots(Weekday.wednesday), [const SessionSlot(TrainingSport.swim)]);
+      expect(week.slots(Weekday.saturday), [const SessionSlot(TrainingSport.bike)]);
+    });
+
+    test('nur eine Tabelle ohne Überschrift: dauerhaft; mehrere Einheiten an einem Tag', () {
+      final preview = check('''
+| Tag | Training |
+|:--|:--|
+| Mo | Schwimmen + Kraft |
+| Mi | Intervalle |
+| Fr | Ruhetag |
+''');
+      expect(preview.schedule!.slots(Weekday.monday), [
+        const SessionSlot(TrainingSport.swim),
+        const SessionSlot(TrainingSport.strength, SessionIntensity.hard),
+      ]);
+      expect(preview.schedule!.slots(Weekday.wednesday), [const SessionSlot(TrainingSport.run, SessionIntensity.hard)]);
+      expect(preview.schedule!.slots(Weekday.friday), isEmpty);
+      expect(preview.currentWeek, isEmpty);
+    });
+
+    test('nächste Woche, unbekannte Einheit sichtbar, Saisonplan ignoriert', () {
+      final next = check('''
+### Plan für nächste Woche
+| Tag | Einheit |
+|---|---|
+| Dienstag | Lauf locker |
+| Donnerstag | Tischtennis |
+''');
+      expect(next.scheduleScope, ScheduleScope.nextWeek);
+      expect(next.corrections, ['Donnerstag: Einheit „Tischtennis“ nicht erkannt.']);
+      final season = check(markdownPlan, mode: ProfileMode.season);
+      expect(season.schedule, isNull);
+      expect(season.currentWeek, isEmpty);
+      expect(season.corrections, ['Wochenplan ignoriert: Im Saisonplan stehen die Tage fest.']);
+    });
+
+    test('JSON-Block hat Vorrang vor Tabellen; diese_woche im JSON', () {
+      final preview = check('''
+| Tag | Einheit |
+|---|---|
+| Montag | Schwimmen |
+
+```ironludi
+{"wochenplan": {"gilt_fuer": "diese_woche", "tage": {"fr": "Lauf locker"}}}
+```
+''');
+      expect(preview.schedule, isNull);
+      expect(preview.currentWeek, {
+        Weekday.friday: [const SessionSlot(TrainingSport.run)],
+      });
+    });
+
+    test('Text ohne Tabelle und ohne JSON bleibt ein Fehler', () {
+      expect(() => check('# Plan\n\nMontag Schwimmen, Dienstag frei.'), throwsA(ImportError.noBlock));
+    });
+  });
 }
+
+// Rückmeldung vom 18.11.2026: Plan als .md-Datei mit Tabellen statt JSON (Inhalt verfremdet).
+const markdownPlan = '''
+# Wochenplan – Halbmarathon im Frühjahr
+
+Phase: Grundlage (4 Wochen), nur locker
+
+## Diese Woche
+
+| Tag | Einheit | Hinweis |
+|---|---|---|
+| Mittwoch | Lockeres Schwimmen, 45 min | Nur Technik |
+| **Donnerstag** | Krafttraining | – |
+| Sonntag | Lockerer Lauf, 30–40 min | Zone 2 |
+
+Kein Rad diese Woche.
+
+## Dauerhafter Wochenplan ab Montag
+
+| Tag | Einheit | Hinweis |
+|---|---|---|
+| Montag | Lockeres Schwimmen, 45 min | Technik |
+| Dienstag | Dehnen und Regeneration | Frei |
+| Mittwoch | Krafttraining | – |
+| Samstag | Lockere Radfahrt (Rolle), 75 min | Zone 2 |
+| Sonntag | Langer Lauf, 60 min | – |
+
+## Verlauf
+
+| Woche | Schwimmen (min) | Lauf So (min) |
+|---|---|---|
+| 1 | 45 | 30–40 |
+| 2 | 60 | 45 |
+
+Danach: Test auf der Rolle, neuer Export.
+''';

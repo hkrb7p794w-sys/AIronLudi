@@ -367,7 +367,8 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
     super.dispose();
   }
 
-  CalendarDay get _nextMonday => PlanAdjustments.monday(CalendarDay.today()).adding(7);
+  CalendarDay get _thisMonday => PlanAdjustments.monday(CalendarDay.today());
+  CalendarDay get _nextMonday => _thisMonday.adding(7);
 
   /// Plan, mit dem der Vorschlag verglichen wird (dauerhaft bzw. nächste Woche).
   WeekSchedule get _currentSchedule {
@@ -435,7 +436,9 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
       routines:
           _selection.replaceAllRoutines ||
           preview.routines.any((routine) => _selection.choice(routine) != RoutineChoice.skip),
-      schedule: CoachImport.schedule(preview, selection: _selection, current: _currentSchedule) != null,
+      schedule:
+          CoachImport.schedule(preview, selection: _selection, current: _currentSchedule) != null ||
+          (_selection.currentWeek && preview.currentWeek.isNotEmpty),
       notes: _selection.notes.isNotEmpty,
       insights:
           preview.insights.any((insight) => _selection.insights.contains(insight.id)) ||
@@ -454,6 +457,12 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
           settings.planAdjustments = settings.planAdjustments
             ..setWeekPlan(schedule, base: settings.profile.schedule, inWeekOf: _nextMonday);
       }
+    }
+    // Diese Woche: auf dem (eben übernommenen) Plan dieser Woche aufsetzen, nur die genannten Tage ändern.
+    if (CoachImport.currentWeekSchedule(preview, selection: _selection, base: settings.schedule(_thisMonday))
+        case final week?) {
+      settings.planAdjustments = settings.planAdjustments
+        ..setWeekPlan(week, base: settings.profile.schedule, inWeekOf: _thisMonday);
     }
     final notes = CoachImport.notes(preview, selection: _selection);
     if (notes.isNotEmpty) settings.importedNotes = ImportedNotes(day: CalendarDay.today(), texts: notes);
@@ -572,7 +581,9 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
             ListTile(
               leading: const Icon(Icons.calendar_month),
               title: Text(
-                _selection.scheduleScope == ScheduleScope.nextWeek
+                _preview?.schedule == null
+                    ? 'Plan dieser Woche ansehen'
+                    : _selection.scheduleScope == ScheduleScope.nextWeek
                     ? 'Plan der nächsten Woche ansehen'
                     : 'Wochenplan ansehen',
               ),
@@ -690,6 +701,27 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
                     subtitle: Text('bisher: ${_slots(current.slots(weekday))}\nneu: ${_slots(proposed)}'),
                   ),
             ],
+          ],
+        ),
+      if (preview.currentWeek.isNotEmpty)
+        FormSection(
+          header: 'Diese Woche',
+          footer: 'Gilt nur bis Sonntag, danach wieder dein Wochenplan. Nicht genannte Tage bleiben, wie sie sind.',
+          children: [
+            SwitchListTile.adaptive(
+              title: const Text('Für diese Woche übernehmen'),
+              value: _selection.currentWeek,
+              onChanged: (on) => setState(() => _selection.currentWeek = on),
+            ),
+            if (_selection.currentWeek)
+              for (final MapEntry(key: weekday, value: proposed) in preview.currentWeek.entries)
+                ListTile(
+                  dense: true,
+                  title: Text(weekday.long, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: Text(
+                    'bisher: ${_slots(settings.schedule(_thisMonday).slots(weekday))}\nneu: ${_slots(proposed)}',
+                  ),
+                ),
           ],
         ),
       if (preview.notes.isNotEmpty)
