@@ -760,3 +760,7 @@ Auf Wunsch des Nutzers; die Swift-App kennt nur einen Benutzer. Tests: `packages
   übergangen. Einheiten werden wie beim JSON erkannt, auch mehrere je Tag („Schwimmen + Kraft“). Ruhetage („Frei“,
   „Regeneration“) bleiben frei. „Krafttraining“ ohne Zusatz ist die normale Krafteinheit, nicht „Kraft leicht“.
   Ein JSON-Block hat weiter Vorrang.
+- Eine Tabelle ist der ganze Plan und überschreibt den bisherigen Wochenplan: Tage, die sie nicht nennt, werden frei
+  (bei „Diese Woche“ ab heute; vergangene Tage bleiben). Ein JSON-Block ändert weiterhin nur die genannten Tage, wie
+  es die Export-Anleitung beschreibt; mit `"vollstaendig": true` ersetzt auch er alle Tage. Wochenpläne und Ausnahmen
+  ab dieser Woche fallen wie bei jeder Änderung des dauerhaften Plans weg.

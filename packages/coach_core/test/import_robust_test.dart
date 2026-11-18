@@ -3,12 +3,16 @@
 import 'package:coach_core/coach_core.dart';
 import 'package:test/test.dart';
 
-ImportPreview check(String text, {ProfileMode mode = ProfileMode.personal}) => CoachImport.preview(
-  text,
-  profile: UserProfile(mode: mode, sports: const [TrainingSport.strength, TrainingSport.run]),
-  equipment: Equipment.gym,
-  custom: const [],
-);
+ImportPreview check(String text, {ProfileMode mode = ProfileMode.personal, WeekSchedule? schedule}) =>
+    CoachImport.preview(
+      text,
+      profile: UserProfile(mode: mode, sports: const [TrainingSport.strength, TrainingSport.run])
+        ..schedule = schedule ?? WeekSchedule(),
+      equipment: Equipment.gym,
+      custom: const [],
+      // Mittwoch
+      now: DateTime(2026, 11, 18, 9),
+    );
 
 void main() {
   group('Block finden und lesen', () {
@@ -122,15 +126,29 @@ void main() {
 
   group('Wochenplan als Markdown-Tabelle', () {
     test('dauerhafter Plan, diese Woche und Hinweise', () {
-      final preview = check(markdownPlan);
+      // Bisheriger Plan: Donnerstag und Freitag Lauf – die Tabelle nennt beide nicht, also werden sie frei.
+      final old = WeekSchedule().withSlots(const [SessionSlot(TrainingSport.run)], Weekday.thursday).withSlots(const [
+        SessionSlot(TrainingSport.run),
+      ], Weekday.friday);
+      final preview = check(markdownPlan, schedule: old);
       expect(preview.scheduleScope, ScheduleScope.permanent);
+      expect(preview.schedule!.slots(Weekday.thursday), isEmpty);
+      expect(preview.schedule!.slots(Weekday.friday), isEmpty);
       final schedule = preview.schedule!;
       expect(schedule.slots(Weekday.monday), [const SessionSlot(TrainingSport.swim)]);
       expect(schedule.slots(Weekday.tuesday), isEmpty);
       expect(schedule.slots(Weekday.wednesday), [const SessionSlot(TrainingSport.strength, SessionIntensity.hard)]);
       expect(schedule.slots(Weekday.saturday), [const SessionSlot(TrainingSport.bike)]);
       expect(schedule.slots(Weekday.sunday), [const SessionSlot(TrainingSport.run, SessionIntensity.long)]);
-      expect(preview.currentWeek.keys, [Weekday.wednesday, Weekday.thursday, Weekday.sunday]);
+      // Ab heute (Mittwoch) vollständig: nicht genannte Tage frei, Montag und Dienstag bleiben, wie sie waren.
+      expect(preview.currentWeek.keys, [
+        Weekday.wednesday,
+        Weekday.thursday,
+        Weekday.friday,
+        Weekday.saturday,
+        Weekday.sunday,
+      ]);
+      expect(preview.currentWeek[Weekday.friday], isEmpty);
       expect(preview.currentWeek[Weekday.wednesday], [const SessionSlot(TrainingSport.swim)]);
       expect(preview.currentWeek[Weekday.thursday], [const SessionSlot(TrainingSport.strength, SessionIntensity.hard)]);
       expect(preview.currentWeek[Weekday.sunday], [const SessionSlot(TrainingSport.run)]);
@@ -140,13 +158,14 @@ void main() {
       expect(preview.notes, contains('Diese Woche, Mittwoch: Nur Technik'));
       expect(preview.notes, contains('Samstag: Zone 2'));
 
-      final selection = ImportSelection.defaults(preview, existing: const [], currentSchedule: WeekSchedule());
+      final selection = ImportSelection.defaults(preview, existing: const [], currentSchedule: old);
+      expect(selection.scheduleDays, containsAll([Weekday.thursday, Weekday.friday, Weekday.monday]));
       expect(selection.currentWeek, isTrue);
       expect(CoachImport.hasChanges(preview, selection: selection), isTrue);
       final week = CoachImport.currentWeekSchedule(preview, selection: selection, base: schedule)!;
       expect(week.slots(Weekday.monday), schedule.slots(Weekday.monday));
       expect(week.slots(Weekday.wednesday), [const SessionSlot(TrainingSport.swim)]);
-      expect(week.slots(Weekday.saturday), [const SessionSlot(TrainingSport.bike)]);
+      expect(week.slots(Weekday.saturday), isEmpty);
     });
 
     test('nur eine Tabelle ohne Überschrift: dauerhaft; mehrere Einheiten an einem Tag', () {

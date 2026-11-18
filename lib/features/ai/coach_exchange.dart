@@ -706,7 +706,7 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
       if (preview.currentWeek.isNotEmpty)
         FormSection(
           header: 'Diese Woche',
-          footer: 'Gilt nur bis Sonntag, danach wieder dein Wochenplan. Nicht genannte Tage bleiben, wie sie sind.',
+          footer: 'Gilt nur bis Sonntag, danach wieder dein Wochenplan.',
           children: [
             SwitchListTile.adaptive(
               title: const Text('Für diese Woche übernehmen'),

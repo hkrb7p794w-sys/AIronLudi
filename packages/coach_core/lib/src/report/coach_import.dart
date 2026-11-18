@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 
 import '../ai/insights.dart';
+import '../calendar/calendar_day.dart';
 import '../gym/exercise_library.dart';
 import '../gym/gym_coach.dart';
 import '../gym/routine.dart';
@@ -272,7 +273,8 @@ abstract final class CoachImport {
         preview.scheduleScope = scope.contains('naechste') || scope.contains('next')
             ? ScheduleScope.nextWeek
             : ScheduleScope.permanent;
-        var schedule = profile.schedule;
+        // Vollständiger Plan (Tabelle oder „vollstaendig“: true): ersetzt alle Tage, nicht genannte sind frei.
+        var schedule = plan['vollstaendig']?.boolValue ?? false ? WeekSchedule() : profile.schedule;
         for (final MapEntry(key: weekday, value: slots) in _weekDays(plan, preview.corrections).entries) {
           schedule = schedule.withSlots(slots, weekday);
         }
@@ -280,6 +282,17 @@ abstract final class CoachImport {
       }
       if (currentWeek != null) {
         preview.currentWeek = _weekDays(currentWeek, preview.corrections, prefix: 'Diese Woche, ');
+        // Vollständig: die restlichen Tage ab heute sind frei (vergangene Tage bleiben, wie sie waren).
+        if (currentWeek['vollstaendig']?.boolValue ?? false) {
+          final today = CalendarDay.fromDate(now ?? DateTime.now()).weekdayIndex;
+          preview.currentWeek = {
+            for (final weekday in Weekday.values)
+              if (preview.currentWeek[weekday] case final slots?)
+                weekday: slots
+              else if (weekday.index >= today)
+                weekday: const <SessionSlot>[],
+          };
+        }
       }
       final planned = {
         for (final weekday in Weekday.values) ...?preview.schedule?.slots(weekday).map((slot) => slot.sport),

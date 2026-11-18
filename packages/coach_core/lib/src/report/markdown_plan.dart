@@ -114,8 +114,9 @@ abstract final class MarkdownPlan {
     final permanent = tables.where((table) => table.scope != 'diese_woche').firstOrNull;
     final thisWeek = tables.where((table) => table.scope == 'diese_woche').firstOrNull;
     return {
-      if (permanent != null) 'wochenplan': {'gilt_fuer': permanent.scope, 'tage': permanent.days},
-      if (thisWeek != null) 'diese_woche': {'tage': thisWeek.days},
+      // Eine Tabelle ist der ganze Plan: nicht genannte Tage sind frei (anders als beim JSON-Block).
+      if (permanent != null) 'wochenplan': {'gilt_fuer': permanent.scope, 'tage': permanent.days, 'vollstaendig': true},
+      if (thisWeek != null) 'diese_woche': {'tage': thisWeek.days, 'vollstaendig': true},
       'hinweise': [
         ...paragraphs,
         if (thisWeek != null) ...thisWeek.hints.map((hint) => 'Diese Woche, $hint'),
