@@ -72,6 +72,8 @@ void main() {
       final metrics = DailyMetrics(CalendarDay(2026, 11, 18))..trainingReadiness = 72;
       expect(TodayKpis.recovery(metrics, RecoveryLevel.normal).status, KpiStatus.good);
       expect(TodayKpis.recovery(metrics, RecoveryLevel.normal).value, '72 %');
+      // Unter dem Ring die Herkunft, nicht noch einmal „Normal trainieren“.
+      expect(TodayKpis.recovery(metrics, RecoveryLevel.normal).caption, 'Erholungswert');
       expect(TodayKpis.recovery(metrics, RecoveryLevel.pause).status, KpiStatus.critical);
       expect(TodayKpis.recovery(metrics..trainingReadiness = 50, RecoveryLevel.normal).status, KpiStatus.moderate);
       expect(TodayKpis.recovery(metrics..trainingReadiness = 20, null).status, KpiStatus.critical);
@@ -81,7 +83,7 @@ void main() {
       final metrics = DailyMetrics(CalendarDay(2026, 11, 18))..bodyBatteryAtWake = 80;
       expect(TodayKpis.recovery(metrics, RecoveryLevel.normal).caption, 'Body Battery');
       final ruled = TodayKpis.recovery(null, RecoveryLevel.locker);
-      expect((ruled.value, ruled.status), ('Mäßig', KpiStatus.moderate));
+      expect((ruled.value, ruled.status, ruled.caption), ('Mäßig', KpiStatus.moderate, 'Tagesampel'));
       expect(TodayKpis.recovery(null, null).status, KpiStatus.unknown);
     });
   });
