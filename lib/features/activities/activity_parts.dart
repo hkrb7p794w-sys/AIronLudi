@@ -125,14 +125,22 @@ class MissingDataSection extends StatelessWidget {
 
 /// Zeile im Verlauf: Sportart, Titel, Kernwerte, Intensität, Quellen und Bezug zum Plan (Port von `FeedRow`).
 class FeedRow extends StatelessWidget {
-  const FeedRow({super.key, required this.entry, this.onTap});
+  const FeedRow({super.key, required this.entry, this.onTap, this.extra});
 
   final FeedEntry entry;
   final VoidCallback? onTap;
 
+  /// Zusätzlicher Wert hinter den Kennzahlen (z. B. „Strain 8,9“ auf „Heute“).
+  final String? extra;
+
   @override
   Widget build(BuildContext context) {
     final sport = SessionMatcher.sport(entry.sport);
+    // „Anderes“ (Bouldern, Yoga, HIIT …): Symbol der feineren Sportart.
+    final kind = switch (entry.activity) {
+      final activity? when entry.sport == ActivitySport.other => ActivityKind.ofActivity(activity),
+      _ => null,
+    };
     final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
     final planned = entry.planned;
     return InkWell(
@@ -143,7 +151,7 @@ class FeedRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: 12,
           children: [
-            SportIcon(symbol: sport.symbol, color: sport.color),
+            SportIcon(symbol: kind?.symbol ?? sport.symbol, color: kind?.color ?? sport.color),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -163,8 +171,8 @@ class FeedRow extends StatelessWidget {
                       Text(formatDay(entry.day), style: TextStyle(fontSize: 12, color: secondary)),
                     ],
                   ),
-                  if (entry.values.isNotEmpty)
-                    Text(entry.values.join(' · '), style: TextStyle(fontSize: 12, color: secondary)),
+                  if (entry.values.isNotEmpty || extra != null)
+                    Text([...entry.values, ?extra].join(' · '), style: TextStyle(fontSize: 12, color: secondary)),
                   Wrap(
                     spacing: 6,
                     runSpacing: 4,

@@ -48,6 +48,8 @@ final class NutritionTargets {
     required this.proteinPerKilogram,
     required this.referenceWeightKilograms,
     required this.energyAvailabilityFloorApplied,
+    this.customMacros = false,
+    this.macroNotes = const [],
   });
 
   final NutrientValues values;
@@ -64,6 +66,12 @@ final class NutritionTargets {
 
   /// `true`, wenn die Energie auf 30 kcal/kg fettfreie Masse angehoben wurde (REDs-Schwelle).
   final bool energyAvailabilityFloorApplied;
+
+  /// Eigene Makroziele angewandt (Einstellungen › Ernährung).
+  final bool customMacros;
+
+  /// Was die Regeln an den eigenen Makrozielen geändert haben (Mindestenergie, Mindestfett).
+  final List<String> macroNotes;
 }
 
 /// Tagesziele der Ernährung (Port von `NutritionPlanner`, ursprünglich `ernaehrung/app/targets.py`).
@@ -80,7 +88,10 @@ abstract final class NutritionPlanner {
     'indoor_cycling', 'rowing', 'elliptical', 'cross_country', 'hiking', 'multi_sport', 'triathlon', 'road_biking', //
     'mountain_biking', 'gravel',
   ];
-  static const strengthKeys = ['strength', 'fitness_equipment', 'hiit', 'yoga', 'pilates', 'training'];
+  static const strengthKeys = [
+    'strength', 'fitness_equipment', 'hiit', 'yoga', 'pilates', 'training', 'climb', 'boulder', 'crossfit', //
+    'boxing', 'martial', 'dance', 'tennis', 'squash', 'badminton', 'soccer', 'basketball', 'volleyball',
+  ];
 
   static Map<Nutrient, double> micro({required bool isFemale, required int age}) => {
     Nutrient.sodium: 1500,
@@ -278,6 +289,52 @@ abstract final class NutritionPlanner {
       fat = (protein + carbs) / 9;
       total = 4 * protein + 4 * carbs + 9 * fat;
     }
+    // Eigene Makroziele: Gramm oder Prozent, für Ruhetage auf Wunsch eigene Werte. Die Untergrenzen der Energie (höchstens
+    // ein Viertel Defizit, Energieverfügbarkeit, kein Defizit ohne Gewichtsziel) und 20 % Fett gelten weiter.
+    final macroNotes = <String>[];
+    var customApplied = false;
+    final custom = dayType == DayType.restDay ? (settings.restDayMacros ?? settings.macros) : settings.macros;
+    if (settings.macroMode != MacroMode.auto &&
+        custom != null &&
+        GoalRules.weightGuard(settings, profile) != WeightGoalGuard.noTargets) {
+      customApplied = true;
+      if (settings.macroMode == MacroMode.grams) {
+        protein = custom.protein;
+        carbs = custom.carbs;
+        fat = custom.fat;
+      } else {
+        final sum = custom.protein + custom.carbs + custom.fat;
+        final kcal = custom.kilocalories ?? total;
+        if (sum > 0) {
+          protein = kcal * custom.protein / sum / 4;
+          carbs = kcal * custom.carbs / sum / 4;
+          fat = kcal * custom.fat / sum / 9;
+        }
+      }
+      var lower = math.max(0.75 * dayEnergy, math.min(energyFloor, dayEnergy));
+      if (GoalRules.weightGuard(settings, profile) == WeightGoalGuard.noDeficit) lower = dayEnergy;
+      var customTotal = 4 * protein + 4 * carbs + 9 * fat;
+      if (customTotal < lower) {
+        // Kohlenhydrate und Fett anteilig anheben, Protein bleibt.
+        final rest = 4 * carbs + 9 * fat;
+        final missing = lower - customTotal;
+        if (rest > 0) {
+          carbs += missing * (4 * carbs / rest) / 4;
+          fat += missing * (9 * fat / rest) / 9;
+        } else {
+          carbs += missing / 4;
+        }
+        customTotal = lower;
+        macroNotes.add('Auf ${lower.round()} kcal angehoben – darunter wäre das Defizit zu groß.');
+      }
+      if (fat * 9 < 0.2 * customTotal) {
+        final needed = 0.2 * customTotal / 9;
+        carbs = math.max(0, carbs - (needed - fat) * 9 / 4);
+        fat = needed;
+        macroNotes.add('Fett auf 20 % der Energie angehoben (Untergrenze für Hormone und Vitamine).');
+      }
+      total = 4 * protein + 4 * carbs + 9 * fat;
+    }
     final water =
         35 * weight +
         10 * classification.enduranceMinutes +
@@ -301,6 +358,8 @@ abstract final class NutritionPlanner {
       proteinPerKilogram: proteinPerKilogram,
       referenceWeightKilograms: referenceWeight,
       energyAvailabilityFloorApplied: floorApplied,
+      customMacros: customApplied,
+      macroNotes: macroNotes,
     );
   }
 }

@@ -188,6 +188,69 @@ final class DayAdjustment {
   int get hashCode => Object.hash(kind, kilocalories);
 }
 
+/// Eigene Makroziele: automatisch (App rechnet), in Gramm oder als Anteil an der Energie.
+enum MacroMode implements RawEnum {
+  auto('auto', 'Automatisch'),
+  grams('gramm', 'Gramm'),
+  percent('prozent', 'Prozent');
+
+  const MacroMode(this.rawValue, this.label);
+
+  @override
+  final String rawValue;
+  final String label;
+}
+
+/// Makroziel eines Tages. In Gramm: [protein], [carbs], [fat] in g, die Energie ergibt sich daraus. In Prozent:
+/// Anteile an der Energie (zusammen 100 %); [kilocalories] = eigene Energie, ohne Angabe die der App.
+final class MacroGoal {
+  const MacroGoal({required this.protein, required this.carbs, required this.fat, this.kilocalories});
+
+  final double protein;
+  final double carbs;
+  final double fat;
+  final double? kilocalories;
+
+  /// Startwerte für Prozent: 30 % Protein, 45 % Kohlenhydrate, 25 % Fett.
+  static const percentDefault = MacroGoal(protein: 30, carbs: 45, fat: 25);
+
+  MacroGoal copyWith({
+    double? protein,
+    double? carbs,
+    double? fat,
+    double? kilocalories,
+    bool clearKilocalories = false,
+  }) => MacroGoal(
+    protein: protein ?? this.protein,
+    carbs: carbs ?? this.carbs,
+    fat: fat ?? this.fat,
+    kilocalories: clearKilocalories ? null : kilocalories ?? this.kilocalories,
+  );
+
+  Map<String, Object?> toJson() => {'protein': protein, 'carbs': carbs, 'fat': fat, 'kcal': ?kilocalories};
+
+  static MacroGoal? fromJson(Object? json) {
+    if (json is! Map) return null;
+    final protein = jsonDouble(json['protein']);
+    final carbs = jsonDouble(json['carbs']);
+    final fat = jsonDouble(json['fat']);
+    if (protein == null || carbs == null || fat == null || protein < 0 || carbs < 0 || fat < 0) return null;
+    final kcal = jsonDouble(json['kcal']);
+    return MacroGoal(protein: protein, carbs: carbs, fat: fat, kilocalories: kcal != null && kcal > 0 ? kcal : null);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is MacroGoal &&
+      other.protein == protein &&
+      other.carbs == carbs &&
+      other.fat == fat &&
+      other.kilocalories == kilocalories;
+
+  @override
+  int get hashCode => Object.hash(protein, carbs, fat, kilocalories);
+}
+
 /// Einstellungen der Ernährung (Schlüssel `coach.nutrition`). Körperwerte sind optional: ohne Eintrag gelten die
 /// Garmin-Werte.
 final class NutritionSettings {
@@ -219,6 +282,12 @@ final class NutritionSettings {
 
   /// Bevorzugter Fettanteil an der Energie in % (20–35, ACSM 2016); ohne Angabe ergibt er sich aus dem Rest.
   double? fatSharePercent;
+
+  /// Eigene Makroziele (Standard: automatisch). [macros] gilt für alle Tage bzw. Trainingstage, [restDayMacros]
+  /// – wenn gesetzt – für Ruhetage. Die Schutzgrenzen der Energie gelten weiter (`NutritionPlanner`).
+  MacroMode macroMode = MacroMode.auto;
+  MacroGoal? macros;
+  MacroGoal? restDayMacros;
 
   /// Anpassungen einzelner Tage (Schlüssel: ISO-Datum). Ältere als 14 Tage fallen beim Speichern weg.
   Map<String, DayAdjustment> dayAdjustments = {};
@@ -273,6 +342,9 @@ final class NutritionSettings {
     'lastCheckInDay': ?lastCheckInDay?.toJson(),
     'proteinPerKilogram': ?proteinPerKilogram,
     'fatSharePercent': ?fatSharePercent,
+    if (macroMode != MacroMode.auto) 'macroMode': macroMode.rawValue,
+    'macros': ?macros?.toJson(),
+    'restDayMacros': ?restDayMacros?.toJson(),
     if (dayAdjustments.isNotEmpty)
       'dayAdjustments': {for (final entry in dayAdjustments.entries) entry.key: entry.value.toJson()},
   };
@@ -296,7 +368,10 @@ final class NutritionSettings {
       ..lastAppliedWeighInDay = _day(json['lastAppliedWeighInDay'])
       ..lastCheckInDay = _day(json['lastCheckInDay'])
       ..proteinPerKilogram = jsonDouble(json['proteinPerKilogram'])?.clamp(proteinRange.$1, proteinRange.$2)
-      ..fatSharePercent = jsonDouble(json['fatSharePercent'])?.clamp(fatShareRange.$1, fatShareRange.$2);
+      ..fatSharePercent = jsonDouble(json['fatSharePercent'])?.clamp(fatShareRange.$1, fatShareRange.$2)
+      ..macroMode = enumFromRaw(MacroMode.values, json['macroMode']) ?? MacroMode.auto
+      ..macros = MacroGoal.fromJson(json['macros'])
+      ..restDayMacros = MacroGoal.fromJson(json['restDayMacros']);
     final rawDays = json['dayAdjustments'];
     if (rawDays is Map) {
       settings.dayAdjustments = {

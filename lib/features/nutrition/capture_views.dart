@@ -12,7 +12,7 @@ import '../../services/providers.dart';
 import 'meal_shortcuts.dart';
 
 /// Weitere Wege aus dem Erfassen-Bildschirm.
-enum CaptureOther { barcode, quick, manual }
+enum CaptureOther { search, barcode, quick, manual }
 
 /// Ergebnis des Erfassen-Bildschirms: Analyse von Text/Foto oder ein anderer Weg.
 sealed class CaptureResult {
@@ -164,6 +164,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
             child: Row(
               spacing: 8,
               children: [
+                _way('Suchen', Icons.search, CaptureOther.search),
                 _way('Barcode', Icons.qr_code_scanner, CaptureOther.barcode),
                 _way('Manuell', Icons.edit_note, CaptureOther.manual),
                 _way('Nur kcal', Icons.bolt, CaptureOther.quick),

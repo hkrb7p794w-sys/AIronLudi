@@ -79,4 +79,27 @@ final class OpenFoodFactsClient {
     }
     return OpenFoodFacts.product(json, barcode: barcode) ?? (throw FoodLookupError.notFound);
   }
+
+  /// Markenprodukte per Suchbegriff (Produkte aus Deutschland zuerst). Leere Liste, wenn nichts passt.
+  Future<List<OpenFoodFactsProduct>> search(String query) async {
+    final HttpResponse response;
+    try {
+      response = await _transport.send(
+        HttpRequest(
+          method: 'GET',
+          url: ProductSearch.searchUri(query),
+          headers: const {'User-Agent': OpenFoodFacts.userAgent},
+          timeout: const Duration(seconds: 20),
+        ),
+      );
+    } on HttpTransportException catch (error) {
+      throw FoodLookupError.network(error.message);
+    }
+    if (response.status == 429) throw const FoodLookupError.network('zu viele Suchen – bitte kurz warten');
+    try {
+      return ProductSearch.searchResults(JsonValue(jsonDecode(utf8.decode(response.body))));
+    } on FormatException {
+      return const [];
+    }
+  }
 }

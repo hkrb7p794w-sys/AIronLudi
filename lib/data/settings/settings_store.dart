@@ -32,6 +32,7 @@ abstract final class SettingsKeys {
   static const weights = 'coach.weights';
   static const sleep = 'coach.sleep';
   static const healthDashboard = 'coach.healthDashboard';
+  static const todayDashboard = 'coach.todayDashboard';
   static const mobility = 'coach.mobility';
   static const sentWorkouts = 'coach.sentWorkouts';
   static const sources = 'coach.sources';

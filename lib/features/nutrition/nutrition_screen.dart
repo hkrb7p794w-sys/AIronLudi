@@ -14,6 +14,7 @@ import '../../ui/components.dart';
 import '../../ui/large_title.dart';
 import '../evidence/evidence_views.dart';
 import '../recipes/recipe_views.dart';
+import '../settings/nutrition_settings_screen.dart';
 import 'bls_views.dart';
 import 'capture_views.dart';
 import 'meal_editor.dart';
@@ -21,6 +22,7 @@ import 'meal_share_views.dart';
 import 'meal_shortcuts.dart';
 import 'nutrition_controller.dart';
 import 'nutrition_plan_views.dart';
+import 'product_search_screen.dart';
 import 'weight_views.dart';
 
 String mealSummary(List<MealItem> items) {
@@ -385,6 +387,17 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         await _reload();
       case CaptureChoose(other: CaptureOther.manual):
         _controller.newManualDraft();
+      case CaptureChoose(other: CaptureOther.search):
+        final item = await Navigator.of(context).push<MealItem>(
+          MaterialPageRoute(
+            fullscreenDialog: true,
+            builder: (_) => ProductSearchScreen(own: [for (final food in _foods) ?food.item]),
+          ),
+        );
+        if (item != null) {
+          await _controller.addItem(item);
+          await _reload();
+        }
       case CaptureChoose(other: CaptureOther.barcode):
         final code = await Navigator.of(context)
             .push<String>(MaterialPageRoute(fullscreenDialog: true, builder: (_) => const BarcodeEntryScreen()));
@@ -957,6 +970,9 @@ class _BudgetSection extends StatelessWidget {
     final kcal = NutritionBudget.line(Nutrient.kcal, targets: targets.values, totals: totals);
     return FormSection(
       header: '${targets.dayType.label} · ${targets.source.rawValue}',
+      footer: targets.customMacros
+          ? ['Eigene Makroziele (Einstellungen › Ernährung).', ...targets.macroNotes].join(' ')
+          : null,
       children: [
         Padding(
           padding: const EdgeInsets.all(16),
@@ -994,6 +1010,23 @@ class _BudgetSection extends StatelessWidget {
             );
             if (result != null) onAdjust(result.$1);
           },
+        ),
+        // Makroziele dauerhaft in Gramm oder Prozent, auch getrennt für Ruhetage.
+        ListTile(
+          leading: const Icon(Icons.pie_chart_outline),
+          title: const Text('Makroziele'),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                targets.customMacros ? 'Eigene' : 'Automatisch',
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+              ),
+              const DisclosureChevron(),
+            ],
+          ),
+          onTap: () =>
+              Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const NutritionSettingsScreen())),
         ),
       ],
     );

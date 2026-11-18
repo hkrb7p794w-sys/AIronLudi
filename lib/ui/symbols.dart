@@ -62,6 +62,19 @@ abstract final class AppSymbols {
     'star.fill': Icons.star,
     'sun.max.fill': Icons.wb_sunny,
     'trophy.fill': Icons.emoji_events,
+    // Weitere Sportarten (ActivityKind).
+    'figure.climbing': Icons.terrain,
+    'figure.bouldering': Icons.landscape,
+    'figure.rower': Icons.rowing,
+    'figure.kayaking': Icons.kayaking,
+    'figure.hiit': Icons.local_fire_department,
+    'figure.flexibility': Icons.accessibility_new,
+    'figure.elliptical': Icons.monitor_heart,
+    'figure.dance': Icons.music_note,
+    'figure.skiing.downhill': Icons.downhill_skiing,
+    'figure.tennis': Icons.sports_tennis,
+    'figure.soccer': Icons.sports_soccer,
+    'figure.boxing': Icons.sports_mma,
   };
 
   static IconData of(String name) => _icons[name] ?? Icons.circle;

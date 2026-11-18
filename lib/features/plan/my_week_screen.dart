@@ -12,6 +12,7 @@ import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
 import '../activities/activity_detail_screen.dart';
 import '../activities/activity_parts.dart';
+import '../ai/coach_exchange.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../onboarding/schedule_editor.dart';
 import '../today/now_views.dart';
@@ -94,6 +95,33 @@ class _MyWeekScreenState extends ConsumerState<MyWeekScreen> {
       body: ListView(
         padding: const EdgeInsets.only(bottom: 32),
         children: [
+          // Neuen Plan ohne Umwege einlesen: Datei (.md/.txt/.json), Text oder Antwort einer KI.
+          FormSection(
+            footer:
+                'Aus einer Datei, als Text oder als Antwort von Claude, ChatGPT & Co. Vor dem Übernehmen siehst du '
+                'jede Änderung; ein Plan als Tabelle ersetzt deinen Wochenplan ganz.',
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    icon: const Icon(Icons.file_download_outlined),
+                    label: const Text('Wochenplan importieren'),
+                    onPressed: () => _present(const CoachImportScreen()),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
+                child: TextButton.icon(
+                  icon: const Icon(Icons.auto_awesome, size: 18),
+                  label: const Text('Plan mit einer KI erstellen (Daten exportieren)'),
+                  onPressed: () => _present(const CoachExportScreen()),
+                ),
+              ),
+            ],
+          ),
           _GoalHeader(profile: profile),
           MissedSessionSection(week: sessions, onSaved: _reload),
           FormSection(

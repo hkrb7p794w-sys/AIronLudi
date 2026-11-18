@@ -26,6 +26,8 @@ Future<ProviderContainer> _start(WidgetTester tester) async {
 void main() {
   testWidgets('Heute: Fortschritt mit Serie und Stufe, merkt den Stand fürs Spiel', (tester) async {
     final container = await _start(tester);
+    container.read(coachSettingsProvider).todayDashboard = TodayDashboard()..set(TodayModule.motivation, visible: true);
+    await tester.pumpAndSettle();
     final section = find.text('FORTSCHRITT');
     await tester.scrollUntilVisible(section, 300, scrollable: find.byType(Scrollable).first);
     expect(find.textContaining('Tage in Folge'), findsOneWidget);

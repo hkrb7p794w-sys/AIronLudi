@@ -136,4 +136,84 @@ void main() {
       expect(gain.weeklyKilograms, 0.4);
     });
   });
+
+  group('Eigene Makroziele', () {
+    final run = [TemplateItem(kind: TemplateItemKind.run, text: 'Lauf', minutes: 60, plannedType: DayType.moderate)];
+
+    test('Gramm: genau übernommen, Energie ergibt sich daraus', () {
+      final custom = settings(goal: NutritionGoal.maintain)
+        ..macroMode = MacroMode.grams
+        ..macros = const MacroGoal(protein: 160, carbs: 300, fat: 80);
+      final result = targets(custom, plan: run);
+      expect(result.customMacros, isTrue);
+      expect(result.values[Nutrient.protein], 160);
+      expect(result.values[Nutrient.carbs], 300);
+      expect(result.values[Nutrient.fat], 80);
+      expect(result.values[Nutrient.kcal], 4 * 160 + 4 * 300 + 9 * 80);
+      expect(result.macroNotes, isEmpty);
+    });
+
+    test('Prozent: Anteile der App-Energie oder eigener kcal', () {
+      final custom = settings(goal: NutritionGoal.maintain)
+        ..macroMode = MacroMode.percent
+        ..macros = MacroGoal.percentDefault;
+      final auto = targets(settings(goal: NutritionGoal.maintain), plan: run);
+      final result = targets(custom, plan: run);
+      expect(result.values[Nutrient.kcal]!, closeTo(auto.values[Nutrient.kcal]!, 3));
+      expect(result.values[Nutrient.protein]! * 4 / result.values[Nutrient.kcal]!, closeTo(0.30, 0.01));
+      expect(result.values[Nutrient.fat]! * 9 / result.values[Nutrient.kcal]!, closeTo(0.25, 0.01));
+      final fixed = custom..macros = MacroGoal.percentDefault.copyWith(kilocalories: 3000);
+      expect(targets(fixed, plan: run).values[Nutrient.kcal]!, closeTo(3000, 3));
+    });
+
+    test('Ruhetage mit eigenen Werten, sonst gelten die Trainingswerte', () {
+      final custom = settings(goal: NutritionGoal.maintain)
+        ..macroMode = MacroMode.grams
+        ..macros = const MacroGoal(protein: 160, carbs: 350, fat: 80)
+        ..restDayMacros = const MacroGoal(protein: 160, carbs: 200, fat: 80);
+      expect(targets(custom, plan: run).values[Nutrient.carbs], 350);
+      expect(targets(custom).values[Nutrient.carbs], 200);
+      custom.restDayMacros = null;
+      expect(targets(custom).values[Nutrient.carbs], 350);
+    });
+
+    test('Schutzgrenzen: Mindestenergie und 20 % Fett bleiben, ohne Gewichtsziele automatisch', () {
+      final tooLow = settings()
+        ..macroMode = MacroMode.grams
+        ..macros = const MacroGoal(protein: 150, carbs: 50, fat: 20);
+      final result = targets(tooLow);
+      final auto = targets(settings());
+      expect(result.values[Nutrient.protein], 150);
+      expect(result.values[Nutrient.kcal]!, greaterThanOrEqualTo(auto.values[Nutrient.kcal]! * 0.9));
+      expect(result.values[Nutrient.fat]! * 9 / result.values[Nutrient.kcal]!, greaterThanOrEqualTo(0.195));
+      expect(result.macroNotes.single, startsWith('Auf '));
+
+      // Genug Energie, aber kaum Fett: Fett auf 20 %, dafür weniger Kohlenhydrate.
+      final lowFat = settings(goal: NutritionGoal.maintain)
+        ..macroMode = MacroMode.grams
+        ..macros = const MacroGoal(protein: 150, carbs: 450, fat: 20);
+      final fat = targets(lowFat, plan: run);
+      expect(fat.values[Nutrient.fat]! * 9 / fat.values[Nutrient.kcal]!, closeTo(0.2, 0.01));
+      expect(fat.values[Nutrient.carbs]!, lessThan(450));
+      expect(fat.macroNotes.single, startsWith('Fett auf 20 %'));
+
+      final withheld = settings()
+        ..weightTargetsWithheld = true
+        ..macroMode = MacroMode.grams
+        ..macros = const MacroGoal(protein: 150, carbs: 50, fat: 20);
+      expect(targets(withheld).customMacros, isFalse);
+    });
+
+    test('JSON hin und zurück, Standard automatisch', () {
+      final custom = NutritionSettings()
+        ..macroMode = MacroMode.percent
+        ..macros = MacroGoal.percentDefault.copyWith(kilocalories: 2500)
+        ..restDayMacros = const MacroGoal(protein: 35, carbs: 35, fat: 30);
+      final restored = NutritionSettings.fromJson(custom.toJson());
+      expect(restored, custom);
+      expect(restored.macros!.kilocalories, 2500);
+      expect(NutritionSettings.fromJson(<String, Object?>{}).macroMode, MacroMode.auto);
+      expect(NutritionSettings().toJson().containsKey('macroMode'), isFalse);
+    });
+  });
 }
