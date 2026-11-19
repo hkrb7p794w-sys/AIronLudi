@@ -1,4 +1,5 @@
 // Reiter „Heute“: Jetzt dran, Regel-Notiz, Wochenübersicht mit eigenen Zielen, Auslassen für diese Woche.
+import 'package:aironludi/data/storage.dart';
 import 'package:aironludi/features/ai/ai_screen.dart';
 import 'package:aironludi/features/today/today_dashboard_editor.dart';
 import 'package:aironludi/features/today/today_screen.dart';
@@ -13,6 +14,34 @@ import 'package:flutter_test/flutter_test.dart';
 import '../app_test.dart' show app;
 
 void main() {
+  testWidgets('Strain läuft über den Tag mit: neue Aktivität ohne Garmin-Abruf zählt sofort', (tester) async {
+    await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
+    await tester.pumpAndSettle();
+    final container = ProviderScope.containerOf(tester.element(find.byType(LiquidTabBar)));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel(RegExp(r'^Strain: 0,0')), findsOneWidget);
+    expect(container.read(appModelProvider).lastSync, isNull);
+
+    // Wie ein Health- oder WHOOP-Import am Nachmittag: nur die Datenbank ändert sich, kein Garmin-Abruf.
+    final now = DateTime.now();
+    String two(int value) => value.toString().padLeft(2, '0');
+    final run = GarminActivity(7001)
+      ..typeKey = 'running'
+      ..name = 'Nachmittagslauf'
+      ..startLocal = '${now.year}-${two(now.month)}-${two(now.day)} 00:05:00'
+      ..durationSeconds = 3600
+      ..distanceMeters = 11000
+      ..trainingLoad = 120;
+    await tester.runAsync(() => container.read(activityRepositoryProvider).upsert(run));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await tester.pumpAndSettle();
+    expect(container.read(appModelProvider).lastSync, isNull);
+    expect(find.bySemanticsLabel(RegExp(r'^Strain: 0,0')), findsNothing);
+    expect(find.bySemanticsLabel(RegExp(r'^Strain: [1-9]')), findsOneWidget);
+  });
+
   testWidgets('persönliches Profil: Jetzt dran, Notiz ohne KI, Woche, auslassen', (tester) async {
     // Höher als ein iPhone: vor 12 Uhr steht der Morning Report über „Jetzt dran“.
     tester.view.physicalSize = const Size(1170, 3600);

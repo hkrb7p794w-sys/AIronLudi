@@ -17,6 +17,7 @@ import '../evidence/evidence_views.dart';
 import '../recipes/recipe_views.dart';
 import '../settings/nutrition_settings_screen.dart';
 import 'bls_views.dart';
+import 'brand_product_results.dart';
 import 'capture_views.dart';
 import 'meal_editor.dart';
 import 'meal_share_views.dart';
@@ -221,7 +222,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                 controller: _query,
                 autofocus: true,
                 decoration: const InputDecoration(
-                  hintText: 'Lebensmittel oder Mahlzeit suchen',
+                  hintText: 'Lebensmittel, Marke oder Mahlzeit suchen',
                   border: InputBorder.none,
                 ),
               )
@@ -843,7 +844,11 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
       _searching = false;
     });
     return [
-      if (foundFoods.isEmpty && foundMeals.isEmpty && foundBLS.isEmpty)
+      // Ohne lokale Treffer und zu kurz für die Online-Suche: Hinweis; sonst sagen die Markenprodukte, was es gibt.
+      if (foundFoods.isEmpty &&
+          foundMeals.isEmpty &&
+          foundBLS.isEmpty &&
+          FoodSearch.normalized(query).length < ProductSearch.onlineMinimumLength)
         const FormSection(children: [ListTile(title: Text('Nichts gefunden. Über „+“ eintragen.'))]),
       if (foundMeals.isNotEmpty)
         FormSection(
@@ -897,6 +902,19 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
               ),
           ],
         ),
+      // Markenprodukte (Open Food Facts) unter den eigenen und den BLS-Treffern; eingetragene merkt sich die App als
+      // eigenes Lebensmittel, beim nächsten Mal stehen sie oben.
+      BrandProductResults(
+        query: query,
+        onAdd: (item) {
+          _after(_controller.log(title: item.name, category: category, items: [item]));
+          done();
+        },
+        onOpen: (item) {
+          _controller.draftWithItem(item);
+          done();
+        },
+      ),
     ];
   }
 }

@@ -846,3 +846,37 @@ Auf Wunsch des Nutzers; die Swift-App kennt nur einen Benutzer. Tests: `packages
   gewählter Ansicht). Die echten Widgets und Live-Aktivitäten bleiben nativ (Migrationsplan 4.2) und sind nicht Teil
   dieser Umstellung.
 
+## 2026-11-19 – Daily Strain läuft über den Tag mit; Markenprodukte in der Schnellsuche
+
+**Daily Strain (Ring „Strain“ unter „Heute“, „Meine Belastung heute“ unter „Heute“ und „Training“)**
+
+- Ursache: Beide Seiten luden ihre Daten nur beim Öffnen, um Mitternacht und wenn sich `AppModel.lastSync` änderte.
+  `lastSync` ist der Zeitpunkt des letzten **Garmin**-Abrufs. Abrufe nur von WHOOP oder Apple Health / Health
+  Connect, nachgetragene Aktivitäten und gesicherte Gym-Einheiten änderten ihn nicht – der Wert blieb auf dem Stand
+  vom Morgen. Blieb die App offen, wurde außerdem nicht weiter abgerufen.
+- Jetzt: `trainingDataChangesProvider` meldet jede Änderung der Tabellen für Tageswerte, Aktivitäten und
+  Gym-Einheiten (drift `tableUpdates`), gleich welche Quelle schreibt. „Heute“ und „Training“ laden dann neu
+  (`TrainingDataReload`, 0,6 s nach der letzten Änderung, damit ein Abruf mit vielen Zeilen nur einmal neu lädt).
+  Gerechnet wird bei jedem Neuladen frisch; es gibt keinen Zwischenspeicher für den Wert.
+- Abruf: wie bisher beim Start, beim Zurückkehren in die App und per „Ziehen zum Aktualisieren“; neu zusätzlich alle
+  15 min, solange die App im Vordergrund ist (`RootShell`, über `syncIfDue` mit Mindestabstand und Wartezeit nach
+  Fehlern). Im Hintergrund bleibt es beim Hintergrundabruf des Systems.
+- Datenquellen (unverändert, `DailyStrainRules.compute`): erledigt = Belastungspunkte der heutigen Aktivitäten aus
+  allen Quellen (Garmin, WHOOP, Health, nachgetragen; Doppelte einmal) aus Leistung, Tempo bzw. Puls, sonst aus Dauer
+  und Sportart (`TrainingLoad`), dazu abgeschlossene Gym-Einheiten der App ohne Uhr-Aufzeichnung (35 Punkte je
+  Stunde). Geplant = offene Einheiten aus Ausdauerplan bzw. Wochenplan. Üblicher Tag und Ermüdung aus dem Verlauf
+  (42 bzw. 7 Tage); Erholungsampel aus den Tageswerten. Strain 0–21 = `TodayKpis.strainOf` der erledigten Punkte.
+
+**Lebensmittelsuche**
+
+- Ursache: Die Lupe im Reiter Ernährung (Schnellsuche) durchsuchte nur eigene Lebensmittel, frühere Mahlzeiten und
+  den BLS – keine Produktdatenbank. „Nutella“ & Co. gab es nur unter „+“ › Suchen.
+- Jetzt zeigt die Schnellsuche darunter „Markenprodukte“ aus Open Food Facts (`BrandProductResults`, ab drei
+  Zeichen, nach 0,7 s Tipp-Pause) mit kcal, Protein, Kohlenhydraten und Fett je Portion bzw. 100 g und je 100 g.
+  „+“ trägt mit der Packungsportion (sonst 100 g) ein, Antippen öffnet den Entwurf. Eingetragene Produkte merkt sich
+  die App als eigenes Lebensmittel (stehen beim nächsten Mal oben, ohne Netz).
+- Suche robuster (`OpenFoodFactsClient.search`): zuerst die Volltextsuche „Search-a-licious“
+  (`search.openfoodfacts.org/search`), bei Fehler oder ohne Treffer die klassische `cgi/search.pl`. Bisher ergab eine
+  Fehlerseite (HTML, 5xx) still „Keine Markenprodukte gefunden“ – jetzt eine Meldung mit „Erneut“. Ergebnisse je
+  Suchbegriff gemerkt (Sitzung, höchstens 40), Fehler nicht. `brands` als Liste (Search-a-licious) wird gelesen.
+

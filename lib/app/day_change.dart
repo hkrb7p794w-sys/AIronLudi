@@ -7,7 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Hintergrund kommt (Port von `onDayChange`). Heute, Ernährung und Gym laden dann neu.
 final currentDayProvider = NotifierProvider<CurrentDay, CalendarDay>(CurrentDay.new);
 
-/// Zeitgeber bis Mitternacht; in Widget-Tests aus (dort darf kein Zeitgeber offen bleiben).
+/// Zeitgeber der App (bis Mitternacht, regelmäßiger Abruf im Vordergrund); in Widget-Tests aus (dort darf kein
+/// Zeitgeber offen bleiben).
 final midnightTimerProvider = Provider<bool>((ref) => true);
 
 class CurrentDay extends Notifier<CalendarDay> {

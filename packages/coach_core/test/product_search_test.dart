@@ -47,6 +47,36 @@ void main() {
     expect((item.grams, item.barcode, item.source), (200, '4000000000001', MealItemSource.openFoodFacts));
   });
 
+  test('Volltextsuche (Search-a-licious): Adresse und Treffer unter „hits“ mit Markenliste', () {
+    final uri = ProductSearch.fullTextUri(' Nutella ');
+    expect(uri.host, 'search.openfoodfacts.org');
+    expect(uri.path, '/search');
+    expect(uri.queryParameters['q'], 'Nutella');
+    expect(uri.queryParameters['fields'], OpenFoodFacts.fields);
+    final results = ProductSearch.searchResults(
+      JsonValue({
+        'count': 2,
+        'hits': [
+          {
+            'code': '3017620422003',
+            'product_name': 'Nutella',
+            'brands': ['Ferrero', 'Nutella'],
+            'serving_quantity': '15',
+            'serving_size': '15 g',
+            'nutriments': {'energy-kcal_100g': 539, 'proteins_100g': 6.3, 'carbohydrates_100g': 57.5, 'fat_100g': 30.9},
+          },
+          {'code': '3017620422004', 'product_name': 'Ohne Nährwerte'},
+        ],
+      }),
+    );
+    final product = FoodProduct.openFoodFacts(results.single);
+    expect(product.title, 'Nutella (Ferrero)');
+    expect(product.defaultGrams, 15);
+    expect(product.per100g[Nutrient.kcal], 539);
+    expect(product.amount(Nutrient.fat, 100), closeTo(30.9, 0.01));
+    expect(product.amount(Nutrient.carbs, 15), closeTo(8.625, 0.001));
+  });
+
   test('lokal: eigene Lebensmittel zuerst, dann BLS; Filter nach Herkunft und Nährwerten', () {
     final own = [
       MealItem(

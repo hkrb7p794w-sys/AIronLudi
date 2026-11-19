@@ -98,7 +98,9 @@ void main() {
     expect(transport.requests, isEmpty);
     await tester.pump(const Duration(milliseconds: 800));
     await tester.pumpAndSettle();
-    expect(transport.requests.single.url.queryParameters['search_terms'], 'Skyr');
+    // Zuerst die Volltextsuche (Search-a-licious); mit Treffern keine zweite Anfrage.
+    expect(transport.requests.single.url.host, 'search.openfoodfacts.org');
+    expect(transport.requests.single.url.queryParameters['q'], 'Skyr');
     expect(find.text('Skyr Natur (Molkerei)'), findsOneWidget);
     expect(find.text('95 kcal · 17 P · 6 K · 0 F · 150 g (1 Becher (150 g))'), findsOneWidget);
 
