@@ -104,7 +104,9 @@ abstract final class OpenFoodFacts {
       'generic_name_de',
     ].map((key) => product[key]?.stringValue).nonNulls;
     final name = names.where((candidate) => candidate.trim().isNotEmpty).firstOrNull ?? 'Produkt $barcode';
-    final brand = product['brands']?.stringValue?.split(',').first.trim();
+    // Klassische API: „Marke A, Marke B“; Search-a-licious: Liste der Marken.
+    final brands = product['brands'];
+    final brand = (brands?.arrayValue?.firstOrNull?.stringValue ?? brands?.stringValue)?.split(',').first.trim();
     final serving = product['serving_quantity']?.doubleValue;
     return OpenFoodFactsProduct(
       barcode: barcode,

@@ -89,3 +89,13 @@ final gymRepositoryProvider = Provider<GymRepository>((ref) => GymRepository(ref
 final sourceStoreProvider = Provider<SourceStore>(
   (ref) => SourceStore(ref.watch(databaseProvider), ref.watch(settingsStoreProvider)),
 );
+
+/// Meldet jede Änderung der Trainingsdaten in der Datenbank: Tageswerte (Schlaf, HRV, Ruhepuls, Body Battery …),
+/// Aktivitäten (Garmin, WHOOP, Health, nachgetragen) und Gym-Einheiten der App. Unabhängig davon, welche Quelle oder
+/// welcher Bildschirm geschrieben hat – damit „Meine Belastung heute“ (Daily Strain) über den Tag mitläuft.
+final trainingDataChangesProvider = Provider<Stream<void>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return db
+      .tableUpdates(TableUpdateQuery.onAllTables([db.dailyMetricsRecords, db.activityRecords, db.gymSessionRecords]))
+      .map((_) {});
+});

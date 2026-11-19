@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/day_change.dart';
+import '../../app/training_data_reload.dart';
 import '../../data/repositories/gym_repository.dart';
 import '../../data/settings/coach_settings.dart';
 import '../../data/storage.dart';
@@ -42,7 +43,7 @@ class TodayScreen extends ConsumerStatefulWidget {
   ConsumerState<TodayScreen> createState() => _TodayScreenState();
 }
 
-class _TodayScreenState extends ConsumerState<TodayScreen> {
+class _TodayScreenState extends ConsumerState<TodayScreen> with TrainingDataReload<TodayScreen> {
   late final TodayController _controller = TodayController(
     store: ref.read(settingsStoreProvider),
     schedule: ref.read(seasonScheduleProvider),
@@ -72,6 +73,10 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
   }
 
   List<GymItem> get _gymItems => [for (final record in _gym) GymItem.fromSession(record.session)];
+
+  /// Neue Aktivität, Tageswerte oder Gym-Einheit in der Datenbank (gleich aus welcher Quelle): Belastung neu rechnen.
+  @override
+  Future<void> reloadTrainingData() => _reload();
 
   Future<void> _reload({bool loadNote = false}) async {
     final today = CalendarDay.today();

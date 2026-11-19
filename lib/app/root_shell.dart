@@ -11,6 +11,7 @@ import 'package:coach_core/coach_core.dart'
         LeagueInvite,
         MealShare,
         RoutineLink,
+        SyncPlan,
         TrainingSport;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -70,15 +71,40 @@ class _RootShellState extends ConsumerState<RootShell> {
       _updateScreenAwake(gym);
       unawaited(_updateQuickActions());
     });
-    _lifecycle = AppLifecycleListener(onResume: () => unawaited(_refresh()), onHide: () => unawaited(_leave()));
+    _lifecycle = AppLifecycleListener(
+      onResume: () {
+        _startForegroundSync();
+        unawaited(_refresh());
+      },
+      onHide: () {
+        _foregroundSync?.cancel();
+        unawaited(_leave());
+      },
+    );
+    _startForegroundSync();
     // Schon vor dem ersten Bild beantwortete Mitteilungen (App aus einer Mitteilung gestartet).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _presentReminder(ref.read(reminderServiceProvider));
     });
   }
 
+  Timer? _foregroundSync;
+
+  /// Bleibt die App offen (z. B. „Heute“ nach dem Training), regelmäßig abrufen, wenn fällig – so kommen neue
+  /// Aktivitäten und Tageswerte auch ohne Verlassen der App an, und „Meine Belastung heute“ rechnet mit. `syncIfDue`
+  /// hält den Mindestabstand (15 min) und die Wartezeit nach Fehlern ein. In Widget-Tests aus (kein offener Zeitgeber).
+  void _startForegroundSync() {
+    _foregroundSync?.cancel();
+    if (!ref.read(midnightTimerProvider)) return;
+    _foregroundSync = Timer.periodic(SyncPlan.minimumInterval, (_) {
+      final model = ref.read(appModelProvider);
+      if (!model.isSyncing) unawaited(model.syncIfDue());
+    });
+  }
+
   @override
   void dispose() {
+    _foregroundSync?.cancel();
     _lifecycle.dispose();
     super.dispose();
   }

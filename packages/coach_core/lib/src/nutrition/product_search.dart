@@ -185,11 +185,21 @@ abstract final class ProductSearch {
     'fields': OpenFoodFacts.fields,
   });
 
-  /// Produkte der Antwort; ohne Kalorienangabe oder Barcode fallen sie weg, Doppelte (gleicher Barcode) einmal.
+  /// Volltextsuche von Open Food Facts („Search-a-licious“, `search.openfoodfacts.org`): schnell, findet auch
+  /// Marken wie „Nutella“ zuverlässig. Deutsche Namen bevorzugt (`langs`), nur benötigte Felder.
+  static Uri fullTextUri(String query, {int pageSize = 24}) => Uri.https('search.openfoodfacts.org', '/search', {
+    'q': query.trim(),
+    'langs': 'de,en',
+    'page_size': '$pageSize',
+    'fields': OpenFoodFacts.fields,
+  });
+
+  /// Produkte der Antwort (`products` der klassischen Suche bzw. `hits` von Search-a-licious); ohne Kalorienangabe
+  /// oder Barcode fallen sie weg, Doppelte (gleicher Barcode) einmal.
   static List<OpenFoodFactsProduct> searchResults(JsonValue json) {
     final seen = <String>{};
     return [
-      for (final product in json['products']?.arrayValue ?? const <JsonValue>[])
+      for (final product in json['products']?.arrayValue ?? json['hits']?.arrayValue ?? const <JsonValue>[])
         if (product['code']?.stringValue case final code? when code.isNotEmpty && seen.add(code))
           ?OpenFoodFacts.product(JsonValue({'status': 1, 'product': product.raw}), barcode: code),
     ];

@@ -82,6 +82,48 @@ void main() {
       await expectLater(client.product('4006381333931'), throwsA(FoodLookupError.notFound));
     });
 
+    const nutella =
+        '{"code": "3017620422003", "product_name": "Nutella", "brands": ["Ferrero"], '
+        '"nutriments": {"energy-kcal_100g": 539, "proteins_100g": 6.3, "carbohydrates_100g": 57.5, "fat_100g": 30.9}}';
+
+    test('Suche: Volltextsuche zuerst, Treffer je Suchbegriff gemerkt', () async {
+      final client = OpenFoodFactsClient(transport: transport());
+      handler = (_) => (200, '{"hits": [$nutella], "count": 1}');
+      final found = await client.search('Nutella');
+      expect(found.single.name, 'Nutella');
+      expect(found.single.per100g[Nutrient.kcal], 539);
+      expect(requests.single.url.host, 'search.openfoodfacts.org');
+      expect(requests.single.headers['User-Agent'], OpenFoodFacts.userAgent);
+      // Gleicher Begriff (anders geschrieben): kein zweiter Abruf.
+      expect((await client.search(' nutella ')).single.barcode, '3017620422003');
+      expect(requests, hasLength(1));
+    });
+
+    test('Suche: Fehlerseite der Volltextsuche → klassische Suche; beide weg → Fehler statt leerer Liste', () async {
+      final client = OpenFoodFactsClient(transport: transport());
+      handler = (request) => request.url.host == 'search.openfoodfacts.org'
+          ? (503, '<html>Page temporarily unavailable</html>')
+          : (200, '{"products": [$nutella]}');
+      expect((await client.search('Nutella')).single.brand, 'Ferrero');
+      expect(requests.map((request) => request.url.host), ['search.openfoodfacts.org', 'de.openfoodfacts.org']);
+
+      handler = (_) => (200, '<html>Wartung</html>');
+      await expectLater(
+        client.search('Haferflocken'),
+        throwsA(const FoodLookupError.network('unerwartete Antwort des Servers')),
+      );
+      // Ein Fehler wird nicht gemerkt: „Erneut“ fragt wirklich neu.
+      handler = (_) => (200, '{"hits": [], "count": 0}');
+      expect(await client.search('Haferflocken'), isEmpty);
+    });
+
+    test('Suche: keine Treffer in der Volltextsuche, klassische Suche nicht erreichbar → leer, kein Fehler', () async {
+      final client = OpenFoodFactsClient(transport: transport());
+      handler = (request) =>
+          request.url.host == 'search.openfoodfacts.org' ? (200, '{"hits": []}') : (502, 'Bad Gateway');
+      expect(await client.search('xyzunbekannt'), isEmpty);
+    });
+
     test('Netzwerkfehler', () async {
       final client = OpenFoodFactsClient(
         transport: FakeHttpTransport((_) => throw const HttpTransportException('offline')),
