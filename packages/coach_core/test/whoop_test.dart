@@ -147,6 +147,8 @@ void main() {
     expect(day.totalKilocalories, 1981);
     expect(day.steps, 8432);
     expect(day.maxHeartRate, 141);
+    // Tages-Strain des Zyklus (0–21), wie WHOOP ihn zeigt.
+    expect(day.dayStrain, 5.3);
   });
 
   test('ohne Bewertung keine Messwerte; längster Hauptschlaf der Nacht gewinnt', () {

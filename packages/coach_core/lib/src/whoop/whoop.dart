@@ -434,8 +434,10 @@ abstract final class WhoopImport {
 
     for (final cycle in cycles) {
       final kilojoules = cycle.kilojoules;
-      if (kilojoules == null && cycle.steps == null && cycle.maxHeartRate == null) continue;
+      if (kilojoules == null && cycle.steps == null && cycle.maxHeartRate == null && cycle.strain == null) continue;
       final metrics = on(cycle.day);
+      // Tages-Strain (0–21) des Zyklus; der laufende Zyklus zählt mit seinem bisherigen Stand.
+      if (cycle.strain case final strain? when strain >= 0) metrics.dayStrain = (strain * 10).roundToDouble() / 10;
       if (kilojoules != null) metrics.totalKilocalories = kilocalories(kilojoules).roundToDouble();
       if (cycle.steps case final steps?) metrics.steps = steps.toDouble();
       if (cycle.maxHeartRate case final maxHR?) metrics.maxHeartRate = maxHR;

@@ -135,6 +135,18 @@ final class HealthImportService extends ChangeNotifier {
     } on Object {
       problems.add('Schlaf');
     }
+    // Puls über den ganzen Tag (gestern und heute) für den Strain wie bei WHOOP.
+    try {
+      final from = _startOfDay(now.subtract(const Duration(days: 1)));
+      final samples = await _source.quantities(HealthQuantity.heartRate, from: from, to: now);
+      final curves = HeartRateStrain.curves([for (final sample in samples) (sample.start, sample.value)]);
+      for (final MapEntry(key: day, value: curve) in curves.entries) {
+        final values = DailyMetrics(day)..heartRateCurve = curve;
+        map[day] = map[day]?.merging(values) ?? values;
+      }
+    } on Object {
+      problems.add('Puls');
+    }
     final daysUpdated = await _saveMetrics(map, now);
 
     // Workouts

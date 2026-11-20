@@ -3,9 +3,11 @@ import 'dart:math' as math;
 import '../calendar/calendar_day.dart';
 import '../endurance/endurance_plan.dart';
 import '../endurance/training_load.dart';
+import '../garmin/daily_metrics.dart';
 import '../garmin/garmin_activity.dart';
 import '../profile/user_profile.dart';
 import '../profile/week_schedule.dart';
+import 'heart_rate_strain.dart';
 import 'recommendation.dart';
 import 'recovery_level.dart';
 
@@ -35,7 +37,18 @@ final class DailyStrain {
     required this.headline,
     required this.advice,
     required this.week,
+    this.measured,
+    this.source = StrainSource.workouts,
+    this.heartRate,
   });
+
+  /// Strain 0–21 des Tages wie bei WHOOP: von WHOOP selbst oder aus dem Pulsverlauf über den ganzen Tag. `null`
+  /// ohne Pulsverlauf – dann zählt die Schätzung aus den Trainings ([done]).
+  final double? measured;
+  final StrainSource source;
+
+  /// Einzelheiten der Berechnung aus dem Pulsverlauf (Minuten je Zone, Ruhepuls, HFmax).
+  final HeartRateStrainResult? heartRate;
 
   /// Heute schon trainiert (Punkte).
   final double done;
@@ -99,6 +112,8 @@ abstract final class DailyStrainRules {
     List<PlanSlot> enduranceToday = const [],
     double gymMinutesToday = 0,
     AthleteThresholds thresholds = const AthleteThresholds(),
+    DailyMetrics? todayMetrics,
+    double? maxHeartRate,
   }) {
     final daily = TrainingLoad.daily(activities, thresholds);
     if (gymMinutesToday > 0) daily[today] = (daily[today] ?? 0) + gymMinutesToday / 60 * 35;
@@ -181,7 +196,24 @@ abstract final class DailyStrainRules {
       _ when planned > 0 => 'Noch ${planned.round()} Punkte geplant.',
       _ => 'Im Rahmen deines üblichen Trainings.',
     };
+    // Strain wie bei WHOOP: Wert von WHOOP, sonst aus dem Pulsverlauf des Tages (nur Werte von heute).
+    final metrics = todayMetrics?.day == today ? todayMetrics : null;
+    final heartRate = metrics?.heartRateCurve == null
+        ? null
+        : HeartRateStrain.compute(
+            metrics!.heartRateCurve!,
+            restingHeartRate: metrics.restingHeartRate,
+            maxHeartRate: maxHeartRate,
+          );
+    final (measured, source) = switch ((metrics?.dayStrain, heartRate)) {
+      (final whoop?, _) => (whoop, StrainSource.whoop),
+      (null, final result?) => (result.strain, StrainSource.heartRate),
+      _ => (null, StrainSource.workouts),
+    };
     return DailyStrain(
+      measured: measured,
+      source: source,
+      heartRate: heartRate,
       done: (done * 10).roundToDouble() / 10,
       planned: planned,
       typical: (typical * 10).roundToDouble() / 10,

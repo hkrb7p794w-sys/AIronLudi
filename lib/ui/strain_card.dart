@@ -214,8 +214,36 @@ class DailyStrainDetails extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (strain.measured case final measured?)
+            FormSection(
+              header: 'Strain wie bei WHOOP',
+              footer: switch (strain.source) {
+                StrainSource.whoop => 'Wert von WHOOP (Tageszyklus).',
+                _ =>
+                  'Aus deinem Puls über den ganzen Tag: Jede Minute zählt nach ihrem Anteil an der '
+                      'Herzfrequenzreserve (Zonen 50–60 … 90–100 %, Gewicht 1–5; Alltagsbewegung ab 30 % leicht). '
+                      'Skala 0–21 wie bei WHOOP – nach oben immer schwerer zu steigern. Näherung, die genaue '
+                      'WHOOP-Formel ist nicht öffentlich.',
+              },
+              children: [
+                LabeledRow(label: 'Strain', value: '${GermanFormat.decimal(measured)} von 21'),
+                LabeledRow(label: 'Quelle', value: strain.source.label),
+                if (strain.heartRate case final result?) ...[
+                  LabeledRow(
+                    label: 'Ruhepuls · HFmax',
+                    value: '${result.restingHeartRate.round()} · ${result.maxHeartRate.round()} bpm',
+                  ),
+                  for (final (zone, minutes) in result.zoneMinutes.indexed.skip(1))
+                    if (minutes > 0)
+                      LabeledRow(
+                        label: 'Zone $zone (${40 + zone * 10}–${50 + zone * 10} %)',
+                        value: '${minutes.round()} min',
+                      ),
+                ],
+              ],
+            ),
           FormSection(
-            header: 'Heute',
+            header: strain.measured == null ? 'Heute' : 'Trainings heute (Belastungspunkte)',
             children: [
               LabeledRow(label: 'Erledigt', value: '${strain.done.round()} Punkte'),
               LabeledRow(label: 'Noch geplant', value: '${strain.planned.round()} Punkte'),
