@@ -46,6 +46,29 @@ void main() {
     expect(find.text('Kantine'), findsWidgets);
   });
 
+  testWidgets('Nur Kalorien: Makros und Mikros ohne Angabe zeigen keinen Mangel', (tester) async {
+    await openNutrition(tester);
+    await tester.tap(find.byTooltip('Erfassen'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('Nur kcal'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextField, 'Kalorien'), '650');
+    await tester.pump();
+    await tester.tap(find.widgetWithText(TextButton, 'Eintragen'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await tester.pumpAndSettle();
+    // Protein ist beim Schnell-Eintrag unbekannt: übrig ist höchstens das ganze Ziel.
+    expect(find.textContaining('noch höchstens'), findsWidgets);
+    await tester.scrollUntilVisible(find.text('Alle Nährstoffe'), 300);
+    await tester.tap(find.text('Alle Nährstoffe'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Eisen'), 200);
+    expect(find.text('Keine Angabe in den Einträgen'), findsWidgets);
+    expect(find.textContaining(RegExp(r'^– / 1[16] mg$')), findsOneWidget);
+  });
+
   testWidgets('Schnellsuche: Markenprodukt aus Open Food Facts (Nutella) mit Nährwerten, „+“ trägt ein', (
     tester,
   ) async {

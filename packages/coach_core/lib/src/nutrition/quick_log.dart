@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:collection/collection.dart';
 
 import '../calendar/calendar_day.dart';
+import 'food_aggregation.dart';
 import 'food_search.dart';
 import 'meal.dart';
 import 'meal_category.dart';
@@ -119,11 +120,14 @@ abstract final class MealSuggestions {
 
 /// Eine Zeile „noch übrig“.
 final class BudgetLine {
-  const BudgetLine({required this.nutrient, required this.actual, required this.target});
+  const BudgetLine({required this.nutrient, required this.actual, required this.target, this.partial = false});
 
   final Nutrient nutrient;
   final double actual;
   final double target;
+
+  /// Einige Einträge ohne Wert: [actual] ist eine Untergrenze, „übrig“ eine Obergrenze.
+  final bool partial;
 
   Nutrient get id => nutrient;
 
@@ -137,26 +141,43 @@ final class BudgetLine {
 
   @override
   bool operator ==(Object other) =>
-      other is BudgetLine && other.nutrient == nutrient && other.actual == actual && other.target == target;
+      other is BudgetLine &&
+      other.nutrient == nutrient &&
+      other.actual == actual &&
+      other.target == target &&
+      other.partial == partial;
 
   @override
-  int get hashCode => Object.hash(nutrient, actual, target);
+  int get hashCode => Object.hash(nutrient, actual, target, partial);
 }
 
 /// Was heute noch übrig ist – die Frage beim Essen ist „wie viel Protein fehlt noch?“, nicht „wie viel Prozent“.
 abstract final class NutritionBudget {
   static const main = [Nutrient.protein, Nutrient.carbs, Nutrient.fat];
 
-  static BudgetLine? line(Nutrient nutrient, {required NutrientValues targets, required NutrientValues totals}) {
+  /// [intake]: Lücken der Tagessumme (`FoodAggregation`); ohne Angabe gilt die Summe als vollständig.
+  static BudgetLine? line(
+    Nutrient nutrient, {
+    required NutrientValues targets,
+    required NutrientValues totals,
+    FoodIntake? intake,
+  }) {
     final target = targets[nutrient];
     if (target == null || target <= 0) return null;
-    return BudgetLine(nutrient: nutrient, actual: totals[nutrient] ?? 0, target: target);
+    return BudgetLine(
+      nutrient: nutrient,
+      actual: totals[nutrient] ?? 0,
+      target: target,
+      partial: intake != null && intake.missingCount(nutrient) > 0,
+    );
   }
 
-  /// „noch 62 g“ bzw. „18 g drüber“.
+  /// „noch 62 g“ bzw. „18 g drüber“; mit Lücken „noch höchstens 62 g“ bzw. „mind. 18 g drüber“.
   static String remainingText(BudgetLine line) {
     final amount = line.remaining.abs().round();
-    return line.remaining >= 0 ? 'noch $amount ${line.nutrient.unit}' : '$amount ${line.nutrient.unit} drüber';
+    final unit = line.nutrient.unit;
+    if (line.remaining >= 0) return line.partial ? 'noch höchstens $amount $unit' : 'noch $amount $unit';
+    return line.partial ? 'mind. $amount $unit drüber' : '$amount $unit drüber';
   }
 }
 

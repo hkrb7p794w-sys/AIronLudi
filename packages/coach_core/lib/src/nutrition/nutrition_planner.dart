@@ -9,6 +9,7 @@ import '../garmin/garmin_activity.dart';
 import '../garmin/garmin_profile.dart';
 import '../garmin/strength_duplicates.dart';
 import '../profile/goal_rules.dart';
+import '../util/german_format.dart';
 import 'nutrient.dart';
 import 'nutrition_settings.dart';
 
@@ -45,6 +46,7 @@ final class NutritionTargets {
     required this.profile,
     required this.basalMetabolicRate,
     required this.exerciseKilocalories,
+    this.maintenanceKilocalories = 0,
     required this.proteinPerKilogram,
     required this.referenceWeightKilograms,
     required this.energyAvailabilityFloorApplied,
@@ -59,6 +61,10 @@ final class NutritionTargets {
   final BodyProfile profile;
   final double basalMetabolicRate;
   final double exerciseKilocalories;
+
+  /// Bedarf des Tages ohne Ziel, Anpassungen und eigene Makros: Grundumsatz × PAL + Training (netto). Vergleichswert
+  /// für den gemessenen Verbrauch (`Expenditure`).
+  final double maintenanceKilocalories;
   final double proteinPerKilogram;
 
   /// Gewicht, auf das sich Protein und Kohlenhydrate beziehen (ab BMI 30 weniger als das Körpergewicht).
@@ -95,12 +101,20 @@ abstract final class NutritionPlanner {
     'boxing', 'martial', 'dance', 'tennis', 'squash', 'badminton', 'soccer', 'basketball', 'volleyball',
   ];
 
+  /// Fett in g je kg Referenzgewicht mindestens (untere Praxisgrenze der Sporternährung, 0,7–1 g/kg): Bei großem
+  /// Defizit lägen 20 % der Energie sonst bei rund 0,6 g/kg.
+  static const minimumFatPerKilogram = 0.7;
+
+  /// Natrium-Richtwert ohne Training (DGE-Schätzwert); dazu kommt der Schweißverlust (`compute`).
+  static const sodiumBase = 1500.0;
+
   static Map<Nutrient, double> micro({required bool isFemale, required int age}) => {
-    Nutrient.sodium: 1500,
+    Nutrient.sodium: sodiumBase,
     Nutrient.potassium: 4000,
     Nutrient.magnesium: isFemale ? 300 : 350,
     Nutrient.calcium: age < 19 ? 1200 : 1000,
-    Nutrient.iron: isFemale ? 16 : 11,
+    // DGE/ÖGE 2024: Frauen vor der Menopause 16 mg, danach 14 mg (ab 51 Jahren angenommen), Männer 11 mg.
+    Nutrient.iron: isFemale ? (age >= 51 ? 14 : 16) : 11,
     Nutrient.zinc: isFemale ? 8 : 14,
     Nutrient.vitaminD: 20,
     Nutrient.vitaminB12: 4,
@@ -277,7 +291,8 @@ abstract final class NutritionPlanner {
     // (ACSM 2016); höchstens bis zur Untergrenze der Spanne gekürzt. Ein eigener Fettanteil (20–35 %) wird als
     // Untergrenze gesetzt, der Rest geht an die Kohlenhydrate. Am Refeed-Tag kommt das Plus über Kohlenhydrate.
     final fatShare = dayAdjustment?.kind == DayAdjustmentKind.refeed ? null : settings.fatSharePercent;
-    final fatMinimum = (fatShare ?? 20) / 100 * energy / 9;
+    final fatFloor = minimumFatPerKilogram * referenceWeight;
+    final fatMinimum = math.max((fatShare ?? 20) / 100 * energy / 9, fatFloor);
     final fatMaximum = math.max(0.35 * energy / 9, fatMinimum);
     final carbRoom = (energy - 4 * protein - 9 * fatMinimum) / 4;
     // Ruhetag im Defizit: Die Spannen nach Thomas et al. gelten für Trainingstage. Ohne Training reichen 2 g/kg, aber
@@ -291,8 +306,8 @@ abstract final class NutritionPlanner {
     final rest = energy - 4 * protein - 4 * carbs;
     var fat = math.min(math.max(rest / 9, fatMinimum), fatMaximum);
     if (rest / 9 > fatMaximum) carbs += (rest - fat * 9) / 4;
-    // Auch wenn die Untergrenze der Kohlenhydrate die Energie übersteigt, bleibt Fett bei mindestens 20 %.
-    fat = math.max(fat, (protein + carbs) / 9);
+    // Auch wenn die Untergrenze der Kohlenhydrate die Energie übersteigt, bleibt Fett bei mindestens 20 % und 0,7 g/kg.
+    fat = math.max(math.max(fat, (protein + carbs) / 9), fatFloor);
     var total = 4 * protein + 4 * carbs + 9 * fat;
     // Bei einem Defizit dürfen die Mindestmengen das Ziel nicht über den Bedarf heben: Kohlenhydrate zuerst kürzen,
     // Protein nur, wenn das nicht reicht. Bei Fett = (P + K) / 9 ist die Summe 5 × (P + K).
@@ -340,11 +355,14 @@ abstract final class NutritionPlanner {
         customTotal = lower;
         macroNotes.add('Auf ${lower.round()} kcal angehoben – darunter wäre das Defizit zu groß.');
       }
-      if (fat * 9 < 0.2 * customTotal) {
-        final needed = 0.2 * customTotal / 9;
-        carbs = math.max(0, carbs - (needed - fat) * 9 / 4);
-        fat = needed;
-        macroNotes.add('Fett auf 20 % der Energie angehoben (Untergrenze für Hormone und Vitamine).');
+      final neededFat = math.max(0.2 * customTotal / 9, fatFloor);
+      if (fat < neededFat - 0.5) {
+        carbs = math.max(0, carbs - (neededFat - fat) * 9 / 4);
+        fat = neededFat;
+        macroNotes.add(
+          'Fett auf ${neededFat.round()} g angehoben (mindestens 20 % der Energie und '
+          '${GermanFormat.decimal(minimumFatPerKilogram)} g/kg – Untergrenze für Hormone und Vitamine).',
+        );
       }
       total = 4 * protein + 4 * carbs + 9 * fat;
     }
@@ -359,7 +377,14 @@ abstract final class NutritionPlanner {
     final fatGrams = fat.roundToDouble();
     final carbGrams = math.max(0, ((total - 4 * proteinGrams - 9 * fatGrams) / 4 + 1e-9).floorToDouble()).toDouble();
     total = 4 * proteinGrams + 4 * carbGrams + 9 * fatGrams;
+    // Natrium mit dem Schweiß: etwa 500 mg je Stunde Ausdauer, 250 mg je Stunde anderes Training (ACSM 2007:
+    // Schweiß ~0,5–1 g Natrium je Liter), auf 50 mg gerundet.
+    final sodium =
+        sodiumBase +
+        500 * classification.enduranceMinutes / 60 +
+        250 * math.max(0, classification.trainingMinutes - classification.enduranceMinutes) / 60;
     final values = NutrientValues(micro(isFemale: profile.isFemale, age: profile.age))
+      ..[Nutrient.sodium] = (sodium / 50).roundToDouble() * 50
       ..[Nutrient.kcal] = total
       ..[Nutrient.protein] = proteinGrams
       ..[Nutrient.carbs] = carbGrams
@@ -375,6 +400,7 @@ abstract final class NutritionPlanner {
       profile: profile,
       basalMetabolicRate: bmr.roundToDouble(),
       exerciseKilocalories: exerciseKcal.roundToDouble(),
+      maintenanceKilocalories: dayEnergy.roundToDouble(),
       proteinPerKilogram: proteinPerKilogram,
       referenceWeightKilograms: referenceWeight,
       energyAvailabilityFloorApplied: floorApplied,

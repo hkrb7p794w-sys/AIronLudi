@@ -20,7 +20,7 @@ List<String> nutritionGaps({
   }
   final totals = [
     for (final day in byDay.values)
-      if (day.length >= 2) NutritionSummary.totals([for (final meal in day) ...meal.items]),
+      if (day.length >= 2) FoodAggregation.of([for (final meal in day) ...meal.items]).completeTotals,
   ];
   final reference = NutritionPlanner.compute(
     activities: const [],

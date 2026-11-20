@@ -132,12 +132,14 @@ void main() {
         ..weeklyWeightChangePercent = -1
         ..energyAdjustmentKilocalories = -500;
       final result = plan(value);
-      // 30 kcal × 42,2 kg fettfreie Masse = 1265 läge unter dem Grundumsatz (1346,5).
-      expect(kcalOf(result), inInclusiveRange(1343, 1347));
+      // 30 kcal × 42,2 kg fettfreie Masse = 1265 läge unter dem Grundumsatz (1346,5): Energie auf den Grundumsatz.
       expect(result.energyAvailabilityFloorApplied, isTrue);
-      // Bedarf 1616 kcal: Das Defizit bleibt, weil die Kohlenhydrate am Ruhetag auf 130 g sinken dürfen.
-      expect(result.values[Nutrient.carbs]!, inInclusiveRange(130, 140));
-      expect(9 * result.values[Nutrient.fat]! / kcalOf(result), greaterThanOrEqualTo(0.195));
+      expect(kcalOf(result), greaterThanOrEqualTo(1343));
+      // Darauf die Mindestmengen (136 g Protein, 130 g Kohlenhydrate am Ruhetag, 0,7 g/kg Fett ≈ 1455 kcal) –
+      // das Defizit zum Bedarf von 1616 kcal bleibt.
+      expect(kcalOf(result), inInclusiveRange(1440, 1460));
+      expect(result.values[Nutrient.carbs]!, inInclusiveRange(130, 132));
+      expect(result.values[Nutrient.fat]!, greaterThanOrEqualTo(43));
     });
   });
 
@@ -154,8 +156,10 @@ void main() {
           expect(kcalOf(result), 4 * protein + 4 * carbs + 9 * fat);
           expect(9 * fat / kcalOf(result), greaterThanOrEqualTo(0.195));
           expect(protein, (goal.proteinPerKilogram * 80).roundToDouble());
-          // Kohlenhydrate mindestens 3 g/kg, an langen Tagen deutlich mehr.
-          expect(carbs, greaterThanOrEqualTo(3 * 80 - 1));
+          // Fett mindestens 0,7 g/kg. Kohlenhydrate mindestens 3 g/kg, am Ruhetag im Defizit 2 g/kg.
+          expect(fat, greaterThanOrEqualTo(0.7 * 80 - 0.5));
+          final restDeficit = result.dayType == DayType.restDay && goal.adjustPercent < 0;
+          expect(carbs, greaterThanOrEqualTo((restDeficit ? 2 : 3) * 80 - 1));
         });
       }
     }
@@ -200,7 +204,6 @@ void main() {
           final values = plan(person(female: true, goal: goal), activities: activities).values;
           for (final nutrient in [
             Nutrient.fiber,
-            Nutrient.sodium,
             Nutrient.potassium,
             Nutrient.magnesium,
             Nutrient.calcium,
@@ -223,6 +226,9 @@ void main() {
       final man = plan(person(female: false)).values;
       expect(woman[Nutrient.iron], 16); // mg
       expect(man[Nutrient.iron], 11);
+      // Nach der Menopause (ab 51 angenommen) 14 mg (DGE/ÖGE 2024).
+      expect(plan(person(female: true)..age = 55).values[Nutrient.iron], 14);
+      expect(plan(person(female: false)..age = 55).values[Nutrient.iron], 11);
       expect(man[Nutrient.magnesium], 350); // mg
       expect(woman[Nutrient.calcium], 1000); // mg
       expect(woman[Nutrient.vitaminD], 20); // µg (= 800 IE)
@@ -231,6 +237,17 @@ void main() {
       expect(woman[Nutrient.fiber], 30); // g
       expect(Nutrient.vitaminD.unit, 'µg');
       expect(Nutrient.iron.unit, 'mg');
+    });
+
+    test('Natrium: Richtwert plus Schweißverlust, weder Ziel noch Grenze', () {
+      expect(plan(person(female: false)).values[Nutrient.sodium], 1500);
+      // 60 min Lauf: +500 mg; 45 min Kraft: +200 mg (gerundet auf 50).
+      expect(plan(person(female: false), activities: days['Lauf 60 min']!).values[Nutrient.sodium], 2000);
+      expect(plan(person(female: false), activities: days['Kraft 45 min']!).values[Nutrient.sodium], 1700);
+      expect(plan(person(female: false), activities: days['Rad 5 h']!).values[Nutrient.sodium], 4000);
+      expect(Nutrient.sodium.isReference, isTrue);
+      expect(Nutrient.sodium.isUpperLimit, isFalse);
+      expect(Nutrient.sugar.isUpperLimit, isTrue);
     });
 
     test('Flüssigkeit: 35 ml/kg plus Training, Zucker und gesättigte Fette als 10 % der Energie', () {
@@ -365,6 +382,76 @@ void main() {
       expect(recipe.item().grams, 250);
       expect(recipe.item().amounts[Nutrient.kcal], closeTo(350, 1e-9));
       expect(recipe.item().amounts[Nutrient.protein], closeTo(135 / 5, 1e-9));
+    });
+  });
+
+  group('Auswertungen über Tage', () {
+    MealItem food(String name, double grams, Map<Nutrient, double> per100g) =>
+        MealItem(name: name, grams: grams, source: MealItemSource.manual, per100g: NutrientValues(per100g));
+
+    test('Bedarf ohne Ziel und eigene Makros für den Verbrauchsabgleich', () {
+      final run = days['Lauf 60 min']!;
+      final maintain = plan(person(female: false), activities: run);
+      final custom = person(female: false, goal: NutritionGoal.lose)
+        ..macroMode = MacroMode.grams
+        ..macros = const MacroGoal(protein: 200, carbs: 150, fat: 60)
+        ..energyAdjustmentKilocalories = -300;
+      final result = plan(custom, activities: run);
+      // 1780 × 1,4 + 596 = 3088 – unabhängig von Ziel, Anpassung und eigenen Gramm.
+      expect(maintain.maintenanceKilocalories, 3088);
+      expect(result.maintenanceKilocalories, 3088);
+      expect(kcalOf(result), isNot(3088));
+    });
+
+    test('reines Wasser hat keine Lücken, andere Lücken zählen nach Energie', () {
+      final intake = FoodAggregation.of([
+        MealItem.water(milliliters: 500),
+        food('Haferflocken', 100, {Nutrient.kcal: 370, Nutrient.iron: 4.2, Nutrient.iodine: 1}),
+        food('Gurke', 50, {Nutrient.kcal: 12, Nutrient.iron: 0.2}),
+        food('Riegel', 50, {Nutrient.kcal: 400}),
+      ]);
+      expect(intake.itemCount, 3);
+      expect(intake.missingCount(Nutrient.iron), 1);
+      // Gurke ohne Jod: 6 von 576 kcal (1 %) → Summe taugt; Riegel ohne Eisen: 200 kcal (35 %) → nicht.
+      expect(intake.completeTotals[Nutrient.iron], isNull);
+      expect(intake.completeTotals[Nutrient.kcal], closeTo(576, 1e-9));
+      final small = FoodAggregation.of([
+        food('Haferflocken', 100, {Nutrient.kcal: 370, Nutrient.iodine: 1}),
+        food('Gurke', 50, {Nutrient.kcal: 12}),
+      ]);
+      expect(small.completeTotals[Nutrient.iodine], closeTo(1, 1e-9));
+      expect(small.completeTotals[Nutrient.vitaminD], isNull);
+    });
+
+    test('Lückenliste: unbekannte Werte täuschen keinen Mangel vor', () {
+      final goals = NutrientValues({Nutrient.iron: 15, Nutrient.fiber: 30});
+      final known = NutrientValues({Nutrient.kcal: 2000, Nutrient.fiber: 18});
+      // Eisen an keinem Tag bekannt: keine Eisen-Lücke; Ballaststoffe bekannt und zu niedrig.
+      expect(RecipePlanner.gaps(dailyTotals: [known, known, known], targets: goals), [
+        'Ballaststoffe: im Schnitt 18 von 30 g (60 %)',
+      ]);
+      // Nur an zwei Tagen bekannt: zu wenig für eine Aussage.
+      final withIron = NutrientValues({Nutrient.kcal: 2000, Nutrient.fiber: 30, Nutrient.iron: 5});
+      expect(RecipePlanner.gaps(dailyTotals: [withIron, withIron, known], targets: goals), isEmpty);
+    });
+
+    test('Budget: mit Lücken „höchstens“ übrig', () {
+      final targets = NutrientValues({Nutrient.protein: 150});
+      final items = [
+        food('Hähnchen', 200, {Nutrient.kcal: 110, Nutrient.protein: 23}),
+        MealItem(
+          name: 'Restaurant',
+          grams: 100,
+          source: MealItemSource.manual,
+          per100g: NutrientValues({Nutrient.kcal: 800}),
+        ),
+      ];
+      final intake = FoodAggregation.of(items);
+      final line = NutritionBudget.line(Nutrient.protein, targets: targets, totals: intake.totals, intake: intake)!;
+      expect(line.partial, isTrue);
+      expect(NutritionBudget.remainingText(line), 'noch höchstens 104 g');
+      final full = NutritionBudget.line(Nutrient.protein, targets: targets, totals: intake.totals)!;
+      expect(NutritionBudget.remainingText(full), 'noch 104 g');
     });
   });
 }

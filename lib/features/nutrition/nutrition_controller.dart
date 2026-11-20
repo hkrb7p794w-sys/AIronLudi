@@ -627,9 +627,12 @@ final class NutritionController extends ChangeNotifier {
               {
                 'label': nutrient.label,
                 'unit': nutrient.unit,
-                'actual': totals[nutrient] ?? 0,
+                // Unbekannt (keine Angabe) statt 0, bei Lücken mit Zahl der Einträge ohne Angabe.
+                'actual': intake.isUnknown(nutrient) ? null : totals[nutrient] ?? 0,
                 'target': target,
                 'upperLimit': nutrient.isUpperLimit,
+                if (nutrient.isReference) 'reference': true,
+                if (intake.isPartial(nutrient)) 'missing': intake.missingCount(nutrient),
               },
         ],
         'evidence': CoachingNote.evidenceInput(reviewEvidence),

@@ -36,8 +36,11 @@ enum Nutrient {
     _ => false,
   };
 
-  /// Obergrenze statt Mindestziel (Zucker, gesättigte Fette) bzw. nur Referenz (Natrium).
-  bool get isUpperLimit => this == sugar || this == saturatedFat || this == sodium;
+  /// Obergrenze statt Mindestziel (Zucker, gesättigte Fette).
+  bool get isUpperLimit => this == sugar || this == saturatedFat;
+
+  /// Nur Richtwert, weder Mindestziel noch Grenze (Natrium: Bedarf hängt stark vom Schwitzen ab).
+  bool get isReference => this == sodium;
 
   /// Menge in Gramm (für Plausibilitätsprüfungen); `null` bei Energie.
   double? gramsOf(double value) => switch (unit) {
