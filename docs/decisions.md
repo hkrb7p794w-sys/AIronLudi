@@ -905,3 +905,62 @@ Auf Wunsch des Nutzers; die Swift-App kennt nur einen Benutzer. Tests: `packages
   obendrauf (Belastungspunkte × 2,5 als gewichtete Minuten). Antippen zeigt Ruhepuls, HFmax und Minuten je Zone.
   Ampel, „Meine Belastung heute“ und der übliche Tag rechnen weiter mit den Trainings (Vergleich mit dem Verlauf).
 
+## 2026-11-20 – Prüfung der Ernährungsrechnung (Ziele und Ist-Werte)
+
+Auftrag des Nutzers: Grundumsatz, Bedarf, Ziel-Anpassung, Makros, Mikros und die Summe der Lebensmittel prüfen. Die
+Rechnung bleibt in `NutritionPlanner` (Port von Swift, kein neuer „Service“-Name, damit Swift-Tests und Bezeichner
+zuordenbar bleiben); die Tagessumme läuft neu über `FoodAggregation`. Abweichungen von Swift:
+
+- **Training doppelt gezählt (Fehler):** Netto-kcal einer Aktivität = Uhr-kcal − Grundumsatz/1440 × Minuten. Der PAL
+  enthält für diese Minuten aber schon den Alltag (Grundumsatz × PAL). Jetzt wird Grundumsatz × PAL abgezogen; bei
+  geplanten Einheiten MET × kg × h − Grundumsatz × PAL / 24 × h statt (MET − 1) × kg × h. Beispiel 80 kg, PAL 1,4,
+  60 min Lauf mit 700 kcal: 596 statt 626 kcal Training.
+- **Aufbauen ohne Überschuss an Trainingstagen (Fehler):** Der Tagestyp-Faktor „fuel for the work“ (an harten Tagen
+  0) galt auch für Überschüsse – an harten Tagen gab es keinen, an moderaten nur die Hälfte. Er gilt jetzt nur für
+  Defizite. Der Überschuss ist ein fester Betrag: 10 % des Bedarfs ohne Sport (80-kg-Mann ≈ 250 kcal, 62-kg-Frau
+  ≈ 190 kcal) bzw. aus dem Wochentempo (höchstens 15 % des Bedarfs ohne Sport), an jedem Tag gleich.
+- **Untergrenze unter dem Grundumsatz (Fehler):** Die Untergrenze war 30 kcal/kg fettfreie Masse + Training. Bei
+  niedrigem PAL und viel Körperfett lag sie unter dem Grundumsatz (Frau 62 kg, 32 % Fett, PAL 1,2: 1265 < 1347 kcal).
+  Jetzt gilt das Höhere von beiden, nie über dem Bedarf.
+- **Abnehmen ohne Defizit am Ruhetag (Fehler):** Bei kleinen, wenig aktiven Personen fraßen 2,2 g/kg Protein, 3 g/kg
+  Kohlenhydrate und 20 % Fett das ganze Defizit (Ziel = Bedarf). Am Ruhetag im Defizit dürfen Kohlenhydrate jetzt auf
+  2 g/kg sinken, mindestens 130 g (Glukosebedarf des Gehirns, IOM 2005). An Trainingstagen bleiben die Spannen nach
+  Thomas et al. 2016.
+- **kcal ≠ Summe der Makros (Ungenauigkeit):** kcal und Gramm wurden getrennt gerundet (bis 8 kcal Abweichung). Jetzt
+  sind die kcal genau 4 × P + 4 × KH + 9 × F der angezeigten ganzen Gramm; die Kohlenhydrate nehmen den Rest auf
+  (abgerundet, höchstens 4 kcal unter dem Ziel, nie darüber).
+- **Fehlende Mikros als 0 (Fehler in der Anzeige):** „Alle Nährstoffe“ zeigte fehlende Werte als 0 – ein Riegel aus
+  Open Food Facts ohne Eisenangabe sah wie ein Mangel aus. `FoodAggregation.of` zählt die Lücken je Nährstoff: „–“
+  und „Keine Angabe in den Einträgen“, wenn niemand einen Wert hat, „≥ x“ und „n von m Einträgen ohne Angabe“ bei
+  Lücken. Flüssigkeit in der Tagessumme wie im Wasser-Ring (Getränke ohne Wasserwert mit ihrer Menge).
+- **Einheiten fremder Quellen (Absicherung):** `NutrientPlausibility.per100g` verwirft für Open Food Facts,
+  Etikett-Foto und KI-Schätzung, was physikalisch nicht geht: über 900 kcal oder über 100 g eines Stoffs je 100 g
+  (typisch: mg ins Gramm-Feld getippt, Faktor 1.000), mehr Zucker als Kohlenhydrate, mehr gesättigte Fette als Fett.
+  Open Food Facts: Natrium aus Salz (÷ 2,5), wenn nur Salz angegeben ist.
+- **Aktivitätsfaktor:** Hinweis in den Einstellungen, dass er nur Alltag und Beruf meint (1,4 / 1,6 / 1,8) – das
+  Training rechnet die App selbst dazu.
+
+Geprüft und unverändert (plausibel): Mifflin-St Jeor in kg/cm/Jahren; Defizit −15 % (Abnehmen) bzw. −5 %
+(Umformen), höchstens 25 %; Protein 1,8–2,2 g/kg (ab BMI 30 auf das Referenzgewicht); Fett mindestens 20 % der
+Energie (ACSM 2016, bei −15 % etwa 0,6 g/kg); Mikro-Referenzwerte der DGE in den Einheiten von `Nutrient` (mg/µg,
+Vitamin D 20 µg = 800 IE); Ballaststoffe fest 30 g (DGE-Richtwert, nicht je 1.000 kcal, damit lange Trainingstage
+keine 50 g verlangen); Flüssigkeit 35 ml/kg + 10 ml je Minute Ausdauer; Umrechnung je 100 g → Menge, Portionen,
+Packungsportion, Rezepte je 100 g des fertigen Gerichts; Open Food Facts g → mg (× 1.000) bzw. µg (× 1.000.000);
+Tagessumme wird bei jeder Änderung aus den gespeicherten Mahlzeiten neu gebildet (Bearbeiten, Löschen).
+
+Beispiel (Mann 80 kg, 180 cm, 30 J., PAL 1,4; Grundumsatz 1780 kcal):
+
+| Tag | Ziel | Bedarf | kcal | Protein | KH | Fett |
+|---|---|---|---|---|---|---|
+| Ruhetag | Abnehmen | 2492 | 2118 (−374) | 176 | 241 | 50 |
+| Ruhetag | Halten | 2492 | 2489 | 144 | 260 | 97 |
+| Ruhetag | Aufbauen | 2492 | 2739 (+247) | 160 | 284 | 107 |
+| Lauf 60 min (700 kcal) | Abnehmen | 3088 | 2880 (−208) | 176 | 400 | 64 |
+| Lauf 60 min (700 kcal) | Halten | 3088 | 3085 | 144 | 472 | 69 |
+| Lauf 60 min (700 kcal) | Aufbauen | 3088 | 3334 (+246) | 160 | 480 | 86 |
+| Rad 120 min (1500 kcal) | Abnehmen | 3784 | 3784 (kein Defizit am harten Tag) | 176 | 581 | 84 |
+| Rad 120 min (1500 kcal) | Aufbauen | 3784 | 4033 (+249, vorher +0) | 160 | 639 | 93 |
+
+Tests: `packages/coach_core/test/nutrition_audit_test.dart` (alle Ziele × Tagestypen × Mann/Frau, Makrosumme,
+Untergrenzen, Mikros, Skalierung, Einheiten, Lücken, Tagessumme).
+

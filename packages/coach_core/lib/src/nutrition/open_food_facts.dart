@@ -83,7 +83,7 @@ abstract final class OpenFoodFacts {
     final product = json['product'];
     final nutriments = product?['nutriments'];
     if (json['status']?.doubleValue == 0 || product == null || nutriments == null) return null;
-    final values = NutrientValues();
+    var values = NutrientValues();
     for (final (key, nutrient, factor) in _mapping) {
       final value = nutriments['${key}_100g']?.doubleValue;
       if (value != null && value >= 0) values[nutrient] = value * factor;
@@ -97,6 +97,10 @@ abstract final class OpenFoodFacts {
       'docosahexaenoic-acid',
     ].map((key) => nutriments['${key}_100g']?.doubleValue).nonNulls.toList();
     if (omega3.isNotEmpty) values[Nutrient.omega3] = omega3.reduce((a, b) => a + b) * 1000;
+    // Nur Salz angegeben (Pflichtangabe in der EU): Natrium = Salz / 2,5 (g → mg).
+    final salt = nutriments['salt_100g']?.doubleValue;
+    if (values[Nutrient.sodium] == null && salt != null && salt >= 0) values[Nutrient.sodium] = salt / 2.5 * 1000;
+    values = NutrientPlausibility.per100g(values);
     if (values[Nutrient.kcal] == null) return null;
     final names = [
       'product_name_de',

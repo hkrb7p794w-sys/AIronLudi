@@ -38,6 +38,39 @@ enum Nutrient {
 
   /// Obergrenze statt Mindestziel (Zucker, gesättigte Fette) bzw. nur Referenz (Natrium).
   bool get isUpperLimit => this == sugar || this == saturatedFat || this == sodium;
+
+  /// Menge in Gramm (für Plausibilitätsprüfungen); `null` bei Energie.
+  double? gramsOf(double value) => switch (unit) {
+    'g' || 'ml' => value,
+    'mg' => value / 1000,
+    'µg' => value / 1000000,
+    _ => null,
+  };
+}
+
+/// Plausibilität von Werten je 100 g aus fremden Quellen (Open Food Facts, Etikett-Foto, KI). Was physikalisch nicht
+/// sein kann, wird verworfen (unbekannt statt falsch): mehr als 900 kcal (reines Fett), mehr als 100 g eines Stoffs
+/// – typisch für mg im Gramm-Feld (Faktor 1.000) –, mehr Zucker als Kohlenhydrate, mehr gesättigte Fette als Fett.
+abstract final class NutrientPlausibility {
+  /// Rundungsspielraum der Etiketten.
+  static const _slack = 1.02;
+
+  static NutrientValues per100g(NutrientValues values) {
+    final result = values.copy();
+    for (final MapEntry(key: nutrient, :value) in values.values.entries) {
+      final grams = nutrient.gramsOf(value);
+      final tooMuch = nutrient == Nutrient.kcal ? value > 900 * _slack : (grams ?? 0) > 100 * _slack;
+      if (value < 0 || tooMuch) result[nutrient] = null;
+    }
+    bool exceeds(Nutrient part, Nutrient whole) {
+      final (a, b) = (result[part], result[whole]);
+      return a != null && b != null && a > b * _slack + 0.5;
+    }
+
+    if (exceeds(Nutrient.sugar, Nutrient.carbs)) result[Nutrient.sugar] = null;
+    if (exceeds(Nutrient.saturatedFat, Nutrient.fat)) result[Nutrient.saturatedFat] = null;
+    return result;
+  }
 }
 
 /// Nährwerte als Zuordnung Nährstoff → Menge. Fehlende Werte sind unbekannt, nicht 0.

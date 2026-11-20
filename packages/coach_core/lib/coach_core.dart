@@ -95,6 +95,7 @@ export 'src/motivation/daisy_geometry.dart';
 export 'src/motivation/league.dart';
 export 'src/nutrition/bls.dart';
 export 'src/nutrition/cook_plan.dart';
+export 'src/nutrition/food_aggregation.dart';
 export 'src/nutrition/food_search.dart';
 export 'src/nutrition/hydration.dart';
 export 'src/nutrition/meal.dart';
