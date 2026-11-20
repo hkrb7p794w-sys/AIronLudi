@@ -503,7 +503,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
       case NutritionCard.meals:
         return _mealsSection();
       case NutritionCard.nutrients:
-        return [if (targets != null) _TargetsSection(targets: targets, totals: controller.totals)];
+        return [if (targets != null) _TargetsSection(targets: targets, intake: controller.intake)];
     }
   }
 
@@ -1333,7 +1333,7 @@ class _DaySummarySection extends StatelessWidget {
 
 /// Alle Nährstoffe mit Ziel – aufklappbar, damit oben nur das Wichtige steht.
 class _TargetsSection extends StatelessWidget {
-  const _TargetsSection({required this.targets, required this.totals});
+  const _TargetsSection({required this.targets, required this.intake});
 
   static const primary = [
     Nutrient.kcal,
@@ -1345,7 +1345,7 @@ class _TargetsSection extends StatelessWidget {
   ];
 
   final NutritionTargets targets;
-  final NutrientValues totals;
+  final FoodIntake intake;
 
   static String format(double value) => value >= 10 ? '${value.round()}' : GermanFormat.decimal(value);
 
@@ -1366,20 +1366,39 @@ class _TargetsSection extends StatelessWidget {
           children: [
             for (final nutrient in order)
               () {
-                final actual = totals[nutrient];
+                // Ohne Wert in allen Positionen: unbekannt statt 0 (kein vorgetäuschter Mangel); mit Lücken: Untergrenze.
+                final unknown = intake.isUnknown(nutrient);
+                final missing = intake.missingCount(nutrient);
+                final actual = unknown ? null : intake.totals[nutrient];
                 final target = targets.values[nutrient];
-                final percent = NutritionSummary.percent(actual, target);
-                final actualText = (target ?? 0) >= 10 ? '${(actual ?? 0).round()}' : format(actual ?? 0);
+                final percent = unknown ? null : NutritionSummary.percent(actual, target);
+                final actualText = unknown
+                    ? '–'
+                    : '${intake.isPartial(nutrient) ? '≥ ' : ''}'
+                          '${(target ?? 0) >= 10 ? '${(actual ?? 0).round()}' : format(actual ?? 0)}';
+                final gap = unknown
+                    ? 'Keine Angabe in den Einträgen'
+                    : intake.isPartial(nutrient)
+                    ? '$missing von ${intake.itemCount} ${intake.itemCount == 1 ? 'Eintrag' : 'Einträgen'} ohne Angabe'
+                    : null;
                 return ListTile(
                   title: Text(nutrient.label),
                   trailing: Text('$actualText / ${target == null ? '–' : format(target)} ${nutrient.unit}'),
-                  subtitle: percent == null
+                  subtitle: percent == null && gap == null
                       ? null
-                      : LiquidProgressBar(
-                          value: (percent > 100 ? 100 : percent) / 100,
-                          color: nutrient.isUpperLimit
-                              ? (percent > 100 ? Colors.red : Colors.orange)
-                              : (percent >= 100 ? Colors.green : null),
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (percent != null)
+                              LiquidProgressBar(
+                                value: (percent > 100 ? 100 : percent) / 100,
+                                color: nutrient.isUpperLimit
+                                    ? (percent > 100 ? Colors.red : Colors.orange)
+                                    : (percent >= 100 ? Colors.green : null),
+                              ),
+                            if (gap != null) Text(gap, style: Theme.of(context).textTheme.bodySmall),
+                          ],
                         ),
                 );
               }(),

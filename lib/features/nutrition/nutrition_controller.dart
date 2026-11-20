@@ -76,6 +76,9 @@ final class NutritionController extends ChangeNotifier {
   ({StoredMeal record, String label})? lastLogged;
   NutritionTargets? targets;
   NutrientValues totals = NutrientValues();
+
+  /// Ist-Werte des Tages mit Lücken je Nährstoff (`FoodAggregation`); [totals] ist deren Summe.
+  FoodIntake intake = FoodIntake.empty;
   bool isWorking = false;
   List<String> reviewPoints = [];
   String? reviewModel;
@@ -147,10 +150,11 @@ final class NutritionController extends ChangeNotifier {
       hasGarminData: hasGarminData,
       recovery: day == today ? recovery : null,
     );
-    totals = NutritionSummary.totals([
+    intake = FoodAggregation.of([
       for (final meal in meals)
         if (meal.day == day) ...meal.items,
     ]);
+    totals = intake.totals;
     _changed();
   }
 

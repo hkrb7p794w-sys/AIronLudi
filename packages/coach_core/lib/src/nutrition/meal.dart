@@ -289,11 +289,12 @@ final class MealAnalysis {
         if (amount != null && amount.isFinite && amount >= 0) per100g[nutrient] = amount;
       }
     }
-    final item = MealItem(name: name, grams: grams, source: MealItemSource.ai, per100g: per100g)
-      ..amountText = value['menge_text']?.stringValue
-      ..isDrink = value['getraenk']?.boolValue == true
-      ..confidence = value['sicherheit']?.stringValue
-      ..group = value['gruppe']?.stringValue;
+    final item =
+        MealItem(name: name, grams: grams, source: MealItemSource.ai, per100g: NutrientPlausibility.per100g(per100g))
+          ..amountText = value['menge_text']?.stringValue
+          ..isDrink = value['getraenk']?.boolValue == true
+          ..confidence = value['sicherheit']?.stringValue
+          ..group = value['gruppe']?.stringValue;
     final barcode = value['barcode']?.stringValue;
     item.barcode = barcode != null && OpenFoodFacts.isValidBarcode(barcode) ? barcode : null;
     item.portion = PortionGuess.fromAmountText(item.amountText, grams: grams);
@@ -429,7 +430,7 @@ abstract final class NutrientCheck {
 /// Antwort der Worker-Aufgabe `nutrition_label`: Nährwerttabelle vom Foto (Werte je 100 g wie auf dem Etikett).
 abstract final class NutritionLabel {
   static MealItem? item(JsonValue output) {
-    final per100g = NutrientValues();
+    var per100g = NutrientValues();
     final nutrients = output['naehrwerte_100g']?.objectValue;
     if (nutrients != null) {
       for (final nutrient in Nutrient.values) {
@@ -438,6 +439,7 @@ abstract final class NutritionLabel {
         if (amount != null && amount >= 0) per100g[nutrient] = amount;
       }
     }
+    per100g = NutrientPlausibility.per100g(per100g);
     if (per100g[Nutrient.kcal] == null) return null;
     final rawName = output['name']?.stringValue ?? '';
     final name = rawName.length > 80 ? rawName.substring(0, 80) : rawName;

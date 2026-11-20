@@ -98,6 +98,10 @@ class NutritionSettingsScreen extends ConsumerWidget {
               ),
               ListTile(
                 title: Text('Aktivitätsfaktor ohne Sport ${GermanFormat.decimal(nutrition.activityFactor)}'),
+                // Training rechnet die App aus Garmin bzw. dem Wochenplan dazu; ein höherer Faktor zählt es doppelt.
+                subtitle: const Text(
+                  'Nur Alltag und Beruf: 1,4 sitzend, 1,6 viel auf den Beinen, 1,8 körperliche Arbeit. Training zählt die App selbst dazu.',
+                ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

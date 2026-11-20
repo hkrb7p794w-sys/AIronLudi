@@ -90,11 +90,12 @@ void main() {
       expect(result.dayType, DayType.moderate);
       expect(result.source, TargetsSource.garmin);
       expect(result.basalMetabolicRate, 1750);
-      expect(result.exerciseKilocalories, 627);
+      // Netto: 700 kcal − Grundbedarf × PAL für 60 min (1750 × 1,4 / 24 ≈ 102 kcal).
+      expect(result.exerciseKilocalories, 598);
       final energy = kcal(result);
       final carbs = result.values[Nutrient.carbs]!;
       final fat = result.values[Nutrient.fat]!;
-      expect((energy - 3077).abs(), lessThanOrEqualTo(2));
+      expect(energy, inInclusiveRange(3044, 3048));
       expect(result.values[Nutrient.protein], 144);
       expect(carbs, inInclusiveRange(400, 480));
       expect(9 * fat / energy, greaterThanOrEqualTo(0.195));
@@ -111,8 +112,9 @@ void main() {
       );
       expect(result.dayType, DayType.hard);
       expect(result.source, TargetsSource.planned);
-      // Geplante 90 Minuten Ausdauer (MET 7) fließen in die Energie ein; Kohlenhydrate mindestens 6 g/kg.
-      expect(result.exerciseKilocalories, 720);
+      // Geplante 90 Minuten Ausdauer (MET 7) fließen netto in die Energie ein: 7 × 80 × 1,5 − 2450 / 24 × 1,5.
+      // Kohlenhydrate mindestens 6 g/kg.
+      expect(result.exerciseKilocalories, 687);
       expect(result.values[Nutrient.carbs]!, greaterThanOrEqualTo(480));
       expect(9 * result.values[Nutrient.fat]! / kcal(result), greaterThanOrEqualTo(0.195));
     });
@@ -215,7 +217,8 @@ void main() {
       final result = guarded(value, activities: [hardRun()]);
       expect(result.dayType, DayType.hard);
       expect(result.energyAvailabilityFloorApplied, isTrue);
-      expect(kcal(result), greaterThanOrEqualTo(2450));
+      // 30 kcal × 48,4 kg fettfreie Masse + 978 kcal Training (netto).
+      expect(kcal(result), inInclusiveRange(2426, 2430));
     });
 
     test('Defizit höchstens ein Viertel, auch mit Anpassung', () {

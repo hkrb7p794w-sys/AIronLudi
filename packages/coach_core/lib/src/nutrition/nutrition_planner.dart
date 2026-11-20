@@ -76,9 +76,11 @@ final class NutritionTargets {
 
 /// Tagesziele der Ernährung (Port von `NutritionPlanner`, ursprünglich `ernaehrung/app/targets.py`).
 ///
-/// - Energie: Grundumsatz nach Mifflin-St Jeor (1990) × PAL ohne Sport + Netto-kcal der Aktivitäten.
+/// - Energie: Grundumsatz nach Mifflin-St Jeor (1990) × PAL ohne Sport + Netto-kcal der Aktivitäten (abzüglich
+///   Grundbedarf × PAL für deren Dauer). Defizit nach Tagestyp, höchstens ein Viertel, nie unter Grundumsatz und
+///   30 kcal/kg fettfreier Masse; Überschuss als fester Betrag an jedem Tag.
 /// - Kohlenhydrate je kg nach Tagestyp (Thomas, Erdman & Burke 2016), Protein je Ziel, Fett als Rest (20–35 % der
-///   Energie, ACSM 2016).
+///   Energie, ACSM 2016). Die kcal sind genau 4 × Protein + 4 × Kohlenhydrate + 9 × Fett (ganze Gramm).
 /// - Mikronährstoffe, Ballaststoffe: DGE-Referenzwerte 25 bis < 51 Jahre; Jod 150 µg (DGE/ÖGE 2025); Omega-3
 ///   EPA+DHA 250 mg (EFSA 2012).
 /// - Flüssigkeit ~35 ml/kg + ~0,6 l je Stunde Ausdauer (ACSM 2016).
@@ -214,46 +216,55 @@ abstract final class NutritionPlanner {
     }
     final bmr = mifflinStJeor(profile);
     final baseKcal = bmr * settings.activityFactor;
-    // Ein Krafttraining, das als Export und als Aufzeichnung der Uhr vorliegt, zählt nur einmal.
+    // Ein Krafttraining, das als Export und als Aufzeichnung der Uhr vorliegt, zählt nur einmal. Netto heißt: abzüglich
+    // dessen, was der Grundbedarf × PAL für diese Minuten schon enthält – sonst zählt der Alltag doppelt.
+    final baselinePerMinute = baseKcal / 1440;
     var exerciseKcal = StrengthDuplicates.removing(activities).fold<double>(0, (sum, activity) {
       final minutes = (activity.durationSeconds ?? 0) / 60;
-      return sum + math.max(0, (activity.calories ?? 0) - bmr / 1440 * minutes);
+      return sum + math.max(0, (activity.calories ?? 0) - baselinePerMinute * minutes);
     });
     if (source == TargetsSource.planned) {
-      // Netto-Verbrauch der geplanten Einheit: (MET − 1) × kg × Stunden.
+      // Netto-Verbrauch der geplanten Einheit: MET × kg × Stunden abzüglich Grundbedarf × PAL für diese Zeit.
+      double net(double met, double minutes) => math.max(0, met * weight * minutes / 60 - baselinePerMinute * minutes);
       final timed = recovery == RecoveryLevel.locker
           ? <TemplateItem>[]
           : planItems.where((item) => item.minutes != null);
       if (timed.isEmpty) {
-        exerciseKcal = (dayType.plannedMET - 1) * weight * dayType.plannedMinutes / 60;
+        exerciseKcal = net(dayType.plannedMET, dayType.plannedMinutes);
       } else {
         exerciseKcal = timed.fold<double>(0, (sum, item) {
           final met = item.kind == TemplateItemKind.strength ? DayType.light.plannedMET : DayType.moderate.plannedMET;
-          return sum + (met - 1) * weight * (item.minutes ?? 0) / 60;
+          return sum + net(met, (item.minutes ?? 0).toDouble());
         });
       }
     }
     final dayEnergy = baseKcal + exerciseKcal;
     var adjustPercent = goal.adjustPercent;
+    // Überschuss (Aufbauen) als fester Betrag je Tag: Anteil am Bedarf ohne Sport, damit er weder an Trainingstagen
+    // verschwindet noch an langen Tagen auf mehrere hundert kcal wächst (+10 % ≈ 190–350 kcal).
+    var surplus = adjustPercent > 0 ? adjustPercent / 100 * baseKcal : 0.0;
     if (weeklyChange != null && dayEnergy > 0) {
       // 7.700 kcal je kg Körpergewicht; Grenzen: höchstens 25 % Defizit bzw. 15 % Überschuss.
       final dailyKilocalories = weeklyChange / 100 * weight * 7700 / 7;
       adjustPercent = math.max(-25, math.min(15, dailyKilocalories / dayEnergy * 100));
+      surplus = dailyKilocalories > 0 ? math.min(dailyKilocalories, 0.15 * baseKcal) : 0;
     }
-    var goalPercent = adjustPercent * dayType.goalScale;
+    // Defizit nach Tagestyp („fuel for the work“): an harten Tagen keins. Ein Überschuss gilt an jedem Tag.
+    var goalPercent = adjustPercent < 0 ? adjustPercent * dayType.goalScale : 0.0;
     // Refeed: an diesem Tag kein Defizit (Überschuss-Ziele bleiben), die Anpassung aus dem Verlauf nur nach oben.
     if (dayAdjustment?.kind == DayAdjustmentKind.refeed) {
       goalPercent = math.max(goalPercent, 0);
       adjustment = math.max(adjustment, 0);
     }
     if (dayAdjustment?.kind == DayAdjustmentKind.custom) adjustment += dayAdjustment!.kilocalories;
-    var energy = dayEnergy * (1 + goalPercent / 100) + adjustment;
+    var energy = dayEnergy * (1 + goalPercent / 100) + surplus + adjustment;
     // Höchstens ein Viertel Defizit, auch zusammen mit der Anpassung aus dem Gewichtsverlauf.
     energy = math.max(energy, 0.75 * dayEnergy);
-    // Energieverfügbarkeit nie unter 30 kcal/kg fettfreie Masse (IOC-Konsensus REDs 2023), aber nie über dem Bedarf.
+    // Energieverfügbarkeit nie unter 30 kcal/kg fettfreie Masse (IOC-Konsensus REDs 2023) und die Energie nie unter
+    // dem Grundumsatz, aber nie über dem Bedarf.
     final bodyFat = settings.bodyFatPercent ?? GoalRules.estimatedBodyFatPercent(profile);
     final fatFreeMass = weight * (1 - bodyFat / 100);
-    final energyFloor = math.min(30 * fatFreeMass + exerciseKcal, dayEnergy);
+    final energyFloor = math.min(math.max(30 * fatFreeMass + exerciseKcal, bmr), dayEnergy);
     var floorApplied = false;
     if (energy < energyFloor) {
       energy = energyFloor;
@@ -269,10 +280,12 @@ abstract final class NutritionPlanner {
     final fatMinimum = (fatShare ?? 20) / 100 * energy / 9;
     final fatMaximum = math.max(0.35 * energy / 9, fatMinimum);
     final carbRoom = (energy - 4 * protein - 9 * fatMinimum) / 4;
-    var carbs = math.min(
-      dayType.carbsPerKilogram * referenceWeight,
-      math.max(carbRoom, dayType.minimumCarbsPerKilogram * referenceWeight),
-    );
+    // Ruhetag im Defizit: Die Spannen nach Thomas et al. gelten für Trainingstage. Ohne Training reichen 2 g/kg, aber
+    // mindestens 130 g (Glukosebedarf des Gehirns, IOM 2005) – sonst frisst die Untergrenze das ganze Defizit.
+    final minimumCarbs = dayType == DayType.restDay && energy < dayEnergy
+        ? math.min(math.max(130.0, 2 * referenceWeight), dayType.minimumCarbsPerKilogram * referenceWeight)
+        : dayType.minimumCarbsPerKilogram * referenceWeight;
+    var carbs = math.min(dayType.carbsPerKilogram * referenceWeight, math.max(carbRoom, minimumCarbs));
     // Refeed: der ganze Spielraum über dem Mindestfett geht in die Kohlenhydrate (Glykogen auffüllen).
     if (dayAdjustment?.kind == DayAdjustmentKind.refeed) carbs = math.max(carbs, carbRoom);
     final rest = energy - 4 * protein - 4 * carbs;
@@ -339,11 +352,18 @@ abstract final class NutritionPlanner {
         35 * weight +
         10 * classification.enduranceMinutes +
         5 * math.max(0, classification.trainingMinutes - classification.enduranceMinutes);
+    // Angezeigt werden ganze Gramm; die Energie ist genau deren Summe (4/4/9 kcal je g), damit Ziel und Makros
+    // zusammenpassen. Die Kohlenhydrate nehmen den Rundungsrest auf (abgerundet): höchstens 4 kcal unter dem Ziel,
+    // nie darüber.
+    final proteinGrams = protein.roundToDouble();
+    final fatGrams = fat.roundToDouble();
+    final carbGrams = math.max(0, ((total - 4 * proteinGrams - 9 * fatGrams) / 4 + 1e-9).floorToDouble()).toDouble();
+    total = 4 * proteinGrams + 4 * carbGrams + 9 * fatGrams;
     final values = NutrientValues(micro(isFemale: profile.isFemale, age: profile.age))
-      ..[Nutrient.kcal] = total.roundToDouble()
-      ..[Nutrient.protein] = protein.roundToDouble()
-      ..[Nutrient.carbs] = carbs.roundToDouble()
-      ..[Nutrient.fat] = fat.roundToDouble()
+      ..[Nutrient.kcal] = total
+      ..[Nutrient.protein] = proteinGrams
+      ..[Nutrient.carbs] = carbGrams
+      ..[Nutrient.fat] = fatGrams
       ..[Nutrient.sugar] = (0.10 * total / 4).roundToDouble()
       ..[Nutrient.saturatedFat] = (0.10 * total / 9).roundToDouble()
       ..[Nutrient.water] = (water / 50).roundToDouble() * 50;
