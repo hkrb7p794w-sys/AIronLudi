@@ -422,6 +422,7 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Erfassen mit Suche zuerst: Vorschläge zur Mahlzeit, „+“ in den Korb, mehrere Lebensmittel auf einmal eintragen, andere Wege als Reiter | in PR |
 | UI-Redesign „Clean Liquid Design“ (`lib/ui/liquid.dart`, `AppTheme`): Glasflächen mit Lichtkante über Lichtflecken-Hintergrund, große Radien, Pillen-Knöpfe, schwebende Tab-Leiste, Verlaufs-Ringe und -Balken mit Federanimation, taktile Rückmeldung, Vorschau der Live-Aktivität (`docs/decisions.md`, 18.11.2026) | in PR |
 | Daily Strain aktualisiert über den Tag (Neuladen bei jeder Änderung von Aktivitäten, Tageswerten und Gym-Einheiten, Abruf alle 15 min im Vordergrund); Schnellsuche Ernährung mit Markenprodukten aus Open Food Facts (Volltextsuche, Ausweich-Suche, Fehler statt stiller Leere) | in PR |
+| Strain wie bei WHOOP: WHOOP-Tageswert, sonst aus dem Puls über den ganzen Tag (Garmin `dailyHeartRate`, Apple Health / Health Connect), Zonen der Herzfrequenzreserve, Skala 0–21; neue Datenart „Strain“ | in PR |
 | Test auf echten Geräten: Widgets, Live-Aktivitäten, laufende Mitteilung, Wecker, Hintergrundabruf, Schnellaktionen (nur dort prüfbar, CI baut sie) | offen – durch den Nutzer |
 | Umstellung: `vars.DEPLOY_SIDESTORE` bzw. `vars.DEPLOY_ANDROID` auf `true`, dann ersetzt die Flutter-App die Swift- bzw. Kotlin-App (gleiche Bundle-/Application-ID) | offen – Entscheidung des Nutzers |
 | Später möglich: Android-Widgets mit Glance (Ringe, Balken, Konfiguration), Wiederholungen ± in der Android-Mitteilung | Idee |

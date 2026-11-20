@@ -138,6 +138,9 @@ final class GarminSyncService {
       (GarminEndpoint.spo2(today.adding(-1)), GarminMetricsParser.spo2),
       (GarminEndpoint.spo2(today), GarminMetricsParser.spo2),
       (GarminEndpoint.fitnessAge(today), (json) => GarminMetricsParser.fitnessAge(json, today)),
+      // Puls über den ganzen Tag für den Strain wie bei WHOOP (gestern vollständig, heute bis jetzt).
+      for (final day in [today.adding(-1), today])
+        (GarminEndpoint.dailyHeartRate(day), (json) => GarminMetricsParser.dailyHeartRate(json, day)),
     ];
 
     final maps = <DayMap>[];

@@ -30,6 +30,7 @@ abstract final class MetricsMerge {
     DataKind.calories,
     DataKind.steps,
     DataKind.trainingLoad,
+    DataKind.strain,
     DataKind.recovery,
     DataKind.body,
   ];
@@ -62,6 +63,7 @@ abstract final class MetricsMerge {
     DataKind.calories => m.activeKilocalories != null || m.totalKilocalories != null || m.restingKilocalories != null,
     DataKind.steps => m.steps != null,
     DataKind.trainingLoad => m.acuteLoad != null || m.trainingStatus != null,
+    DataKind.strain => m.dayStrain != null || (m.heartRateCurve?.isNotEmpty ?? false),
     DataKind.recovery =>
       m.bodyBatteryHigh != null ||
           m.bodyBatteryLatest != null ||
@@ -119,6 +121,10 @@ abstract final class MetricsMerge {
           ..acuteLoad = m.acuteLoad
           ..chronicLoad = m.chronicLoad
           ..trainingStatus = m.trainingStatus;
+      case DataKind.strain:
+        t
+          ..dayStrain = m.dayStrain
+          ..heartRateCurve = m.heartRateCurve;
       case DataKind.recovery:
         t
           ..bodyBatteryHigh = m.bodyBatteryHigh

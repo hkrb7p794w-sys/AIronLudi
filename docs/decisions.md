@@ -880,3 +880,28 @@ Auf Wunsch des Nutzers; die Swift-App kennt nur einen Benutzer. Tests: `packages
   Fehlerseite (HTML, 5xx) still „Keine Markenprodukte gefunden“ – jetzt eine Meldung mit „Erneut“. Ergebnisse je
   Suchbegriff gemerkt (Sitzung, höchstens 40), Fehler nicht. `brands` als Liste (Search-a-licious) wird gelesen.
 
+## 2026-11-20 – Strain wie bei WHOOP (Puls über den ganzen Tag)
+
+- Wunsch des Nutzers: Strain soll wie bei WHOOP entstehen. Bisher zählten nur Trainings (Belastungspunkte →
+  0–21); ohne aufgezeichnetes Training stand der Ring auf 0,0, Alltagsbewegung zählte nie.
+- Reihenfolge der Quellen (neue Datenart `DataKind.strain`, einstellbar unter Datenquellen; Standard WHOOP, Garmin,
+  Apple Health / Health Connect):
+  1. **WHOOP verbunden:** der Tages-Strain des WHOOP-Zyklus (`WhoopCycle.strain` → `DailyMetrics.dayStrain`), also
+     genau der Wert der WHOOP-App.
+  2. **Pulsverlauf:** Garmin `dailyHeartRate` (alle 2 min, gestern und heute bei jedem Abruf) bzw. Herzfrequenz aus
+     Apple Health / Health Connect (in 2-Minuten-Fenster gemittelt) → `DailyMetrics.heartRateCurve`, kompakt als
+     `[Minute, Puls, …]` gespeichert. Daraus `HeartRateStrain.compute`.
+  3. **Ohne Pulsverlauf:** wie bisher aus den Trainings (`DailyStrainRules`, Belastungspunkte).
+- Berechnung (`HeartRateStrain`): Anteil an der Herzfrequenzreserve je Minute, Ruhepuls des Tages (sonst 60),
+  HFmax aus den Einstellungen, sonst höchster Lauf-/Radpuls der letzten 12 Monate, sonst 208 − 0,7 × Alter (Garmin-
+  Profil), sonst 190 – nie unter dem heute gemessenen Höchstwert. Zonen wie bei WHOOP (50–60 … 90–100 % HRR) mit
+  Gewicht 1–5 (Edwards), Alltagsbewegung 30–50 % mit 0,1, darunter 0. Lücken über 10 min zählen nicht (Uhr
+  abgelegt). Skala: Strain = 21 × (1 − e^(−gewichtete Minuten / 170)) – wächst anfangs schnell und wird nach oben
+  immer schwerer zu steigern.
+- WHOOP veröffentlicht seine Formel nicht. Die Skala ist an WHOOPs Einordnung kalibriert (leicht 0–9, mittel 10–13,
+  hoch 14–17, all out 18–21) und getestet: ruhiger Tag ≈ 4, dazu 1 h locker ≈ 13, 1 h zügig ≈ 15, 1 h Intervalle
+  ≈ 17, Marathon ≥ 20. Abweichungen zur WHOOP-App sind möglich; mit WHOOP gilt dessen Wert.
+- Ring „Strain“: gemessener Wert, Beschriftung mit der Quelle („WHOOP“, „Puls ganztags“); noch Geplantes hell
+  obendrauf (Belastungspunkte × 2,5 als gewichtete Minuten). Antippen zeigt Ruhepuls, HFmax und Minuten je Zone.
+  Ampel, „Meine Belastung heute“ und der übliche Tag rechnen weiter mit den Trainings (Vergleich mit dem Verlauf).
+

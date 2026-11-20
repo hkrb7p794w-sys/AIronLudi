@@ -4,6 +4,7 @@ import '../garmin/daily_metrics.dart';
 import '../json/json_value.dart';
 import '../util/enum_codec.dart';
 import 'daily_strain.dart';
+import 'heart_rate_strain.dart';
 import 'recovery_level.dart';
 
 /// Ampel einer Kennzahl: Grün = im Zielbereich, Gelb = Aufmerksamkeit, Rot = kritisch bzw. hohe Belastung.
@@ -145,9 +146,18 @@ abstract final class TodayKpis {
 
   /// Strain 0–21: erledigt (voll) und noch geplant (hell). Farbe aus der Einordnung gegen den üblichen Tag; bei
   /// eingeschränkter Erholung ist „hoch“ schon rot.
+  /// Belastungspunkte → gewichtete Pulsminuten, um Geplantes auf einen gemessenen Strain aufzuschlagen
+  /// (100 Punkte ≈ 1 h an der Schwelle ≈ 250 gewichtete Minuten).
+  static const pulseMinutesPerPoint = 2.5;
+
+  /// Strain-Ring: gemessen (WHOOP bzw. Puls über den ganzen Tag) oder – ohne Pulsverlauf – aus den Trainings
+  /// geschätzt; noch Geplantes hell obendrauf.
   static Kpi strain(DailyStrain strain) {
-    final done = strainOf(strain.done);
-    final total = strainOf(strain.total);
+    final measured = strain.measured;
+    final done = measured ?? strainOf(strain.done);
+    final total = measured == null
+        ? strainOf(strain.total)
+        : HeartRateStrain.strainOf(HeartRateStrain.loadOf(measured) + strain.planned * pulseMinutesPerPoint);
     final status = switch (strain.level) {
       StrainLevel.rest || StrainLevel.light || StrainLevel.moderate => KpiStatus.good,
       StrainLevel.high => strain.recovery == RecoveryLevel.normal ? KpiStatus.moderate : KpiStatus.critical,
@@ -159,7 +169,9 @@ abstract final class TodayKpis {
       fraction: done / strainMaximum,
       secondaryFraction: total > done ? total / strainMaximum : null,
       status: status,
-      caption: total > done ? '+${_decimal(total - done)} geplant' : 'von 21',
+      caption: total > done
+          ? '+${_decimal(total - done)} geplant'
+          : (measured == null ? 'von 21' : strain.source.label),
     );
   }
 }

@@ -12,6 +12,7 @@ enum DataKind implements RawEnum {
   calories('Kalorien'),
   steps('Schritte'),
   trainingLoad('Trainingsbelastung'),
+  strain('Strain (Puls über den Tag)'),
   recovery('Erholung (Recovery)'),
   body('Körperwerte');
 
@@ -88,6 +89,7 @@ enum DataProvider implements RawEnum {
       DataKind.calories,
       DataKind.steps,
       DataKind.body,
+      DataKind.strain,
     },
     whoop => {
       DataKind.activities,
@@ -98,6 +100,7 @@ enum DataProvider implements RawEnum {
       DataKind.calories,
       DataKind.recovery,
       DataKind.body,
+      DataKind.strain,
     },
     polar => {
       DataKind.activities,
@@ -133,7 +136,7 @@ enum DataProvider implements RawEnum {
       DataKind.calories,
     },
     appleHealth => {DataKind.steps, DataKind.calories},
-    whoop => {DataKind.sleep, DataKind.hrv, DataKind.restingHeartRate, DataKind.recovery},
+    whoop => {DataKind.sleep, DataKind.hrv, DataKind.restingHeartRate, DataKind.recovery, DataKind.strain},
     polar => {DataKind.activities, DataKind.workoutHeartRate, DataKind.trainingLoad},
     fitbit => {DataKind.steps, DataKind.sleep},
   };
@@ -141,7 +144,10 @@ enum DataProvider implements RawEnum {
   /// Allgemeine Rangfolge je Datenart (beste zuerst). Apple Health steht hinten, weil es meist nur weitergibt, was
   /// ein Gerät geschrieben hat (Gefahr doppelter Werte), und HRV dort SDNN statt RMSSD ist.
   static List<DataProvider> defaultOrder(DataKind kind) => switch (kind) {
-    DataKind.hrv || DataKind.recovery || DataKind.sleep => [whoop, garmin, polar, fitbit, appleHealth],
+    DataKind.hrv ||
+    DataKind.recovery ||
+    DataKind.sleep ||
+    DataKind.strain => [whoop, garmin, polar, fitbit, appleHealth],
     DataKind.restingHeartRate => [garmin, whoop, polar, fitbit, appleHealth],
     DataKind.activities ||
     DataKind.workoutHeartRate ||

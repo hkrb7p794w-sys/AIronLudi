@@ -32,6 +32,38 @@ final class BodyBatterySample {
   String toString() => 'BodyBatterySample($minute, $value)';
 }
 
+/// Ein Wert des Pulsverlaufs über den Tag: Minuten nach Mitternacht (Ortszeit) und Herzfrequenz (bpm).
+final class HeartRateSample {
+  const HeartRateSample({required this.minute, required this.bpm});
+
+  final int minute;
+  final int bpm;
+
+  /// Kompakt als flache Liste `[Minute, Puls, Minute, Puls, …]` (ein Tag hat bis zu 720 Werte).
+  static List<int> encode(List<HeartRateSample> samples) => [
+    for (final sample in samples) ...[sample.minute, sample.bpm],
+  ];
+
+  static List<HeartRateSample>? decode(Object? json) {
+    if (json is! List) return null;
+    final values = json.map(jsonInt).toList();
+    return [
+      for (var index = 0; index + 1 < values.length; index += 2)
+        if ((values[index], values[index + 1]) case (final minute?, final bpm?))
+          HeartRateSample(minute: minute, bpm: bpm),
+    ];
+  }
+
+  @override
+  bool operator ==(Object other) => other is HeartRateSample && other.minute == minute && other.bpm == bpm;
+
+  @override
+  int get hashCode => Object.hash(minute, bpm);
+
+  @override
+  String toString() => 'HeartRateSample($minute, $bpm)';
+}
+
 /// Erholungs- und Tageswerte eines Kalendertags, zusammengeführt aus mehreren Garmin-Endpunkten. Alle Werte optional:
 /// Nicht jede Uhr liefert alles, und die Personal API ist nicht vollständig dokumentiert.
 ///
@@ -85,6 +117,13 @@ final class DailyMetrics {
   double? acuteLoad;
   double? chronicLoad;
 
+  /// Pulsverlauf über den ganzen Tag (Garmin `dailyHeartRate`, Apple Health / Health Connect) – Grundlage des
+  /// Strain wie bei WHOOP (`HeartRateStrain`).
+  List<HeartRateSample>? heartRateCurve;
+
+  /// Strain 0–21, wie ihn der Anbieter selbst angibt (WHOOP-Zyklus).
+  double? dayStrain;
+
   double? get sleepHours {
     final seconds = sleepSeconds;
     return seconds == null ? null : (seconds / 360).roundToDouble() / 10;
@@ -133,7 +172,9 @@ final class DailyMetrics {
     ..maxHeartRate = other.maxHeartRate ?? maxHeartRate
     ..recoveryHours = other.recoveryHours ?? recoveryHours
     ..acuteLoad = other.acuteLoad ?? acuteLoad
-    ..chronicLoad = other.chronicLoad ?? chronicLoad;
+    ..chronicLoad = other.chronicLoad ?? chronicLoad
+    ..heartRateCurve = other.heartRateCurve ?? heartRateCurve
+    ..dayStrain = other.dayStrain ?? dayStrain;
 
   DailyMetrics copy() => DailyMetrics(day)
     ..restingHeartRate = restingHeartRate
@@ -177,7 +218,9 @@ final class DailyMetrics {
     ..maxHeartRate = maxHeartRate
     ..recoveryHours = recoveryHours
     ..acuteLoad = acuteLoad
-    ..chronicLoad = chronicLoad;
+    ..chronicLoad = chronicLoad
+    ..heartRateCurve = heartRateCurve
+    ..dayStrain = dayStrain;
 
   /// Namen der befüllten Felder – für die Diagnose in der App.
   List<String> get presentFields {
@@ -206,6 +249,8 @@ final class DailyMetrics {
       ('Höchster Puls', maxHeartRate),
       ('Regenerationszeit', recoveryHours),
       ('Akute Belastung', acuteLoad),
+      ('Pulsverlauf', heartRateCurve),
+      ('Strain', dayStrain),
     ];
     return [
       for (final (name, value) in fields)
@@ -257,6 +302,8 @@ final class DailyMetrics {
     'recoveryHours': ?recoveryHours,
     'acuteLoad': ?acuteLoad,
     'chronicLoad': ?chronicLoad,
+    if (heartRateCurve case final curve?) 'heartRateCurve': HeartRateSample.encode(curve),
+    'dayStrain': ?dayStrain,
   };
 
   static DailyMetrics? fromJson(Object? json) {
@@ -307,7 +354,9 @@ final class DailyMetrics {
       ..maxHeartRate = jsonDouble(json['maxHeartRate'])
       ..recoveryHours = jsonDouble(json['recoveryHours'])
       ..acuteLoad = jsonDouble(json['acuteLoad'])
-      ..chronicLoad = jsonDouble(json['chronicLoad']);
+      ..chronicLoad = jsonDouble(json['chronicLoad'])
+      ..heartRateCurve = HeartRateSample.decode(json['heartRateCurve'])
+      ..dayStrain = jsonDouble(json['dayStrain']);
   }
 
   @override
@@ -508,6 +557,33 @@ abstract final class GarminMetricsParser {
       ..fitnessAge = _positive(json.firstValue(['fitnessAge']))
       ..vo2Max = _positive(json.firstValue(['vo2Max', 'vo2MaxValue', 'vO2MaxValue']));
     if (metrics.fitnessAge == null && metrics.vo2Max == null) return {};
+    return {day: metrics};
+  }
+
+  /// `/wellness-service/wellness/dailyHeartRate?date=…`: Puls über den ganzen Tag (meist alle 2 min) als
+  /// `heartRateValues: [[Zeitstempel ms (UTC), bpm], …]`, dazu Ruhe-, Tiefst- und Höchstpuls. Minuten werden ab
+  /// `startTimestampGMT` (Mitternacht Ortszeit) gezählt, sonst in der Ortszeit des Geräts.
+  static DayMap dailyHeartRate(JsonValue json, CalendarDay day) {
+    final start = DateTime.tryParse('${json['startTimestampGMT']?.stringValue ?? ''}Z'.replaceFirst('ZZ', 'Z'));
+    final curve = <HeartRateSample>[];
+    for (final pair in json['heartRateValues']?.arrayValue ?? const <JsonValue>[]) {
+      final values = pair.arrayValue;
+      if (values == null || values.length < 2) continue;
+      final (stamp, bpm) = (values[0].doubleValue, values[1].doubleValue);
+      if (stamp == null || bpm == null || bpm <= 0) continue;
+      final time = DateTime.fromMillisecondsSinceEpoch(stamp.round(), isUtc: true);
+      final minute = start != null
+          ? time.difference(start).inMinutes
+          : time.toLocal().hour * 60 + time.toLocal().minute;
+      if (minute < 0 || minute >= 24 * 60) continue;
+      curve.add(HeartRateSample(minute: minute, bpm: bpm.round()));
+    }
+    final metrics = DailyMetrics(day)
+      ..restingHeartRate = _positive(json['restingHeartRate'])
+      ..minHeartRate = _positive(json['minHeartRate'])
+      ..maxHeartRate = _positive(json['maxHeartRate']);
+    if (curve.isNotEmpty) metrics.heartRateCurve = curve;
+    if (curve.isEmpty && metrics.restingHeartRate == null && metrics.maxHeartRate == null) return {};
     return {day: metrics};
   }
 

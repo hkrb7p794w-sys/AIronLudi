@@ -154,6 +154,14 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with TrainingDataRelo
       today: today,
       gymMinutesToday: gymMinutes,
       thresholds: endurance?.request.thresholds ?? const AthleteThresholds(),
+      // Strain wie bei WHOOP: WHOOP-Wert bzw. Puls über den ganzen Tag (heutige Tageswerte).
+      todayMetrics: _days.where((metrics) => metrics.day == today).firstOrNull,
+      maxHeartRate: HeartRateStrain.maxHeartRate(
+        overrides: settings.heartRate,
+        activities: _activities,
+        today: today,
+        age: ref.read(appModelProvider).sync.profile?.ageOn(today),
+      ),
     );
   }
 
