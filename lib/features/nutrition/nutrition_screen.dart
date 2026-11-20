@@ -460,6 +460,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
             _BudgetSection(
               targets: targets,
               totals: controller.totals,
+              intake: controller.intake,
               adjustment: ref.read(coachSettingsProvider).nutrition.adjustmentOn(controller.day),
               onAdjust: (adjustment) {
                 final settings = ref.read(coachSettingsProvider);
@@ -997,10 +998,17 @@ class _DayStripState extends State<_DayStrip> {
 
 /// Auf einen Blick: übrige kcal im Ring, Protein/KH/Fett als „noch … g“.
 class _BudgetSection extends StatelessWidget {
-  const _BudgetSection({required this.targets, required this.totals, required this.adjustment, required this.onAdjust});
+  const _BudgetSection({
+    required this.targets,
+    required this.totals,
+    required this.intake,
+    required this.adjustment,
+    required this.onAdjust,
+  });
 
   final NutritionTargets targets;
   final NutrientValues totals;
+  final FoodIntake intake;
 
   /// Anpassung für den angezeigten Tag (Refeed, Ruhetag, eigene kcal).
   final DayAdjustment? adjustment;
@@ -1015,7 +1023,7 @@ class _BudgetSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final kcal = NutritionBudget.line(Nutrient.kcal, targets: targets.values, totals: totals);
+    final kcal = NutritionBudget.line(Nutrient.kcal, targets: targets.values, totals: totals, intake: intake);
     return FormSection(
       header: '${targets.dayType.label} · ${targets.source.rawValue}',
       footer: targets.customMacros
@@ -1032,7 +1040,8 @@ class _BudgetSection extends StatelessWidget {
                 child: Column(
                   children: [
                     for (final nutrient in NutritionBudget.main)
-                      if (NutritionBudget.line(nutrient, targets: targets.values, totals: totals) case final line?)
+                      if (NutritionBudget.line(nutrient, targets: targets.values, totals: totals, intake: intake)
+                          case final line?)
                         _MacroBar(line: line),
                   ],
                 ),
@@ -1393,7 +1402,9 @@ class _TargetsSection extends StatelessWidget {
                             if (percent != null)
                               LiquidProgressBar(
                                 value: (percent > 100 ? 100 : percent) / 100,
-                                color: nutrient.isUpperLimit
+                                color: nutrient.isReference
+                                    ? null
+                                    : nutrient.isUpperLimit
                                     ? (percent > 100 ? Colors.red : Colors.orange)
                                     : (percent >= 100 ? Colors.green : null),
                               ),

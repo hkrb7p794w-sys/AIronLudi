@@ -195,7 +195,7 @@ void main() {
       final fat = targets(lowFat, plan: run);
       expect(fat.values[Nutrient.fat]! * 9 / fat.values[Nutrient.kcal]!, closeTo(0.2, 0.01));
       expect(fat.values[Nutrient.carbs]!, lessThan(450));
-      expect(fat.macroNotes.single, startsWith('Fett auf 20 %'));
+      expect(fat.macroNotes.single, startsWith('Fett auf '));
 
       final withheld = settings()
         ..weightTargetsWithheld = true

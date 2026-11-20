@@ -187,7 +187,10 @@ export function groundMeal(output: unknown): unknown {
 }
 
 function fmt(value: unknown, unit: string): string {
-  return typeof value === "number" && Number.isFinite(value) ? `${Math.round(value)} ${unit}` : "–";
+  if (typeof value !== "number" || !Number.isFinite(value)) return "–";
+  // Kleine Werte (Vitamin D, B12, Eisen) mit einer Nachkommastelle, sonst wird aus 2,4 µg „2 µg“.
+  const rounded = Math.abs(value) < 10 ? Math.round(value * 10) / 10 : Math.round(value);
+  return `${String(rounded).replace(".", ",")} ${unit}`;
 }
 
 /** Gemeinsame Auswertung von Ernährung und Training für den Tag. */
@@ -197,8 +200,15 @@ export function nutritionReviewPrompt(input: Record<string, unknown>): string {
     .map((row) => {
       const r = (typeof row === "object" && row !== null ? row : {}) as Record<string, unknown>;
       const unit = text(r.unit, 6);
-      const kind = r.upperLimit === true ? " (Obergrenze)" : "";
-      return `- ${text(r.label, 40)}: ${fmt(r.actual, unit)} von ${fmt(r.target, unit)}${kind}`;
+      const kind = r.upperLimit === true ? " (Obergrenze)" : r.reference === true ? " (Richtwert)" : "";
+      const missing = typeof r.missing === "number" && r.missing > 0 ? Math.round(r.missing) : 0;
+      const actual =
+        r.actual === null || r.actual === undefined
+          ? "unbekannt (keine Angabe in den Einträgen)"
+          : missing > 0
+            ? `mindestens ${fmt(r.actual, unit)} (${missing} Einträge ohne Angabe)`
+            : fmt(r.actual, unit);
+      return `- ${text(r.label, 40)}: ${actual} von ${fmt(r.target, unit)}${kind}`;
     })
     .join("\n");
   return [
@@ -224,7 +234,8 @@ export function nutritionReviewPrompt(input: Record<string, unknown>): string {
       "Berücksichtige die Uhrzeit: Ziele sind Tagesziele, morgens ist wenig erreicht normal.",
     "2. Protein: Verteilung über den Tag (0,25-0,4 g/kg je Mahlzeit) und was noch fehlt.",
     "3. Ein konkreter, alltagstauglicher Vorschlag für die nächste Mahlzeit passend zur Ernährungsweise.",
-    "4. Optional: auffällige Mikronährstoff-Lücke (nur wenn deutlich), ohne Panik.",
+    "4. Optional: auffällige Mikronährstoff-Lücke (nur wenn deutlich), ohne Panik. Unbekannte Werte und " +
+      "Mindestwerte mit Einträgen ohne Angabe sind kein Mangel.",
     "Keine Diagnosen, keine Supplement-Empfehlungen ohne klaren Anlass. " +
       "Schreibe durchgängig in korrektem Deutsch mit echten Umlauten (ä, ö, ü, ß).",
   ].join("\n");

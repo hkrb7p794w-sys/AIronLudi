@@ -964,3 +964,34 @@ Beispiel (Mann 80 kg, 180 cm, 30 J., PAL 1,4; Grundumsatz 1780 kcal):
 Tests: `packages/coach_core/test/nutrition_audit_test.dart` (alle Ziele × Tagestypen × Mann/Frau, Makrosumme,
 Untergrenzen, Mikros, Skalierung, Einheiten, Lücken, Tagessumme).
 
+## 2026-11-20 – Ernährungsrechnung, zweite Runde
+
+Auftrag des Nutzers: weiter verbessern, Mikros nachrangig. Ergänzend zur ersten Runde:
+
+- **Verbrauchsabgleich mit falschem Formel-Bedarf (Fehler):** „Gemessener Verbrauch vs. Formel“ verglich mit dem
+  kcal-Ziel eines Tages mit Ziel „Halten“. Mit eigenen Makros in Gramm ist das die selbst gewählte Zahl, nicht der
+  Bedarf – der Vorschlag zur Anpassung war dann falsch. Neu: `NutritionTargets.maintenanceKilocalories`
+  (Grundumsatz × PAL + Training netto, ohne Ziel, Anpassungen und eigene Makros) als Vergleichswert.
+- **KI-Tagesauswertung bekam 0 für fehlende Werte (Fehler):** Unbekannte Nährstoffe gehen jetzt als `null`
+  („unbekannt“), Summen mit Lücken mit der Zahl der Einträge ohne Angabe („mindestens …“) an den Worker; der Prompt
+  sagt, dass beides kein Mangel ist. Kleine Werte mit einer Nachkommastelle (2,4 µg statt 2 µg).
+- **Lückenliste für Rezepte (Fehler):** `RecipePlanner.gaps` zählte fehlende Werte als 0 und meldete z. B.
+  „Eisen 20 %“, wenn Produkte keine Eisenangabe hatten. Jetzt zählen nur Tage mit bekanntem Wert (mindestens drei),
+  und `FoodIntake.completeTotals` lässt Nährstoffe weg, deren Einträge ohne Angabe mehr als 10 % der Energie
+  ausmachen. Reines Wasser zählt bei Lücken nicht mit.
+- **Budget-Karte:** Mit Einträgen ohne Angabe heißt es „noch höchstens 62 g“ bzw. „mind. 18 g drüber“.
+- **Fett mindestens 0,7 g/kg** (Referenzgewicht) zusätzlich zu 20 % der Energie, auch bei eigenen Makros (mit
+  Hinweis). Vorher lag Fett bei −15 % am Ruhetag bei 0,58–0,63 g/kg. Die Kohlenhydrate geben dafür nach (am
+  Ruhetag im Defizit bis 2 g/kg, mindestens 130 g).
+- **Eisen:** Frauen ab 51 Jahren 14 mg (DGE/ÖGE 2024: nach der Menopause), sonst 16 mg; Männer 11 mg.
+- **Natrium als Richtwert:** 1500 mg plus Schweißverlust (500 mg je Stunde Ausdauer, 250 mg je Stunde anderes
+  Training, auf 50 mg gerundet). Keine Obergrenze mehr (vorher rot ab 1500 mg – irreführend für Ausdauersport),
+  in der Anzeige ohne Ampelfarbe, für die KI „(Richtwert)“.
+
+Bewusst nicht geändert: eine Prüfung auf „mögliche, aber unwahrscheinliche“ Mikrowerte je 100 g (z. B. Vitamin D in
+mg statt µg). Nahrungsergänzungen haben je 100 g echte Werte in dieser Höhe; eine Grenze würde sie verwerfen.
+Wasser- und Natriumzuschlag zählen nur aufgezeichnetes Training, nicht geplantes (wie bisher beim Wasser).
+
+Tests: `nutrition_audit_test.dart` (Gruppen „Auswertungen über Tage“, Natrium, Eisen), Widget-Test „Nur Kalorien:
+Makros und Mikros ohne Angabe zeigen keinen Mangel“, Worker `nutrition.test.ts`.
+

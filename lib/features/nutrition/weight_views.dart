@@ -246,25 +246,19 @@ class _WeightTrendScreenState extends ConsumerState<WeightTrendScreen> {
     return intake;
   }
 
-  /// Bedarf laut Formel ohne Ziel und Anpassungen (Grundumsatz × Alltag + Training des Tages), Schnitt über die Tage
-  /// mit Einträgen seit [start].
+  /// Bedarf laut Formel ohne Ziel, Anpassungen und eigene Makros (Grundumsatz × Alltag + Training des Tages), Schnitt
+  /// über die Tage mit Einträgen seit [start].
   double? _formulaMaintenance(CoachSettings settings, GarminProfile? garmin, Iterable<CalendarDay> days) {
-    final maintenance = settings.nutrition.copy()
-      ..goal = NutritionGoal.maintain
-      ..weeklyWeightChangePercent = null
-      ..energyAdjustmentKilocalories = 0
-      ..dayAdjustments = {};
     final values = [
       for (final day in days)
         NutritionPlanner.compute(
-              activities: _activities.where((activity) => activity.day == day).toList(),
-              planItems: const [],
-              settings: maintenance,
-              garminProfile: garmin,
-              day: day,
-              hasGarminData: true,
-            ).values[Nutrient.kcal] ??
-            0,
+          activities: _activities.where((activity) => activity.day == day).toList(),
+          planItems: const [],
+          settings: settings.nutrition,
+          garminProfile: garmin,
+          day: day,
+          hasGarminData: true,
+        ).maintenanceKilocalories,
     ];
     return values.isEmpty ? null : values.reduce((a, b) => a + b) / values.length;
   }

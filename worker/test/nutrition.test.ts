@@ -69,6 +69,22 @@ describe("nutrition_review", () => {
     expect(prompt).toContain('{"punkte"');
   });
 
+  it("unbekannte und unvollständige Mikros sind kein Mangel", () => {
+    const prompt = nutritionReviewPrompt({
+      nutrients: [
+        { label: "Vitamin D", unit: "µg", actual: null, target: 20 },
+        { label: "Eisen", unit: "mg", actual: 3.36, target: 16, missing: 2 },
+        { label: "Vitamin B12", unit: "µg", actual: 2.44, target: 4 },
+        { label: "Natrium", unit: "mg", actual: 1800, target: 2500, reference: true },
+      ],
+    });
+    expect(prompt).toContain("- Vitamin D: unbekannt (keine Angabe in den Einträgen) von 20 µg");
+    expect(prompt).toContain("- Eisen: mindestens 3,4 mg (2 Einträge ohne Angabe) von 16 mg");
+    expect(prompt).toContain("- Vitamin B12: 2,4 µg von 4 µg");
+    expect(prompt).toContain("- Natrium: 1800 mg von 2500 mg (Richtwert)");
+    expect(prompt).toContain("sind kein Mangel");
+  });
+
   it("verträgt leere Eingaben", () => {
     const prompt = nutritionReviewPrompt({});
     expect(prompt).toContain("noch nichts aufgezeichnet");

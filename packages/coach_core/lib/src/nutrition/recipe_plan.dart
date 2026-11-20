@@ -760,11 +760,16 @@ abstract final class RecipePlanner {
       Nutrient.iodine,
       Nutrient.magnesium,
     ];
+    // Nur Tage mit bekanntem Wert zählen: Fehlt ein Wert (unbekannt, nicht 0), wäre die Lücke vorgetäuscht.
+    double? average(Nutrient nutrient) {
+      final known = [for (final day in dailyTotals) ?day[nutrient]];
+      return known.length < 3 ? null : known.fold(0.0, (sum, value) => sum + value) / known.length;
+    }
+
     return [
       for (final nutrient in watched)
         if (targets[nutrient] case final target? when target > 0)
-          if (dailyTotals.fold(0.0, (sum, day) => sum + (day[nutrient] ?? 0)) / dailyTotals.length case final average
-              when average < 0.8 * target)
+          if (average(nutrient) case final average? when average < 0.8 * target)
             '${nutrient.label}: im Schnitt ${average.round()} von ${target.round()} ${nutrient.unit} '
                 '(${(average / target * 100).round()} %)',
     ];
