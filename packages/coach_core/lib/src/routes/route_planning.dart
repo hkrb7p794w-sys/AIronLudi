@@ -1,0 +1,451 @@
+// Routenplaner (neu in AIronLudi, keine Swift-Vorlage): Vorgaben, Wegpunkte für Rundwege und Strecken,
+// Höhenprofil, Dauer und Bewertung der Vorschläge. Regeln entscheiden – das Routing selbst liefert ein
+// OSM-Router (Valhalla, BRouter) über den RoutePlannerService der App.
+import 'dart:math' as math;
+
+import '../util/enum_codec.dart';
+import 'geo.dart';
+
+/// Disziplin des Routenplaners samt Wegbevorzugung.
+enum RouteDiscipline implements RawEnum {
+  /// Fuß- und Waldwege, Parks, ruhige Nebenstraßen (`footway`, `path`, `track`).
+  run('run', 'Laufen', 'figure.run'),
+
+  /// Asphaltierte Radwege und Straßen (`cycleway`, `surface=asphalt`).
+  roadBike('roadBike', 'Rennrad', 'figure.outdoor.cycle'),
+
+  /// Gemischte und unbefestigte Wege (`gravel`, `track`).
+  gravel('gravel', 'Gravel/Allround', 'bicycle');
+
+  const RouteDiscipline(this.rawValue, this.label, this.symbol);
+
+  @override
+  final String rawValue;
+  final String label;
+  final String symbol;
+
+  bool get isBike => this != run;
+
+  /// Beschreibung der bevorzugten Wege (Auswahl im Planer).
+  String get surfaces => switch (this) {
+    run => 'Fuß- und Waldwege, Parks, ruhige Nebenstraßen',
+    roadBike => 'Asphalt: Radwege und ruhige Straßen',
+    gravel => 'Gemischt: Schotter, Feld- und Waldwege',
+  };
+}
+
+/// Form der Strecke.
+enum RouteShape implements RawEnum {
+  /// Start = Ziel.
+  loop('loop', 'Rundweg'),
+
+  /// Fester Zielpunkt auf der Karte; bei Bedarf mit Umweg zur Wunschdistanz.
+  toDestination('toDestination', 'Zum Ziel'),
+
+  /// Offenes Ziel: Himmelsrichtung und Distanz.
+  direction('direction', 'Richtung');
+
+  const RouteShape(this.rawValue, this.label);
+
+  @override
+  final String rawValue;
+  final String label;
+}
+
+/// Charakter eines Vorschlags.
+enum RouteVariant implements RawEnum {
+  balanced('balanced', 'Direkt & ausgeglichen'),
+  hilly('hilly', 'Höhenmeter-Fokus'),
+  green('green', 'Grün & verkehrsarm');
+
+  const RouteVariant(this.rawValue, this.label);
+
+  @override
+  final String rawValue;
+  final String label;
+}
+
+/// Himmelsrichtungen für Strecken mit offenem Ziel.
+enum CompassDirection {
+  north('N', 0),
+  northEast('NO', 45),
+  east('O', 90),
+  southEast('SO', 135),
+  south('S', 180),
+  southWest('SW', 225),
+  west('W', 270),
+  northWest('NW', 315);
+
+  const CompassDirection(this.label, this.degrees);
+
+  final String label;
+  final double degrees;
+
+  static CompassDirection nearest(double degrees) {
+    final index = (((degrees % 360) + 360) % 360 / 45).round() % 8;
+    return values[index];
+  }
+}
+
+/// Vorgaben des Nutzers.
+final class RouteRequest {
+  const RouteRequest({
+    required this.discipline,
+    required this.shape,
+    required this.start,
+    required this.distanceMeters,
+    this.destination,
+    this.bearingDegrees,
+    this.elevationGainMeters,
+  });
+
+  final RouteDiscipline discipline;
+  final RouteShape shape;
+  final GeoPoint start;
+  final GeoPoint? destination;
+
+  /// Richtung (Grad) bei [RouteShape.direction]; bei Rundwegen optional die Richtung der Schleife.
+  final double? bearingDegrees;
+  final double distanceMeters;
+
+  /// Gewünschte kumulierte Höhenmeter (Anstieg); `null`: egal.
+  final double? elevationGainMeters;
+
+  /// Erlaubte Abweichung der Distanz (±7 %).
+  static const tolerance = 0.07;
+
+  /// Grenzen der Eingabe.
+  static const minDistance = 1000.0;
+  static double maxDistance(RouteDiscipline discipline) => discipline.isBike ? 250000 : 60000;
+
+  /// Fehler der Eingabe für die Anzeige, sonst `null`.
+  String? get problem {
+    if (!start.isValid) return 'Bitte einen Startpunkt wählen.';
+    if (distanceMeters < minDistance) return 'Die Distanz muss mindestens 1 km betragen.';
+    if (distanceMeters > maxDistance(discipline)) {
+      return 'Höchstens ${maxDistance(discipline) ~/ 1000} km für ${discipline.label}.';
+    }
+    if (shape == RouteShape.toDestination) {
+      final destination = this.destination;
+      if (destination == null || !destination.isValid) return 'Bitte einen Zielpunkt auf der Karte setzen.';
+      if (Geo.distance(start, destination) < 100) return 'Start und Ziel liegen zu nah beieinander.';
+    }
+    if (shape == RouteShape.direction && bearingDegrees == null) return 'Bitte eine Himmelsrichtung wählen.';
+    if (elevationGainMeters case final gain? when gain < 0) return 'Höhenmeter können nicht negativ sein.';
+    return null;
+  }
+
+  bool withinTolerance(double meters) => (meters - distanceMeters).abs() <= distanceMeters * tolerance;
+
+  RouteRequest copyWith({GeoPoint? start, GeoPoint? destination}) => RouteRequest(
+    discipline: discipline,
+    shape: shape,
+    start: start ?? this.start,
+    destination: destination ?? this.destination,
+    bearingDegrees: bearingDegrees,
+    distanceMeters: distanceMeters,
+    elevationGainMeters: elevationGainMeters,
+  );
+
+  Map<String, Object?> toJson() => {
+    'discipline': discipline.rawValue,
+    'shape': shape.rawValue,
+    'start': start.toJson(),
+    'destination': ?destination?.toJson(),
+    'bearing': ?bearingDegrees,
+    'distance': distanceMeters,
+    'elevationGain': ?elevationGainMeters,
+  };
+
+  static RouteRequest? fromJson(Object? json) {
+    if (json is! Map) return null;
+    final discipline = enumFromRaw(RouteDiscipline.values, json['discipline']);
+    final shape = enumFromRaw(RouteShape.values, json['shape']);
+    final start = GeoPoint.fromJson(json['start']);
+    final distance = json['distance'];
+    if (discipline == null || shape == null || start == null || distance is! num) return null;
+    final bearing = json['bearing'];
+    final gain = json['elevationGain'];
+    return RouteRequest(
+      discipline: discipline,
+      shape: shape,
+      start: start,
+      destination: GeoPoint.fromJson(json['destination']),
+      bearingDegrees: bearing is num ? bearing.toDouble() : null,
+      distanceMeters: distance.toDouble(),
+      elevationGainMeters: gain is num ? gain.toDouble() : null,
+    );
+  }
+}
+
+/// Wegpunkte, die der Router zu einer Strecke der gewünschten Länge verbindet. Alles deterministisch aus dem
+/// Startwert ([seed]): „Neu würfeln“ wählt nur einen anderen Startwert.
+abstract final class RouteWaypointPlanner {
+  /// Typischer Umwegfaktor des Wegenetzes gegenüber der Luftlinie.
+  static const roadFactor = 1.25;
+
+  /// Richtung (Grad) der Schleife bzw. des Umwegs für Variante [variant] beim Würfeln [seed].
+  static double bearingFor({required int seed, required RouteVariant variant, double? preferred}) {
+    final base = preferred ?? (math.Random(seed).nextDouble() * 360);
+    // Varianten zeigen in verschiedene Richtungen; mit gewählter Richtung nur leicht versetzt.
+    final spread = preferred == null ? 120.0 : 25.0;
+    final offset = switch (variant) {
+      RouteVariant.balanced => 0.0,
+      RouteVariant.hilly => spread,
+      RouteVariant.green => -spread,
+    };
+    return (base + offset + 360) % 360;
+  }
+
+  /// Rundweg: Start liegt auf einem Kreis mit Umfang [geometricLength]; drei Wegpunkte verteilen sich leicht
+  /// unregelmäßig darauf, damit die Runde nicht wie gezirkelt wirkt und keine Wege doppelt läuft.
+  static List<GeoPoint> loop({
+    required GeoPoint start,
+    required double geometricLength,
+    required double bearingDegrees,
+    int seed = 0,
+    int points = 3,
+  }) {
+    final random = math.Random(seed);
+    final radius = geometricLength / (2 * math.pi);
+    final center = Geo.destination(start, bearingDegrees, radius);
+    // Winkel des Starts vom Mittelpunkt aus gesehen.
+    final startAngle = (bearingDegrees + 180) % 360;
+    final result = [start];
+    for (var index = 1; index <= points; index++) {
+      final jitter = (random.nextDouble() - 0.5) * (240 / (points + 1)) * 0.35;
+      final angle = startAngle + index * 360 / (points + 1) + jitter;
+      final scale = 0.9 + random.nextDouble() * 0.2;
+      result.add(Geo.destination(center, angle % 360, radius * scale));
+    }
+    return result..add(start);
+  }
+
+  /// Zum festen Ziel: direkt, wenn die Luftlinie schon reicht, sonst über einen seitlichen Umweg-Punkt (Ellipse),
+  /// sodass die Strecke etwa [targetMeters] lang wird. [side] wählt die Seite (+1 rechts, −1 links).
+  static List<GeoPoint> toDestination({
+    required GeoPoint start,
+    required GeoPoint destination,
+    required double geometricLength,
+    double side = 1,
+  }) {
+    final direct = Geo.distance(start, destination);
+    if (direct >= geometricLength * 0.97) return [start, destination];
+    final half = geometricLength / 2;
+    final offset = math.sqrt(math.max(0, half * half - direct * direct / 4));
+    final bearing = Geo.bearing(start, destination);
+    final via = Geo.destination(Geo.midpoint(start, destination), (bearing + 90 * side.sign + 360) % 360, offset);
+    return [start, via, destination];
+  }
+
+  /// Offenes Ziel: Endpunkt in Richtung [bearingDegrees]; ein leicht versetzter Zwischenpunkt sorgt für Abwechslung
+  /// zwischen den Varianten.
+  static List<GeoPoint> direction({
+    required GeoPoint start,
+    required double geometricLength,
+    required double bearingDegrees,
+    int seed = 0,
+  }) {
+    final random = math.Random(seed);
+    final end = Geo.destination(start, bearingDegrees, geometricLength);
+    final lateral = (random.nextDouble() - 0.5) * 0.3 * geometricLength;
+    final middle = Geo.destination(
+      Geo.destination(start, bearingDegrees, geometricLength / 2),
+      (bearingDegrees + 90) % 360,
+      lateral,
+    );
+    return [start, middle, end];
+  }
+
+  /// Nächste Größe nach einer gerouteten Länge [routedMeters] mit Größe [geometricLength]: proportional nachführen,
+  /// gedämpft, damit sich die Schätzung nicht aufschaukelt.
+  static double rescale({required double geometricLength, required double routedMeters, required double targetMeters}) {
+    if (routedMeters <= 0) return geometricLength;
+    final ratio = (targetMeters / routedMeters).clamp(0.4, 2.5);
+    return geometricLength * ratio;
+  }
+
+  /// Erste Größe für die Wunschdistanz.
+  static double initialLength(RouteRequest request) => request.distanceMeters / roadFactor;
+}
+
+/// Punkt des Höhenprofils.
+typedef ElevationSample = ({double kilometers, double elevation});
+
+/// Kennzahlen einer Strecke aus Punkten mit Höhe.
+final class RouteStats {
+  const RouteStats({
+    required this.distanceMeters,
+    required this.ascentMeters,
+    required this.descentMeters,
+    this.minElevation,
+    this.maxElevation,
+  });
+
+  final double distanceMeters;
+  final double ascentMeters;
+  final double descentMeters;
+  final double? minElevation;
+  final double? maxElevation;
+
+  bool get hasElevation => minElevation != null;
+
+  /// Schwelle gegen Rauschen der Höhendaten: Anstieg zählt erst nach 3 m in einer Richtung (Hysterese).
+  static const noiseThreshold = 3.0;
+
+  static RouteStats of(List<GeoPoint> points) {
+    final distance = Geo.length(points);
+    final elevations = [for (final point in points) ?point.elevation];
+    if (elevations.isEmpty) return RouteStats(distanceMeters: distance, ascentMeters: 0, descentMeters: 0);
+    var ascent = 0.0;
+    var descent = 0.0;
+    var reference = elevations.first;
+    for (final elevation in elevations.skip(1)) {
+      final delta = elevation - reference;
+      if (delta >= noiseThreshold) {
+        ascent += delta;
+        reference = elevation;
+      } else if (delta <= -noiseThreshold) {
+        descent -= delta;
+        reference = elevation;
+      }
+    }
+    return RouteStats(
+      distanceMeters: distance,
+      ascentMeters: ascent,
+      descentMeters: descent,
+      minElevation: elevations.reduce(math.min),
+      maxElevation: elevations.reduce(math.max),
+    );
+  }
+
+  /// Höhenprofil mit höchstens [samples] Punkten (km, m) – für das Diagramm.
+  static List<ElevationSample> profile(List<GeoPoint> points, {int samples = 120}) {
+    if (points.isEmpty || points.every((point) => point.elevation == null)) return const [];
+    final cumulative = Geo.cumulative(points);
+    final step = math.max(1, (points.length / samples).ceil());
+    final result = <ElevationSample>[];
+    for (var index = 0; index < points.length; index += step) {
+      if (points[index].elevation case final elevation?) {
+        result.add((kilometers: cumulative[index] / 1000, elevation: elevation));
+      }
+    }
+    if (points.last.elevation case final elevation? when (points.length - 1) % step != 0) {
+      result.add((kilometers: cumulative.last / 1000, elevation: elevation));
+    }
+    return result;
+  }
+}
+
+/// Geschätzte Dauer: Distanz mit Steigungszuschlag.
+abstract final class RouteDuration {
+  /// Lockere Pace ohne bekannte Schwelle: 6:00 /km.
+  static const defaultRunPace = 360.0;
+
+  /// Laufen: 1 Höhenmeter kostet so viel wie 8 m in der Ebene (Faustregel nach Naismith/Scarf).
+  static const runClimbEquivalent = 8.0;
+
+  /// Rad in der Ebene (km/h) und Steigleistung (Höhenmeter je Stunde, VAM) für Freizeitfahrer.
+  static const roadSpeed = 25.0, gravelSpeed = 19.0;
+  static const roadClimbRate = 700.0, gravelClimbRate = 550.0;
+
+  /// Lockere Pace aus der Schwellen-Pace (s/km): etwa 25 % langsamer.
+  static double easyPace(int? thresholdPace) =>
+      thresholdPace == null || thresholdPace <= 0 ? defaultRunPace : thresholdPace * 1.25;
+
+  static Duration estimate({
+    required RouteDiscipline discipline,
+    required double distanceMeters,
+    required double ascentMeters,
+    int? runThresholdPace,
+  }) {
+    final seconds = switch (discipline) {
+      RouteDiscipline.run => (distanceMeters + ascentMeters * runClimbEquivalent) / 1000 * easyPace(runThresholdPace),
+      RouteDiscipline.roadBike => distanceMeters / 1000 / roadSpeed * 3600 + ascentMeters / roadClimbRate * 3600 * 0.5,
+      RouteDiscipline.gravel =>
+        distanceMeters / 1000 / gravelSpeed * 3600 + ascentMeters / gravelClimbRate * 3600 * 0.5,
+    };
+    return Duration(seconds: seconds.round());
+  }
+}
+
+/// Bewertung eines Vorschlags (kleiner ist besser): Abweichung von Distanz und Höhenmetern sowie doppelt gelaufene
+/// Abschnitte („hin und zurück“).
+abstract final class RouteScore {
+  static double of({
+    required RouteRequest request,
+    required RouteVariant variant,
+    required RouteStats stats,
+    required double overlap,
+  }) {
+    final distanceError = (stats.distanceMeters - request.distanceMeters).abs() / request.distanceMeters;
+    // Innerhalb der Toleranz zählt die Distanz kaum, außerhalb stark.
+    final distancePart = distanceError <= RouteRequest.tolerance
+        ? distanceError
+        : RouteRequest.tolerance + (distanceError - RouteRequest.tolerance) * 4;
+    double elevationPart = 0;
+    if (request.elevationGainMeters case final target?) {
+      elevationPart = (stats.ascentMeters - target).abs() / math.max(target, 50);
+      if (variant == RouteVariant.hilly) elevationPart *= 2;
+    } else if (variant == RouteVariant.hilly && stats.hasElevation) {
+      // Ohne Vorgabe: mehr Höhenmeter je km sind beim Höhenmeter-Fokus besser.
+      final perKm = stats.ascentMeters / math.max(1, stats.distanceMeters / 1000);
+      elevationPart = -math.min(perKm, 40) / 100;
+    }
+    return distancePart + elevationPart * 0.5 + overlap * 0.6;
+  }
+
+  /// Anteil der Strecke, der auf schon befahrenen Abschnitten liegt (0…1), über ein Raster von etwa 25 m.
+  static double overlap(List<GeoPoint> points) {
+    if (points.length < 2) return 0;
+    final cumulative = Geo.cumulative(points);
+    final total = cumulative.last;
+    if (total <= 0) return 0;
+    const cell = 25.0;
+    final origin = points.first;
+    final cosLat = math.cos(origin.latitude * math.pi / 180);
+    (int, int) key(GeoPoint point) => (
+      ((point.longitude - origin.longitude) * math.pi / 180 * Geo.earthRadius * cosLat / cell).floor(),
+      ((point.latitude - origin.latitude) * math.pi / 180 * Geo.earthRadius / cell).floor(),
+    );
+    // Wann (Streckenmeter) jede Zelle zuerst erreicht wurde; erneuter Besuch erst nach 150 m zählt als Doppelung.
+    final firstSeen = <(int, int), double>{};
+    var repeated = 0.0;
+    var samples = 0;
+    var next = 0.0;
+    for (var index = 0; index < points.length; index++) {
+      if (cumulative[index] < next) continue;
+      next = cumulative[index] + cell;
+      samples++;
+      final id = key(points[index]);
+      final seen = firstSeen[id];
+      if (seen == null) {
+        firstSeen[id] = cumulative[index];
+      } else if (cumulative[index] - seen > 150 && cumulative[index] < total - 150) {
+        repeated++;
+      }
+    }
+    return samples == 0 ? 0 : repeated / samples;
+  }
+}
+
+/// Anzeige von Routenwerten auf Deutsch.
+abstract final class RouteFormat {
+  /// „850 m“, „10,2 km“, „124 km“.
+  static String distance(double meters) {
+    if (meters < 1000) return '${meters.round()} m';
+    final kilometers = meters / 1000;
+    if (kilometers >= 100) return '${kilometers.round()} km';
+    return '${kilometers.toStringAsFixed(1).replaceAll('.', ',')} km';
+  }
+
+  /// „48 min“, „1:05 h“.
+  static String duration(Duration duration) {
+    final minutes = (duration.inSeconds / 60).round();
+    if (minutes < 60) return '$minutes min';
+    return '${minutes ~/ 60}:${(minutes % 60).toString().padLeft(2, '0')} h';
+  }
+
+  /// „180 hm“.
+  static String elevation(double meters) => '${meters.round()} hm';
+}

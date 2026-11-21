@@ -12,6 +12,9 @@ enum FitBaseType {
   uint8(0x02, 1),
   uint16(0x84, 2),
   uint32(0x86, 4),
+
+  /// Vorzeichenbehaftet (Zweierkomplement), z. B. Koordinaten in Halbkreisen.
+  sint32(0x85, 4),
   uint32z(0x8C, 4),
 
   /// Nullterminierter UTF-8-Text; die Größe steht am Feld ([FitField.text]).
@@ -37,7 +40,7 @@ final class FitField {
   final int number;
   final FitBaseType type;
 
-  /// Wert als vorzeichenlose 32-Bit-Zahl.
+  /// Wert als 32-Bit-Zahl (negative Werte im Zweierkomplement, nur bei [FitBaseType.sint32]).
   final int value;
 
   /// Rohbytes bei Textfeldern.

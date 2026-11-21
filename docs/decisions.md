@@ -995,3 +995,44 @@ Wasser- und Natriumzuschlag zählen nur aufgezeichnetes Training, nicht geplante
 Tests: `nutrition_audit_test.dart` (Gruppen „Auswertungen über Tage“, Natrium, Eisen), Widget-Test „Nur Kalorien:
 Makros und Mikros ohne Angabe zeigen keinen Mangel“, Worker `nutrition.test.ts`.
 
+## 2026-11-21 – Routenplaner (OpenStreetMap) und optionale Gebiete
+
+Auftrag des Nutzers: Routenplaner für Laufen und Radfahren auf OSM-Basis mit Rundweg, Strecke zum Ziel bzw. in eine
+Richtung, Wunschdistanz und Höhenmetern, 2–3 Vorschlägen, Höhenprofil, Übernahme in eine Einheit, GPX/FIT-Export
+und einem abschaltbaren Gebiete-Modul (Prinzip von Territory-Apps). Neu in AIronLudi, keine Swift-Vorlage.
+
+- **Router ohne Schlüssel, direkt aus der App:** Valhalla auf dem Server der FOSSGIS (`valhalla1.openstreetmap.de`,
+  `/route` und `/height`), bei Störung BRouter (`brouter.de`, Höhen in der Antwort). Beide sind kostenlos und
+  brauchen keinen API-Key; daher kein Umweg über den Worker (die Regel „Keys nur im Worker“ betrifft hier nichts).
+  OpenRouteService/GraphHopper bräuchten einen Schlüssel – sollte das nötig werden, gehört der Aufruf in den Worker.
+  Rate-Limit: höchstens etwa eine Anfrage je Sekunde je Dienst (`RateGate`), `Retry-After` bei 429, gestörte Router
+  werden einige Minuten übersprungen, gleiche Anfragen kommen aus dem Zwischenspeicher. „Kein Weg“ (z. B. Wegpunkt im
+  See) führt nicht zum Ausweichen, sondern zu einem gedrehten Wegpunkt.
+- **Regeln entscheiden, Router routet:** Wegpunkte (Kreis mit leicht unregelmäßigen Punkten für Rundwege, Ellipse
+  für den Umweg zum Ziel, Endpunkt in der Himmelsrichtung) werden deterministisch aus einem Startwert erzeugt
+  („Neu würfeln“ = anderer Startwert). Nach jeder Antwort wird die Größe proportional zur Abweichung nachgeführt,
+  höchstens drei Anfragen je Variante; Toleranz ±7 %. Bewertung (`RouteScore`): Distanz, Höhenvorgabe (beim
+  Höhenmeter-Fokus doppelt) und doppelt gelaufene Abschnitte. Wegbevorzugung über die Valhalla-Kosten
+  (`pedestrian` mit `use_tracks`/`walkway_factor`, `bicycle` mit `bicycle_type` Road/Cross/Mountain, `use_roads`,
+  `avoid_bad_surfaces`, `use_hills` aus der Höhenvorgabe je km).
+- **Dauer:** Laufen mit lockerer Pace (Schwellen-Pace × 1,25, sonst 6:00 /km) und 8 m Flachstrecke je Höhenmeter
+  (Naismith/Scarf); Rad 25 km/h (Rennrad) bzw. 19 km/h (Gravel) plus halbe Steigzeit bei 700 bzw. 550 hm/h.
+- **Höhen:** Anstieg mit 3 m Hysterese gegen Rauschen; Höhen für höchstens 400 Stützpunkte, dazwischen interpoliert.
+- **Speicher strikt je Benutzer:** `coach.routes`, `coach.exploration` und `coach.routePlanner` in der Datenbank des
+  Benutzers (wie alle `coach.*`-Schlüssel in der Sicherung). Routen und Erkundung tragen zusätzlich den `username`;
+  ein Stand eines anderen Benutzers wird weder angezeigt noch überschrieben (wie `coach.endurancePlan`).
+- **Gebiete:** standardmäßig aus. Raster aus OSM-Kacheln der Zoomstufe 17 (in Mitteleuropa etwa 190 × 190 m).
+  Eine Runde gilt als geschlossen bei höchstens 150 m (bzw. 3 % der Länge) zwischen Start und Ende, mindestens
+  1 km Länge und mindestens 2 ha Fläche (kein „hin und zurück“); eroberte Fläche = Kacheln mit Mittelpunkt im
+  Gebiet (Überschneidungen zählen einmal). Quellen sind die zwischengespeicherten FIT-Dateien der Aktivitäten (keine
+  zusätzlichen Downloads); jede Aktivität zählt einmal.
+- **FIT-Kurs:** Dateityp 6 (`course`) mit Runde, Start/Stopp und Punkten (Halbkreise, Strecke, Höhe); Zeitstempel
+  aus der geschätzten Dauer. Dafür neu `FitBaseType.sint32`.
+- **Standort:** `geolocator`, nur im Vordergrund und nur auf Antippen; ohne Freigabe bleibt der Pin auf der Karte.
+- **Kartenkacheln:** wie die bestehende Streckenkarte `tile.openstreetmap.org` (Tile Usage Policy: geringe Nutzung,
+  Quellenangabe). Bei wachsender Nutzung auf einen eigenen bzw. kommerziellen Kachel-Anbieter umstellen.
+
+Tests: `packages/coach_core/test/routes_test.dart` (Geometrie, Wegpunkte, Router-Formate, Planer mit Test-Router,
+Export, Gebiete), `test/services/routing_service_test.dart` (Ausweichen, Rate-Limit, Benutzer-Trennung),
+`test/features/route_planner_screen_test.dart` (Ablauf vom Reiter Training bis zur Übernahme und Gebieten).
+
