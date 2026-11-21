@@ -56,6 +56,11 @@ abstract final class SettingsKeys {
   /// Adaptiver Ausdauerplan (Laufen, Rad, Schwimmen) des Benutzers, neu in AIronLudi.
   static const endurancePlan = 'coach.endurancePlan';
 
+  /// Routenplaner (neu in AIronLudi): gespeicherte Routen, Erkundung/Gebiete und Planer-Einstellungen des Benutzers.
+  static const routes = 'coach.routes';
+  static const exploration = 'coach.exploration';
+  static const routePlanner = 'coach.routePlanner';
+
   /// Worker-Adresse (gehört zur Sicherung, `AppBackup.isBackedUp`).
   static const workerURL = 'ai.workerURL';
 

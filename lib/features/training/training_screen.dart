@@ -9,6 +9,7 @@ import '../../app/training_data_reload.dart';
 import '../../data/repositories/gym_repository.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
+import '../../services/routing/routing_providers.dart';
 import '../../ui/components.dart';
 import '../../ui/large_title.dart';
 import '../../ui/sport_style.dart';
@@ -21,6 +22,7 @@ import '../gym/gym_screen.dart';
 import '../health/health_screen.dart';
 import '../plan/my_week_screen.dart';
 import '../plan/plan_screen.dart';
+import '../routes/routes_screen.dart';
 import 'discipline_pages.dart';
 import 'sleep_coach_screen.dart';
 import 'training_controller.dart';
@@ -136,6 +138,8 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> with TrainingDa
       null => endurancePlan == null ? null : 'heute frei',
     };
     final today = CalendarDay.today();
+    final routeStore = ref.watch(routeStoreProvider);
+    final routeToday = routeStore.plannedOn(today).firstOrNull;
     final controller = _controller;
     final gym = [for (final record in _gym) GymItem.fromSession(record.session)];
     final weekMinutes = TrainingTrends.weeklyMinutes(
@@ -266,6 +270,18 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> with TrainingDa
                   value: '${report.week.sessions} Einheiten',
                   caption: 'letzte Woche',
                   onTap: () => _open((_) => WeeklyReportScreen(report: report)),
+                ),
+                _HubRow(
+                  title: 'Routen',
+                  symbol: 'point.topleft.down.to.point.bottomright.curvepath',
+                  color: Colors.teal,
+                  value: routeToday == null ? '' : RouteFormat.distance(routeToday.stats.distanceMeters),
+                  caption: routeToday == null
+                      ? (routeStore.settings.explorationEnabled
+                            ? '${routeStore.exploration.territories.length} Gebiete · Routen planen'
+                            : 'Laufen & Rad auf OpenStreetMap')
+                      : 'Route heute',
+                  onTap: () => _open((_) => const RoutesScreen()),
                 ),
               ],
             ),

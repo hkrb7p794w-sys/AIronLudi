@@ -10,6 +10,7 @@ import '../../data/repositories/gym_repository.dart';
 import '../../data/storage.dart';
 import '../../services/garmin/garmin_sync_service.dart';
 import '../../services/providers.dart';
+import '../../services/routing/routing_providers.dart';
 import '../../ui/components.dart';
 import '../../ui/route_map.dart';
 import '../gym/gym_screen.dart';
@@ -102,11 +103,33 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
   /// Bericht aus der geladenen Datei erzeugen und speichern (auch für ältere Aktivitäten außerhalb des Abrufs).
   void _storeReport(GarminActivity activity) {
+    // Gebiete (optional): Strecke einmalig in die Erkundung übernehmen.
+    if (_fit case final fit?) unawaited(_explore(activity, fit));
     final fit = _fit;
     if (fit == null || _report?.version == ActivityReport.currentVersion) return;
     final built = ActivityReportBuilder.build(activity, fit);
     _report = built;
     ref.read(garminSyncServiceProvider).reportStore.store(built, today: CalendarDay.today());
+  }
+
+  Future<void> _explore(GarminActivity activity, FitActivity fit) async {
+    try {
+      final gain = await ref.read(explorationImportProvider).record(activity, fit);
+      if (gain == null || !mounted) return;
+      if (gain.territory != null || gain.newTiles > 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              gain.territory != null
+                  ? 'Neues Gebiet erobert: ${GermanFormat.decimal(gain.territory!.areaSquareMeters / 1e6)} km²'
+                  : '${gain.newTiles} neue Kacheln erkundet',
+            ),
+          ),
+        );
+      }
+    } on Object {
+      // Erkundung ist optional – Fehler stören die Detailseite nicht.
+    }
   }
 
   @override

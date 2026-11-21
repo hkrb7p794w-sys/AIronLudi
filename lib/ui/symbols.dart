@@ -75,6 +75,11 @@ abstract final class AppSymbols {
     'figure.tennis': Icons.sports_tennis,
     'figure.soccer': Icons.sports_soccer,
     'figure.boxing': Icons.sports_mma,
+    // Routenplaner und Gebiete.
+    'bicycle': Icons.pedal_bike,
+    'map.fill': Icons.map,
+    'point.topleft.down.to.point.bottomright.curvepath': Icons.route,
+    'flag.2.crossed.fill': Icons.flag_circle,
   };
 
   static IconData of(String name) => _icons[name] ?? Icons.circle;

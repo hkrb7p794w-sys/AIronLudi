@@ -152,6 +152,26 @@ von Hand: denselben Link wieder öffnen.
    `Dokumente\Zwift\Workouts\<Zwift-ID>\` kopieren. In Zwift unter
    *Training › Eigene Workouts*. **FIT-Datei teilen** gibt es für alle Einheiten.
 
+## Routen planen: Laufen und Rad (OpenStreetMap)
+
+1. *Training › Routen › Neue Route planen:* Start mit **Aktueller Standort** (fragt einmal nach der Freigabe) oder
+   per Antippen der Karte. **Disziplin:** Laufen (Fuß- und Waldwege, Parks), Rennrad (Asphalt) oder Gravel/Allround
+   (Schotter, Feld- und Waldwege).
+2. **Strecke:** *Rundweg*, *Zum Ziel* (Ziel-Pin setzen; ist es näher als die Wunschdistanz, gibt es einen Umweg)
+   oder *Richtung* (Himmelsrichtung, offenes Ziel). **Distanz** wählen (Toleranz etwa ±7 %), optional
+   **Höhenmeter vorgeben**.
+3. **Routen vorschlagen:** bis zu drei Varianten – *Direkt & ausgeglichen*, *Höhenmeter-Fokus*, *Grün &
+   verkehrsarm* – mit Karte, Höhenprofil, Anstieg/Abstieg und geschätzter Dauer. **Neu würfeln** probiert andere Wege.
+4. **In Einheit übernehmen:** heute, eine kommende Einheit des Ausdauerplans oder ein anderer Tag – die Route steht
+   dann unter *Heute › Route für heute*. **GPX** oder **FIT** öffnet das Teilen-Menü (z. B. Garmin Connect, Komoot,
+   Wahoo, Dateien).
+5. **Gebiete (optional):** *Training › Routen › Gebiete anzeigen*. Geschlossene Runden erobern die umschlossene
+   Fläche, alle Läufe und Fahrten mit GPS füllen deine Kachel-Karte. Gezählt wird eine Aktivität, sobald ihr Verlauf
+   einmal geladen wurde (Aktivität öffnen). Alles bleibt bei deinem Benutzer.
+
+Die Routen kommen von öffentlichen, kostenlosen OSM-Routern (Valhalla der FOSSGIS, ersatzweise BRouter). Sind sie
+überlastet, hilft es, kurz zu warten.
+
 ## Für dich als Betreiber:in: KI-Worker in der App eintragen
 
 Nur auf deinem eigenen Gerät (alle anderen nutzen den Einladungs- bzw. Android-Link):

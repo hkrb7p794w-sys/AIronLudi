@@ -29,6 +29,7 @@ import '../gym/gym_screen.dart';
 import '../health/health_screen.dart';
 import '../health/morning_report_views.dart';
 import '../plan/my_week_screen.dart';
+import '../routes/routes_screen.dart';
 import '../settings/settings_screen.dart';
 import 'now_views.dart';
 import 'today_controller.dart';
@@ -392,6 +393,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with TrainingDataRelo
       if (shows(TodayModule.training)) ...[
         if (snapshot.focus case final focus?)
           NowSection(snapshot: snapshot, focus: focus, openDone: (item) => _doneScreen(item, snapshot.plan.today)),
+        const PlannedRoutesTodaySection(),
         MissedSessionSection(week: snapshot.sessions, onSaved: _reload),
         if (settings.profile.mode == ProfileMode.season)
           if (snapshot.today case final plan?) SeasonOpenSections(today: plan),

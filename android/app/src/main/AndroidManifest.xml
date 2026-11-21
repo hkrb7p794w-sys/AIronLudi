@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Netz: Garmin, Cloudflare Worker (KI, Konto, Freunde), Open Food Facts, Kartenkacheln. -->
+    <!-- Netz: Garmin, Cloudflare Worker (KI, Konto, Freunde), Open Food Facts, Kartenkacheln, Routenplaner (Valhalla, BRouter). -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Mahlzeit-Fotos (Kamera-App) und Barcode-Scanner (mobile_scanner). -->
@@ -9,6 +9,10 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <!-- Mahlzeit diktieren (speech_to_text). -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Routenplaner: aktueller Standort als Startpunkt (nur im Vordergrund, nur auf Wunsch). -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
     <!-- Haptik und Pausenende. -->
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Erinnerungen: Mitteilungen, genaue Uhrzeit, nach Neustart neu planen. -->
