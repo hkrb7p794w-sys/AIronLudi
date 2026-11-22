@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 import '../../services/routing/routing_providers.dart';
 import '../../ui/liquid.dart';
 import '../endurance/endurance_controller.dart';
+import 'address_field.dart';
 import 'route_detail_screen.dart';
 import 'route_parts.dart';
 import 'route_planner_screen.dart';
@@ -204,6 +205,67 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
         .pushReplacement(MaterialPageRoute<void>(builder: (_) => RouteDetailScreen(routeID: route.id)));
   }
 
+  /// Adresse suchen: ohne Start wird sie zum Start, sonst als nächster Punkt angehängt (auf Wegen geroutet).
+  Future<void> _searchAddress() async {
+    final place = await showModalBottomSheet<Place>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+                child: Text(
+                  _route.isEmpty ? 'Start suchen' : 'Nächsten Punkt suchen',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: Text(
+                  _route.isEmpty
+                      ? 'Die Adresse wird zum Start der Route.'
+                      : 'Die Route wird vom bisherigen Ende auf Wegen bis zu dieser Adresse verlängert.',
+                  style: LiquidText.label(context),
+                ),
+              ),
+              AddressField(
+                hint: 'Adresse oder Ort',
+                icon: _route.isEmpty ? Icons.flag : Icons.add_location_alt_outlined,
+                color: _route.isEmpty ? Colors.green : Colors.red,
+                near: _route.end ?? _nearCenter,
+                autofocus: true,
+                onSelected: (place) => Navigator.pop(context, place),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (place == null || !mounted) return;
+    if (_route.isEmpty) {
+      setState(() => _route.setStart(place.point));
+      _map.move(latLng(place.point), 15);
+    } else {
+      await _routeTo([_route.end!, place.point]);
+      if (mounted) PlannerMap.fit(_map, Geo.thin(_route.points, 200));
+    }
+  }
+
+  GeoPoint? get _nearCenter {
+    try {
+      return _map.camera.zoom < 8 ? null : geoPoint(_map.camera.center);
+    } on Object {
+      return null;
+    }
+  }
+
   Future<void> _settings() async {
     await showModalBottomSheet<void>(
       context: context,
@@ -268,6 +330,11 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
       appBar: AppBar(
         title: const Text('Frei planen'),
         actions: [
+          IconButton(
+            tooltip: 'Adresse suchen',
+            onPressed: _busy ? null : () => unawaited(_searchAddress()),
+            icon: const Icon(Icons.search),
+          ),
           IconButton(
             tooltip: 'Sportart und Umgebung',
             onPressed: _settings,
@@ -376,7 +443,7 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
                                 : _route.isEmpty
                                 ? (drawing
                                       ? 'Zeichne mit dem Finger los – der Anfang wird zum Start.'
-                                      : 'Tippe den Start an.')
+                                      : 'Tippe den Start an oder suche eine Adresse (Lupe).')
                                 : (drawing
                                       ? 'Weiterzeichnen: Die Linie wird auf echte Wege gelegt.'
                                       : 'Nächsten Punkt antippen. Zoomen und Verschieben wie gewohnt.'),

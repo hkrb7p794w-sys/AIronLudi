@@ -980,6 +980,88 @@ void main() {
     });
   });
 
+  group('Adresssuche', () {
+    test('Photon: Anfrage mit Nähe, Antwort mit Straße, Ort und Land', () {
+      final uri = GeocodingFormat.photonUri('Hauptstraße 5', near: berlin);
+      expect(uri.host, 'photon.komoot.io');
+      expect(uri.queryParameters, containsPair('q', 'Hauptstraße 5'));
+      expect(uri.queryParameters, containsPair('lat', '52.5200'));
+      expect(uri.queryParameters, containsPair('lang', 'de'));
+      final places = GeocodingFormat.parsePhoton({
+        'features': [
+          {
+            'geometry': {
+              'coordinates': [13.35, 52.49],
+            },
+            'properties': {
+              'street': 'Hauptstraße',
+              'housenumber': '5',
+              'postcode': '10827',
+              'city': 'Berlin',
+              'countrycode': 'DE',
+              'country': 'Deutschland',
+            },
+          },
+          {
+            'geometry': {
+              'coordinates': [9.99, 53.55],
+            },
+            'properties': {'name': 'Alster', 'city': 'Hamburg', 'countrycode': 'DE'},
+          },
+          {
+            'geometry': {
+              'coordinates': [16.37, 48.21],
+            },
+            'properties': {'name': 'Prater', 'city': 'Wien', 'countrycode': 'AT', 'country': 'Österreich'},
+          },
+          {
+            'geometry': {
+              'coordinates': [1, 2],
+            },
+            'properties': <String, Object?>{},
+          },
+        ],
+      });
+      expect(places.map((place) => place.label), [
+        'Hauptstraße 5, 10827 Berlin',
+        'Alster, Hamburg',
+        'Prater, Wien, Österreich',
+      ]);
+      expect(places.first.point, const GeoPoint(52.49, 13.35));
+      expect(() => GeocodingFormat.parsePhoton('kaputt'), throwsA(isA<RoutingUnavailable>()));
+    });
+
+    test('Nominatim: Anfrage und Antwort', () {
+      final uri = GeocodingFormat.nominatimUri('Tempelhofer Feld');
+      expect(uri.host, 'nominatim.openstreetmap.org');
+      expect(uri.queryParameters['format'], 'jsonv2');
+      final places = GeocodingFormat.parseNominatim([
+        {
+          'lat': '52.4731',
+          'lon': '13.4013',
+          'name': 'Tempelhofer Feld',
+          'display_name': 'Tempelhofer Feld, Tempelhof, Tempelhof-Schöneberg, Berlin, 12101, Deutschland',
+        },
+        {'lat': 'x', 'lon': '1', 'display_name': 'kaputt'},
+      ]);
+      expect(places.single.label, 'Tempelhofer Feld, Tempelhof, Tempelhof-Schöneberg, Berlin');
+      expect(places.single.point, const GeoPoint(52.4731, 13.4013));
+    });
+
+    test('Eingabe: Mindestlänge, Koordinaten, Entfernung', () {
+      expect(GeocodingFormat.normalized('  ab '), isNull);
+      expect(GeocodingFormat.normalized(' Haupt   straße '), 'Haupt straße');
+      expect(GeocodingFormat.coordinates('52.52, 13.405'), const GeoPoint(52.52, 13.405));
+      expect(GeocodingFormat.coordinates('52,52 13,405'), const GeoPoint(52.52, 13.405));
+      expect(GeocodingFormat.coordinates('95, 13'), isNull);
+      expect(GeocodingFormat.coordinates('Berlin'), isNull);
+      final place = Place(title: 'Ziel', detail: '', point: Geo.destination(berlin, 0, 2400));
+      expect(GeocodingFormat.distanceLabel(place, berlin), '2,4 km');
+      expect(GeocodingFormat.distanceLabel(place, null), isNull);
+      expect(place.label, 'Ziel');
+    });
+  });
+
   test('Anzeige', () {
     expect(RouteFormat.distance(850), '850 m');
     expect(RouteFormat.distance(10249), '10,2 km');

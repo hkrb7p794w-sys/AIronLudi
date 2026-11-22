@@ -312,3 +312,73 @@ final class OverpassFeatureSource implements RouteFeatureSource {
     }
   }
 }
+
+/// Adresssuche: Photon (Vorschläge beim Tippen, nach Nähe sortiert), bei ausdrücklicher Suche ersatzweise Nominatim
+/// (höchstens eine Anfrage je Sekunde, nie beim Tippen – Nutzungsregeln der OSM Foundation). Gleiche Anfragen kommen
+/// aus dem Zwischenspeicher.
+final class OsmPlaceSearch implements PlaceSearch {
+  OsmPlaceSearch(this.transport, {RateGate? photonGate, RateGate? nominatimGate})
+    : photonGate = photonGate ?? RateGate(const Duration(milliseconds: 600)),
+      nominatimGate = nominatimGate ?? RateGate(const Duration(milliseconds: 1100));
+
+  final HttpTransport transport;
+  final RateGate photonGate;
+  final RateGate nominatimGate;
+  final Map<String, List<Place>> _cache = {};
+
+  @override
+  Future<List<Place>> search(String query, {GeoPoint? near, bool typing = false}) async {
+    if (GeocodingFormat.coordinates(query) case final point?) {
+      return [Place(title: 'Koordinaten', detail: query.trim(), point: point)];
+    }
+    final text = GeocodingFormat.normalized(query);
+    if (text == null) return const [];
+    final key =
+        '$text|${near == null ? '' : '${near.latitude.toStringAsFixed(2)},${near.longitude.toStringAsFixed(2)}'}';
+    if (_cache[key] case final cached?) return cached;
+    RoutingUnavailable? problem;
+    try {
+      final places = await _get(photonGate, GeocodingFormat.photonUri(text, near: near), GeocodingFormat.parsePhoton);
+      if (places.isNotEmpty || typing) return _remember(key, places);
+    } on RoutingUnavailable catch (error) {
+      if (typing) rethrow;
+      problem = error;
+    }
+    try {
+      return _remember(
+        key,
+        await _get(nominatimGate, GeocodingFormat.nominatimUri(text), GeocodingFormat.parseNominatim),
+      );
+    } on RoutingUnavailable {
+      if (problem != null) throw problem;
+      rethrow;
+    }
+  }
+
+  List<Place> _remember(String key, List<Place> places) {
+    if (_cache.length >= 50) _cache.remove(_cache.keys.first);
+    return _cache[key] = places;
+  }
+
+  Future<List<Place>> _get(RateGate gate, Uri uri, List<Place> Function(Object? json) parse) => gate.run(() async {
+    final HttpResponse response;
+    try {
+      response = await transport.send(
+        HttpRequest(
+          method: 'GET',
+          url: uri,
+          headers: const {'User-Agent': _HttpEngine.userAgent, 'Accept-Language': 'de'},
+          timeout: const Duration(seconds: 15),
+        ),
+      );
+    } on HttpTransportException catch (error) {
+      throw RoutingUnavailable('Adresssuche nicht erreichbar: ${error.message}');
+    }
+    if (response.status == 429) {
+      gate.backOff(const Duration(seconds: 5));
+      throw const RoutingUnavailable('Adresssuche: zu viele Anfragen, bitte kurz warten.');
+    }
+    if (!response.isSuccess) throw RoutingUnavailable('Adresssuche gestört (${response.status}).');
+    return parse(_HttpEngine.decode(response));
+  });
+}

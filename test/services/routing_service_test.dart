@@ -170,6 +170,52 @@ void main() {
       expect(await offline.attractors(start, 3000, {RoutePreference.water}), isEmpty);
     });
 
+    test('Adresssuche: Photon zuerst, bei Ausfall Nominatim – beim Tippen nie Nominatim', () async {
+      var photonDown = false;
+      final transport = FakeHttpTransport((request) {
+        if (request.url.host == 'photon.komoot.io') {
+          if (photonDown) return json({'message': 'down'}, status: 503);
+          return json({
+            'features': [
+              {
+                'geometry': {
+                  'coordinates': [13.35, 52.49],
+                },
+                'properties': {'street': 'Hauptstraße', 'housenumber': '5', 'city': 'Berlin', 'countrycode': 'DE'},
+              },
+            ],
+          });
+        }
+        return json([
+          {
+            'lat': '52.49',
+            'lon': '13.35',
+            'name': 'Hauptstraße 5',
+            'display_name': 'Hauptstraße 5, Berlin, Deutschland',
+          },
+        ]);
+      });
+      final search = OsmPlaceSearch(transport, photonGate: instantGate(), nominatimGate: instantGate());
+      final places = await search.search('Hauptstraße 5', near: start, typing: true);
+      expect(places.single.label, 'Hauptstraße 5, Berlin');
+      expect(transport.requests.single.url.queryParameters['lat'], '52.5200');
+      expect(transport.requests.single.headers['User-Agent'], contains('AIronLudi'));
+      // Gleiche Suche: aus dem Zwischenspeicher.
+      await search.search('Hauptstraße 5', near: start, typing: true);
+      expect(transport.requests.length, 1);
+      photonDown = true;
+      await expectLater(search.search('Tempelhofer Feld', typing: true), throwsA(isA<RoutingUnavailable>()));
+      expect(transport.requests.where((request) => request.url.host.startsWith('nominatim')), isEmpty);
+      final fallback = await search.search('Tempelhofer Feld');
+      expect(fallback.single.title, 'Hauptstraße 5');
+      expect(transport.requests.last.url.host, 'nominatim.openstreetmap.org');
+      // Koordinaten und zu kurze Eingaben brauchen keine Anfrage.
+      final count = transport.requests.length;
+      expect((await search.search('52.5, 13.4')).single.point, const GeoPoint(52.5, 13.4));
+      expect(await search.search('ab'), isEmpty);
+      expect(transport.requests.length, count);
+    });
+
     test('Rate-Limit: Anfragen nacheinander mit Mindestabstand', () async {
       var now = DateTime.utc(2026, 11, 21, 8);
       final waits = <Duration>[];

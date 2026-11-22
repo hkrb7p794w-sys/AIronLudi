@@ -62,6 +62,23 @@ final class FakeRouting implements RoutingBackend {
   Future<List<double?>> elevations(List<GeoPoint> points) async => [for (final _ in points) 50];
 }
 
+/// Adresssuche ohne Netz: findet „Hauptstraße“ und „Hafen“ in der Nähe.
+final class FakePlaces implements PlaceSearch {
+  final List<String> queries = [];
+
+  @override
+  Future<List<Place>> search(String query, {GeoPoint? near, bool typing = false}) async {
+    queries.add(query);
+    if (query.contains('Hafen')) {
+      return [Place(title: 'Hafen', detail: '10117 Berlin', point: Geo.destination(home, 90, 3000))];
+    }
+    return [
+      Place(title: 'Hauptstraße 5', detail: '10827 Berlin', point: Geo.destination(home, 200, 1500)),
+      Place(title: 'Hauptstraße 50', detail: '10827 Berlin', point: Geo.destination(home, 210, 1800)),
+    ];
+  }
+}
+
 /// Overpass ohne Netz: Uferwege rund um den Start.
 final class FakeFeatures implements RouteFeatureSource {
   int requests = 0;
@@ -78,7 +95,12 @@ final class FakeFeatures implements RouteFeatureSource {
   }
 }
 
-Future<ProviderContainer> openPlanner(WidgetTester tester, FakeRouting routing, {FakeFeatures? features}) async {
+Future<ProviderContainer> openPlanner(
+  WidgetTester tester,
+  FakeRouting routing, {
+  FakeFeatures? features,
+  FakePlaces? places,
+}) async {
   OsmTiles.cacheDisabled = true;
   tester.view.physicalSize = const Size(1170, 2532);
   tester.view.devicePixelRatio = 3;
@@ -90,6 +112,7 @@ Future<ProviderContainer> openPlanner(WidgetTester tester, FakeRouting routing, 
         overrides: [
           routingBackendProvider.overrideWithValue(routing),
           routeFeatureSourceProvider.overrideWithValue(features ?? FakeFeatures()),
+          placeSearchProvider.overrideWithValue(places ?? FakePlaces()),
           locationSourceProvider.overrideWithValue(FakeLocation()),
         ],
       ),
@@ -253,7 +276,7 @@ void main() {
     await tester.tap(find.text('Frei planen'));
     await tester.pumpAndSettle();
     expect(find.byType(RouteDrawScreen), findsOneWidget);
-    expect(find.text('Tippe den Start an.'), findsOneWidget);
+    expect(find.text('Tippe den Start an oder suche eine Adresse (Lupe).'), findsOneWidget);
 
     // Start und ein Wegpunkt: ein Abschnitt, Werte in der Leiste.
     await tapMap(tester);
@@ -288,5 +311,39 @@ void main() {
     expect(saved.request.shape, RouteShape.drawn);
     expect(saved.isLoop, isTrue);
     expect(saved.username, store.username);
+  });
+
+  testWidgets('Start und Ziel per Adresszeile', (tester) async {
+    final routing = FakeRouting();
+    final places = FakePlaces();
+    await openPlanner(tester, routing, places: places);
+
+    // Tippen: Vorschläge nach kurzer Pause, Auswahl setzt den Start.
+    await tester.enterText(find.widgetWithText(TextField, 'Startadresse oder Ort'), 'Hauptstr');
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+    await tester.pumpAndSettle();
+    expect(places.queries, ['Hauptstr']);
+    expect(find.text('Hauptstraße 50'), findsOneWidget);
+    await tester.tap(find.text('Hauptstraße 5'));
+    await tester.pumpAndSettle();
+    expect(find.text('Start: gesuchte Adresse'), findsOneWidget);
+    expect(find.text('Hauptstraße 5, 10827 Berlin'), findsOneWidget);
+
+    // Zum Ziel: Zieladresse per Eingabetaste, ein Treffer wird gleich übernommen.
+    await tapCentered(tester, find.text('Zum Ziel'));
+    final destination = find.widgetWithText(TextField, 'Zieladresse oder Ort');
+    await tapCentered(tester, destination);
+    await tester.enterText(destination, 'Hafen');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+    await tester.pumpAndSettle();
+    expect(find.text('Hafen, 10117 Berlin'), findsOneWidget);
+
+    await tapCentered(tester, find.text('Routen vorschlagen'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pumpAndSettle();
+    expect(routing.calls, greaterThan(0));
+    expect(find.textContaining('Bitte'), findsNothing);
   });
 }

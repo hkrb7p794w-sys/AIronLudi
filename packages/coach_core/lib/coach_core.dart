@@ -145,6 +145,7 @@ export 'src/report/persona_report.dart';
 export 'src/report/prompt_library.dart';
 export 'src/routes/exploration.dart';
 export 'src/routes/geo.dart';
+export 'src/routes/geocoding.dart';
 export 'src/routes/planned_route.dart';
 export 'src/routes/route_planner.dart';
 export 'src/routes/route_planning.dart';

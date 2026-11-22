@@ -12,6 +12,7 @@ import '../../services/routing/routing_providers.dart';
 import '../../ui/components.dart';
 import '../../ui/liquid.dart';
 import '../endurance/endurance_controller.dart';
+import 'address_field.dart';
 import 'route_detail_screen.dart';
 import 'route_draw_screen.dart';
 import 'route_parts.dart';
@@ -49,6 +50,10 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
   bool _startFromLocation = false;
   GeoPoint? _destination;
   bool _locating = false;
+
+  /// Adressen aus der Adresszeile (`null`: Punkt kam von Karte oder Standort).
+  String? _startAddress;
+  String? _destinationAddress;
 
   bool _planning = false;
   String? _progress;
@@ -123,6 +128,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
       setState(() {
         _start = point;
         _startFromLocation = true;
+        _startAddress = null;
         if (_shape == RouteShape.toDestination && _destination == null) _pin = _PinTarget.destination;
         _clearResults();
       });
@@ -160,14 +166,45 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
       _editingPins = false;
       if (_shape == RouteShape.toDestination && _pin == _PinTarget.destination) {
         _destination = point;
+        _destinationAddress = null;
         _pin = _PinTarget.start;
       } else {
         _start = point;
         _startFromLocation = false;
+        _startAddress = null;
         if (_shape == RouteShape.toDestination && _destination == null) _pin = _PinTarget.destination;
       }
       _clearResults();
     });
+  }
+
+  /// Adresse gewählt: ausdrückliche Eingabe, setzt den Punkt auch über vorhandenen Vorschlägen.
+  void _selectAddress(Place place, {required bool destination}) {
+    setState(() {
+      if (destination) {
+        _destination = place.point;
+        _destinationAddress = place.label;
+      } else {
+        _start = place.point;
+        _startAddress = place.label;
+        _startFromLocation = false;
+        if (_shape == RouteShape.toDestination && _destination == null) _pin = _PinTarget.destination;
+      }
+      _editingPins = false;
+      _clearResults();
+    });
+    PlannerMap.fit(_map, [?_start, if (_shape == RouteShape.toDestination) ?_destination]);
+  }
+
+  /// Bezugspunkt für Vorschläge: Start, sonst Kartenmitte.
+  GeoPoint? get _near {
+    if (_start case final start?) return start;
+    try {
+      final center = _map.camera.center;
+      return _map.camera.zoom < 8 ? null : geoPoint(center);
+    } on Object {
+      return null;
+    }
   }
 
   void _changeStart() => setState(() {
@@ -179,6 +216,8 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     _start = null;
     _destination = null;
     _startFromLocation = false;
+    _startAddress = null;
+    _destinationAddress = null;
     _editingPins = false;
     _pin = _PinTarget.start;
     _clearResults();
@@ -326,6 +365,15 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
           FormSection(
             header: 'Start',
             children: [
+              AddressField(
+                hint: 'Startadresse oder Ort',
+                icon: Icons.flag,
+                color: Colors.green,
+                value: _startAddress,
+                near: _near,
+                enabled: !_planning,
+                onSelected: (place) => _selectAddress(place, destination: false),
+              ),
               ListTile(
                 leading: _locating
                     ? const SizedBox.square(dimension: 24, child: CircularProgressIndicator(strokeWidth: 2.5))
@@ -336,6 +384,8 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                       ? 'oder einen Pin auf der Karte setzen'
                       : _startFromLocation
                       ? 'Start: dein Standort'
+                      : _startAddress != null
+                      ? 'Start: gesuchte Adresse'
                       : 'Start: Pin auf der Karte',
                 ),
                 onTap: _locating || _planning ? null : () => unawaited(_useLocation()),
@@ -407,7 +457,8 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
             footer: switch (_shape) {
               RouteShape.loop => 'Start und Ziel sind gleich – die Route schließt sich als Runde.',
               RouteShape.toDestination =>
-                'Setze das Ziel mit einem Pin. Ist es näher als die Wunschdistanz, baut der Planer einen Umweg ein.',
+                'Ziel als Adresse eingeben oder mit einem Pin setzen. Ist es näher als die Wunschdistanz, baut der Planer '
+                    'einen Umweg ein.',
               RouteShape.direction => 'Offenes Ziel: Die Route führt genau die Wunschdistanz in diese Richtung.',
               RouteShape.drawn => null,
             },
@@ -429,6 +480,16 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                   }),
                 ),
               ),
+              if (_shape == RouteShape.toDestination)
+                AddressField(
+                  hint: 'Zieladresse oder Ort',
+                  icon: Icons.sports_score,
+                  color: Colors.red,
+                  value: _destinationAddress,
+                  near: _near,
+                  enabled: !_planning,
+                  onSelected: (place) => _selectAddress(place, destination: true),
+                ),
               if (_shape == RouteShape.toDestination)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -574,7 +635,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
   }
 
   String get _hint {
-    if (_start == null) return 'Tippe auf die Karte, um den Start zu setzen – oder nutze deinen Standort.';
+    if (_start == null) return 'Adresse eingeben, auf die Karte tippen oder deinen Standort nutzen.';
     if (_editingPins) {
       return _pin == _PinTarget.destination
           ? 'Tippe auf die Karte für das neue Ziel.'
@@ -582,7 +643,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     }
     if (_pinsLocked) return 'Ansicht: Zum Verschieben lange drücken oder „Startpunkt ändern“.';
     if (_shape == RouteShape.toDestination && (_destination == null || _pin == _PinTarget.destination)) {
-      return 'Tippe auf die Karte, um das Ziel zu setzen.';
+      return 'Ziel als Adresse eingeben oder auf die Karte tippen.';
     }
     return _routes.isEmpty ? 'Antippen verschiebt den Start.' : 'Wähle unten einen Vorschlag.';
   }
