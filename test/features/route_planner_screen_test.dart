@@ -100,6 +100,20 @@ final class FakeFeatures implements RouteFeatureSource {
   }
 }
 
+/// Overpass gestört.
+final class FailingFeatures extends FakeFeatures {
+  @override
+  Future<List<GeoPoint>> attractors(
+    GeoPoint center,
+    double radiusMeters,
+    Set<RoutePreference> preferences, {
+    RouteDiscipline discipline = RouteDiscipline.run,
+  }) async {
+    requests++;
+    throw const RoutingUnavailable('Overpass gestört');
+  }
+}
+
 Future<ProviderContainer> openPlanner(
   WidgetTester tester,
   FakeRouting routing, {
@@ -489,5 +503,17 @@ void main() {
     expect(saved.slotID, 'slot-42');
     expect(saved.slotTitle, 'Langer Lauf');
     expect(saved.plannedDay, day);
+  });
+
+  testWidgets('Hinweis, wenn „Am Wasser“ gerade nicht berücksichtigt werden kann', (tester) async {
+    final routing = FakeRouting();
+    await openPlanner(tester, routing, features: FailingFeatures());
+    await tapCentered(tester, find.text('Aktueller Standort'), delta: -300);
+    await tapCentered(tester, find.text('Am Wasser'));
+    await tapCentered(tester, find.text('Routen vorschlagen'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pumpAndSettle();
+    expect(routing.calls, greaterThan(0));
+    expect(find.textContaining('„Am Wasser“ sind gerade nicht erreichbar'), findsOneWidget);
   });
 }

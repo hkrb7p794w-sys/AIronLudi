@@ -961,6 +961,34 @@ void main() {
       expect(routes.single.preferenceShare, isNull);
     });
 
+    test('Hinweis, wenn die Wegart nicht berücksichtigt werden konnte', () async {
+      const request = RouteRequest(
+        discipline: RouteDiscipline.run,
+        shape: RouteShape.loop,
+        start: berlin,
+        distanceMeters: 6000,
+        preferences: {RoutePreference.water},
+      );
+      final notices = <String>[];
+      await RoutePlanner(
+        FakeBackend(),
+        features: FakeFeatures(const [], fails: true),
+      ).generate(request, username: 'anna', variants: const [RouteVariant.balanced], onNotice: notices.add);
+      expect(notices.single, contains('„Am Wasser“ sind gerade nicht erreichbar'));
+      notices.clear();
+      await RoutePlanner(
+        FakeBackend(),
+        features: FakeFeatures(const []),
+      ).generate(request, username: 'anna', variants: const [RouteVariant.balanced], onNotice: notices.add);
+      expect(notices.single, contains('kaum passende Wege für „Am Wasser“'));
+      notices.clear();
+      await RoutePlanner(
+        FakeBackend(),
+        features: FakeFeatures([Geo.destination(berlin, 0, 900)]),
+      ).generate(request, username: 'anna', variants: const [RouteVariant.balanced], onNotice: notices.add);
+      expect(notices, isEmpty);
+    });
+
     test('Ungleichmäßiges Wegenetz: trotzdem auf ±2,5 % genau', () async {
       // Umwegfaktor wächst mit der Größe (1,2 bei kleinen, bis 1,6 bei großen Runden).
       final backend = CurvedBackend();

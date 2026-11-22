@@ -52,6 +52,7 @@ final class RoutePlanner {
     int? runThresholdPace,
     void Function(String message)? onProgress,
     void Function(PlannedRoute route)? onRoute,
+    void Function(String notice)? onNotice,
     bool Function()? isCancelled,
   }) async {
     if (request.problem case final problem?) throw ArgumentError(problem);
@@ -60,6 +61,10 @@ final class RoutePlanner {
     if (features != null && OverpassFormat.needed(request.preferences, request.discipline)) {
       onProgress?.call('Passende Wege werden gesucht …');
       final area = searchArea(request);
+      final wanted = RoutePreference.describe({
+        for (final preference in request.preferences)
+          if (preference != RoutePreference.paved || request.discipline.isBike) preference,
+      });
       try {
         attractors = await features!.attractors(
           area.center,
@@ -67,8 +72,17 @@ final class RoutePlanner {
           request.preferences,
           discipline: request.discipline,
         );
+        if (attractors.isEmpty) {
+          onNotice?.call(
+            'In der Nähe gibt es kaum passende Wege für „$wanted“ – geplant mit der Wegbewertung des Routers.',
+          );
+        }
       } on Object {
-        // Ohne Overpass: nur die Wegbewertung des Routers.
+        // Ohne Overpass: nur die Wegbewertung des Routers – aber nicht still.
+        onNotice?.call(
+          'Die Wegdaten für „$wanted“ sind gerade nicht erreichbar – geplant nur mit der Wegbewertung des Routers. '
+          '„Neu würfeln“ versucht es später noch einmal.',
+        );
       }
     }
     final result = <PlannedRoute>[];

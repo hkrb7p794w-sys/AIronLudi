@@ -70,6 +70,9 @@ final class RoutePlannerController extends ChangeNotifier {
   bool planning = false;
   String? progress;
   String? problem;
+
+  /// Hinweis zur Planung, z. B. wenn eine Wegart nicht berücksichtigt werden konnte.
+  String? notice;
   int seed = DateTime.now().millisecondsSinceEpoch % 100000;
   List<PlannedRoute> routes = const [];
   int selected = 0;
@@ -118,6 +121,7 @@ final class RoutePlannerController extends ChangeNotifier {
     routes = const [];
     selected = 0;
     problem = null;
+    notice = null;
     if (planning) {
       _run++;
       planning = false;
@@ -227,6 +231,7 @@ final class RoutePlannerController extends ChangeNotifier {
       planning = true;
       progress = 'Wegenetz wird abgefragt …';
       problem = null;
+      notice = null;
       routes = const [];
       selected = 0;
     });
@@ -248,6 +253,9 @@ final class RoutePlannerController extends ChangeNotifier {
         runThresholdPace: _runThresholdPace(),
         onProgress: (message) {
           if (run == _run) update((planner) => progress = message);
+        },
+        onNotice: (text) {
+          if (run == _run) update((planner) => notice = text);
         },
         onRoute: (route) {
           if (run != _run) return;

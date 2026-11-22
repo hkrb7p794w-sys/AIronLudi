@@ -506,6 +506,20 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                 ),
               ),
             ),
+          if (c.notice case final notice?)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(LiquidSpacing.page, 12, LiquidSpacing.page, 0),
+              child: LiquidCard(
+                tint: theme.colorScheme.primary,
+                child: Row(
+                  spacing: 12,
+                  children: [
+                    Icon(Icons.info_outline, color: theme.colorScheme.primary),
+                    Expanded(child: Text(notice)),
+                  ],
+                ),
+              ),
+            ),
           LiquidSwitcher(
             child: current == null
                 ? const SizedBox.shrink(key: ValueKey('leer'))
