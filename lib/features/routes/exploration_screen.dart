@@ -10,6 +10,7 @@ import '../../data/storage.dart';
 import '../../services/routing/routing_providers.dart';
 import '../../ui/components.dart';
 import '../../ui/liquid.dart';
+import 'my_location.dart';
 import 'route_parts.dart';
 
 /// Persönliche Karte: Heatmap der besuchten Kacheln, eroberte Kacheln und Gebiete aus geschlossenen Runden.
@@ -24,6 +25,7 @@ class _ExplorationScreenState extends ConsumerState<ExplorationScreen> {
   final _map = MapController();
   bool _importing = false;
   bool _fitted = false;
+  GeoPoint? _myLocation;
 
   /// Höchstzahl gezeichneter Kacheln (Leistung auf älteren Geräten).
   static const maxDrawnTiles = 6000;
@@ -153,7 +155,13 @@ class _ExplorationScreenState extends ConsumerState<ExplorationScreen> {
                           ),
                       ],
                     ),
+                    MyLocationLayer(point: _myLocation),
                     osmAttribution(),
+                    Positioned(
+                      right: 8,
+                      bottom: 30,
+                      child: LocateMeButton(map: _map, onLocated: (point) => setState(() => _myLocation = point)),
+                    ),
                   ],
                 ),
               ),
