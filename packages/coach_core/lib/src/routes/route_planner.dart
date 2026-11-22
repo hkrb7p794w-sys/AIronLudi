@@ -51,6 +51,8 @@ final class RoutePlanner {
     List<RouteVariant> variants = RouteVariant.values,
     int? runThresholdPace,
     void Function(String message)? onProgress,
+    void Function(PlannedRoute route)? onRoute,
+    void Function(String notice)? onNotice,
     bool Function()? isCancelled,
   }) async {
     if (request.problem case final problem?) throw ArgumentError(problem);
@@ -59,6 +61,10 @@ final class RoutePlanner {
     if (features != null && OverpassFormat.needed(request.preferences, request.discipline)) {
       onProgress?.call('Passende Wege werden gesucht …');
       final area = searchArea(request);
+      final wanted = RoutePreference.describe({
+        for (final preference in request.preferences)
+          if (preference != RoutePreference.paved || request.discipline.isBike) preference,
+      });
       try {
         attractors = await features!.attractors(
           area.center,
@@ -66,8 +72,17 @@ final class RoutePlanner {
           request.preferences,
           discipline: request.discipline,
         );
+        if (attractors.isEmpty) {
+          onNotice?.call(
+            'In der Nähe gibt es kaum passende Wege für „$wanted“ – geplant mit der Wegbewertung des Routers.',
+          );
+        }
       } on Object {
-        // Ohne Overpass: nur die Wegbewertung des Routers.
+        // Ohne Overpass: nur die Wegbewertung des Routers – aber nicht still.
+        onNotice?.call(
+          'Die Wegdaten für „$wanted“ sind gerade nicht erreichbar – geplant nur mit der Wegbewertung des Routers. '
+          '„Neu würfeln“ versucht es später noch einmal.',
+        );
       }
     }
     final result = <PlannedRoute>[];
@@ -88,20 +103,21 @@ final class RoutePlanner {
         }
         // Nahezu gleiche Strecke wie ein schon gefundener Vorschlag: weglassen.
         if (result.any((other) => _similar(other.points, withElevation.points))) continue;
-        result.add(
-          PlannedRoute(
-            id: _newID(),
-            username: username,
-            name: PlannedRoute.suggestedName(request, variant, withElevation.distanceMeters),
-            request: request,
-            variant: variant,
-            points: PlannedRoute.storable(withElevation.points),
-            engine: withElevation.engine,
-            createdAt: _now(),
-            runThresholdPace: runThresholdPace,
-            preferenceShare: attractors.isEmpty ? null : PreferenceSnapper.coverage(withElevation.points, attractors),
-          ),
+        final route = PlannedRoute(
+          id: _newID(),
+          username: username,
+          name: PlannedRoute.suggestedName(request, variant, withElevation.distanceMeters),
+          request: request,
+          variant: variant,
+          points: PlannedRoute.storable(withElevation.points),
+          engine: withElevation.engine,
+          createdAt: _now(),
+          runThresholdPace: runThresholdPace,
+          preferenceShare: attractors.isEmpty ? null : PreferenceSnapper.coverage(withElevation.points, attractors),
         );
+        result.add(route);
+        // Jeder Vorschlag sofort, nicht erst wenn alle fertig sind.
+        onRoute?.call(route);
       } on RoutingUnavailable catch (error) {
         lastError = error;
       } on NoRouteFound catch (error) {

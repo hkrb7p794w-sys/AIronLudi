@@ -1165,3 +1165,26 @@ echten Server. Ergebnisse und Folgen:
   nächsten Mal korrekt). Neu: bei Verbindungsabbruch ein zweiter Versuch nach 0,6 s für alle Router und die
   Adresssuche (`sendWithRetry`).
 
+## 2026-11-22 – Routenplaner: Controller, Vorschläge einzeln, Einheiten, Hinweise, Bearbeiten
+
+Umsetzung der Verbesserungsliste, Punkte 2–6 und 14:
+
+- **Controller (Punkt 14):** `RoutePlannerController` (Riverpod, im Container des Benutzers) hält Vorgaben, Punkte und
+  Vorschläge; der Bildschirm zeigt nur an. Er liest den Routen-Speicher, ohne ihn zu beobachten – sonst entstünde
+  er bei jedem Speichern neu und die Vorschläge wären weg.
+- **Vorschläge einzeln (Punkt 2):** `RoutePlanner.generate(onRoute:)` meldet jeden fertigen Vorschlag sofort; die
+  Planung braucht auf echten Wegen 11–25 s (siehe Echttest), der erste Vorschlag steht nach etwa einem Drittel.
+- **Stand bleibt (Punkt 3):** Vorschläge, Start und Vorgaben überdauern das Verlassen des Planers; eine laufende
+  Planung rechnet weiter. Geänderte Vorgaben verwerfen eine laufende Planung (Lauf-Zähler), „Zurücksetzen“ leert alles.
+- **Aus der Einheit planen (Punkt 4):** In einer Einheit des Ausdauerplans „Route dazu planen“. Distanz: geplante
+  Strecke, sonst Dauer × lockeres Tempo (Schwellen-Pace × 1,25, sonst 6:00 /km) bzw. 25 km/h beim Rad
+  (`RouteForWorkout`); Laufen auf halbe, Rad auf ganze km gerundet. Gespeicherte Vorschläge tragen Tag, Einheit und
+  Titel; zugeordnete Routen stehen in der Einheit.
+- **Hinweis bei Wegarten (Punkt 5):** Sind die Wegdaten nicht erreichbar oder gibt es in der Nähe kaum passende Wege,
+  meldet der Planer das über den Vorschlägen (`onNotice`), statt still ohne Wegart zu planen.
+- **Bearbeiten beim freien Planen (Punkt 6):** `DrawnRoute` kennt Wegpunkte, Zwischenpunkte je Strich und einen
+  Verlauf (50 Schritte). Punkt antippen wählt ihn (Fangbereich ≈ 28 px), dann verschieben oder löschen; langes
+  Drücken auf die Linie fügt einen Punkt ein. Neu geroutet werden nur die betroffenen Abschnitte (verschieben: beide
+  Nachbarn, löschen: die neue Verbindung, einfügen: beide Hälften); misslingt das, wird die Änderung zurückgenommen.
+  „Rückgängig“ nimmt jede letzte Aktion zurück, auch „Zurücksetzen“.
+

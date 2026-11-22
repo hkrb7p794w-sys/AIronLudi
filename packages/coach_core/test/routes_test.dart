@@ -461,6 +461,22 @@ void main() {
       expect(other.calls.first, isNot(backend.calls.first));
     });
 
+    test('Vorschläge kommen einzeln, sobald sie fertig sind', () async {
+      final seen = <RouteVariant>[];
+      final routes = await planner(FakeBackend()).generate(
+        const RouteRequest(
+          discipline: RouteDiscipline.run,
+          shape: RouteShape.loop,
+          start: berlin,
+          distanceMeters: 8000,
+        ),
+        username: 'anna',
+        onRoute: (route) => seen.add(route.variant),
+      );
+      expect(seen, RouteVariant.values);
+      expect(routes.map((route) => route.variant), seen);
+    });
+
     test('Kein Weg am Wegpunkt: gedreht neu versucht', () async {
       final backend = FakeBackend(failFirst: 1);
       final routes = await planner(backend).generate(
@@ -882,6 +898,66 @@ void main() {
       expect(route.isEmpty, isTrue);
     });
 
+    test('Frei geplante Route bearbeiten: verschieben, löschen, einfügen, rückgängig', () {
+      final a = Geo.destination(berlin, 0, 1000);
+      final b = Geo.destination(a, 90, 1000);
+      final c = Geo.destination(b, 180, 1000);
+      final route = DrawnRoute()
+        ..setStart(berlin)
+        ..add([berlin, a])
+        ..add([a, b])
+        ..add([b, c]);
+      expect(route.waypoints, [berlin, a, b, c]);
+      expect(route.unrouted, isEmpty);
+
+      // Mittleren Punkt verschieben: die beiden angrenzenden Abschnitte müssen neu geroutet werden.
+      final moved = Geo.destination(a, 90, 300);
+      expect(route.moveWaypoint(1, moved), [0, 1]);
+      expect(route.waypoints[1], moved);
+      expect(route.unrouted, [0, 1]);
+      expect(route.request(1), [moved, b]);
+      route
+        ..setRouted(0, [berlin, moved])
+        ..setRouted(1, [moved, b]);
+      expect(route.unrouted, isEmpty);
+
+      // Start verschieben: nur der erste Abschnitt.
+      expect(route.moveWaypoint(0, Geo.destination(berlin, 180, 200)), [0]);
+      route.undo();
+      expect(route.start, berlin);
+
+      // Mittleren Punkt löschen: Nachbarn direkt verbunden.
+      expect(route.removeWaypoint(2), [1]);
+      expect(route.waypoints, [berlin, moved, c]);
+      route.undo();
+      expect(route.waypoints, [berlin, moved, b, c]);
+
+      // Letzten Punkt löschen: kein Neu-Routen; Start löschen: erstes Ziel wird Start.
+      expect(route.removeWaypoint(3), isEmpty);
+      expect(route.end, b);
+      expect(route.removeWaypoint(0), isEmpty);
+      expect(route.start, moved);
+      route
+        ..undo()
+        ..undo();
+
+      // Auf der Linie einfügen: Abschnitt wird geteilt.
+      final onLine = Geo.destination(b, 180, 500);
+      final segment = route.nearestSegment(Geo.destination(onLine, 90, 20))!;
+      expect(segment, 2);
+      expect(route.insertWaypoint(segment, onLine), [2, 3]);
+      expect(route.waypoints, [berlin, moved, b, onLine, c]);
+      expect(route.nearestSegment(Geo.destination(berlin, 270, 2000)), isNull);
+      expect(route.nearestWaypoint(Geo.destination(b, 0, 10)), 2);
+      expect(route.nearestWaypoint(Geo.destination(b, 0, 500)), isNull);
+
+      // Zurücksetzen lässt sich ebenfalls zurücknehmen.
+      route.reset();
+      expect(route.isEmpty, isTrue);
+      route.undo();
+      expect(route.waypoints.length, 5);
+    });
+
     test('Sekantenverfahren zwischen zu kurz und zu lang', () {
       expect(RouteSizing.next(length: 8000, routed: 9000, target: 10000), closeTo(8888.9, 0.1));
       expect(
@@ -943,6 +1019,34 @@ void main() {
         variants: const [RouteVariant.balanced],
       );
       expect(routes.single.preferenceShare, isNull);
+    });
+
+    test('Hinweis, wenn die Wegart nicht berücksichtigt werden konnte', () async {
+      const request = RouteRequest(
+        discipline: RouteDiscipline.run,
+        shape: RouteShape.loop,
+        start: berlin,
+        distanceMeters: 6000,
+        preferences: {RoutePreference.water},
+      );
+      final notices = <String>[];
+      await RoutePlanner(
+        FakeBackend(),
+        features: FakeFeatures(const [], fails: true),
+      ).generate(request, username: 'anna', variants: const [RouteVariant.balanced], onNotice: notices.add);
+      expect(notices.single, contains('„Am Wasser“ sind gerade nicht erreichbar'));
+      notices.clear();
+      await RoutePlanner(
+        FakeBackend(),
+        features: FakeFeatures(const []),
+      ).generate(request, username: 'anna', variants: const [RouteVariant.balanced], onNotice: notices.add);
+      expect(notices.single, contains('kaum passende Wege für „Am Wasser“'));
+      notices.clear();
+      await RoutePlanner(
+        FakeBackend(),
+        features: FakeFeatures([Geo.destination(berlin, 0, 900)]),
+      ).generate(request, username: 'anna', variants: const [RouteVariant.balanced], onNotice: notices.add);
+      expect(notices, isEmpty);
     });
 
     test('Ungleichmäßiges Wegenetz: trotzdem auf ±2,5 % genau', () async {
@@ -1216,6 +1320,20 @@ void main() {
       expect(KilometerMarks.step(7000), 10);
       expect(KilometerMarks.step(1e9), 50);
     });
+  });
+
+  test('Wunschdistanz aus einer Einheit des Ausdauerplans', () {
+    // 60 min locker bei 4:00-Schwelle (5:00 /km) → 12 km.
+    expect(RouteForWorkout.suggest(isBike: false, isRun: true, minutes: 60, runThresholdPace: 240)?.kilometers, 12);
+    // Ohne Schwelle 6:00 /km: 45 min → 7,5 km.
+    expect(RouteForWorkout.suggest(isBike: false, isRun: true, minutes: 45)?.kilometers, 7.5);
+    // Geplante Strecke hat Vorrang.
+    expect(RouteForWorkout.suggest(isBike: false, isRun: true, minutes: 90, meters: 21100)?.kilometers, 21);
+    final bike = RouteForWorkout.suggest(isBike: true, isRun: false, minutes: 120)!;
+    expect(bike.discipline, RouteDiscipline.roadBike);
+    expect(bike.kilometers, 50);
+    expect(RouteForWorkout.suggest(isBike: false, isRun: false, minutes: 60), isNull);
+    expect(RouteForWorkout.suggest(isBike: false, isRun: true, minutes: 0), isNull);
   });
 
   test('Anzeige', () {

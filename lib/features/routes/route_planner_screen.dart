@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:coach_core/coach_core.dart';
 import 'package:flutter/material.dart';
@@ -11,20 +10,18 @@ import '../../services/routing/location_source.dart';
 import '../../services/routing/routing_providers.dart';
 import '../../ui/components.dart';
 import '../../ui/liquid.dart';
-import '../endurance/endurance_controller.dart';
 import 'address_field.dart';
 import 'my_location.dart';
 import 'route_detail_screen.dart';
 import 'route_draw_screen.dart';
 import 'route_parts.dart';
+import 'route_planner_controller.dart';
 
-/// Was ein Antippen der Karte setzt.
-enum _PinTarget { start, destination }
-
-/// Routenplaner auf OpenStreetMap: Start (Standort oder Pin), Rundweg / zum Ziel / Richtung, Distanz, Wegearten und
-/// optional Höhenmeter; erzeugt 2–3 Vorschläge mit Karte, Richtungspfeilen, Höhenprofil, Kennzahlen, „Neu würfeln“,
-/// Übernahme und Export. Liegen Vorschläge vor, ist die Karte nur zum Ansehen: Punkte setzt dann nur ein langes
-/// Drücken oder „Startpunkt ändern“ – versehentliches Antippen beim Zoomen löscht nichts mehr.
+/// Routenplaner auf OpenStreetMap: Start (Adresse, Standort oder Pin), Rundweg / zum Ziel / Richtung, Distanz,
+/// Wegearten und optional Höhenmeter; zeigt bis zu drei Vorschläge, sobald sie einzeln fertig sind – mit Karte,
+/// Richtungspfeilen, Kilometermarken, Höhenprofil, Kennzahlen, „Neu würfeln“, Übernahme und Export. Der Stand liegt im
+/// [RoutePlannerController] und bleibt beim Verlassen erhalten. Liegen Vorschläge vor, ist die Karte nur zum Ansehen:
+/// Antippen öffnet das Vollbild, Punkte setzt langes Drücken oder „Startpunkt ändern“.
 class RoutePlannerScreen extends ConsumerStatefulWidget {
   const RoutePlannerScreen({super.key});
 
@@ -34,52 +31,18 @@ class RoutePlannerScreen extends ConsumerStatefulWidget {
 
 class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
   final _map = MapController();
-  late RouteDiscipline _discipline;
-  late RouteShape _shape;
-  late double _kilometers;
   late final TextEditingController _distanceField;
-  bool _wantsElevation = false;
-  int _elevation = 150;
-  CompassDirection _direction = CompassDirection.north;
-  _PinTarget _pin = _PinTarget.start;
-  Set<RoutePreference> _preferences = {};
-
-  /// Nach „Startpunkt ändern“: der nächste Tipp setzt den Punkt, auch wenn Vorschläge vorliegen.
-  bool _editingPins = false;
-
-  GeoPoint? _start;
-  bool _startFromLocation = false;
-  GeoPoint? _destination;
   bool _locating = false;
+  int _fitted = 0;
 
-  /// Eigener Standort auf der Karte (blauer Punkt, „Mein Standort“); setzt keinen Start.
-  GeoPoint? _myLocation;
-
-  /// Adressen aus der Adresszeile (`null`: Punkt kam von Karte oder Standort).
-  String? _startAddress;
-  String? _destinationAddress;
-
-  bool _planning = false;
-  String? _progress;
-  String? _problem;
-  int _seed = DateTime.now().millisecondsSinceEpoch % 100000;
-  List<PlannedRoute> _routes = const [];
-  int _selected = 0;
-  final Set<String> _saved = {};
+  RoutePlannerController get _c => ref.read(routePlannerControllerProvider);
 
   @override
   void initState() {
     super.initState();
-    final settings = ref.read(routeStoreProvider).settings;
-    _discipline = settings.discipline;
-    _shape = settings.shape;
-    _kilometers = settings.distanceKilometers.clamp(_minKm, _maxKm);
-    _distanceField = TextEditingController(text: _kmText(_kilometers));
-    _preferences = {...settings.preferences};
-    if (settings.elevationGain case final gain?) {
-      _wantsElevation = true;
-      _elevation = gain;
-    }
+    _distanceField = TextEditingController(text: _kmText(_c.kilometers));
+    // Bei vorhandenen Vorschlägen (Rückkehr in den Planer) die Karte darauf ausrichten.
+    _fitted = _c.routes.isEmpty ? _c.fitGeneration : _c.fitGeneration - 1;
   }
 
   @override
@@ -88,62 +51,20 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     super.dispose();
   }
 
-  double get _minKm => 1;
-  double get _maxKm => RouteRequest.maxDistance(_discipline) / 1000;
-  int get _maxElevation => switch (_discipline) {
-    RouteDiscipline.roadBike || RouteDiscipline.gravel => 4000,
-    RouteDiscipline.run => 2000,
-    RouteDiscipline.walk => 1000,
-  };
-
   static String _kmText(double value) =>
       value == value.roundToDouble() ? '${value.round()}' : value.toStringAsFixed(1).replaceAll('.', ',');
 
-  PlannedRoute? get _current => _routes.isEmpty ? null : _routes[_selected.clamp(0, _routes.length - 1)];
-
-  RouteRequest? get _request {
-    final start = _start;
-    if (start == null) return null;
-    return RouteRequest(
-      discipline: _discipline,
-      shape: _shape,
-      start: start,
-      destination: _shape == RouteShape.toDestination ? _destination : null,
-      bearingDegrees: _shape == RouteShape.direction ? _direction.degrees : null,
-      distanceMeters: _kilometers * 1000,
-      elevationGainMeters: _wantsElevation ? _elevation.toDouble() : null,
-      preferences: _preferences,
-    );
-  }
-
-  /// Vorschläge liegen vor: Antippen verschiebt keine Punkte (Ansichtsmodus).
-  bool get _pinsLocked => _routes.isNotEmpty && !_editingPins;
-
-  void _clearResults() {
-    _routes = const [];
-    _selected = 0;
-    _problem = null;
-  }
-
   Future<void> _useLocation() async {
-    setState(() {
-      _locating = true;
-      _problem = null;
-    });
+    setState(() => _locating = true);
+    _c.update((planner) => planner.problem = null);
     try {
       final point = await ref.read(locationSourceProvider).current();
       if (!mounted) return;
-      setState(() {
-        _start = point;
-        _startFromLocation = true;
-        _startAddress = null;
-        if (_shape == RouteShape.toDestination && _destination == null) _pin = _PinTarget.destination;
-        _clearResults();
-      });
-      PlannerMap.fit(_map, [point, ?_destination]);
+      _c.useLocation(point);
+      PlannerMap.fit(_map, [point, ?_c.destination]);
     } on LocationProblem catch (problem) {
       if (!mounted) return;
-      setState(() => _problem = problem.message);
+      _c.update((planner) => planner.problem = problem.message);
       if (problem.canOpenSettings) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -159,75 +80,50 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
 
   /// Antippen öffnet die Karte im Vollbild; nur nach „Startpunkt ändern“ setzt der Tipp einen Punkt.
   void _tapMap(GeoPoint point) {
-    if (_editingPins) {
+    if (_c.editingPins) {
       _placePin(point);
       return;
     }
     unawaited(_openFullscreen());
   }
 
-  Future<void> _openFullscreen() => FullscreenRouteMap.open(
-    context,
-    start: _start,
-    destination: _shape == RouteShape.toDestination ? _destination : null,
-    routes: _routes,
-    selected: _selected,
-    onSelect: (index) {
-      if (mounted) setState(() => _selected = index);
-    },
-    onLongPress: _planning
-        ? null
-        : (point) {
-            _longPressMap(point);
-            return (start: _start, destination: _shape == RouteShape.toDestination ? _destination : null);
-          },
-  );
+  Future<void> _openFullscreen() {
+    final c = _c;
+    return FullscreenRouteMap.open(
+      context,
+      start: c.start,
+      destination: c.shape == RouteShape.toDestination ? c.destination : null,
+      routes: c.routes,
+      selected: c.selected,
+      onSelect: c.select,
+      onLongPress: c.planning
+          ? null
+          : (point) {
+              _longPressMap(point);
+              return (start: c.start, destination: c.shape == RouteShape.toDestination ? c.destination : null);
+            },
+    );
+  }
 
   /// Langes Drücken setzt immer einen Punkt (ausdrücklich), auch über vorhandenen Vorschlägen.
   void _longPressMap(GeoPoint point) {
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     _placePin(point);
   }
 
   void _placePin(GeoPoint point) {
-    HapticFeedback.selectionClick();
-    setState(() {
-      _editingPins = false;
-      if (_shape == RouteShape.toDestination && _pin == _PinTarget.destination) {
-        _destination = point;
-        _destinationAddress = null;
-        _pin = _PinTarget.start;
-      } else {
-        _start = point;
-        _startFromLocation = false;
-        _startAddress = null;
-        if (_shape == RouteShape.toDestination && _destination == null) _pin = _PinTarget.destination;
-      }
-      _clearResults();
-    });
+    unawaited(HapticFeedback.selectionClick());
+    _c.placePin(point);
   }
 
-  /// Adresse gewählt: ausdrückliche Eingabe, setzt den Punkt auch über vorhandenen Vorschlägen.
-  void _selectAddress(Place place, {required bool destination}) {
-    setState(() {
-      if (destination) {
-        _destination = place.point;
-        _destinationAddress = place.label;
-      } else {
-        _start = place.point;
-        _startAddress = place.label;
-        _startFromLocation = false;
-        if (_shape == RouteShape.toDestination && _destination == null) _pin = _PinTarget.destination;
-      }
-      _editingPins = false;
-      _clearResults();
-    });
-    PlannerMap.fit(_map, [?_start, if (_shape == RouteShape.toDestination) ?_destination]);
+  void _selectAddress(Place place, {required bool isDestination}) {
+    final c = _c..selectAddress(place, isDestination: isDestination);
+    PlannerMap.fit(_map, [?c.start, if (c.shape == RouteShape.toDestination) ?c.destination]);
   }
 
   /// Bezugspunkt für Vorschläge: Start, sonst Kartenmitte.
   GeoPoint? get _near {
-    if (_start case final start?) return start;
+    if (_c.start case final start?) return start;
     try {
       final center = _map.camera.center;
       return _map.camera.zoom < 8 ? null : geoPoint(center);
@@ -236,100 +132,25 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     }
   }
 
-  void _changeStart() => setState(() {
-    _editingPins = true;
-    _pin = _PinTarget.start;
-  });
-
-  void _reset() => setState(() {
-    _start = null;
-    _destination = null;
-    _startFromLocation = false;
-    _startAddress = null;
-    _destinationAddress = null;
-    _editingPins = false;
-    _pin = _PinTarget.start;
-    _clearResults();
-  });
-
   void _openDrawing() {
+    final c = _c;
     unawaited(
       Navigator.of(context).pushReplacement(
         MaterialPageRoute<void>(
-          builder: (_) => RouteDrawScreen(start: _start, discipline: _discipline, preferences: _preferences),
+          builder: (_) => RouteDrawScreen(start: c.start, discipline: c.discipline, preferences: c.preferences),
         ),
       ),
     );
   }
 
   Future<void> _plan({bool reroll = false}) async {
-    final request = _request;
-    if (request == null) {
-      setState(() => _problem = 'Bitte zuerst einen Startpunkt wählen: Standort oder Pin auf der Karte.');
-      return;
-    }
-    if (request.problem case final problem?) {
-      setState(() => _problem = problem);
-      return;
-    }
     FocusScope.of(context).unfocus();
-    if (reroll) _seed++;
-    setState(() {
-      _planning = true;
-      _progress = 'Wegenetz wird abgefragt …';
-      _problem = null;
-    });
-    final store = ref.read(routeStoreProvider);
-    unawaited(
-      store.updateSettings(
-        (settings) => settings
-          ..discipline = _discipline
-          ..shape = _shape
-          ..distanceKilometers = _kilometers
-          ..elevationGain = _wantsElevation ? _elevation : null
-          ..preferences = {..._preferences},
-      ),
-    );
-    try {
-      final routes =
-          await RoutePlanner(ref.read(routingBackendProvider), features: ref.read(routeFeatureSourceProvider)).generate(
-            request,
-            username: store.username,
-            seed: _seed,
-            runThresholdPace: ref.read(enduranceControllerProvider).plan?.request.thresholds.runThresholdPace,
-            onProgress: (message) {
-              if (mounted) setState(() => _progress = message);
-            },
-            isCancelled: () => !mounted,
-          );
-      if (!mounted) return;
-      setState(() {
-        _routes = routes;
-        _selected = 0;
-        _editingPins = false;
-      });
-      PlannerMap.fit(_map, [for (final route in routes) ...Geo.thin(route.points, 200)]);
-    } on NoRouteFound catch (error) {
-      if (mounted) setState(() => _problem = error.message);
-    } on RoutingUnavailable catch (error) {
-      if (mounted) {
-        setState(
-          () => _problem =
-              '${error.message} Die öffentlichen Routing-Server sind gerade nicht erreichbar – bitte '
-              'gleich noch einmal versuchen.',
-        );
-      }
-    } on ArgumentError catch (error) {
-      if (mounted) setState(() => _problem = '${error.message}');
-    } finally {
-      if (mounted) setState(() => _planning = false);
-    }
+    await _c.plan(reroll: reroll);
   }
 
   Future<void> _save(PlannedRoute route, {bool open = false}) async {
-    await ref.read(routeStoreProvider).save(route);
+    await _c.save(route);
     if (!mounted) return;
-    setState(() => _saved.add(route.id));
     if (open) {
       await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => RouteDetailScreen(routeID: route.id)));
     } else {
@@ -338,21 +159,28 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
   }
 
   Future<void> _assign(PlannedRoute route) async {
-    if (await assignRouteToSession(context, ref, route) && mounted) setState(() => _saved.add(route.id));
+    if (await assignRouteToSession(context, ref, route) && mounted) _c.markSaved(route);
   }
 
   @override
   Widget build(BuildContext context) {
-    final current = _current;
+    final c = ref.watch(routePlannerControllerProvider);
+    final current = c.current;
+    if (c.fitGeneration != _fitted) {
+      _fitted = c.fitGeneration;
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => PlannerMap.fit(_map, [for (final route in c.routes) ...Geo.thin(route.points, 200)]),
+      );
+    }
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Route planen'),
         actions: [
-          if (_start != null)
+          if (c.start != null)
             IconButton(
               tooltip: 'Planer zurücksetzen',
-              onPressed: _planning ? null : _reset,
+              onPressed: c.planning ? null : c.reset,
               icon: const Icon(Icons.restart_alt),
             ),
         ],
@@ -360,6 +188,26 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
       body: ListView(
         padding: const EdgeInsets.only(bottom: 40),
         children: [
+          if (c.forSlot case final slot?)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(LiquidSpacing.page, 4, LiquidSpacing.page, 4),
+              child: LiquidCard(
+                padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
+                tint: theme.colorScheme.primary,
+                child: Row(
+                  spacing: 10,
+                  children: [
+                    const Icon(Icons.event_note),
+                    Expanded(child: Text('Für „${slot.title}“ am ${GermanFormat.date(slot.day)}', maxLines: 2)),
+                    IconButton(
+                      tooltip: 'Ohne Einheit planen',
+                      icon: const Icon(Icons.close),
+                      onPressed: () => c.update((planner) => planner.forSlot = null),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.fromLTRB(LiquidSpacing.page, 4, LiquidSpacing.page, 12),
             child: PlannerModeSwitch(automatic: true, onChanged: (automatic) => automatic ? null : _openDrawing()),
@@ -370,19 +218,22 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
               children: [
                 PlannerMap(
                   controller: _map,
-                  start: _start,
-                  destination: _shape == RouteShape.toDestination ? _destination : null,
-                  routes: _routes,
+                  start: c.start,
+                  destination: c.shape == RouteShape.toDestination ? c.destination : null,
+                  routes: c.routes,
                   selected: current,
-                  onTap: _planning ? null : _tapMap,
-                  onLongPress: _planning ? null : _longPressMap,
-                  myLocation: _myLocation,
+                  onTap: c.planning ? null : _tapMap,
+                  onLongPress: c.planning ? null : _longPressMap,
+                  myLocation: c.myLocation,
                   routingSource: current?.engine,
                 ),
                 Positioned(
                   right: 8,
                   bottom: 30,
-                  child: LocateMeButton(map: _map, onLocated: (point) => setState(() => _myLocation = point)),
+                  child: LocateMeButton(
+                    map: _map,
+                    onLocated: (point) => c.update((planner) => planner.myLocation = point),
+                  ),
                 ),
                 Positioned(
                   left: 8,
@@ -404,7 +255,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                   top: 10,
                   child: IgnorePointer(
                     child: LiquidSwitcher(
-                      child: _MapHint(key: ValueKey('$_start$_destination$_shape$_pin$_pinsLocked'), text: _hint),
+                      child: _MapHint(key: ValueKey('$c.start$c.destination$c.shape$c.pin$c.pinsLocked'), text: _hint),
                     ),
                   ),
                 ),
@@ -418,45 +269,45 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                 hint: 'Startadresse oder Ort',
                 icon: Icons.flag,
                 color: Colors.green,
-                value: _startAddress,
+                value: c.startAddress,
                 near: _near,
-                enabled: !_planning,
-                point: _start,
-                onSelected: (place) => _selectAddress(place, destination: false),
+                enabled: !c.planning,
+                point: c.start,
+                onSelected: (place) => _selectAddress(place, isDestination: false),
               ),
               ListTile(
                 leading: _locating
                     ? const SizedBox.square(dimension: 24, child: CircularProgressIndicator(strokeWidth: 2.5))
-                    : Icon(Icons.my_location, color: _startFromLocation ? theme.colorScheme.primary : null),
+                    : Icon(Icons.my_location, color: c.startFromLocation ? theme.colorScheme.primary : null),
                 title: const Text('Aktueller Standort'),
                 subtitle: Text(
-                  _start == null
+                  c.start == null
                       ? 'oder einen Pin auf der Karte setzen'
-                      : _startFromLocation
+                      : c.startFromLocation
                       ? 'Start: dein Standort'
-                      : _startAddress != null
+                      : c.startAddress != null
                       ? 'Start: gesuchte Adresse'
                       : 'Start: Pin auf der Karte',
                 ),
-                onTap: _locating || _planning ? null : () => unawaited(_useLocation()),
+                onTap: _locating || c.planning ? null : () => unawaited(_useLocation()),
               ),
-              if (_routes.isNotEmpty)
+              if (c.routes.isNotEmpty)
                 ListTile(
                   leading: Icon(
                     Icons.edit_location_alt_outlined,
-                    color: _editingPins ? theme.colorScheme.primary : null,
+                    color: c.editingPins ? theme.colorScheme.primary : null,
                   ),
-                  title: Text(_shape == RouteShape.toDestination ? 'Start oder Ziel ändern' : 'Startpunkt ändern'),
+                  title: Text(c.shape == RouteShape.toDestination ? 'Start oder Ziel ändern' : 'Startpunkt ändern'),
                   subtitle: Text(
-                    _editingPins ? 'Tippe jetzt auf die Karte.' : 'Oder einen Punkt auf der Karte lange drücken.',
+                    c.editingPins ? 'Tippe jetzt auf die Karte.' : 'Oder einen Punkt auf der Karte lange drücken.',
                   ),
-                  onTap: _planning ? null : _changeStart,
+                  onTap: c.planning ? null : c.changeStart,
                 ),
             ],
           ),
           FormSection(
             header: 'Disziplin',
-            footer: _discipline.surfaces,
+            footer: c.discipline.surfaces,
             children: [
               Padding(
                 padding: const EdgeInsets.all(12),
@@ -469,34 +320,31 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                         label: Text(discipline.label, textAlign: TextAlign.center),
                       ),
                   ],
-                  selected: {_discipline},
-                  onSelectionChanged: (selection) => setState(() {
-                    _discipline = selection.single;
-                    _kilometers = _kilometers.clamp(_minKm, _maxKm);
-                    _distanceField.text = _kmText(_kilometers);
-                    _elevation = math.min(_elevation, _maxElevation);
-                    _clearResults();
-                  }),
+                  selected: {c.discipline},
+                  onSelectionChanged: (selection) {
+                    c.setDiscipline(selection.single);
+                    _distanceField.text = _kmText(c.kilometers);
+                  },
                 ),
               ),
             ],
           ),
           FormSection(
             header: 'Umgebung',
-            footer: _preferences.isEmpty
+            footer: c.preferences.isEmpty
                 ? 'Ausgewogener Mix aus Natur- und befestigten Wegen.'
                 : [
                     for (final preference in RoutePreference.values)
-                      if (_preferences.contains(preference)) preference.detail,
+                      if (c.preferences.contains(preference)) preference.detail,
                   ].join(' · '),
             children: [
               Padding(
                 padding: const EdgeInsets.all(12),
                 child: PreferenceChips(
-                  selected: _preferences,
-                  onChanged: (selection) => setState(() {
-                    _preferences = selection;
-                    _clearResults();
+                  selected: c.preferences,
+                  onChanged: (selection) => c.update((planner) {
+                    planner.preferences = selection;
+                    planner.clearResults();
                   }),
                 ),
               ),
@@ -504,7 +352,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
           ),
           FormSection(
             header: 'Strecke',
-            footer: switch (_shape) {
+            footer: switch (c.shape) {
               RouteShape.loop => 'Start und Ziel sind gleich – die Route schließt sich als Runde.',
               RouteShape.toDestination =>
                 'Ziel als Adresse eingeben oder mit einem Pin setzen. Ist es näher als die Wunschdistanz, baut der Planer '
@@ -520,44 +368,38 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                   segments: [
                     for (final shape in RouteShape.generated) ButtonSegment(value: shape, label: Text(shape.label)),
                   ],
-                  selected: {_shape},
-                  onSelectionChanged: (selection) => setState(() {
-                    _shape = selection.single;
-                    _pin = _shape == RouteShape.toDestination && _start != null && _destination == null
-                        ? _PinTarget.destination
-                        : _PinTarget.start;
-                    _clearResults();
-                  }),
+                  selected: {c.shape},
+                  onSelectionChanged: (selection) => c.setShape(selection.single),
                 ),
               ),
-              if (_shape == RouteShape.toDestination)
+              if (c.shape == RouteShape.toDestination)
                 AddressField(
                   hint: 'Zieladresse oder Ort',
                   icon: Icons.sports_score,
                   color: Colors.red,
-                  value: _destinationAddress,
+                  value: c.destinationAddress,
                   near: _near,
-                  enabled: !_planning,
-                  point: _destination,
-                  onSelected: (place) => _selectAddress(place, destination: true),
+                  enabled: !c.planning,
+                  point: c.destination,
+                  onSelected: (place) => _selectAddress(place, isDestination: true),
                 ),
-              if (_shape == RouteShape.toDestination)
+              if (c.shape == RouteShape.toDestination)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                  child: SegmentedButton<_PinTarget>(
+                  child: SegmentedButton<PinTarget>(
                     segments: const [
-                      ButtonSegment(value: _PinTarget.start, label: Text('Pin: Start'), icon: Icon(Icons.flag)),
+                      ButtonSegment(value: PinTarget.start, label: Text('Pin: Start'), icon: Icon(Icons.flag)),
                       ButtonSegment(
-                        value: _PinTarget.destination,
+                        value: PinTarget.destination,
                         label: Text('Pin: Ziel'),
                         icon: Icon(Icons.sports_score),
                       ),
                     ],
-                    selected: {_pin},
-                    onSelectionChanged: (selection) => setState(() => _pin = selection.single),
+                    selected: {c.pin},
+                    onSelectionChanged: (selection) => c.update((planner) => planner.pin = selection.single),
                   ),
                 ),
-              if (_shape == RouteShape.direction)
+              if (c.shape == RouteShape.direction)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                   child: Wrap(
@@ -567,10 +409,10 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                       for (final direction in CompassDirection.values)
                         ChoiceChip(
                           label: Text(direction.label),
-                          selected: _direction == direction,
-                          onSelected: (_) => setState(() {
-                            _direction = direction;
-                            _clearResults();
+                          selected: c.direction == direction,
+                          onSelected: (_) => c.update((planner) {
+                            planner.direction = direction;
+                            planner.clearResults();
                           }),
                         ),
                     ],
@@ -604,35 +446,37 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                 ),
               ),
               Slider(
-                value: _kilometers.clamp(_minKm, _maxKm),
-                min: _minKm,
-                max: _maxKm,
-                divisions: ((_maxKm - _minKm) * (_discipline.isBike ? 1 : 2)).round(),
-                label: '${_kmText(_kilometers)} km',
-                onChanged: (value) => setState(() {
-                  _kilometers = _discipline.isBike ? value.roundToDouble() : (value * 2).round() / 2;
-                  _distanceField.text = _kmText(_kilometers);
-                  _clearResults();
-                }),
+                value: c.kilometers.clamp(c.minKm, c.maxKm),
+                min: c.minKm,
+                max: c.maxKm,
+                divisions: ((c.maxKm - c.minKm) * (c.discipline.isBike ? 1 : 2)).round(),
+                label: '${_kmText(c.kilometers)} km',
+                onChanged: (value) {
+                  c.update((planner) {
+                    planner.kilometers = planner.discipline.isBike ? value.roundToDouble() : (value * 2).round() / 2;
+                    planner.clearResults();
+                  });
+                  _distanceField.text = _kmText(c.kilometers);
+                },
               ),
               SwitchListTile(
                 title: const Text('Höhenmeter vorgeben'),
-                subtitle: Text(_wantsElevation ? 'ca. $_elevation hm Anstieg' : 'flach oder hügelig – egal'),
-                value: _wantsElevation,
-                onChanged: (value) => setState(() {
-                  _wantsElevation = value;
-                  _clearResults();
+                subtitle: Text(c.wantsElevation ? 'ca. $c.elevation hm Anstieg' : 'flach oder hügelig – egal'),
+                value: c.wantsElevation,
+                onChanged: (value) => c.update((planner) {
+                  planner.wantsElevation = value;
+                  planner.clearResults();
                 }),
               ),
-              if (_wantsElevation)
+              if (c.wantsElevation)
                 Slider(
-                  value: _elevation.toDouble().clamp(0, _maxElevation.toDouble()),
-                  max: _maxElevation.toDouble(),
-                  divisions: _maxElevation ~/ (_discipline.isBike ? 50 : 10),
-                  label: '$_elevation hm',
-                  onChanged: (value) => setState(() {
-                    _elevation = value.round();
-                    _clearResults();
+                  value: c.elevation.toDouble().clamp(0, c.maxElevation.toDouble()),
+                  max: c.maxElevation.toDouble(),
+                  divisions: c.maxElevation ~/ (c.discipline.isBike ? 50 : 10),
+                  label: '$c.elevation hm',
+                  onChanged: (value) => c.update((planner) {
+                    planner.elevation = value.round();
+                    planner.clearResults();
                   }),
                 ),
             ],
@@ -641,14 +485,14 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
             padding: const EdgeInsets.fromLTRB(LiquidSpacing.page, 16, LiquidSpacing.page, 4),
             child: FilledButton.icon(
               style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
-              onPressed: _planning ? null : () => unawaited(_plan()),
-              icon: _planning
+              onPressed: c.planning ? null : () => unawaited(_plan()),
+              icon: c.planning
                   ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2.5))
                   : const Icon(Icons.route),
-              label: Text(_planning ? (_progress ?? 'Wird berechnet …') : 'Routen vorschlagen'),
+              label: Text(c.planning ? (c.progress ?? 'Wird berechnet …') : 'Routen vorschlagen'),
             ),
           ),
-          if (_problem case final problem?)
+          if (c.problem case final problem?)
             Padding(
               padding: const EdgeInsets.fromLTRB(LiquidSpacing.page, 12, LiquidSpacing.page, 0),
               child: LiquidCard(
@@ -662,19 +506,33 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                 ),
               ),
             ),
+          if (c.notice case final notice?)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(LiquidSpacing.page, 12, LiquidSpacing.page, 0),
+              child: LiquidCard(
+                tint: theme.colorScheme.primary,
+                child: Row(
+                  spacing: 12,
+                  children: [
+                    Icon(Icons.info_outline, color: theme.colorScheme.primary),
+                    Expanded(child: Text(notice)),
+                  ],
+                ),
+              ),
+            ),
           LiquidSwitcher(
             child: current == null
                 ? const SizedBox.shrink(key: ValueKey('leer'))
                 : _Results(
-                    key: ValueKey(_routes.map((route) => route.id).join()),
-                    routes: _routes,
-                    selected: _selected,
-                    saved: _saved,
+                    key: ValueKey(c.fitGeneration),
+                    routes: c.routes,
+                    selected: c.selected,
+                    saved: c.saved,
                     onSelect: (index) {
-                      setState(() => _selected = index);
-                      PlannerMap.fit(_map, Geo.thin(_routes[index].points, 200));
+                      c.select(index);
+                      PlannerMap.fit(_map, Geo.thin(c.routes[index].points, 200));
                     },
-                    onReroll: _planning ? null : () => unawaited(_plan(reroll: true)),
+                    onReroll: c.planning ? null : () => unawaited(_plan(reroll: true)),
                     onSave: (route) => unawaited(_save(route)),
                     onOpen: (route) => unawaited(_save(route, open: true)),
                     onAssign: (route) => unawaited(_assign(route)),
@@ -686,14 +544,15 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
   }
 
   String get _hint {
-    if (_start == null) return 'Start: Adresse eingeben, Standort nutzen oder Karte lange drücken.';
-    if (_editingPins) {
-      return _pin == _PinTarget.destination
+    final c = ref.read(routePlannerControllerProvider);
+    if (c.start == null) return 'Start: Adresse eingeben, Standort nutzen oder Karte lange drücken.';
+    if (c.editingPins) {
+      return c.pin == PinTarget.destination
           ? 'Tippe auf die Karte für das neue Ziel.'
           : 'Tippe auf die Karte für den neuen Start.';
     }
-    if (_pinsLocked) return 'Antippen: Vollbild · lange drücken verschiebt den Start.';
-    if (_shape == RouteShape.toDestination && (_destination == null || _pin == _PinTarget.destination)) {
+    if (c.pinsLocked) return 'Antippen: Vollbild · lange drücken verschiebt den Start.';
+    if (c.shape == RouteShape.toDestination && (c.destination == null || c.pin == PinTarget.destination)) {
       return 'Ziel: Adresse eingeben oder Karte lange drücken.';
     }
     return 'Antippen: Vollbild · lange drücken verschiebt den Start.';
@@ -701,11 +560,12 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
 
   void _setDistanceText(String text) {
     final value = parseNumber(text);
-    setState(() {
-      if (value != null) _kilometers = value.clamp(_minKm, _maxKm).toDouble();
-      _distanceField.text = _kmText(_kilometers);
-      _clearResults();
+    final c = ref.read(routePlannerControllerProvider);
+    c.update((planner) {
+      if (value != null) planner.kilometers = value.clamp(planner.minKm, planner.maxKm).toDouble();
+      planner.clearResults();
     });
+    _distanceField.text = _kmText(c.kilometers);
   }
 }
 

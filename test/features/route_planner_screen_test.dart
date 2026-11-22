@@ -5,6 +5,7 @@ import 'package:aironludi/features/routes/my_location.dart';
 import 'package:aironludi/features/routes/route_detail_screen.dart';
 import 'package:aironludi/features/routes/route_draw_screen.dart';
 import 'package:aironludi/features/routes/route_parts.dart';
+import 'package:aironludi/features/routes/route_planner_controller.dart';
 import 'package:aironludi/features/routes/route_planner_screen.dart';
 import 'package:aironludi/features/routes/routes_screen.dart';
 import 'package:aironludi/services/routing/location_source.dart';
@@ -96,6 +97,20 @@ final class FakeFeatures implements RouteFeatureSource {
   }) async {
     requests++;
     return [for (var angle = 0; angle < 360; angle += 30) Geo.destination(center, angle.toDouble(), 1500)];
+  }
+}
+
+/// Overpass gestört.
+final class FailingFeatures extends FakeFeatures {
+  @override
+  Future<List<GeoPoint>> attractors(
+    GeoPoint center,
+    double radiusMeters,
+    Set<RoutePreference> preferences, {
+    RouteDiscipline discipline = RouteDiscipline.run,
+  }) async {
+    requests++;
+    throw const RoutingUnavailable('Overpass gestört');
   }
 }
 
@@ -314,7 +329,7 @@ void main() {
 
     // Start und ein Wegpunkt: ein Abschnitt, Werte in der Leiste.
     await tapMap(tester);
-    expect(find.text('Nächsten Punkt antippen. Zoomen und Verschieben wie gewohnt.'), findsOneWidget);
+    expect(find.textContaining('Nächsten Punkt antippen'), findsOneWidget);
     await tapMap(tester, offset: const Offset(80, -60));
     expect(routing.calls, 1);
     expect(find.text('0 m'), findsNothing);
@@ -419,5 +434,133 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pumpAndSettle();
     expect(routing.disciplines.toSet(), {RouteDiscipline.walk});
+  });
+
+  testWidgets('Vorschläge bleiben beim Verlassen erhalten und kommen einzeln', (tester) async {
+    final routing = FakeRouting();
+    final container = await openPlanner(tester, routing);
+    final planner = container.read(routePlannerControllerProvider);
+    final counts = <int>[];
+    void listener() => counts.add(planner.routes.length);
+    planner.addListener(listener);
+    await tapCentered(tester, find.text('Aktueller Standort'), delta: -300);
+    await tapCentered(tester, find.text('Routen vorschlagen'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pumpAndSettle();
+    planner.removeListener(listener);
+    // Erst einer, dann zwei, dann drei Vorschläge.
+    expect(counts.toSet().containsAll({1, 2, 3}), isTrue);
+    expect(planner.routes.length, 3);
+
+    // Planer verlassen und wieder öffnen: Vorschläge und Start sind noch da.
+    Navigator.of(tester.element(find.byType(RoutePlannerScreen))).pop();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Neue Route planen'));
+    await tester.pumpAndSettle();
+    expect(find.text('Start: dein Standort'), findsOneWidget);
+    expect(find.text('Startpunkt ändern'), findsOneWidget);
+    expect(planner.routes.length, 3);
+    final calls = routing.calls;
+    await tapCentered(tester, find.text('Neu würfeln'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pumpAndSettle();
+    expect(routing.calls, greaterThan(calls));
+
+    // Zurücksetzen leert alles.
+    tester.state<ScrollableState>(find.byType(Scrollable).first).position.jumpTo(0);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Planer zurücksetzen'));
+    await tester.pumpAndSettle();
+    expect(planner.routes, isEmpty);
+    expect(planner.start, isNull);
+  });
+
+  testWidgets('Route für eine Einheit des Ausdauerplans: vorbelegt und beim Speichern zugeordnet', (tester) async {
+    final routing = FakeRouting();
+    final container = await openPlanner(tester, routing);
+    Navigator.of(tester.element(find.byType(RoutePlannerScreen))).pop();
+    await tester.pumpAndSettle();
+    final planner = container.read(routePlannerControllerProvider);
+    final day = CalendarDay.today().adding(2);
+    final suggestion = RouteForWorkout.suggest(isBike: false, isRun: true, minutes: 60, runThresholdPace: 240)!;
+    planner.prepareForSlot(
+      discipline: suggestion.discipline,
+      kilometers: suggestion.kilometers,
+      day: day,
+      slotID: 'slot-42',
+      title: 'Langer Lauf',
+    );
+    await tester.tap(find.text('Neue Route planen'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Für „Langer Lauf“'), findsOneWidget);
+    expect(planner.kilometers, 12);
+    await tapCentered(tester, find.text('Aktueller Standort'), delta: -300);
+    await tapCentered(tester, find.text('Routen vorschlagen'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pumpAndSettle();
+    await tapCentered(tester, find.text('Speichern'));
+    final saved = container.read(routeStoreProvider).openRoutes.single;
+    expect(saved.slotID, 'slot-42');
+    expect(saved.slotTitle, 'Langer Lauf');
+    expect(saved.plannedDay, day);
+  });
+
+  testWidgets('Hinweis, wenn „Am Wasser“ gerade nicht berücksichtigt werden kann', (tester) async {
+    final routing = FakeRouting();
+    await openPlanner(tester, routing, features: FailingFeatures());
+    await tapCentered(tester, find.text('Aktueller Standort'), delta: -300);
+    await tapCentered(tester, find.text('Am Wasser'));
+    await tapCentered(tester, find.text('Routen vorschlagen'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pumpAndSettle();
+    expect(routing.calls, greaterThan(0));
+    expect(find.textContaining('„Am Wasser“ sind gerade nicht erreichbar'), findsOneWidget);
+  });
+
+  testWidgets('Frei planen: Wegpunkte wählen, verschieben, einfügen und löschen', (tester) async {
+    final routing = FakeRouting();
+    await openPlanner(tester, routing);
+    await tester.tap(find.text('Frei planen'));
+    await tester.pumpAndSettle();
+    await tapMap(tester);
+    await tapMap(tester, offset: const Offset(120, 0));
+    await tapMap(tester, offset: const Offset(120, 120));
+    expect(routing.calls, 2);
+
+    // Mittleren Punkt antippen: gewählt, Werkzeuge erscheinen.
+    await tapMap(tester, offset: const Offset(120, 0));
+    expect(find.text('Punkt 1'), findsOneWidget);
+    expect(find.text('Punkt gewählt: verschieben oder löschen.'), findsOneWidget);
+
+    // Verschieben: nächster Tipp setzt die neue Lage, beide Nachbarabschnitte werden neu geroutet.
+    await tester.tap(find.byTooltip('Punkt verschieben'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tippe auf die neue Position des Punkts.'), findsOneWidget);
+    await tapMap(tester, offset: const Offset(150, -40));
+    expect(routing.calls, 4);
+
+    // Löschen: Nachbarn werden direkt verbunden (ein Abschnitt neu).
+    await tester.tap(find.byTooltip('Punkt löschen'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.pumpAndSettle();
+    expect(routing.calls, 5);
+    expect(find.text('Punkt 1'), findsNothing);
+
+    // Rückgängig holt den Punkt zurück.
+    await tester.tap(find.byTooltip('Rückgängig'));
+    await tester.pumpAndSettle();
+    await tapMap(tester, offset: const Offset(150, -40));
+    expect(find.text('Punkt 1'), findsOneWidget);
+    await tester.tap(find.byTooltip('Fertig'));
+    await tester.pumpAndSettle();
+    expect(find.text('Punkt 1'), findsNothing);
+
+    // Lange auf die Linie drücken fügt dort einen Punkt ein (zwei Abschnitte neu geroutet).
+    final calls = routing.calls;
+    await tester.longPressAt(tester.getCenter(find.byType(FlutterMap)) + const Offset(75, -20));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.pumpAndSettle();
+    expect(routing.calls, calls + 2);
+    expect(find.text('Punkt 1'), findsOneWidget);
   });
 }

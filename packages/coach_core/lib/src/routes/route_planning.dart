@@ -554,3 +554,32 @@ abstract final class RouteFormat {
   /// „180 hm“.
   static String elevation(double meters) => '${meters.round()} hm';
 }
+
+/// Wunschdistanz für eine Einheit des Ausdauerplans: geplante Strecke, sonst Dauer × lockeres Tempo (Laufen) bzw.
+/// Radtempo. Schwimmen und Ruhetage haben keine Route.
+abstract final class RouteForWorkout {
+  static ({RouteDiscipline discipline, double kilometers})? suggest({
+    required bool isBike,
+    required bool isRun,
+    required int minutes,
+    int? meters,
+    int? runThresholdPace,
+  }) {
+    if (!isBike && !isRun) return null;
+    final discipline = isBike ? RouteDiscipline.roadBike : RouteDiscipline.run;
+    double kilometers;
+    if (meters case final meters? when meters > 0) {
+      kilometers = meters / 1000;
+    } else if (minutes > 0) {
+      kilometers = isBike
+          ? minutes / 60 * RouteDuration.roadSpeed
+          : minutes * 60 / RouteDuration.easyPace(runThresholdPace);
+    } else {
+      return null;
+    }
+    // Laufen auf halbe, Rad auf ganze Kilometer; innerhalb der Grenzen des Planers.
+    kilometers = isBike ? kilometers.roundToDouble() : (kilometers * 2).round() / 2;
+    final max = RouteRequest.maxDistance(discipline) / 1000;
+    return (discipline: discipline, kilometers: kilometers.clamp(1.0, max));
+  }
+}

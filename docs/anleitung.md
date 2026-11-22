@@ -169,12 +169,13 @@ von Hand: denselben Link wieder öffnen.
    verkehrsarm* – mit Karte, Richtungspfeilen, Höhenprofil, Anstieg/Abstieg und geschätzter Dauer. **Neu würfeln**
    probiert andere Wege. Solange Vorschläge da sind, kannst du die Karte gefahrlos zoomen und verschieben; einen
    Punkt verschiebst du mit **langem Drücken** (auch im Vollbild) oder **Startpunkt ändern**, ganz neu beginnst du mit ↺ oben rechts.
-4. **In Einheit übernehmen:** heute, eine kommende Einheit des Ausdauerplans oder ein anderer Tag – die Route steht
+4. **Aus dem Ausdauerplan:** In einer Einheit *Route dazu planen* – Disziplin und Distanz sind vorbelegt, die
+   Route gehört dann zur Einheit. **In Einheit übernehmen:** heute, eine kommende Einheit des Ausdauerplans oder ein anderer Tag – die Route steht
    dann unter *Heute › Route für heute*. **GPX** oder **FIT** öffnet das Teilen-Menü (z. B. Garmin Connect, Komoot,
    Wahoo, Dateien).
 5. **Frei planen:** oben auf *Frei planen* umschalten. *Punkte*: Start und weitere Punkte antippen oder über die Lupe als Adresse suchen; *Zeichnen*: mit
    dem Finger eine grobe Linie ziehen. Jeder Abschnitt wird auf echte Wege gelegt; unten stehen Distanz, Höhenmeter
-   und Dauer. ↶ nimmt den letzten Abschnitt zurück, ⟳ schließt den Rundweg zum Start, **Speichern** legt die Route ab.
+   und Dauer. Einen Punkt antippen wählt ihn: verschieben oder löschen; lange auf die Linie drücken fügt einen Punkt ein. ↶ nimmt die letzte Aktion zurück, ⟳ schließt den Rundweg zum Start, **Speichern** legt die Route ab.
 6. **Archiv und Uhr:** Gelaufene bzw. gefahrene Routen wandern ins *Archiv*, sobald am geplanten Tag eine passende
    Aktivität vorliegt (oder per „Als erledigt markieren“). Auf jeder Route stehen Kilometermarken. **An Uhr senden**
    zeigt den Weg je Hersteller: Garmin über Garmin Connect („An Gerät senden“), Apple Watch über eine App mit
