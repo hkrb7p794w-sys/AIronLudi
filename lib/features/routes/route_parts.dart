@@ -70,7 +70,8 @@ class _Attribution extends StatelessWidget {
   );
 }
 
-/// Interaktive Karte des Planers: Start (grün), Ziel (rot), Vorschläge als Linien; Antippen setzt einen Pin.
+/// Interaktive Karte des Planers: Start (grün), Ziel (rot), Vorschläge als Linien mit Richtungspfeilen auf der
+/// gewählten Route. Antippen und langes Drücken melden den Punkt (was daraus wird, entscheidet der Planer).
 class PlannerMap extends StatelessWidget {
   const PlannerMap({
     super.key,
@@ -80,6 +81,7 @@ class PlannerMap extends StatelessWidget {
     this.routes = const [],
     this.selected,
     this.onTap,
+    this.onLongPress,
     this.height = 320,
     this.routingSource,
   });
@@ -90,6 +92,7 @@ class PlannerMap extends StatelessWidget {
   final List<PlannedRoute> routes;
   final PlannedRoute? selected;
   final void Function(GeoPoint point)? onTap;
+  final void Function(GeoPoint point)? onLongPress;
   final double height;
   final String? routingSource;
 
@@ -107,13 +110,14 @@ class PlannerMap extends StatelessWidget {
       child: ClipRRect(
         borderRadius: LiquidRadii.cardAll,
         child: Semantics(
-          label: 'Karte des Routenplaners. Antippen setzt einen Punkt.',
+          label: 'Karte des Routenplaners',
           child: FlutterMap(
             mapController: controller,
             options: MapOptions(
               initialCenter: start == null ? fallbackCenter : latLng(start!),
               initialZoom: start == null ? 5.5 : 13,
               onTap: onTap == null ? null : (_, point) => onTap!(geoPoint(point)),
+              onLongPress: onLongPress == null ? null : (_, point) => onLongPress!(geoPoint(point)),
               interactionOptions: const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
             ),
             children: [
@@ -136,6 +140,7 @@ class PlannerMap extends StatelessWidget {
                     ),
                 ],
               ),
+              if (selected case final route?) DirectionArrows(points: route.points, color: variantColor(route.variant)),
               MarkerLayer(
                 markers: [
                   if (destination case final destination?)
@@ -177,6 +182,112 @@ class PlannerMap extends StatelessWidget {
       // Karte noch nicht aufgebaut: beim nächsten Mal.
     }
   }
+}
+
+/// Richtungspfeile entlang der Strecke, Abstand je nach Zoom (etwa alle 90 Bildpunkte, höchstens 80 Pfeile).
+class DirectionArrows extends StatelessWidget {
+  const DirectionArrows({super.key, required this.points, required this.color, this.pixelSpacing = 90});
+
+  final List<GeoPoint> points;
+  final Color color;
+  final double pixelSpacing;
+
+  @override
+  Widget build(BuildContext context) {
+    if (points.length < 2) return const SizedBox.shrink();
+    final camera = MapCamera.of(context);
+    final spacing = pixelSpacing * RouteArrows.metersPerPixel(camera.center.latitude, camera.zoom);
+    final arrows = RouteArrows.along(points, spacing);
+    return MarkerLayer(
+      markers: [
+        for (final arrow in arrows)
+          Marker(
+            point: latLng(arrow.point),
+            width: 18,
+            height: 18,
+            child: IgnorePointer(
+              child: Transform.rotate(
+                angle: arrow.bearing * math.pi / 180,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 1.5),
+                    boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 3, offset: Offset(0, 1))],
+                  ),
+                  child: const Icon(Icons.navigation, size: 10, color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Umschalter „Automatisch / Frei zeichnen“ als Liquid-Pille.
+class PlannerModeSwitch extends StatelessWidget {
+  const PlannerModeSwitch({super.key, required this.automatic, required this.onChanged});
+
+  final bool automatic;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) => SegmentedButton<bool>(
+    showSelectedIcon: false,
+    style: SegmentedButton.styleFrom(
+      shape: const StadiumBorder(),
+      backgroundColor: LiquidTheme.of(context).fillFor(context),
+    ),
+    segments: const [
+      ButtonSegment(value: true, icon: Icon(Icons.auto_awesome), label: Text('Automatisch')),
+      ButtonSegment(value: false, icon: Icon(Icons.draw_outlined), label: Text('Frei planen')),
+    ],
+    selected: {automatic},
+    onSelectionChanged: (selection) {
+      if (selection.single != automatic) onChanged(selection.single);
+    },
+  );
+}
+
+/// Auswahl der Umgebung: Mix oder Wald/Wasser/Asphalt (Natur und Asphalt schließen sich aus).
+class PreferenceChips extends StatelessWidget {
+  const PreferenceChips({super.key, required this.selected, required this.onChanged});
+
+  final Set<RoutePreference> selected;
+  final ValueChanged<Set<RoutePreference>> onChanged;
+
+  static IconData icon(RoutePreference preference) => switch (preference) {
+    RoutePreference.nature => Icons.forest_outlined,
+    RoutePreference.water => Icons.water_outlined,
+    RoutePreference.paved => Icons.add_road,
+  };
+
+  @override
+  Widget build(BuildContext context) => Wrap(
+    spacing: 8,
+    runSpacing: 8,
+    children: [
+      FilterChip(
+        avatar: const Icon(Icons.balance, size: 18),
+        label: const Text(RoutePreference.mixLabel),
+        selected: selected.isEmpty,
+        showCheckmark: false,
+        shape: const StadiumBorder(),
+        onSelected: (_) => onChanged(const {}),
+      ),
+      for (final preference in RoutePreference.values)
+        FilterChip(
+          avatar: Icon(icon(preference), size: 18),
+          label: Text(preference.label),
+          tooltip: preference.detail,
+          selected: selected.contains(preference),
+          showCheckmark: false,
+          shape: const StadiumBorder(),
+          onSelected: (_) => onChanged(RoutePreference.toggle(selected, preference)),
+        ),
+    ],
+  );
 }
 
 class _Pin extends StatelessWidget {

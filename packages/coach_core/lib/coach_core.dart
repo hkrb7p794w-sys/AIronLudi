@@ -148,6 +148,7 @@ export 'src/routes/geo.dart';
 export 'src/routes/planned_route.dart';
 export 'src/routes/route_planner.dart';
 export 'src/routes/route_planning.dart';
+export 'src/routes/route_tools.dart';
 export 'src/routes/routing_formats.dart';
 export 'src/settings/app_settings.dart';
 export 'src/social/social.dart';

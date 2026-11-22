@@ -1,0 +1,328 @@
+// Werkzeuge des Routenplaners (neu in AIronLudi): Wegarten aus OpenStreetMap (Overpass), Wegpunkte auf passende
+// Wege ziehen, Richtungspfeile, Strecke kürzen und frei gezeichnete Routen.
+import 'dart:math' as math;
+
+import 'geo.dart';
+import 'route_planning.dart';
+import 'routing_formats.dart';
+
+/// Liefert Punkte auf Wegen der gewünschten Art (Wald, Wasser, Radwege) rund um einen Ort.
+abstract interface class RouteFeatureSource {
+  /// Leere Liste, wenn nichts gefunden wurde oder der Dienst gestört ist (dann routet der Planer ohne).
+  Future<List<GeoPoint>> attractors(
+    GeoPoint center,
+    double radiusMeters,
+    Set<RoutePreference> preferences, {
+    RouteDiscipline discipline = RouteDiscipline.run,
+  });
+}
+
+/// Overpass-API (`overpass-api.de`, ohne Schlüssel): Abfrage und Antwort.
+abstract final class OverpassFormat {
+  static final uri = Uri.parse('https://overpass-api.de/api/interpreter');
+  static const engineName = 'Overpass';
+
+  /// Größter Suchradius (größere Abfragen dauern auf dem öffentlichen Server zu lange).
+  static const maxRadius = 12000.0;
+
+  /// Höchstzahl gelieferter Wegpunkte (Knoten) je Abfrage.
+  static const maxResults = 2000;
+
+  /// Höchstzahl der Anziehungspunkte nach dem Ausdünnen (einer je [spreadMeters]).
+  static const maxAttractors = 400;
+  static const spreadMeters = 80.0;
+
+  /// Braucht die Auswahl überhaupt Punkte aus OSM? Asphalt beim Laufen regelt allein die Wegbewertung.
+  static bool needed(Set<RoutePreference> preferences, RouteDiscipline discipline) =>
+      preferences.contains(RoutePreference.nature) ||
+      preferences.contains(RoutePreference.water) ||
+      (preferences.contains(RoutePreference.paved) && discipline.isBike);
+
+  /// Overpass-QL: Knoten **auf** passenden Wegen im Umkreis. Bewusst nicht `out center`: Der Mittelpunkt des
+  /// umgebenden Rechtecks eines gebogenen Uferwegs liegt oft im Wasser – ein Wegpunkt dort hieße „durch den Kanal“.
+  static String query(
+    GeoPoint center,
+    double radiusMeters,
+    Set<RoutePreference> preferences, {
+    RouteDiscipline discipline = RouteDiscipline.run,
+  }) {
+    final radius = radiusMeters.clamp(500, maxRadius).round();
+    final around = '(around:$radius,${center.latitude.toStringAsFixed(5)},${center.longitude.toStringAsFixed(5)})';
+    final parts = <String>[];
+    var sets = 0;
+    if (preferences.contains(RoutePreference.water)) {
+      // Wege bis 40 m neben Kanälen, Flüssen und Seen (Ufer- und Leinpfade).
+      parts
+        ..add('(way["waterway"~"^(canal|river)\$"]$around;way["natural"="water"]$around;)->.w;')
+        ..add('way["highway"~"^(path|track|footway|cycleway|bridleway)\$"](around.w:40)->.s$sets;');
+      sets++;
+    }
+    if (preferences.contains(RoutePreference.nature)) {
+      // Unbefestigte Wald- und Feldwege, Pfade; dazu Parks.
+      parts
+        ..add('way["highway"~"^(path|track|bridleway)\$"]["surface"!~"^(asphalt|paved|concrete)\$"]$around->.s$sets;')
+        ..add('way["leisure"="park"]$around->.s${sets + 1};');
+      sets += 2;
+    }
+    if (preferences.contains(RoutePreference.paved) && discipline.isBike) {
+      parts.add('way["highway"="cycleway"]$around->.s$sets;');
+      sets++;
+    }
+    final union = [for (var index = 0; index < sets; index++) '.s$index;'].join();
+    return '[out:json][timeout:20];${parts.join()}($union)->.all;node(w.all);out skel qt $maxResults;';
+  }
+
+  /// Knoten aus der Antwort, räumlich ausgedünnt (höchstens einer je [spreadMeters]).
+  static List<GeoPoint> parse(Object? json) => spread(_points(json));
+
+  static List<GeoPoint> _points(Object? json) {
+    if (json is! Map) throw const RoutingUnavailable('Antwort von Overpass unlesbar.');
+    final elements = json['elements'];
+    if (elements is! List) return const [];
+    return [
+      for (final element in elements)
+        if (element case {'center': {'lat': final num latitude, 'lon': final num longitude}})
+          GeoPoint(latitude.toDouble(), longitude.toDouble())
+        else if (element case {'lat': final num latitude, 'lon': final num longitude})
+          GeoPoint(latitude.toDouble(), longitude.toDouble()),
+    ];
+  }
+
+  /// Ein Punkt je Rasterzelle von [cellMeters], höchstens [max] (gleichmäßig über die Liste).
+  static List<GeoPoint> spread(List<GeoPoint> points, {double cellMeters = spreadMeters, int max = maxAttractors}) {
+    if (points.isEmpty) return const [];
+    final origin = points.first;
+    final cosLat = math.cos(origin.latitude * math.pi / 180);
+    final seen = <(int, int)>{};
+    final result = <GeoPoint>[];
+    for (final point in points) {
+      final cell = (
+        ((point.longitude - origin.longitude) * math.pi / 180 * Geo.earthRadius * cosLat / cellMeters).floor(),
+        ((point.latitude - origin.latitude) * math.pi / 180 * Geo.earthRadius / cellMeters).floor(),
+      );
+      if (seen.add(cell)) result.add(point);
+    }
+    return Geo.thin(result, max);
+  }
+}
+
+/// Zieht Wegpunkte auf Wege der gewünschten Art und misst, wie viel der Strecke dort verläuft.
+abstract final class PreferenceSnapper {
+  /// Ersetzt jeden Zwischenpunkt durch den nächsten Anziehungspunkt, wenn dieser höchstens [maxShift] entfernt
+  /// liegt; jeder Anziehungspunkt wird nur einmal verwendet. Start und Ende bleiben.
+  static List<GeoPoint> snap(List<GeoPoint> waypoints, List<GeoPoint> attractors, {required double maxShift}) {
+    if (attractors.isEmpty || waypoints.length < 3) return waypoints;
+    final used = <int>{};
+    final result = [waypoints.first];
+    for (var index = 1; index < waypoints.length - 1; index++) {
+      final point = waypoints[index];
+      var best = -1;
+      var bestDistance = maxShift;
+      for (final (candidate, attractor) in attractors.indexed) {
+        if (used.contains(candidate)) continue;
+        final distance = Geo.distance(point, attractor);
+        if (distance <= bestDistance) {
+          best = candidate;
+          bestDistance = distance;
+        }
+      }
+      if (best >= 0) {
+        used.add(best);
+        result.add(attractors[best]);
+      } else {
+        result.add(point);
+      }
+    }
+    return result..add(waypoints.last);
+  }
+
+  /// Anteil der Strecke (0…1), der höchstens [radius] neben einem Anziehungspunkt liegt (alle 100 m gemessen).
+  static double coverage(List<GeoPoint> route, List<GeoPoint> attractors, {double radius = 150}) {
+    if (route.length < 2 || attractors.isEmpty) return 0;
+    // Raster mit Zellen von [radius] für schnelle Nachbarsuche.
+    final origin = route.first;
+    final cosLat = math.cos(origin.latitude * math.pi / 180);
+    (int, int) cell(GeoPoint point) => (
+      ((point.longitude - origin.longitude) * math.pi / 180 * Geo.earthRadius * cosLat / radius).floor(),
+      ((point.latitude - origin.latitude) * math.pi / 180 * Geo.earthRadius / radius).floor(),
+    );
+    final grid = <(int, int), List<GeoPoint>>{};
+    for (final attractor in attractors) {
+      (grid[cell(attractor)] ??= []).add(attractor);
+    }
+    final cumulative = Geo.cumulative(route);
+    var next = 0.0;
+    var samples = 0;
+    var near = 0;
+    for (var index = 0; index < route.length; index++) {
+      // Halber Meter Spielraum gegen Rundungsfehler der Streckensumme.
+      if (cumulative[index] < next - 0.5) continue;
+      next = cumulative[index] + 100;
+      samples++;
+      final (x, y) = cell(route[index]);
+      var found = false;
+      for (var dx = -1; dx <= 1 && !found; dx++) {
+        for (var dy = -1; dy <= 1 && !found; dy++) {
+          for (final attractor in grid[(x + dx, y + dy)] ?? const <GeoPoint>[]) {
+            if (Geo.distance(route[index], attractor) <= radius) {
+              found = true;
+              break;
+            }
+          }
+        }
+      }
+      if (found) near++;
+    }
+    return samples == 0 ? 0 : near / samples;
+  }
+}
+
+/// Richtungspfeil auf der Strecke: Ort und Richtung (Grad, 0 = Nord).
+typedef DirectionArrow = ({GeoPoint point, double bearing});
+
+/// Pfeile in gleichen Abständen entlang der Strecke, damit die Laufrichtung erkennbar ist.
+abstract final class RouteArrows {
+  /// Pfeile alle [spacingMeters], beginnend nach einem halben Abstand; höchstens [maxArrows] (sonst weiter auseinander).
+  static List<DirectionArrow> along(List<GeoPoint> points, double spacingMeters, {int maxArrows = 80}) {
+    if (points.length < 2 || spacingMeters <= 0) return const [];
+    final total = Geo.length(points);
+    if (total <= 0) return const [];
+    var spacing = spacingMeters;
+    if (total / spacing > maxArrows) spacing = total / maxArrows;
+    final result = <DirectionArrow>[];
+    var target = spacing / 2;
+    var walked = 0.0;
+    for (var index = 1; index < points.length && target < total; index++) {
+      final a = points[index - 1];
+      final b = points[index];
+      final segment = Geo.distance(a, b);
+      while (segment > 0 && target <= walked + segment && target < total) {
+        final t = (target - walked) / segment;
+        result.add((
+          point: GeoPoint(a.latitude + (b.latitude - a.latitude) * t, a.longitude + (b.longitude - a.longitude) * t),
+          bearing: Geo.bearing(a, b),
+        ));
+        target += spacing;
+      }
+      walked += segment;
+    }
+    return result;
+  }
+
+  /// Meter je Bildpunkt in Web-Mercator bei [zoom] und Breite [latitude].
+  static double metersPerPixel(double latitude, double zoom) =>
+      156543.03392 * math.cos(latitude * math.pi / 180) / math.pow(2, zoom);
+}
+
+/// Strecke auf eine Länge kürzen (für offene Ziele: exakt die Wunschdistanz).
+abstract final class RouteTrim {
+  static List<GeoPoint> truncate(List<GeoPoint> points, double meters) {
+    if (points.length < 2 || meters <= 0) return [...points];
+    final result = [points.first];
+    var walked = 0.0;
+    for (var index = 1; index < points.length; index++) {
+      final a = points[index - 1];
+      final b = points[index];
+      final segment = Geo.distance(a, b);
+      if (walked + segment >= meters) {
+        final t = segment <= 0 ? 0.0 : (meters - walked) / segment;
+        final elevation = switch ((a.elevation, b.elevation)) {
+          (final first?, final second?) => first + (second - first) * t,
+          _ => null,
+        };
+        result.add(
+          GeoPoint(
+            a.latitude + (b.latitude - a.latitude) * t,
+            a.longitude + (b.longitude - a.longitude) * t,
+            elevation: elevation,
+          ),
+        );
+        return result;
+      }
+      walked += segment;
+      result.add(b);
+    }
+    return result;
+  }
+}
+
+/// Grob gezeichnete Linie → Wegpunkte für den Router (der die Linie auf echte Wege legt).
+abstract final class FreehandStroke {
+  /// Höchstzahl Wegpunkte je Strich (öffentliche Router begrenzen die Anzahl der Orte je Anfrage).
+  static const maxWaypoints = 16;
+
+  /// Vereinfacht den Strich und verteilt höchstens [maxWaypoints] Punkte mit mindestens [minSpacing] Abstand.
+  static List<GeoPoint> waypoints(List<GeoPoint> stroke, {double minSpacing = 120}) {
+    if (stroke.length < 2) return [...stroke];
+    final length = Geo.length(stroke);
+    if (length < minSpacing) return [stroke.first, stroke.last];
+    final spacing = math.max(minSpacing, length / (maxWaypoints - 1));
+    final simplified = Geo.simplify(stroke, spacing / 6);
+    final result = [simplified.first];
+    var sinceLast = 0.0;
+    for (var index = 1; index < simplified.length; index++) {
+      sinceLast += Geo.distance(simplified[index - 1], simplified[index]);
+      if (sinceLast >= spacing && index < simplified.length - 1) {
+        result.add(simplified[index]);
+        sinceLast = 0;
+      }
+    }
+    if (Geo.distance(result.last, simplified.last) < spacing / 3 && result.length > 1) result.removeLast();
+    result.add(simplified.last);
+    return Geo.thin(result, maxWaypoints);
+  }
+}
+
+/// Frei geplante Route: Abschnitte (je angetipptem Punkt bzw. gezeichnetem Strich) mit Rückgängig.
+final class DrawnRoute {
+  DrawnRoute();
+
+  GeoPoint? _start;
+  final List<List<GeoPoint>> _segments = [];
+
+  GeoPoint? get start => _start;
+  List<List<GeoPoint>> get segments => List.unmodifiable(_segments);
+  bool get isEmpty => _start == null;
+  bool get hasSegments => _segments.isNotEmpty;
+
+  /// Letzter Punkt (Anschluss für den nächsten Abschnitt).
+  GeoPoint? get end => _segments.isEmpty ? _start : _segments.last.last;
+
+  /// Ganze Strecke ohne doppelte Anschlusspunkte.
+  List<GeoPoint> get points => [
+    if (_start case final start? when _segments.isEmpty) start,
+    for (final (index, segment) in _segments.indexed) ...(index == 0 ? segment : segment.skip(1)),
+  ];
+
+  /// Geschlossen, wenn das Ende höchstens 60 m vom Start liegt.
+  bool get isClosed => _segments.isNotEmpty && _start != null && Geo.distance(_segments.last.last, _start!) <= 60;
+
+  /// Rundweg schließen lohnt sich ab zwei Abschnitten bzw. 300 m Abstand zum Start.
+  bool get canClose => _segments.isNotEmpty && !isClosed && Geo.distance(end!, _start!) > 60;
+
+  void setStart(GeoPoint point) {
+    _start = point;
+    _segments.clear();
+  }
+
+  void add(List<GeoPoint> segment) {
+    if (_start == null || segment.length < 2) return;
+    _segments.add(segment);
+  }
+
+  /// Letzten Abschnitt entfernen; ohne Abschnitte den Start.
+  void undo() {
+    if (_segments.isNotEmpty) {
+      _segments.removeLast();
+    } else {
+      _start = null;
+    }
+  }
+
+  void reset() {
+    _start = null;
+    _segments.clear();
+  }
+
+  RouteStats get stats => RouteStats.of(points);
+}

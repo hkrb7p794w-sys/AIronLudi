@@ -75,7 +75,15 @@ class _RouteDetailScreenState extends ConsumerState<RouteDetailScreen> {
                   runSpacing: 6,
                   children: [
                     AppChip(text: route.discipline.label, color: variantColor(route.variant)),
-                    AppChip(text: route.variant.label, color: Theme.of(context).colorScheme.secondary),
+                    AppChip(
+                      text: route.request.shape == RouteShape.drawn ? RouteShape.drawn.label : route.variant.label,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                    if (route.request.preferences.isNotEmpty)
+                      AppChip(
+                        text: RoutePreference.describe(route.request.preferences),
+                        color: Theme.of(context).colorScheme.tertiary,
+                      ),
                   ],
                 ),
                 RouteStatsRow(route: route),

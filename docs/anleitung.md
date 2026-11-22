@@ -156,20 +156,27 @@ von Hand: denselben Link wieder öffnen.
 
 1. *Training › Routen › Neue Route planen:* Start mit **Aktueller Standort** (fragt einmal nach der Freigabe) oder
    per Antippen der Karte. **Disziplin:** Laufen (Fuß- und Waldwege, Parks), Rennrad (Asphalt) oder Gravel/Allround
-   (Schotter, Feld- und Waldwege).
+   (Schotter, Feld- und Waldwege). **Umgebung:** *Wald & Natur*, *Am Wasser* (Kanäle, Flüsse, Seen),
+   *Straße & Asphalt* oder *Ausgewogener Mix*.
 2. **Strecke:** *Rundweg*, *Zum Ziel* (Ziel-Pin setzen; ist es näher als die Wunschdistanz, gibt es einen Umweg)
-   oder *Richtung* (Himmelsrichtung, offenes Ziel). **Distanz** wählen (Toleranz etwa ±7 %), optional
-   **Höhenmeter vorgeben**.
+   oder *Richtung* (Himmelsrichtung, offenes Ziel, genau auf die Distanz gekürzt). **Distanz** wählen (der Planer
+   trifft sie auf ±2,5 %), optional **Höhenmeter vorgeben**.
 3. **Routen vorschlagen:** bis zu drei Varianten – *Direkt & ausgeglichen*, *Höhenmeter-Fokus*, *Grün &
-   verkehrsarm* – mit Karte, Höhenprofil, Anstieg/Abstieg und geschätzter Dauer. **Neu würfeln** probiert andere Wege.
+   verkehrsarm* – mit Karte, Richtungspfeilen, Höhenprofil, Anstieg/Abstieg und geschätzter Dauer. **Neu würfeln**
+   probiert andere Wege. Solange Vorschläge da sind, kannst du die Karte gefahrlos zoomen und verschieben; einen
+   Punkt verschiebst du mit **langem Drücken** oder **Startpunkt ändern**, ganz neu beginnst du mit ↺ oben rechts.
 4. **In Einheit übernehmen:** heute, eine kommende Einheit des Ausdauerplans oder ein anderer Tag – die Route steht
    dann unter *Heute › Route für heute*. **GPX** oder **FIT** öffnet das Teilen-Menü (z. B. Garmin Connect, Komoot,
    Wahoo, Dateien).
-5. **Gebiete (optional):** *Training › Routen › Gebiete anzeigen*. Geschlossene Runden erobern die umschlossene
+5. **Frei planen:** oben auf *Frei planen* umschalten. *Punkte*: Start und weitere Punkte antippen; *Zeichnen*: mit
+   dem Finger eine grobe Linie ziehen. Jeder Abschnitt wird auf echte Wege gelegt; unten stehen Distanz, Höhenmeter
+   und Dauer. ↶ nimmt den letzten Abschnitt zurück, ⟳ schließt den Rundweg zum Start, **Speichern** legt die Route ab.
+6. **Gebiete (optional):** *Training › Routen › Gebiete anzeigen*. Geschlossene Runden erobern die umschlossene
    Fläche, alle Läufe und Fahrten mit GPS füllen deine Kachel-Karte. Gezählt wird eine Aktivität, sobald ihr Verlauf
    einmal geladen wurde (Aktivität öffnen). Alles bleibt bei deinem Benutzer.
 
-Die Routen kommen von öffentlichen, kostenlosen OSM-Routern (Valhalla der FOSSGIS, ersatzweise BRouter). Sind sie
+Die Routen kommen von öffentlichen, kostenlosen OSM-Diensten (Valhalla der FOSSGIS, ersatzweise BRouter; passende
+Wege über Overpass). Sind sie
 überlastet, hilft es, kurz zu warten.
 
 ## Für dich als Betreiber:in: KI-Worker in der App eintragen

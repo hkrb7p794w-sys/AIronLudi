@@ -18,6 +18,7 @@ abstract interface class RoutingEngine {
     required RouteVariant variant,
     double? elevationGain,
     double? distanceMeters,
+    Set<RoutePreference> preferences = const {},
   });
 
   Future<List<double?>> elevations(List<GeoPoint> points);
@@ -119,6 +120,7 @@ final class ValhallaEngine extends _HttpEngine {
     required RouteVariant variant,
     double? elevationGain,
     double? distanceMeters,
+    Set<RoutePreference> preferences = const {},
   }) async {
     final response = await send(
       _post(
@@ -129,6 +131,7 @@ final class ValhallaEngine extends _HttpEngine {
           variant: variant,
           elevationGain: elevationGain,
           distanceMeters: distanceMeters,
+          preferences: preferences,
         ),
       ),
     );
@@ -162,11 +165,12 @@ final class BRouterEngine extends _HttpEngine {
     required RouteVariant variant,
     double? elevationGain,
     double? distanceMeters,
+    Set<RoutePreference> preferences = const {},
   }) async {
     final response = await send(
       HttpRequest(
         method: 'GET',
-        url: BRouterFormat.uri(waypoints, discipline: discipline, variant: variant),
+        url: BRouterFormat.uri(waypoints, discipline: discipline, variant: variant, preferences: preferences),
         headers: const {'User-Agent': _HttpEngine.userAgent},
         timeout: const Duration(seconds: 40),
       ),
@@ -210,12 +214,17 @@ final class FallbackRoutingBackend implements RoutingBackend {
     required RouteVariant variant,
     double? elevationGain,
     double? distanceMeters,
+    Set<RoutePreference> preferences = const {},
   }) async {
     final key = [
       discipline.rawValue,
       variant.rawValue,
       elevationGain?.round(),
       distanceMeters?.round(),
+      [
+        for (final preference in RoutePreference.values)
+          if (preferences.contains(preference)) preference.rawValue,
+      ].join(),
       Geo.encodePolyline(waypoints),
     ].join('|');
     if (_cache[key] case final cached?) return cached;
@@ -229,6 +238,7 @@ final class FallbackRoutingBackend implements RoutingBackend {
           variant: variant,
           elevationGain: elevationGain,
           distanceMeters: distanceMeters,
+          preferences: preferences,
         );
         if (_cache.length >= _maxCache) _cache.remove(_cache.keys.first);
         return _cache[key] = path;
@@ -253,5 +263,52 @@ final class FallbackRoutingBackend implements RoutingBackend {
       }
     }
     throw lastProblem ?? const RoutingUnavailable('Keine Höhendaten verfügbar.');
+  }
+}
+
+/// Wege der gewünschten Art aus OpenStreetMap über die Overpass-API (ohne Schlüssel, höchstens eine Anfrage je zwei
+/// Sekunden). Fehler ergeben eine leere Liste: Der Planer routet dann nur mit der Wegbewertung.
+final class OverpassFeatureSource implements RouteFeatureSource {
+  OverpassFeatureSource(this.transport, {RateGate? gate}) : gate = gate ?? RateGate(const Duration(seconds: 2));
+
+  final HttpTransport transport;
+  final RateGate gate;
+  final Map<String, List<GeoPoint>> _cache = {};
+
+  @override
+  Future<List<GeoPoint>> attractors(
+    GeoPoint center,
+    double radiusMeters,
+    Set<RoutePreference> preferences, {
+    RouteDiscipline discipline = RouteDiscipline.run,
+  }) async {
+    final query = OverpassFormat.query(center, radiusMeters, preferences, discipline: discipline);
+    if (_cache[query] case final cached?) return cached;
+    try {
+      final response = await gate.run(
+        () => transport.send(
+          HttpRequest(
+            method: 'POST',
+            url: OverpassFormat.uri,
+            headers: const {
+              'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+              'User-Agent': _HttpEngine.userAgent,
+            },
+            body: utf8.encode('data=${Uri.encodeQueryComponent(query)}'),
+            timeout: const Duration(seconds: 30),
+          ),
+        ),
+      );
+      if (response.status == 429 || response.status >= 500) {
+        gate.backOff(Duration(seconds: int.tryParse(response.headers['retry-after'] ?? '') ?? 10));
+        return const [];
+      }
+      if (!response.isSuccess) return const [];
+      final points = OverpassFormat.parse(_HttpEngine.decode(response));
+      if (_cache.length >= 20) _cache.remove(_cache.keys.first);
+      return _cache[query] = points;
+    } on Object {
+      return const [];
+    }
   }
 }

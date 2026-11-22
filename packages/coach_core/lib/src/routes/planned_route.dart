@@ -21,6 +21,7 @@ final class PlannedRoute {
     this.plannedDay,
     this.slotID,
     this.slotTitle,
+    this.preferenceShare,
     Duration? duration,
     int? runThresholdPace,
   }) : stats = RouteStats.of(points),
@@ -51,9 +52,15 @@ final class PlannedRoute {
   String? slotID;
   String? slotTitle;
 
+  /// Anteil der Strecke auf den gewählten Wegearten (0…1), soweit messbar.
+  final double? preferenceShare;
+
   RouteDiscipline get discipline => request.discipline;
 
-  bool get isLoop => request.shape == RouteShape.loop;
+  /// Rundweg: automatisch erzeugt oder frei gezeichnet mit Ende am Start.
+  bool get isLoop =>
+      request.shape == RouteShape.loop ||
+      (request.shape == RouteShape.drawn && Geo.distance(points.first, points.last) <= 60);
 
   /// Höchstzahl gespeicherter Punkte (vereinfacht auf ~3 m genau, sonst gleichmäßig ausgedünnt).
   static const maxStoredPoints = 2500;
@@ -78,6 +85,7 @@ final class PlannedRoute {
     'plannedDay': ?plannedDay?.iso,
     'slotID': ?slotID,
     'slotTitle': ?slotTitle,
+    if (preferenceShare case final share?) 'preferenceShare': (share * 100).round() / 100,
   };
 
   /// Nur Routen von [username]; fremde oder kaputte Einträge: `null`.
@@ -116,6 +124,7 @@ final class PlannedRoute {
       plannedDay: day is String ? CalendarDay.tryParse(day) : null,
       slotID: json['slotID'] is String ? json['slotID'] as String : null,
       slotTitle: json['slotTitle'] is String ? json['slotTitle'] as String : null,
+      preferenceShare: json['preferenceShare'] is num ? (json['preferenceShare'] as num).toDouble() : null,
     );
   }
 
@@ -123,6 +132,7 @@ final class PlannedRoute {
   static String suggestedName(RouteRequest request, RouteVariant variant, double meters) {
     final kilometers = (meters / 100).round() / 10;
     final distance = '${kilometers.toStringAsFixed(1).replaceAll('.', ',')} km';
+    if (request.shape == RouteShape.drawn) return 'Eigene Route $distance';
     return '${request.shape.label} $distance · ${variant.label}';
   }
 }

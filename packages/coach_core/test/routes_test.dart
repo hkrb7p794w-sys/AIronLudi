@@ -21,6 +21,7 @@ final class FakeBackend implements RoutingBackend {
   final double hill;
   final List<List<GeoPoint>> calls = [];
   final List<RouteVariant> variants = [];
+  final List<Set<RoutePreference>> preferences = [];
   int heightCalls = 0;
 
   @override
@@ -30,8 +31,10 @@ final class FakeBackend implements RoutingBackend {
     required RouteVariant variant,
     double? elevationGain,
     double? distanceMeters,
+    Set<RoutePreference> preferences = const {},
   }) async {
     calls.add(waypoints);
+    this.preferences.add(preferences);
     variants.add(variant);
     if (unavailable) throw const RoutingUnavailable('Dienst gestört');
     if (failFirst > 0) {
@@ -55,6 +58,47 @@ final class FakeBackend implements RoutingBackend {
   Future<List<double?>> elevations(List<GeoPoint> points) async {
     heightCalls++;
     return [for (final point in points) 100 + (point.latitude - berlin.latitude).abs() * hill];
+  }
+}
+
+final class FakeFeatures implements RouteFeatureSource {
+  FakeFeatures(this.points, {this.fails = false});
+
+  final List<GeoPoint> points;
+  final bool fails;
+  int requests = 0;
+
+  @override
+  Future<List<GeoPoint>> attractors(
+    GeoPoint center,
+    double radiusMeters,
+    Set<RoutePreference> preferences, {
+    RouteDiscipline discipline = RouteDiscipline.run,
+  }) async {
+    requests++;
+    if (fails) throw const RoutingUnavailable('Overpass gestört');
+    return points;
+  }
+}
+
+/// Router, dessen Umwegfaktor mit der Größe der Runde wächst (nichtlinear wie echte Wegenetze).
+final class CurvedBackend extends FakeBackend {
+  double lastDistance = 0;
+
+  @override
+  Future<RoutedPath> route(
+    List<GeoPoint> waypoints, {
+    required RouteDiscipline discipline,
+    required RouteVariant variant,
+    double? elevationGain,
+    double? distanceMeters,
+    Set<RoutePreference> preferences = const {},
+  }) async {
+    final path = await super.route(waypoints, discipline: discipline, variant: variant);
+    final straight = Geo.length(path.points);
+    final factor = 1.2 + 0.4 * (straight / 20000).clamp(0, 1);
+    lastDistance = straight * factor;
+    return RoutedPath(points: path.points, distanceMeters: lastDistance, engine: 'Test');
   }
 }
 
@@ -143,8 +187,8 @@ void main() {
         ).problem,
         contains('Himmelsrichtung'),
       );
-      expect(loop().withinTolerance(10650), isTrue);
-      expect(loop().withinTolerance(10800), isFalse);
+      expect(loop().withinTolerance(10240), isTrue);
+      expect(loop().withinTolerance(10300), isFalse);
       expect(
         RouteRequest.fromJson(jsonDecode(jsonEncode(loop(gain: 200).toJson())))!.toJson(),
         loop(gain: 200).toJson(),
@@ -395,10 +439,10 @@ void main() {
         expect(route.points.first.latitude, closeTo(berlin.latitude, 1e-6));
         expect(route.stats.hasElevation, isTrue);
         // Gespeicherte Linie ist die geroutete (ohne Umwegfaktor des Test-Routers); der Router meldet 10 km ± 7 %.
-        expect(route.stats.distanceMeters * 1.4, inInclusiveRange(9300, 10700));
+        expect(route.stats.distanceMeters * 1.4, inInclusiveRange(9750, 10250));
       }
-      // Höchstens drei Router-Anfragen je Variante.
-      expect(backend.calls.length, lessThanOrEqualTo(9));
+      // Höchstens sechs Router-Anfragen je Variante.
+      expect(backend.calls.length, lessThanOrEqualTo(18));
       // Gleicher Startwert: gleiche Wegpunkte.
       final again = FakeBackend(hill: 3000);
       await planner(again).generate(request, username: 'anna', seed: 4);
@@ -616,6 +660,323 @@ void main() {
       expect(restored.territories.length, 2);
       expect(restored.processed, {'a1', 'a2'});
       expect(ExplorationState.fromJson(json, username: 'ben'), isNull);
+    });
+  });
+
+  group('Wegarten, Pfeile, Zeichnen', () {
+    test('Auswahl: Natur und Asphalt schließen sich aus, leer ist der Mix', () {
+      var selection = <RoutePreference>{};
+      expect(RoutePreference.describe(selection), 'Ausgewogener Mix');
+      selection = RoutePreference.toggle(selection, RoutePreference.nature);
+      selection = RoutePreference.toggle(selection, RoutePreference.water);
+      expect(selection, {RoutePreference.nature, RoutePreference.water});
+      selection = RoutePreference.toggle(selection, RoutePreference.paved);
+      expect(selection, {RoutePreference.water, RoutePreference.paved});
+      expect(RoutePreference.describe(selection), 'Am Wasser + Straße & Asphalt');
+      selection = RoutePreference.toggle(selection, RoutePreference.water);
+      expect(selection, {RoutePreference.paved});
+      const request = RouteRequest(
+        discipline: RouteDiscipline.run,
+        shape: RouteShape.loop,
+        start: berlin,
+        distanceMeters: 8000,
+        preferences: {RoutePreference.water, RoutePreference.nature},
+      );
+      final restored = RouteRequest.fromJson(jsonDecode(jsonEncode(request.toJson())))!;
+      expect(restored.preferences, request.preferences);
+      expect(RouteShape.generated, isNot(contains(RouteShape.drawn)));
+    });
+
+    test('Router-Gewichtung je Wegart', () {
+      final nature = ValhallaFormat.costing(
+        RouteDiscipline.run,
+        RouteVariant.balanced,
+        preferences: {RoutePreference.nature},
+      ).options;
+      expect(nature['use_tracks'], 1.0);
+      expect(nature['sidewalk_factor'], greaterThan(1));
+      final paved = ValhallaFormat.costing(
+        RouteDiscipline.run,
+        RouteVariant.green,
+        preferences: {RoutePreference.paved},
+      ).options;
+      expect(paved['use_tracks'], 0.0);
+      final gravelNature = ValhallaFormat.costing(
+        RouteDiscipline.gravel,
+        RouteVariant.balanced,
+        preferences: {RoutePreference.nature},
+      ).options;
+      expect(gravelNature['bicycle_type'], 'Mountain');
+      expect(gravelNature['use_roads'], 0.0);
+      final roadPaved = ValhallaFormat.costing(
+        RouteDiscipline.roadBike,
+        RouteVariant.green,
+        preferences: {RoutePreference.paved},
+      ).options;
+      expect(roadPaved['avoid_bad_surfaces'], 1.0);
+      expect(
+        BRouterFormat.profile(RouteDiscipline.gravel, RouteVariant.balanced, preferences: {RoutePreference.nature}),
+        'mtb-zossebart',
+      );
+    });
+
+    test('Overpass: Abfrage für Wasser und Natur, Antwort mit Mittelpunkten', () {
+      final query = OverpassFormat.query(berlin, 3000, {RoutePreference.water, RoutePreference.nature});
+      expect(query, startsWith('[out:json]'));
+      expect(query, contains('waterway'));
+      expect(query, contains('(around.w:40)'));
+      expect(query, contains('around:3000,52.52000,13.40500'));
+      expect(query, contains('leisure'));
+      // Knoten auf den Wegen statt Mittelpunkt des Rechtecks (der läge bei Flussbiegungen im Wasser).
+      expect(query, contains('(.s0;.s1;.s2;)->.all;node(w.all);out skel qt 2000;'));
+      expect(query, isNot(contains('out center')));
+      expect(OverpassFormat.query(berlin, 50000, {RoutePreference.water}), contains('around:12000,'));
+      expect(OverpassFormat.needed({RoutePreference.paved}, RouteDiscipline.run), isFalse);
+      expect(OverpassFormat.needed({RoutePreference.paved}, RouteDiscipline.roadBike), isTrue);
+      expect(OverpassFormat.needed(const {}, RouteDiscipline.gravel), isFalse);
+      final points = OverpassFormat.parse({
+        'elements': [
+          {
+            'type': 'way',
+            'id': 1,
+            'center': {'lat': 52.5, 'lon': 13.4},
+          },
+          {'type': 'node', 'id': 2, 'lat': 52.6, 'lon': 13.5},
+          {'type': 'way', 'id': 3},
+        ],
+      });
+      expect(points, [const GeoPoint(52.5, 13.4), const GeoPoint(52.6, 13.5)]);
+      // Dicht liegende Knoten werden ausgedünnt: höchstens einer je 80 m.
+      final dense = [for (var index = 0; index < 100; index++) Geo.destination(berlin, 90, index * 10.0)];
+      final spread = OverpassFormat.spread(dense);
+      expect(spread.length, inInclusiveRange(12, 14));
+      expect(OverpassFormat.spread(dense, max: 5).length, 5);
+    });
+
+    test('Nie übers Wasser: Routen mit Fähre werden verworfen', () {
+      expect(
+        () => ValhallaFormat.parseRoute({
+          'trip': {
+            'legs': [
+              {
+                'shape': Geo.encodePolyline([berlin, hamburg]),
+              },
+            ],
+            'summary': {'length': 255, 'has_ferry': true},
+          },
+        }),
+        throwsA(isA<NoRouteFound>()),
+      );
+      Map<String, Object?> brouter(String tags) => {
+        'features': [
+          {
+            'properties': {
+              'track-length': '1000',
+              'messages': [
+                ['Longitude', 'Latitude', 'Elevation', 'Distance', 'WayTags'],
+                ['13405000', '52520000', '34', '500', tags],
+              ],
+            },
+            'geometry': {
+              'coordinates': [
+                [13.405, 52.52, 34.0],
+                [13.41, 52.53, 35.0],
+              ],
+            },
+          },
+        ],
+      };
+      expect(
+        () => BRouterFormat.parse(jsonEncode(brouter('route=ferry highway=service'))),
+        throwsA(isA<NoRouteFound>()),
+      );
+      expect(BRouterFormat.parse(jsonEncode(brouter('highway=path surface=gravel'))).distanceMeters, 1000);
+    });
+
+    test('Wegpunkte auf passende Wege ziehen und Anteil messen', () {
+      final waypoints = [berlin, Geo.destination(berlin, 0, 1000), Geo.destination(berlin, 90, 1000), berlin];
+      final near = Geo.destination(waypoints[1], 90, 200);
+      final far = Geo.destination(waypoints[2], 180, 3000);
+      final snapped = PreferenceSnapper.snap(waypoints, [near, far], maxShift: 400);
+      expect(snapped[1], near);
+      expect(snapped[2], waypoints[2]);
+      expect(snapped.first, berlin);
+      expect(snapped.last, berlin);
+      final line = [for (var index = 0; index <= 10; index++) Geo.destination(berlin, 0, index * 100.0)];
+      expect(PreferenceSnapper.coverage(line, [Geo.destination(berlin, 0, 250)]), closeTo(3 / 11, 0.01));
+      expect(PreferenceSnapper.coverage(line, const []), 0);
+    });
+
+    test('Richtungspfeile in gleichen Abständen mit Fahrtrichtung', () {
+      final line = [
+        berlin,
+        Geo.destination(berlin, 90, 1000),
+        Geo.destination(Geo.destination(berlin, 90, 1000), 0, 1000),
+      ];
+      final arrows = RouteArrows.along(line, 500);
+      expect(arrows.length, 4);
+      expect(arrows.first.bearing, closeTo(90, 0.5));
+      expect(arrows.last.bearing, closeTo(0, 0.5));
+      expect(Geo.distance(berlin, arrows.first.point), closeTo(250, 1));
+      expect(RouteArrows.along(line, 1, maxArrows: 10).length, 10);
+      expect(RouteArrows.metersPerPixel(0, 0), closeTo(156543, 1));
+    });
+
+    test('Kürzen auf exakte Länge mit Höhe', () {
+      final line = [
+        berlin.withElevation(10),
+        Geo.destination(berlin, 0, 1000).withElevation(20),
+        Geo.destination(berlin, 0, 2000).withElevation(30),
+      ];
+      final trimmed = RouteTrim.truncate(line, 1500);
+      expect(Geo.length(trimmed), closeTo(1500, 0.5));
+      expect(trimmed.last.elevation, closeTo(25, 0.01));
+      expect(RouteTrim.truncate(line, 5000).length, 3);
+    });
+
+    test('Gezeichneter Strich wird zu wenigen Wegpunkten', () {
+      final stroke = [for (var index = 0; index <= 200; index++) Geo.destination(berlin, 45, index * 25.0)];
+      final points = FreehandStroke.waypoints(stroke);
+      expect(points.length, lessThanOrEqualTo(FreehandStroke.maxWaypoints));
+      expect(points.first, stroke.first);
+      expect(points.last, stroke.last);
+      expect(FreehandStroke.waypoints([berlin, Geo.destination(berlin, 0, 50)]).length, 2);
+    });
+
+    test('Frei geplante Route: Abschnitte, Rückgängig, Rundweg schließen', () {
+      final route = DrawnRoute();
+      expect(route.isEmpty, isTrue);
+      route.setStart(berlin);
+      expect(route.points, [berlin]);
+      final a = Geo.destination(berlin, 0, 1000);
+      final b = Geo.destination(a, 90, 1000);
+      route
+        ..add([berlin, a])
+        ..add([a, b]);
+      expect(route.points, [berlin, a, b]);
+      expect(route.stats.distanceMeters, closeTo(2000, 2));
+      expect(route.canClose, isTrue);
+      route.add([b, berlin]);
+      expect(route.isClosed, isTrue);
+      expect(route.canClose, isFalse);
+      route.undo();
+      expect(route.end, b);
+      route
+        ..undo()
+        ..undo();
+      expect(route.points, [berlin]);
+      route.undo();
+      expect(route.isEmpty, isTrue);
+    });
+
+    test('Sekantenverfahren zwischen zu kurz und zu lang', () {
+      expect(RouteSizing.next(length: 8000, routed: 9000, target: 10000), closeTo(8888.9, 0.1));
+      expect(
+        RouteSizing.next(length: 8000, routed: 9000, target: 10000, below: (8000, 9000), above: (9000, 11000)),
+        closeTo(8500, 0.1),
+      );
+    });
+  });
+
+  group('Planer mit Wegarten und exakter Distanz', () {
+    test('Wegarten: Router bekommt die Auswahl, Wegpunkte liegen auf passenden Wegen', () async {
+      // Ufer rund um den Start (alle 20° in 1–2 km Entfernung).
+      final water = [
+        for (var angle = 0; angle < 360; angle += 20)
+          for (final distance in [1000.0, 2000.0]) Geo.destination(berlin, angle.toDouble(), distance),
+      ];
+      final features = FakeFeatures(water);
+      final backend = FakeBackend(hill: 1000);
+      final routes = await RoutePlanner(backend, features: features).generate(
+        const RouteRequest(
+          discipline: RouteDiscipline.run,
+          shape: RouteShape.loop,
+          start: berlin,
+          distanceMeters: 8000,
+          preferences: {RoutePreference.water},
+        ),
+        username: 'anna',
+        variants: const [RouteVariant.balanced],
+      );
+      expect(features.requests, 1);
+      expect(backend.preferences.first, {RoutePreference.water});
+      expect(backend.calls.first.where(water.contains), isNotEmpty);
+      expect(routes.single.preferenceShare, isNotNull);
+      expect(routes.single.preferenceShare, greaterThan(0));
+    });
+
+    test('Ohne passende Auswahl keine Overpass-Abfrage; Abfragefehler stört nicht', () async {
+      final features = FakeFeatures(const []);
+      await RoutePlanner(FakeBackend(), features: features).generate(
+        const RouteRequest(
+          discipline: RouteDiscipline.run,
+          shape: RouteShape.loop,
+          start: berlin,
+          distanceMeters: 5000,
+        ),
+        username: 'anna',
+        variants: const [RouteVariant.balanced],
+      );
+      expect(features.requests, 0);
+      final routes = await RoutePlanner(FakeBackend(), features: FakeFeatures(const [], fails: true)).generate(
+        const RouteRequest(
+          discipline: RouteDiscipline.gravel,
+          shape: RouteShape.loop,
+          start: berlin,
+          distanceMeters: 20000,
+          preferences: {RoutePreference.nature},
+        ),
+        username: 'anna',
+        variants: const [RouteVariant.balanced],
+      );
+      expect(routes.single.preferenceShare, isNull);
+    });
+
+    test('Ungleichmäßiges Wegenetz: trotzdem auf ±2,5 % genau', () async {
+      // Umwegfaktor wächst mit der Größe (1,2 bei kleinen, bis 1,6 bei großen Runden).
+      final backend = CurvedBackend();
+      final routes = await RoutePlanner(backend).generate(
+        const RouteRequest(
+          discipline: RouteDiscipline.run,
+          shape: RouteShape.loop,
+          start: berlin,
+          distanceMeters: 12000,
+        ),
+        username: 'anna',
+        variants: const [RouteVariant.balanced],
+      );
+      expect(backend.lastDistance, inInclusiveRange(12000 * 0.975, 12000 * 1.025));
+      expect(routes, hasLength(1));
+    });
+
+    test('Offenes Ziel wird exakt auf die Wunschdistanz gekürzt', () async {
+      final routes = await RoutePlanner(FakeBackend(factor: 1.0)).generate(
+        const RouteRequest(
+          discipline: RouteDiscipline.roadBike,
+          shape: RouteShape.direction,
+          start: berlin,
+          distanceMeters: 30000,
+          bearingDegrees: 90,
+        ),
+        username: 'anna',
+        variants: const [RouteVariant.balanced],
+      );
+      expect(routes.single.stats.distanceMeters, closeTo(30000, 30000 * 0.005));
+    });
+
+    test('Frei gezeichnete Routen erzeugt der Planer nicht', () {
+      expect(
+        RoutePlanner(FakeBackend()).generate(
+          const RouteRequest(
+            discipline: RouteDiscipline.run,
+            shape: RouteShape.drawn,
+            start: berlin,
+            distanceMeters: 0,
+          ),
+          username: 'anna',
+        ),
+        throwsArgumentError,
+      );
     });
   });
 
