@@ -44,6 +44,10 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
   String? _engine;
   GeoPoint? _myLocation;
 
+  /// Gewählter Wegpunkt (0 = Start) zum Verschieben oder Löschen; [_moving]: der nächste Tipp verschiebt ihn.
+  int? _selected;
+  bool _moving = false;
+
   @override
   void initState() {
     super.initState();
@@ -54,36 +58,43 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
 
   // Abschnitte routen
 
+  /// Strecke über [waypoints] auf Wegen, mit Höhen (wirft [NoRouteFound] bzw. [RoutingUnavailable]).
+  Future<RoutedPath> _routePath(List<GeoPoint> waypoints) async {
+    final backend = ref.read(routingBackendProvider);
+    var path = await backend.route(
+      waypoints,
+      discipline: _discipline,
+      variant: RouteVariant.balanced,
+      preferences: _preferences,
+    );
+    if (!path.hasElevation) {
+      try {
+        final points = path.points;
+        final indices = _sampleIndices(points.length, ValhallaFormat.maxHeightPoints);
+        final heights = await backend.elevations([for (final index in indices) points[index]]);
+        path = RoutedPath(
+          points: ElevationFill.interpolate(points, indices, heights),
+          distanceMeters: path.distanceMeters,
+          engine: path.engine,
+        );
+      } on RoutingUnavailable {
+        // Ohne Höhen weiter: Distanz und Dauer stimmen trotzdem.
+      }
+    }
+    return path;
+  }
+
+  /// Neuen Abschnitt bis zum letzten der [waypoints] anhängen (Zwischenpunkte eines Strichs bleiben gespeichert).
   Future<void> _routeTo(List<GeoPoint> waypoints) async {
     if (waypoints.length < 2 || _busy) return;
     setState(() => _busy = true);
-    final backend = ref.read(routingBackendProvider);
     try {
-      var path = await backend.route(
-        waypoints,
-        discipline: _discipline,
-        variant: RouteVariant.balanced,
-        preferences: _preferences,
-      );
-      if (!path.hasElevation) {
-        try {
-          final points = path.points;
-          final indices = _sampleIndices(points.length, ValhallaFormat.maxHeightPoints);
-          final heights = await backend.elevations([for (final index in indices) points[index]]);
-          path = RoutedPath(
-            points: ElevationFill.interpolate(points, indices, heights),
-            distanceMeters: path.distanceMeters,
-            engine: path.engine,
-          );
-        } on RoutingUnavailable {
-          // Ohne Höhen weiter: Distanz und Dauer stimmen trotzdem.
-        }
-      }
+      final path = await _routePath(waypoints);
       if (!mounted) return;
       // Anschluss exakt am bisherigen Ende, damit die Linie nicht springt.
       final segment = [waypoints.first, ...path.points.skip(1)];
       setState(() {
-        _route.add(segment);
+        _route.add(segment, target: waypoints.last, vias: waypoints.sublist(1, waypoints.length - 1));
         _engine = path.engine;
       });
       unawaited(HapticFeedback.selectionClick());
@@ -94,6 +105,73 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  /// Nach dem Bearbeiten die betroffenen Abschnitte neu routen; klappt es nicht, wird die Änderung zurückgenommen.
+  Future<void> _reroute(List<int> dirty) async {
+    if (dirty.isEmpty) {
+      setState(() {});
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      for (final index in dirty) {
+        final request = _route.request(index);
+        final path = await _routePath(request);
+        if (!mounted) return;
+        setState(() {
+          _route.setRouted(index, [request.first, ...path.points.skip(1)]);
+          _engine = path.engine;
+        });
+      }
+      unawaited(HapticFeedback.selectionClick());
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(_route.undo);
+      _say(
+        error is NoRouteFound
+            ? 'Dort gibt es keinen passenden Weg – Änderung zurückgenommen.'
+            : 'Neu routen hat nicht geklappt – Änderung zurückgenommen.',
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Fangbereich für Wegpunkte und Linie: etwa 28 Bildpunkte in Metern.
+  double get _touchMeters {
+    try {
+      return 28 * RouteArrows.metersPerPixel(_map.camera.center.latitude, _map.camera.zoom);
+    } on Object {
+      return 40;
+    }
+  }
+
+  void _deleteSelected() {
+    final index = _selected;
+    if (index == null || _busy) return;
+    final dirty = _route.removeWaypoint(index);
+    setState(() {
+      _selected = null;
+      _moving = false;
+    });
+    unawaited(_reroute(dirty));
+  }
+
+  void _longPress(GeoPoint point) {
+    if (_tool != DrawTool.points || _busy || !_route.hasSegments) return;
+    final segment = _route.nearestSegment(point, maxDistance: _touchMeters);
+    if (segment == null) {
+      _say('Lange auf die Linie drücken, um dort einen Punkt einzufügen.');
+      return;
+    }
+    unawaited(HapticFeedback.mediumImpact());
+    final dirty = _route.insertWaypoint(segment, point);
+    setState(() {
+      _selected = segment + 1;
+      _moving = false;
+    });
+    unawaited(_reroute(dirty));
   }
 
   static List<int> _sampleIndices(int count, int max) {
@@ -114,8 +192,25 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
   void _tap(GeoPoint point) {
     if (_tool != DrawTool.points || _busy) return;
     if (_route.isEmpty) {
-      HapticFeedback.selectionClick();
+      unawaited(HapticFeedback.selectionClick());
       setState(() => _route.setStart(point));
+      return;
+    }
+    // Gewählten Punkt verschieben.
+    if (_moving && _selected != null) {
+      final dirty = _route.moveWaypoint(_selected!, point);
+      setState(() => _moving = false);
+      unawaited(_reroute(dirty));
+      return;
+    }
+    // Punkt antippen wählt ihn aus (zum Verschieben oder Löschen).
+    if (_route.nearestWaypoint(point, maxDistance: _touchMeters) case final index?) {
+      unawaited(HapticFeedback.selectionClick());
+      setState(() => _selected = _selected == index ? null : index);
+      return;
+    }
+    if (_selected != null) {
+      setState(() => _selected = null);
       return;
     }
     unawaited(_routeTo([_route.end!, point]));
@@ -154,7 +249,11 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
 
   // Werkzeuge
 
-  void _undo() => setState(_route.undo);
+  void _undo() => setState(() {
+    _route.undo();
+    _selected = null;
+    _moving = false;
+  });
 
   Future<void> _close() async {
     if (_route.start case final start? when _route.canClose) await _routeTo([_route.end!, start]);
@@ -371,6 +470,7 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
                         initialCenter: _route.start == null ? PlannerMap.fallbackCenter : latLng(_route.start!),
                         initialZoom: _route.start == null ? 5.5 : 14,
                         onTap: (_, point) => _tap(geoPoint(point)),
+                        onLongPress: (_, point) => _longPress(geoPoint(point)),
                         // Beim Zeichnen steht die Karte still; Doppeltippen setzt keine zwei Punkte.
                         interactionOptions: InteractionOptions(
                           flags: drawing
@@ -403,15 +503,28 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
                         if (points.length > 1) KilometerMarkers(points: points, color: color),
                         MarkerLayer(
                           markers: [
+                            // Wegpunkte zum Bearbeiten (Start und Ziel haben eigene Symbole).
+                            for (final (index, waypoint) in _route.waypoints.indexed)
+                              if (index > 0 && (index < _route.waypoints.length - 1 || _route.isClosed))
+                                Marker(
+                                  point: latLng(waypoint),
+                                  width: index == _selected ? 30 : 20,
+                                  height: index == _selected ? 30 : 20,
+                                  child: _Handle(color: color, selected: index == _selected),
+                                ),
                             if (_route.end case final end? when _route.hasSegments && !_route.isClosed)
                               Marker(
                                 point: latLng(end),
-                                child: const _Dot(color: Colors.red, icon: Icons.sports_score),
+                                child: _Dot(
+                                  color: Colors.red,
+                                  icon: Icons.sports_score,
+                                  selected: _selected == _route.waypoints.length - 1,
+                                ),
                               ),
                             if (_route.start case final start?)
                               Marker(
                                 point: latLng(start),
-                                child: const _Dot(color: Colors.green, icon: Icons.flag),
+                                child: _Dot(color: Colors.green, icon: Icons.flag, selected: _selected == 0),
                               ),
                           ],
                         ),
@@ -441,16 +554,21 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
                       IgnorePointer(
                         child: LiquidSwitcher(
                           child: _Hint(
-                            key: ValueKey('${_tool.name}${_route.isEmpty}$_busy'),
+                            key: ValueKey('${_tool.name}${_route.isEmpty}$_busy$_selected$_moving'),
                             text: _busy
                                 ? 'Wird auf Wege gelegt …'
+                                : _moving
+                                ? 'Tippe auf die neue Position des Punkts.'
+                                : _selected != null
+                                ? 'Punkt gewählt: verschieben oder löschen.'
                                 : _route.isEmpty
                                 ? (drawing
                                       ? 'Zeichne mit dem Finger los – der Anfang wird zum Start.'
                                       : 'Tippe den Start an oder suche eine Adresse (Lupe).')
                                 : (drawing
                                       ? 'Weiterzeichnen: Die Linie wird auf echte Wege gelegt.'
-                                      : 'Nächsten Punkt antippen. Zoomen und Verschieben wie gewohnt.'),
+                                      : 'Nächsten Punkt antippen · Punkt antippen zum Bearbeiten · lange auf die Linie '
+                                            'drücken fügt einen Punkt ein.'),
                           ),
                         ),
                       ),
@@ -467,6 +585,21 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
                     spacing: 10,
                     children: [
                       LocateMeButton(map: _map, onLocated: (point) => setState(() => _myLocation = point)),
+                      if (_selected case final index? when index < _route.waypoints.length)
+                        _EditBar(
+                          label: index == 0
+                              ? 'Start'
+                              : index == _route.waypoints.length - 1
+                              ? 'Ziel'
+                              : 'Punkt $index',
+                          moving: _moving,
+                          onMove: _busy ? null : () => setState(() => _moving = !_moving),
+                          onDelete: _busy ? null : _deleteSelected,
+                          onDone: () => setState(() {
+                            _selected = null;
+                            _moving = false;
+                          }),
+                        ),
                       _TelemetryBar(
                         distance: stats.distanceMeters,
                         ascent: stats.hasElevation ? stats.ascentMeters : null,
@@ -652,22 +785,84 @@ class _Value extends StatelessWidget {
 }
 
 class _Dot extends StatelessWidget {
-  const _Dot({required this.color, required this.icon});
+  const _Dot({required this.color, required this.icon, this.selected = false});
 
   final Color color;
   final IconData icon;
+  final bool selected;
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
     decoration: BoxDecoration(
       color: color,
       shape: BoxShape.circle,
-      border: Border.all(color: Colors.white, width: 2),
+      border: Border.all(color: selected ? Colors.amber : Colors.white, width: selected ? 3 : 2),
       boxShadow: const [BoxShadow(color: Color(0x40000000), blurRadius: 6, offset: Offset(0, 2))],
     ),
     child: Padding(
       padding: const EdgeInsets.all(4),
       child: Icon(icon, size: 16, color: Colors.white),
+    ),
+  );
+}
+
+/// Griff eines Wegpunkts (gewählt: größer, gelber Rand).
+class _Handle extends StatelessWidget {
+  const _Handle({required this.color, required this.selected});
+
+  final Color color;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: Colors.white,
+      shape: BoxShape.circle,
+      border: Border.all(color: selected ? Colors.amber : color, width: selected ? 4 : 3),
+      boxShadow: const [BoxShadow(color: Color(0x40000000), blurRadius: 4, offset: Offset(0, 1))],
+    ),
+  );
+}
+
+/// Werkzeuge für den gewählten Wegpunkt.
+class _EditBar extends StatelessWidget {
+  const _EditBar({
+    required this.label,
+    required this.moving,
+    required this.onMove,
+    required this.onDelete,
+    required this.onDone,
+  });
+
+  final String label;
+  final bool moving;
+  final VoidCallback? onMove;
+  final VoidCallback? onDelete;
+  final VoidCallback onDone;
+
+  @override
+  Widget build(BuildContext context) => LiquidSurface(
+    radius: LiquidRadii.pill,
+    strong: true,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 8, right: 4),
+            child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+          ),
+          IconButton(
+            tooltip: moving ? 'Verschieben abbrechen' : 'Punkt verschieben',
+            isSelected: moving,
+            onPressed: onMove,
+            icon: const Icon(Icons.open_with),
+          ),
+          IconButton(tooltip: 'Punkt löschen', onPressed: onDelete, icon: const Icon(Icons.delete_outline)),
+          IconButton(tooltip: 'Fertig', onPressed: onDone, icon: const Icon(Icons.check)),
+        ],
+      ),
     ),
   );
 }

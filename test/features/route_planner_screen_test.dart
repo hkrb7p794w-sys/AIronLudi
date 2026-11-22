@@ -329,7 +329,7 @@ void main() {
 
     // Start und ein Wegpunkt: ein Abschnitt, Werte in der Leiste.
     await tapMap(tester);
-    expect(find.text('Nächsten Punkt antippen. Zoomen und Verschieben wie gewohnt.'), findsOneWidget);
+    expect(find.textContaining('Nächsten Punkt antippen'), findsOneWidget);
     await tapMap(tester, offset: const Offset(80, -60));
     expect(routing.calls, 1);
     expect(find.text('0 m'), findsNothing);
@@ -515,5 +515,52 @@ void main() {
     await tester.pumpAndSettle();
     expect(routing.calls, greaterThan(0));
     expect(find.textContaining('„Am Wasser“ sind gerade nicht erreichbar'), findsOneWidget);
+  });
+
+  testWidgets('Frei planen: Wegpunkte wählen, verschieben, einfügen und löschen', (tester) async {
+    final routing = FakeRouting();
+    await openPlanner(tester, routing);
+    await tester.tap(find.text('Frei planen'));
+    await tester.pumpAndSettle();
+    await tapMap(tester);
+    await tapMap(tester, offset: const Offset(120, 0));
+    await tapMap(tester, offset: const Offset(120, 120));
+    expect(routing.calls, 2);
+
+    // Mittleren Punkt antippen: gewählt, Werkzeuge erscheinen.
+    await tapMap(tester, offset: const Offset(120, 0));
+    expect(find.text('Punkt 1'), findsOneWidget);
+    expect(find.text('Punkt gewählt: verschieben oder löschen.'), findsOneWidget);
+
+    // Verschieben: nächster Tipp setzt die neue Lage, beide Nachbarabschnitte werden neu geroutet.
+    await tester.tap(find.byTooltip('Punkt verschieben'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tippe auf die neue Position des Punkts.'), findsOneWidget);
+    await tapMap(tester, offset: const Offset(150, -40));
+    expect(routing.calls, 4);
+
+    // Löschen: Nachbarn werden direkt verbunden (ein Abschnitt neu).
+    await tester.tap(find.byTooltip('Punkt löschen'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.pumpAndSettle();
+    expect(routing.calls, 5);
+    expect(find.text('Punkt 1'), findsNothing);
+
+    // Rückgängig holt den Punkt zurück.
+    await tester.tap(find.byTooltip('Rückgängig'));
+    await tester.pumpAndSettle();
+    await tapMap(tester, offset: const Offset(150, -40));
+    expect(find.text('Punkt 1'), findsOneWidget);
+    await tester.tap(find.byTooltip('Fertig'));
+    await tester.pumpAndSettle();
+    expect(find.text('Punkt 1'), findsNothing);
+
+    // Lange auf die Linie drücken fügt dort einen Punkt ein (zwei Abschnitte neu geroutet).
+    final calls = routing.calls;
+    await tester.longPressAt(tester.getCenter(find.byType(FlutterMap)) + const Offset(75, -20));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.pumpAndSettle();
+    expect(routing.calls, calls + 2);
+    expect(find.text('Punkt 1'), findsOneWidget);
   });
 }

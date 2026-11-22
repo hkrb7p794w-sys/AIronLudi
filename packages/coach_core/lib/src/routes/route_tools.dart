@@ -317,55 +317,215 @@ abstract final class FreehandStroke {
   }
 }
 
-/// Frei geplante Route: Abschnitte (je angetipptem Punkt bzw. gezeichnetem Strich) mit Rückgängig.
+/// Abschnitt einer frei geplanten Route: Ziel (vom Nutzer gesetzter Punkt), Zwischenpunkte eines gezeichneten Strichs
+/// und die geroutete Linie (leer, solange der Abschnitt noch neu geroutet werden muss).
+final class DrawnSegment {
+  const DrawnSegment({required this.target, this.vias = const [], this.points = const []});
+
+  final GeoPoint target;
+  final List<GeoPoint> vias;
+  final List<GeoPoint> points;
+
+  bool get isRouted => points.length >= 2;
+
+  DrawnSegment withPoints(List<GeoPoint> value) => DrawnSegment(target: target, vias: vias, points: value);
+}
+
+/// Frei geplante Route: Wegpunkte mit Abschnitten dazwischen (je angetipptem Punkt bzw. gezeichnetem Strich).
+/// Wegpunkte lassen sich verschieben, löschen und einfügen; betroffene Abschnitte meldet die jeweilige Methode zum
+/// Neu-Routen. „Rückgängig“ nimmt die letzte Aktion zurück.
 final class DrawnRoute {
   DrawnRoute();
 
   GeoPoint? _start;
-  final List<List<GeoPoint>> _segments = [];
+  List<DrawnSegment> _segments = [];
+  final List<(GeoPoint?, List<DrawnSegment>)> _history = [];
+
+  /// Höchstzahl gemerkter Schritte für „Rückgängig“.
+  static const maxHistory = 50;
 
   GeoPoint? get start => _start;
-  List<List<GeoPoint>> get segments => List.unmodifiable(_segments);
+
+  /// Geroutete Linie je Abschnitt (unroutete als gerade Verbindung).
+  List<List<GeoPoint>> get segments => [
+    for (final (index, segment) in _segments.indexed)
+      segment.isRouted ? segment.points : [waypoint(index), ...segment.vias, segment.target],
+  ];
+
+  List<DrawnSegment> get parts => List.unmodifiable(_segments);
   bool get isEmpty => _start == null;
   bool get hasSegments => _segments.isNotEmpty;
+  bool get canUndo => _history.isNotEmpty;
+
+  /// Wegpunkte: Start und das Ziel jedes Abschnitts.
+  List<GeoPoint> get waypoints => [?_start, for (final segment in _segments) segment.target];
+
+  /// Anfang des Abschnitts [index] (Start bzw. Ziel des vorigen Abschnitts).
+  GeoPoint waypoint(int index) => index == 0 ? _start! : _segments[index - 1].target;
 
   /// Letzter Punkt (Anschluss für den nächsten Abschnitt).
-  GeoPoint? get end => _segments.isEmpty ? _start : _segments.last.last;
+  GeoPoint? get end => _segments.isEmpty ? _start : _segments.last.target;
 
   /// Ganze Strecke ohne doppelte Anschlusspunkte.
   List<GeoPoint> get points => [
     if (_start case final start? when _segments.isEmpty) start,
-    for (final (index, segment) in _segments.indexed) ...(index == 0 ? segment : segment.skip(1)),
+    for (final (index, segment) in segments.indexed) ...(index == 0 ? segment : segment.skip(1)),
   ];
 
   /// Geschlossen, wenn das Ende höchstens 60 m vom Start liegt.
-  bool get isClosed => _segments.isNotEmpty && _start != null && Geo.distance(_segments.last.last, _start!) <= 60;
+  bool get isClosed => _segments.isNotEmpty && _start != null && Geo.distance(_segments.last.target, _start!) <= 60;
 
-  /// Rundweg schließen lohnt sich ab zwei Abschnitten bzw. 300 m Abstand zum Start.
+  /// Rundweg schließen lohnt sich, sobald das Ende mehr als 60 m vom Start entfernt ist.
   bool get canClose => _segments.isNotEmpty && !isClosed && Geo.distance(end!, _start!) > 60;
 
+  /// Abschnitte, die noch geroutet werden müssen.
+  List<int> get unrouted => [
+    for (final (index, segment) in _segments.indexed)
+      if (!segment.isRouted) index,
+  ];
+
+  /// Wegpunkte für das Routen von Abschnitt [index]: Anfang, Zwischenpunkte, Ziel.
+  List<GeoPoint> request(int index) => [waypoint(index), ..._segments[index].vias, _segments[index].target];
+
+  void _remember() {
+    _history.add((_start, [..._segments]));
+    if (_history.length > maxHistory) _history.removeAt(0);
+  }
+
   void setStart(GeoPoint point) {
+    _remember();
     _start = point;
-    _segments.clear();
+    _segments = [];
   }
 
-  void add(List<GeoPoint> segment) {
+  /// Fertig gerouteten Abschnitt anhängen (Ziel = letzter Punkt bzw. [target]).
+  void add(List<GeoPoint> segment, {GeoPoint? target, List<GeoPoint> vias = const []}) {
     if (_start == null || segment.length < 2) return;
-    _segments.add(segment);
+    _remember();
+    _segments = [..._segments, DrawnSegment(target: target ?? segment.last, vias: vias, points: segment)];
   }
 
-  /// Letzten Abschnitt entfernen; ohne Abschnitte den Start.
-  void undo() {
-    if (_segments.isNotEmpty) {
-      _segments.removeLast();
+  /// Geroutete Linie für Abschnitt [index] eintragen (nach einer Änderung; kein eigener Schritt für „Rückgängig“).
+  void setRouted(int index, List<GeoPoint> points) {
+    if (index < 0 || index >= _segments.length || points.length < 2) return;
+    _segments = [..._segments]..[index] = _segments[index].withPoints(points);
+  }
+
+  /// Wegpunkt [index] (0 = Start) verschieben; liefert die neu zu routenden Abschnitte.
+  List<int> moveWaypoint(int index, GeoPoint point) {
+    if (index < 0 || index > _segments.length || _start == null) return const [];
+    _remember();
+    final next = [..._segments];
+    final dirty = <int>[];
+    if (index == 0) {
+      _start = point;
     } else {
-      _start = null;
+      next[index - 1] = DrawnSegment(target: point, vias: const []);
+      dirty.add(index - 1);
     }
+    if (index < next.length) {
+      next[index] = DrawnSegment(target: next[index].target, vias: const []);
+      dirty.add(index);
+    }
+    _segments = next;
+    return dirty;
+  }
+
+  /// Wegpunkt [index] löschen; die Nachbarn werden direkt verbunden. Liefert die neu zu routenden Abschnitte.
+  List<int> removeWaypoint(int index) {
+    if (index < 0 || index > _segments.length || _start == null) return const [];
+    _remember();
+    if (_segments.isEmpty) {
+      _start = null;
+      return const [];
+    }
+    if (index == 0) {
+      // Erstes Ziel wird zum Start, der erste Abschnitt entfällt.
+      _start = _segments.first.target;
+      _segments = _segments.sublist(1);
+      return const [];
+    }
+    if (index == _segments.length) {
+      _segments = _segments.sublist(0, _segments.length - 1);
+      return const [];
+    }
+    final next = [..._segments];
+    next[index - 1] = DrawnSegment(target: next[index].target);
+    next.removeAt(index);
+    _segments = next;
+    return [index - 1];
+  }
+
+  /// Neuen Wegpunkt [point] in Abschnitt [segment] einfügen; liefert die beiden neu zu routenden Abschnitte.
+  List<int> insertWaypoint(int segment, GeoPoint point) {
+    if (segment < 0 || segment >= _segments.length) return const [];
+    _remember();
+    final next = [..._segments];
+    final old = next[segment];
+    next
+      ..[segment] = DrawnSegment(target: point)
+      ..insert(segment + 1, DrawnSegment(target: old.target));
+    _segments = next;
+    return [segment, segment + 1];
+  }
+
+  /// Abschnitt, dessen Linie höchstens [maxDistance] neben [point] verläuft (zum Einfügen), sonst `null`.
+  int? nearestSegment(GeoPoint point, {double maxDistance = 80}) {
+    int? best;
+    var bestDistance = maxDistance;
+    for (final (index, line) in segments.indexed) {
+      for (var step = 1; step < line.length; step++) {
+        final distance = _distanceToSegment(point, line[step - 1], line[step]);
+        if (distance <= bestDistance) {
+          best = index;
+          bestDistance = distance;
+        }
+      }
+    }
+    return best;
+  }
+
+  /// Wegpunkt höchstens [maxDistance] neben [point] (zum Auswählen), sonst `null`.
+  int? nearestWaypoint(GeoPoint point, {double maxDistance = 40}) {
+    int? best;
+    var bestDistance = maxDistance;
+    for (final (index, waypoint) in waypoints.indexed) {
+      final distance = Geo.distance(point, waypoint);
+      if (distance <= bestDistance) {
+        best = index;
+        bestDistance = distance;
+      }
+    }
+    return best;
+  }
+
+  static double _distanceToSegment(GeoPoint point, GeoPoint a, GeoPoint b) {
+    final cosLat = math.cos(point.latitude * math.pi / 180);
+    double x(GeoPoint p) => p.longitude * math.pi / 180 * Geo.earthRadius * cosLat;
+    double y(GeoPoint p) => p.latitude * math.pi / 180 * Geo.earthRadius;
+    final dx = x(b) - x(a);
+    final dy = y(b) - y(a);
+    final length = dx * dx + dy * dy;
+    final t = length == 0 ? 0.0 : (((x(point) - x(a)) * dx + (y(point) - y(a)) * dy) / length).clamp(0.0, 1.0);
+    return math.sqrt(math.pow(x(point) - (x(a) + t * dx), 2) + math.pow(y(point) - (y(a) + t * dy), 2));
+  }
+
+  /// Letzte Aktion zurücknehmen.
+  void undo() {
+    if (_history.isEmpty) {
+      _start = null;
+      _segments = [];
+      return;
+    }
+    final (start, segments) = _history.removeLast();
+    _start = start;
+    _segments = segments;
   }
 
   void reset() {
+    _remember();
     _start = null;
-    _segments.clear();
+    _segments = [];
   }
 
   RouteStats get stats => RouteStats.of(points);
