@@ -155,8 +155,11 @@ von Hand: denselben Link wieder öffnen.
 ## Routen planen: Laufen und Rad (OpenStreetMap)
 
 1. *Training › Routen › Neue Route planen:* Start als **Adresse** eingeben (Vorschläge erscheinen beim Tippen,
-   Eingabetaste sucht), mit **Aktueller Standort** (fragt einmal nach der Freigabe) oder per Antippen der Karte. **Disziplin:** Laufen (Fuß- und Waldwege, Parks), Rennrad (Asphalt) oder Gravel/Allround
-   (Schotter, Feld- und Waldwege). **Umgebung:** *Wald & Natur*, *Am Wasser* (Kanäle, Flüsse, Seen),
+   Eingabetaste sucht), mit **Aktueller Standort** (fragt einmal nach der Freigabe) oder durch **langes Drücken** auf
+   die Karte. Antippen der Karte öffnet sie im Vollbild. Mit dem **Stern** neben der Adresse merkst du einen Ort als
+   Favorit (z. B. Zuhause); Favoriten erscheinen beim Antippen der Adresszeile und lassen sich unter *Routen ›
+   Favorisierte Orte* umbenennen oder löschen. **Disziplin:** Laufen (Fuß- und Waldwege, Parks), Rennrad (Asphalt), Gravel
+   (Schotter, Feld- und Waldwege) oder Spazieren (ruhige Wege und Parks, z. B. Gassi mit dem Hund). **Umgebung:** *Wald & Natur*, *Am Wasser* (Kanäle, Flüsse, Seen),
    *Straße & Asphalt* oder *Ausgewogener Mix*.
 2. **Strecke:** *Rundweg*, *Zum Ziel* (Zieladresse eingeben oder Ziel-Pin setzen; ist es näher als die Wunschdistanz, gibt es einen Umweg)
    oder *Richtung* (Himmelsrichtung, offenes Ziel, genau auf die Distanz gekürzt). **Distanz** wählen (der Planer
@@ -164,7 +167,7 @@ von Hand: denselben Link wieder öffnen.
 3. **Routen vorschlagen:** bis zu drei Varianten – *Direkt & ausgeglichen*, *Höhenmeter-Fokus*, *Grün &
    verkehrsarm* – mit Karte, Richtungspfeilen, Höhenprofil, Anstieg/Abstieg und geschätzter Dauer. **Neu würfeln**
    probiert andere Wege. Solange Vorschläge da sind, kannst du die Karte gefahrlos zoomen und verschieben; einen
-   Punkt verschiebst du mit **langem Drücken** oder **Startpunkt ändern**, ganz neu beginnst du mit ↺ oben rechts.
+   Punkt verschiebst du mit **langem Drücken** (auch im Vollbild) oder **Startpunkt ändern**, ganz neu beginnst du mit ↺ oben rechts.
 4. **In Einheit übernehmen:** heute, eine kommende Einheit des Ausdauerplans oder ein anderer Tag – die Route steht
    dann unter *Heute › Route für heute*. **GPX** oder **FIT** öffnet das Teilen-Menü (z. B. Garmin Connect, Komoot,
    Wahoo, Dateien).

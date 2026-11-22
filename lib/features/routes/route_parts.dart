@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:coach_core/coach_core.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:path/path.dart' as p;
@@ -83,6 +85,8 @@ class PlannerMap extends StatelessWidget {
     this.onTap,
     this.onLongPress,
     this.height = 320,
+    this.rounded = true,
+    this.initialPoints = const [],
     this.routingSource,
   });
 
@@ -93,7 +97,13 @@ class PlannerMap extends StatelessWidget {
   final PlannedRoute? selected;
   final void Function(GeoPoint point)? onTap;
   final void Function(GeoPoint point)? onLongPress;
-  final double height;
+
+  /// Höhe; `null` füllt den verfügbaren Platz (Vollbild).
+  final double? height;
+  final bool rounded;
+
+  /// Beim Aufbau auf diese Punkte ausrichten (z. B. alle Vorschläge im Vollbild).
+  final List<GeoPoint> initialPoints;
   final String? routingSource;
 
   /// Mitte Deutschlands, solange kein Start bekannt ist.
@@ -105,10 +115,17 @@ class PlannerMap extends StatelessWidget {
       for (final route in routes)
         if (route.id != selected?.id) route,
     ];
+    final fit = initialPoints.length > 1
+        ? CameraFit.coordinates(
+            coordinates: [for (final point in initialPoints) latLng(point)],
+            padding: const EdgeInsets.fromLTRB(36, 110, 36, 150),
+            maxZoom: 16,
+          )
+        : null;
     return SizedBox(
-      height: height,
+      height: height ?? double.infinity,
       child: ClipRRect(
-        borderRadius: LiquidRadii.cardAll,
+        borderRadius: rounded ? LiquidRadii.cardAll : BorderRadius.zero,
         child: Semantics(
           label: 'Karte des Routenplaners',
           child: FlutterMap(
@@ -116,6 +133,7 @@ class PlannerMap extends StatelessWidget {
             options: MapOptions(
               initialCenter: start == null ? fallbackCenter : latLng(start!),
               initialZoom: start == null ? 5.5 : 13,
+              initialCameraFit: fit,
               onTap: onTap == null ? null : (_, point) => onTap!(geoPoint(point)),
               onLongPress: onLongPress == null ? null : (_, point) => onLongPress!(geoPoint(point)),
               interactionOptions: const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
@@ -181,6 +199,189 @@ class PlannerMap extends StatelessWidget {
     } on Object {
       // Karte noch nicht aufgebaut: beim nächsten Mal.
     }
+  }
+}
+
+/// Karte im Vollbild (Antippen der kleinen Karte): Routen mit Pfeilen, Auswahl der Vorschläge unten, langes Drücken
+/// setzt Start bzw. Ziel über [onLongPress] (liefert den neuen Stand, Vorschläge verfallen dann).
+class FullscreenRouteMap extends StatefulWidget {
+  const FullscreenRouteMap({
+    super.key,
+    required this.start,
+    this.destination,
+    this.routes = const [],
+    this.selected = 0,
+    this.onSelect,
+    this.onLongPress,
+    this.title,
+  });
+
+  final GeoPoint? start;
+  final GeoPoint? destination;
+  final List<PlannedRoute> routes;
+  final int selected;
+  final ValueChanged<int>? onSelect;
+  final ({GeoPoint? start, GeoPoint? destination}) Function(GeoPoint point)? onLongPress;
+  final String? title;
+
+  static Future<void> open(
+    BuildContext context, {
+    required GeoPoint? start,
+    GeoPoint? destination,
+    List<PlannedRoute> routes = const [],
+    int selected = 0,
+    ValueChanged<int>? onSelect,
+    ({GeoPoint? start, GeoPoint? destination}) Function(GeoPoint point)? onLongPress,
+    String? title,
+  }) => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      fullscreenDialog: true,
+      builder: (_) => FullscreenRouteMap(
+        start: start,
+        destination: destination,
+        routes: routes,
+        selected: selected,
+        onSelect: onSelect,
+        onLongPress: onLongPress,
+        title: title,
+      ),
+    ),
+  );
+
+  @override
+  State<FullscreenRouteMap> createState() => _FullscreenRouteMapState();
+}
+
+class _FullscreenRouteMapState extends State<FullscreenRouteMap> {
+  final _map = MapController();
+  late GeoPoint? _start = widget.start;
+  late GeoPoint? _destination = widget.destination;
+  late List<PlannedRoute> _routes = widget.routes;
+  late int _selected = widget.selected.clamp(0, widget.routes.isEmpty ? 0 : widget.routes.length - 1);
+
+  PlannedRoute? get _current => _routes.isEmpty ? null : _routes[_selected];
+
+  void _longPress(GeoPoint point) {
+    final callback = widget.onLongPress;
+    if (callback == null) return;
+    unawaited(HapticFeedback.mediumImpact());
+    final next = callback(point);
+    setState(() {
+      _start = next.start;
+      _destination = next.destination;
+      _routes = const [];
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final current = _current;
+    final padding = MediaQuery.paddingOf(context);
+    return Scaffold(
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: PlannerMap(
+              controller: _map,
+              start: _start,
+              destination: _destination,
+              routes: _routes,
+              selected: current,
+              onLongPress: widget.onLongPress == null ? null : _longPress,
+              height: null,
+              rounded: false,
+              initialPoints: [
+                for (final route in _routes) ...Geo.thin(route.points, 200),
+                if (_routes.isEmpty) ...[?_start, ?_destination],
+              ],
+              routingSource: current?.engine,
+            ),
+          ),
+          Positioned(
+            top: padding.top + 10,
+            left: 12,
+            right: 12,
+            child: Row(
+              spacing: 10,
+              children: [
+                LiquidSurface(
+                  radius: LiquidRadii.pill,
+                  strong: true,
+                  child: IconButton(
+                    tooltip: 'Schließen',
+                    icon: const Icon(Icons.close_fullscreen),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
+                if (widget.onLongPress != null)
+                  Expanded(
+                    child: LiquidSurface(
+                      radius: LiquidRadii.pill,
+                      strong: true,
+                      shadow: false,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                        child: Text(
+                          _routes.isEmpty
+                              ? 'Lange drücken setzt den Punkt.'
+                              : 'Lange drücken verschiebt den Start und plant neu.',
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ),
+                  )
+                else if (widget.title case final title?)
+                  Expanded(
+                    child: LiquidSurface(
+                      radius: LiquidRadii.pill,
+                      strong: true,
+                      shadow: false,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                        child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (_routes.length > 1)
+            Positioned(
+              left: 12,
+              right: 12,
+              bottom: padding.bottom + 16,
+              child: LiquidSurface(
+                radius: LiquidRadii.pill,
+                strong: true,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.all(6),
+                  child: Row(
+                    spacing: 6,
+                    children: [
+                      for (final (index, route) in _routes.indexed)
+                        ChoiceChip(
+                          avatar: CircleAvatar(backgroundColor: variantColor(route.variant), radius: 6),
+                          label: Text('${route.variant.label} · ${RouteFormat.distance(route.stats.distanceMeters)}'),
+                          selected: index == _selected,
+                          shape: const StadiumBorder(),
+                          showCheckmark: false,
+                          onSelected: (_) {
+                            setState(() => _selected = index);
+                            widget.onSelect?.call(index);
+                            PlannerMap.fit(_map, Geo.thin(route.points, 200));
+                          },
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
 

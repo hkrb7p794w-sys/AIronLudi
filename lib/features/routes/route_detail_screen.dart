@@ -62,6 +62,15 @@ class _RouteDetailScreenState extends ConsumerState<RouteDetailScreen> {
             destination: route.isLoop ? null : route.points.last,
             routes: [route],
             selected: route,
+            onTap: (_) => unawaited(
+              FullscreenRouteMap.open(
+                context,
+                start: route.points.first,
+                destination: route.isLoop ? null : route.points.last,
+                routes: [route],
+                title: route.name,
+              ),
+            ),
             routingSource: route.engine.isEmpty ? null : route.engine,
           ),
           const SizedBox(height: LiquidSpacing.l),
@@ -173,13 +182,18 @@ class _RouteDetailScreenState extends ConsumerState<RouteDetailScreen> {
 /// mit dieser Zuordnung. Ungespeicherte Vorschläge werden dabei gespeichert.
 Future<bool> assignRouteToSession(BuildContext context, WidgetRef ref, PlannedRoute route) async {
   final plan = ref.read(enduranceControllerProvider).plan;
-  final sport = route.discipline.isBike ? EnduranceSport.bike : EnduranceSport.run;
+  // Spaziergänge haben keine Einheiten im Ausdauerplan: nur Tag wählen.
+  final sport = switch (route.discipline) {
+    RouteDiscipline.run => EnduranceSport.run,
+    RouteDiscipline.roadBike || RouteDiscipline.gravel => EnduranceSport.bike,
+    RouteDiscipline.walk => null,
+  };
   final today = CalendarDay.today();
   final slots = [
     if (plan != null)
       for (var offset = 0; offset < 14; offset++)
         for (final slot in plan.slotsOn(today.adding(offset)))
-          if (!slot.current.isRest && slot.current.sport == sport) slot,
+          if (sport != null && !slot.current.isRest && slot.current.sport == sport) slot,
   ];
   final choice = await showModalBottomSheet<_Assignment>(
     context: context,

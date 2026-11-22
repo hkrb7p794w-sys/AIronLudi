@@ -16,6 +16,9 @@ final class RouteStore extends ChangeNotifier {
         ExplorationState.fromJson(_store.json(SettingsKeys.exploration), username: username) ??
         ExplorationState(username: username);
     _settings = _store.read(SettingsKeys.routePlanner, RoutePlannerSettings.fromJson, RoutePlannerSettings());
+    _favorites =
+        FavoritePlaces.fromJson(_store.json(SettingsKeys.favoritePlaces), username: username) ??
+        FavoritePlaces(username: username);
   }
 
   final SettingsStore _store;
@@ -23,6 +26,39 @@ final class RouteStore extends ChangeNotifier {
   late RouteLibrary _library;
   late ExplorationState _exploration;
   late RoutePlannerSettings _settings;
+  late FavoritePlaces _favorites;
+
+  /// Favorisierte Orte (Start/Ziel mit einem Tipp).
+  List<FavoritePlace> get favorites => List.unmodifiable(_favorites.places);
+
+  FavoritePlace? favoriteNear(GeoPoint point) => _favorites.near(point);
+
+  List<FavoritePlace> favoritesMatching(String query) => _favorites.matching(query);
+
+  bool get hasForeignFavorites =>
+      _store.contains(SettingsKeys.favoritePlaces) &&
+      FavoritePlaces.fromJson(_store.json(SettingsKeys.favoritePlaces), username: username) == null;
+
+  Future<void> saveFavorite(FavoritePlace place) async {
+    if (hasForeignFavorites) throw StateError('Die Favoriten gehören einem anderen Benutzer.');
+    _favorites.save(place);
+    notifyListeners();
+    await _store.setJson(SettingsKeys.favoritePlaces, _favorites.toJson());
+  }
+
+  Future<void> renameFavorite(String id, String name) async {
+    if (hasForeignFavorites) return;
+    _favorites.rename(id, name);
+    notifyListeners();
+    await _store.setJson(SettingsKeys.favoritePlaces, _favorites.toJson());
+  }
+
+  Future<void> deleteFavorite(String id) async {
+    if (hasForeignFavorites) return;
+    _favorites.delete(id);
+    notifyListeners();
+    await _store.setJson(SettingsKeys.favoritePlaces, _favorites.toJson());
+  }
 
   List<PlannedRoute> get routes => List.unmodifiable(_library.routes);
   ExplorationState get exploration => _exploration;

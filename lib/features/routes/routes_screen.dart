@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/routing/routing_providers.dart';
 import '../../ui/components.dart';
 import '../../ui/liquid.dart';
+import 'address_field.dart';
 import 'exploration_screen.dart';
 import 'route_detail_screen.dart';
 import 'route_parts.dart';
@@ -47,7 +48,7 @@ class RoutesScreen extends ConsumerWidget {
                       children: [
                         Text('Neue Route planen', style: Theme.of(context).textTheme.titleMedium),
                         Text(
-                          'Laufen, Rennrad oder Gravel – Rundweg, zum Ziel oder in eine Richtung',
+                          'Laufen, Rennrad, Gravel oder Spazieren – Rundweg, zum Ziel oder in eine Richtung',
                           style: LiquidText.label(context),
                         ),
                       ],
@@ -82,6 +83,41 @@ class RoutesScreen extends ConsumerWidget {
                   ),
                   trailing: const DisclosureChevron(),
                   onTap: () => open(RouteDetailScreen(routeID: route.id)),
+                ),
+            ],
+          ),
+          FormSection(
+            header: 'Favorisierte Orte',
+            footer: store.favorites.isEmpty
+                ? 'Tippe im Planer auf den Stern neben Start oder Ziel, um einen Ort zu merken (z. B. Zuhause, '
+                      'Hundewiese). Favoriten erscheinen beim Antippen der Adresszeile.'
+                : 'Favoriten erscheinen beim Antippen der Adresszeile für Start und Ziel.',
+            children: [
+              for (final favorite in store.favorites)
+                ListTile(
+                  leading: const Icon(Icons.star_rounded, color: Colors.amber),
+                  title: Text(favorite.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  subtitle: Text(
+                    favorite.address ??
+                        '${favorite.point.latitude.toStringAsFixed(5)}, ${favorite.point.longitude.toStringAsFixed(5)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: PopupMenuButton<String>(
+                    tooltip: 'Favorit bearbeiten',
+                    onSelected: (action) async {
+                      if (action == 'delete') {
+                        await store.deleteFavorite(favorite.id);
+                        return;
+                      }
+                      final name = await askFavoriteName(context, initial: favorite.name);
+                      if (name != null) await store.renameFavorite(favorite.id, name);
+                    },
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(value: 'rename', child: Text('Umbenennen')),
+                      PopupMenuItem(value: 'delete', child: Text('Löschen')),
+                    ],
+                  ),
                 ),
             ],
           ),

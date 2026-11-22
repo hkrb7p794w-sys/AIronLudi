@@ -1062,6 +1062,84 @@ void main() {
     });
   });
 
+  group('Favoriten und Spazieren', () {
+    test('Favoriten je Benutzer: speichern, gleiche Stelle ersetzen, umbenennen, suchen', () {
+      final favorites = FavoritePlaces(username: 'anna');
+      final home = FavoritePlace(
+        id: 'f1',
+        name: 'Zuhause',
+        point: berlin,
+        createdAt: DateTime.utc(2026, 11, 22),
+        address: 'Hauptstraße 5, 10827 Berlin',
+      );
+      favorites
+        ..save(home)
+        ..save(FavoritePlace(id: 'f2', name: 'Hundewiese', point: hamburg, createdAt: DateTime.utc(2026, 11, 22)));
+      expect(favorites.places.map((place) => place.name), ['Hundewiese', 'Zuhause']);
+      // Gleiche Stelle (10 m daneben): ersetzt statt doppelt.
+      favorites.save(
+        FavoritePlace(
+          id: 'f3',
+          name: 'Daheim',
+          point: Geo.destination(berlin, 0, 10),
+          createdAt: DateTime.utc(2026, 11, 22),
+        ),
+      );
+      expect(favorites.places.length, 2);
+      expect(favorites.near(berlin)!.name, 'Daheim');
+      favorites.rename('f3', '  Zuhause  ');
+      expect(favorites.near(berlin)!.name, 'Zuhause');
+      expect(favorites.matching('hunde').single.id, 'f2');
+      expect(favorites.matching('').length, 2);
+      expect(home.place.label, 'Zuhause, Hauptstraße 5, 10827 Berlin');
+      final json = jsonDecode(jsonEncode(favorites.toJson()));
+      expect(FavoritePlaces.fromJson(json, username: 'anna')!.places.map((place) => place.id), ['f3', 'f2']);
+      expect(FavoritePlaces.fromJson(json, username: 'ben'), isNull);
+      favorites.delete('f2');
+      expect(favorites.places.single.id, 'f3');
+    });
+
+    test('Spazieren: Fußwege-Profil, Gehtempo, eigene Grenzen und Export', () {
+      expect(RouteDiscipline.walk.onFoot, isTrue);
+      expect(RouteDiscipline.walk.isBike, isFalse);
+      expect(RouteDiscipline.gravel.label, 'Gravel');
+      expect(ValhallaFormat.costing(RouteDiscipline.walk, RouteVariant.balanced).costing, 'pedestrian');
+      expect(ValhallaFormat.costing(RouteDiscipline.walk, RouteVariant.balanced).options['use_hills'], 0.2);
+      expect(
+        ValhallaFormat.costing(
+          RouteDiscipline.walk,
+          RouteVariant.balanced,
+          preferences: {RoutePreference.nature},
+        ).options['use_tracks'],
+        1.0,
+      );
+      expect(BRouterFormat.profile(RouteDiscipline.walk, RouteVariant.green), 'hiking-mountain');
+      // 4,5 km/h: 3 km in 40 min; 60 hm kosten 6 min.
+      expect(
+        RouteDuration.estimate(discipline: RouteDiscipline.walk, distanceMeters: 3000, ascentMeters: 60),
+        const Duration(minutes: 46),
+      );
+      expect(RouteRequest.maxDistance(RouteDiscipline.walk), 30000);
+      final route = PlannedRoute(
+        id: 'w',
+        username: 'anna',
+        name: 'Gassi',
+        request: const RouteRequest(
+          discipline: RouteDiscipline.walk,
+          shape: RouteShape.loop,
+          start: berlin,
+          distanceMeters: 3000,
+        ),
+        variant: RouteVariant.green,
+        points: [berlin, Geo.destination(berlin, 0, 500), berlin],
+        engine: 'Test',
+        createdAt: DateTime.utc(2026, 11, 22),
+      );
+      expect(GpxExport.xml(route), contains('<type>walking</type>'));
+      expect(FitDecoder.decode(FitCourseFile.bytes(route, created: DateTime.utc(2026, 11, 22))).records.length, 3);
+    });
+  });
+
   test('Anzeige', () {
     expect(RouteFormat.distance(850), '850 m');
     expect(RouteFormat.distance(10249), '10,2 km');

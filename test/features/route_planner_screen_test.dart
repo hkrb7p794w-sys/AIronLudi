@@ -1,4 +1,5 @@
 // Routenplaner im Reiter Training: Einstieg, Standort als Start, Vorschläge, Speichern, Übernahme für heute, Gebiete.
+import 'package:aironludi/features/routes/address_field.dart';
 import 'package:aironludi/features/routes/exploration_screen.dart';
 import 'package:aironludi/features/routes/route_detail_screen.dart';
 import 'package:aironludi/features/routes/route_draw_screen.dart';
@@ -27,6 +28,7 @@ final class FakeLocation implements LocationSource {
 final class FakeRouting implements RoutingBackend {
   int calls = 0;
   final List<Set<RoutePreference>> preferences = [];
+  final List<RouteDiscipline> disciplines = [];
 
   @override
   Future<RoutedPath> route(
@@ -39,6 +41,7 @@ final class FakeRouting implements RoutingBackend {
   }) async {
     calls++;
     this.preferences.add(preferences);
+    disciplines.add(discipline);
     final points = <GeoPoint>[];
     for (var index = 1; index < waypoints.length; index++) {
       final a = waypoints[index - 1];
@@ -211,14 +214,22 @@ void main() {
     expect(find.text('Neu würfeln'), findsOneWidget);
     expect(find.textContaining('% Am Wasser'), findsWidgets);
 
-    // Ansichtsmodus: Antippen der Karte (z. B. beim Zoomen) lässt Start und Vorschläge stehen.
+    // Antippen der Karte öffnet das Vollbild; Start und Vorschläge bleiben stehen.
     final start = container.read(routeStoreProvider).settings;
     expect(start.preferences, {RoutePreference.water});
     tester.state<ScrollableState>(find.byType(Scrollable).first).position.jumpTo(0);
     await tester.pumpAndSettle();
     final callsBefore = routing.calls;
     await tapMap(tester, offset: const Offset(40, 30));
-    expect(find.textContaining('Ansicht: Zum Verschieben lange drücken'), findsOneWidget);
+    expect(find.byType(FullscreenRouteMap), findsOneWidget);
+    expect(find.text('Lange drücken verschiebt den Start und plant neu.'), findsOneWidget);
+    // Vorschläge auch im Vollbild wählbar.
+    await tester.tap(find.textContaining('${RouteVariant.hilly.label} ·'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Schließen'));
+    await tester.pumpAndSettle();
+    expect(find.byType(FullscreenRouteMap), findsNothing);
+    expect(find.text('Antippen: Vollbild · lange drücken verschiebt den Start.'), findsOneWidget);
     expect(routing.calls, callsBefore);
     // „Startpunkt ändern“ gibt es nur, solange die Vorschläge noch da sind.
     expect(find.text('Startpunkt ändern'), findsOneWidget);
@@ -316,7 +327,7 @@ void main() {
   testWidgets('Start und Ziel per Adresszeile', (tester) async {
     final routing = FakeRouting();
     final places = FakePlaces();
-    await openPlanner(tester, routing, places: places);
+    final container = await openPlanner(tester, routing, places: places);
 
     // Tippen: Vorschläge nach kurzer Pause, Auswahl setzt den Start.
     await tester.enterText(find.widgetWithText(TextField, 'Startadresse oder Ort'), 'Hauptstr');
@@ -330,20 +341,51 @@ void main() {
     expect(find.text('Start: gesuchte Adresse'), findsOneWidget);
     expect(find.text('Hauptstraße 5, 10827 Berlin'), findsOneWidget);
 
+    // Stern: Start als Favorit „Zuhause“ merken; beim nächsten Antippen der Adresszeile erscheint er.
+    await tester.tap(find.byTooltip('Als Favorit speichern').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Als Favorit speichern'), findsOneWidget);
+    await tester.enterText(find.descendant(of: find.byType(AlertDialog), matching: find.byType(TextField)), 'Zuhause');
+    await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text('Speichern')));
+    await tester.pumpAndSettle();
+    final store = container.read(routeStoreProvider);
+    expect(store.favorites.single.name, 'Zuhause');
+    expect(store.favorites.single.address, 'Hauptstraße 5, 10827 Berlin');
+    expect(find.byTooltip('Aus Favoriten entfernen'), findsOneWidget);
+
     // Zum Ziel: Zieladresse per Eingabetaste, ein Treffer wird gleich übernommen.
     await tapCentered(tester, find.text('Zum Ziel'));
     final destination = find.widgetWithText(TextField, 'Zieladresse oder Ort');
     await tapCentered(tester, destination);
+    // Favorit beim Antippen sichtbar, noch bevor getippt wird.
+    expect(find.descendant(of: find.byType(AddressField).last, matching: find.text('Zuhause')), findsOneWidget);
     await tester.enterText(destination, 'Hafen');
     await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
     await tester.pumpAndSettle();
     expect(find.text('Hafen, 10117 Berlin'), findsOneWidget);
+    // Hinweis „als Favorit gespeichert“ ausblenden (liegt über dem Knopf).
+    ScaffoldMessenger.of(tester.element(find.byType(RoutePlannerScreen))).hideCurrentSnackBar();
+    await tester.pumpAndSettle();
 
     await tapCentered(tester, find.text('Routen vorschlagen'));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pumpAndSettle();
     expect(routing.calls, greaterThan(0));
     expect(find.textContaining('Bitte'), findsNothing);
+  });
+
+  testWidgets('Spazieren als eigene Disziplin', (tester) async {
+    final routing = FakeRouting();
+    await openPlanner(tester, routing);
+    expect(find.text('Gravel'), findsOneWidget);
+    expect(find.text('Gravel/Allround'), findsNothing);
+    await tapCentered(tester, find.text('Spazieren'));
+    expect(find.text(RouteDiscipline.walk.surfaces), findsOneWidget);
+    await tapCentered(tester, find.text('Aktueller Standort'), delta: -300);
+    await tapCentered(tester, find.text('Routen vorschlagen'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pumpAndSettle();
+    expect(routing.disciplines.toSet(), {RouteDiscipline.walk});
   });
 }

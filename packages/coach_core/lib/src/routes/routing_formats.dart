@@ -64,7 +64,7 @@ abstract final class ValhallaFormat {
     final paved = preferences.contains(RoutePreference.paved);
     final water = preferences.contains(RoutePreference.water);
     switch (discipline) {
-      case RouteDiscipline.run:
+      case RouteDiscipline.run || RouteDiscipline.walk:
         return {
           if (nature) ...{'use_tracks': 1.0, 'walkway_factor': 0.6, 'sidewalk_factor': 1.6, 'use_living_streets': 0.3},
           if (paved) ...{'use_tracks': 0.0, 'walkway_factor': 1.0, 'sidewalk_factor': 0.8, 'use_living_streets': 0.8},
@@ -111,6 +111,20 @@ abstract final class ValhallaFormat {
             'use_living_streets': variant == RouteVariant.green ? 0.9 : 0.6,
             'walkway_factor': variant == RouteVariant.green ? 0.7 : 0.9,
             'sidewalk_factor': variant == RouteVariant.green ? 1.2 : 1.0,
+            'use_ferry': 0.0,
+          },
+        );
+      case RouteDiscipline.walk:
+        // Spazieren/Gassi: ruhig und grün, wenig Hauptstraßen, sanfte Steigungen.
+        return (
+          costing: 'pedestrian',
+          options: {
+            'use_hills': hillsForTarget ?? (variant == RouteVariant.hilly ? 0.7 : 0.2),
+            'use_tracks': 0.8,
+            'use_living_streets': 0.9,
+            'walkway_factor': 0.7,
+            'sidewalk_factor': 1.2,
+            'alley_factor': 2.0,
             'use_ferry': 0.0,
           },
         );
@@ -232,7 +246,8 @@ abstract final class BRouterFormat {
     RouteVariant variant, {
     Set<RoutePreference> preferences = const {},
   }) => switch (discipline) {
-    RouteDiscipline.run => preferences.contains(RoutePreference.paved) ? 'shortest' : 'hiking-mountain',
+    RouteDiscipline.run ||
+    RouteDiscipline.walk => preferences.contains(RoutePreference.paved) ? 'shortest' : 'hiking-mountain',
     RouteDiscipline.roadBike =>
       preferences.contains(RoutePreference.nature) || variant == RouteVariant.green
           ? 'fastbike-lowtraffic'
