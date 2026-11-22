@@ -549,3 +549,90 @@ final class DrawnRoute {
 
   RouteStats get stats => RouteStats.of(points);
 }
+
+/// Stand beim Folgen einer Route.
+final class FollowState {
+  const FollowState({
+    required this.progressMeters,
+    required this.totalMeters,
+    required this.offRouteMeters,
+    required this.isOffRoute,
+    required this.arrived,
+  });
+
+  /// Zurückgelegt entlang der Route (Projektion der Position auf die Linie).
+  final double progressMeters;
+  final double totalMeters;
+
+  /// Abstand der Position zur Route.
+  final double offRouteMeters;
+  final bool isOffRoute;
+  final bool arrived;
+
+  double get remainingMeters => (totalMeters - progressMeters).clamp(0, totalMeters).toDouble();
+  double get fraction => totalMeters <= 0 ? 0 : (progressMeters / totalMeters).clamp(0, 1).toDouble();
+}
+
+/// Folgt einer Route mit Positionen vom Gerät: Fortschritt entlang der Linie (nur vorwärts suchend, damit Rundwege
+/// am Start nicht gleich als „fertig“ gelten), Abweichung und Ankunft.
+final class RouteFollower {
+  RouteFollower(List<GeoPoint> route, {this.offRouteDistance = 50, this.confirmations = 2})
+    : _points = route,
+      _cumulative = Geo.cumulative(route);
+
+  final List<GeoPoint> _points;
+  final List<double> _cumulative;
+
+  /// Ab dieser Entfernung zur Linie gilt man als abseits …
+  final double offRouteDistance;
+
+  /// … und zwar erst nach so vielen Messungen in Folge (GPS springt gelegentlich).
+  final int confirmations;
+
+  double _progress = 0;
+  int _offCount = 0;
+
+  double get totalMeters => _cumulative.isEmpty ? 0 : _cumulative.last;
+
+  /// Suchfenster nach vorn bzw. zurück (m) ab dem bisherigen Fortschritt.
+  static const lookAhead = 1500.0, lookBack = 150.0;
+
+  FollowState update(GeoPoint position) {
+    if (_points.length < 2) {
+      return const FollowState(progressMeters: 0, totalMeters: 0, offRouteMeters: 0, isOffRoute: false, arrived: false);
+    }
+    var bestDistance = double.infinity;
+    var bestProgress = _progress;
+    for (var index = 1; index < _points.length; index++) {
+      final from = _cumulative[index - 1];
+      final to = _cumulative[index];
+      if (to < _progress - lookBack || from > _progress + lookAhead) continue;
+      final a = _points[index - 1];
+      final b = _points[index];
+      final distance = Geo.distanceToSegment(position, a, b);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        final length = to - from;
+        final along = length <= 0 ? 0.0 : (Geo.distance(a, position).clamp(0, length)).toDouble();
+        bestProgress = from + along;
+      }
+    }
+    final onRoute = bestDistance <= offRouteDistance;
+    if (onRoute) {
+      _offCount = 0;
+      // Fortschritt nur nach vorn (kleine Rücksprünge des GPS ignorieren).
+      if (bestProgress > _progress) _progress = bestProgress;
+    } else {
+      _offCount++;
+    }
+    final arrived =
+        _progress >= totalMeters - 30 || (totalMeters - _progress < 60 && Geo.distance(position, _points.last) < 30);
+    return FollowState(
+      progressMeters: _progress,
+      totalMeters: totalMeters,
+      offRouteMeters: bestDistance,
+      isOffRoute: _offCount >= confirmations,
+      arrived: arrived,
+    );
+  }
+}

@@ -1,6 +1,9 @@
 // Routenplaner im Reiter Training: Einstieg, Standort als Start, Vorschläge, Speichern, Übernahme für heute, Gebiete.
+import 'dart:async';
+
 import 'package:aironludi/features/routes/address_field.dart';
 import 'package:aironludi/features/routes/exploration_screen.dart';
+import 'package:aironludi/features/routes/follow_route_screen.dart';
 import 'package:aironludi/features/routes/my_location.dart';
 import 'package:aironludi/features/routes/route_detail_screen.dart';
 import 'package:aironludi/features/routes/route_draw_screen.dart';
@@ -22,8 +25,14 @@ import '../app_test.dart' show app;
 const home = GeoPoint(52.52, 13.405);
 
 final class FakeLocation implements LocationSource {
+  /// Positionen für „Route folgen“ (vom Test gesteuert).
+  final positions = StreamController<GeoPoint>.broadcast();
+
   @override
   Future<GeoPoint> current() async => home;
+
+  @override
+  Stream<GeoPoint> watch() => positions.stream;
 }
 
 /// Router ohne Netz: läuft die Wegpunkte ab (Umwegfaktor 1,3) und liefert Höhen.
@@ -130,6 +139,7 @@ Future<ProviderContainer> openPlanner(
   FakeRouting routing, {
   FakeFeatures? features,
   FakePlaces? places,
+  FakeLocation? location,
 }) async {
   OsmTiles.cacheDisabled = true;
   tester.view.physicalSize = const Size(1170, 2532);
@@ -144,7 +154,7 @@ Future<ProviderContainer> openPlanner(
           routeFeatureSourceProvider.overrideWithValue(features ?? FakeFeatures()),
           placeSearchProvider.overrideWithValue(places ?? FakePlaces()),
           routePoiSourceProvider.overrideWithValue(FakePois()),
-          locationSourceProvider.overrideWithValue(FakeLocation()),
+          locationSourceProvider.overrideWithValue(location ?? FakeLocation()),
         ],
       ),
     ) as Widget,
@@ -623,5 +633,38 @@ void main() {
     expect(routing.calls, greaterThan(calls));
     expect(planner.discipline, RouteDiscipline.walk);
     expect(planner.routes, isNotEmpty);
+  });
+
+  testWidgets('Route folgen: Standort live, Fortschritt, Warnung abseits der Route', (tester) async {
+    final routing = FakeRouting();
+    final location = FakeLocation();
+    await openPlanner(tester, routing, location: location);
+    await tapCentered(tester, find.text('Aktueller Standort'), delta: -300);
+    await tapCentered(tester, find.text('Routen vorschlagen'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pumpAndSettle();
+    await tapCentered(tester, find.text('Speichern'));
+    await tapCentered(tester, find.text('Gespeichert – öffnen'));
+    await tapCentered(tester, find.text('Route folgen'));
+    expect(find.byType(FollowRouteScreen), findsOneWidget);
+    expect(find.text('Standort wird gesucht …'), findsOneWidget);
+
+    location.positions.add(home);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('Auf der Route'), findsOneWidget);
+
+    // Zweimal weit weg: Warnung.
+    final away = Geo.destination(home, 225, 3000);
+    location.positions.add(away);
+    await tester.pump();
+    location.positions.add(away);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.textContaining('Abseits der Route'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Beenden'));
+    await tester.pumpAndSettle();
+    expect(find.byType(FollowRouteScreen), findsNothing);
   });
 }

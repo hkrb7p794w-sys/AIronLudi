@@ -9,6 +9,7 @@ import '../../services/routing/routing_providers.dart';
 import '../../ui/components.dart';
 import '../../ui/liquid.dart';
 import '../endurance/endurance_controller.dart';
+import 'follow_route_screen.dart';
 import 'route_parts.dart';
 
 /// Gespeicherte Route: Karte, Kennzahlen, Höhenprofil; übernehmen in eine Einheit, exportieren, umbenennen, löschen.
@@ -139,6 +140,23 @@ class _RouteDetailScreenState extends ConsumerState<RouteDetailScreen> {
                   subtitle: const Text('Die Route wandert ins Archiv.'),
                   onTap: () => unawaited(ref.read(routeStoreProvider).setCompleted(route, completed: true)),
                 ),
+            ],
+          ),
+          FormSection(
+            footer:
+                'Zeigt deinen Standort live auf der Route, die Restdistanz und warnt mit Vibration, wenn du die '
+                'Route verlässt. Der Bildschirm bleibt dabei an; bei gesperrtem Bildschirm ortet die App nicht.',
+            children: [
+              ListTile(
+                leading: const Icon(Icons.navigation),
+                title: const Text('Route folgen'),
+                trailing: const DisclosureChevron(),
+                onTap: () => unawaited(
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(fullscreenDialog: true, builder: (_) => FollowRouteScreen(route: route)),
+                  ),
+                ),
+              ),
             ],
           ),
           FormSection(

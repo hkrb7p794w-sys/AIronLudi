@@ -1448,6 +1448,47 @@ void main() {
     });
   });
 
+  group('Route folgen', () {
+    // Rundweg: 1 km nach Norden, 1 km nach Osten, zurück.
+    final north = Geo.destination(berlin, 0, 1000);
+    final east = Geo.destination(north, 90, 1000);
+    final loop = [berlin, north, east, berlin];
+
+    test('Fortschritt entlang der Linie, Rundweg gilt am Start nicht als fertig', () {
+      final follower = RouteFollower(loop);
+      final atStart = follower.update(berlin);
+      expect(atStart.progressMeters, closeTo(0, 1));
+      expect(atStart.arrived, isFalse);
+      final halfway = follower.update(Geo.destination(berlin, 0, 500));
+      expect(halfway.progressMeters, closeTo(500, 5));
+      expect(halfway.remainingMeters, closeTo(follower.totalMeters - 500, 5));
+      expect(halfway.isOffRoute, isFalse);
+      final corner = follower.update(Geo.destination(north, 90, 300));
+      expect(corner.progressMeters, closeTo(1300, 10));
+      // GPS-Rücksprung: Fortschritt bleibt.
+      expect(follower.update(Geo.destination(north, 90, 250)).progressMeters, closeTo(1300, 10));
+    });
+
+    test('Abseits erst nach zwei Messungen, Ankunft am Ende', () {
+      final follower = RouteFollower(loop);
+      follower.update(Geo.destination(berlin, 0, 400));
+      final away = Geo.destination(Geo.destination(berlin, 0, 400), 270, 200);
+      expect(follower.update(away).isOffRoute, isFalse);
+      final second = follower.update(away);
+      expect(second.isOffRoute, isTrue);
+      expect(second.offRouteMeters, closeTo(200, 5));
+      expect(follower.update(Geo.destination(berlin, 0, 420)).isOffRoute, isFalse);
+      // Strecke abgehen bis zum Ende.
+      for (final point in [north, Geo.destination(north, 90, 500), east]) {
+        follower.update(point);
+      }
+      final back = Geo.destination(east, Geo.bearing(east, berlin), Geo.distance(east, berlin) - 10);
+      final end = follower.update(back);
+      expect(end.arrived, isTrue);
+      expect(end.fraction, closeTo(1, 0.01));
+    });
+  });
+
   test('Anzeige', () {
     expect(RouteFormat.distance(850), '850 m');
     expect(RouteFormat.distance(10249), '10,2 km');
