@@ -1117,3 +1117,21 @@ Disziplin „Spazieren“ (Gassi mit dem Hund).
   bietet daher nur Tage an.
 - **„Gravel“:** nur die Bezeichnung; der gespeicherte Rohwert bleibt `gravel`.
 
+## 2026-11-22 – Routenplaner: Archiv, Kilometermarken, An Uhr senden
+
+Auftrag des Nutzers: abgeschlossene, vorab geplante Routen im Archiv; Kilometermarken auf allen Routen; Frage, ob
+sich Routen an die Uhr übertragen lassen.
+
+- **Archiv:** Eine Route mit geplantem Tag gilt als abgeschlossen, sobald an diesem Tag eine Aktivität mit passender
+  Sportart (Laufen, Rad, Gehen/Wandern für Spazieren) und 50–150 % der geplanten Distanz vorliegt (ohne Distanz
+  genügt die Sportart; je Aktivität höchstens eine Route). Geprüft beim Öffnen von *Routen* und bei jedem Neuladen
+  von *Training*. Von Hand: „Als erledigt markieren“ bzw. zurück in die Planung. Abgeschlossene Routen verschwinden
+  aus „Route für heute“ und der offenen Liste, stehen im Archiv (`completedAt`, `activityID` in `coach.routes`) und
+  zählen getrennt (60 offene, 200 im Archiv).
+- **Kilometermarken:** auf der gewählten Route jeder Karte (Planer, Vollbild, Detail, frei planen), mindestens 56 px
+  auseinander – sonst alle 2, 5, 10, 20 bzw. 50 km. Keine Marke direkt vor dem Ziel.
+- **An Uhr senden:** über das Teilen-Menü an die App des Herstellers, mit kurzer Anleitung je Marke (Garmin als
+  FIT-Kurs, alle anderen als GPX). Eine **direkte Übertragung zu Garmin** ginge über den inoffiziellen
+  Garmin-Connect-Zugang der App (Kurs anlegen im `course-service`, wie „An Uhr senden“ beim Ausdauerplan); das
+  Format dieser Schnittstelle ist nicht dokumentiert und ließ sich hier nicht prüfen. Deshalb vorerst nicht eingebaut.
+

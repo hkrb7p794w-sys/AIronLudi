@@ -214,6 +214,44 @@ abstract final class RouteArrows {
       156543.03392 * math.cos(latitude * math.pi / 180) / math.pow(2, zoom);
 }
 
+/// Kilometermarke auf der Strecke („3“ bei 3 km).
+typedef KilometerMark = ({int kilometer, GeoPoint point});
+
+/// Kilometermarken entlang der Strecke, je nach Zoom in Schritten von 1, 2, 5, 10 … km.
+abstract final class KilometerMarks {
+  static const steps = [1, 2, 5, 10, 20, 50];
+
+  /// Kleinster Schritt (km), bei dem Marken mindestens [minSpacingMeters] auseinander liegen.
+  static int step(double minSpacingMeters) =>
+      steps.firstWhere((step) => step * 1000 >= minSpacingMeters, orElse: () => steps.last);
+
+  /// Marken alle [stepKm] Kilometer (ohne Start; das Ziel bekommt keine eigene Marke, wenn es zu nah liegt).
+  static List<KilometerMark> along(List<GeoPoint> points, {int stepKm = 1}) {
+    if (points.length < 2 || stepKm <= 0) return const [];
+    final result = <KilometerMark>[];
+    final spacing = stepKm * 1000.0;
+    var target = spacing;
+    var walked = 0.0;
+    for (var index = 1; index < points.length; index++) {
+      final a = points[index - 1];
+      final b = points[index];
+      final segment = Geo.distance(a, b);
+      while (segment > 0 && target <= walked + segment) {
+        final t = (target - walked) / segment;
+        result.add((
+          kilometer: (target / 1000).round(),
+          point: GeoPoint(a.latitude + (b.latitude - a.latitude) * t, a.longitude + (b.longitude - a.longitude) * t),
+        ));
+        target += spacing;
+      }
+      walked += segment;
+    }
+    // Marke direkt am Ziel (weniger als 10 % eines Schritts davor) weglassen: dort steht die Zielflagge.
+    if (result.isNotEmpty && walked - result.last.kilometer * 1000 < spacing * 0.1) result.removeLast();
+    return result;
+  }
+}
+
 /// Strecke auf eine Länge kürzen (für offene Ziele: exakt die Wunschdistanz).
 abstract final class RouteTrim {
   static List<GeoPoint> truncate(List<GeoPoint> points, double meters) {

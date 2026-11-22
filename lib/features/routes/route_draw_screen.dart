@@ -398,6 +398,7 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
                           ],
                         ),
                         if (points.length > 1) DirectionArrows(points: points, color: color),
+                        if (points.length > 1) KilometerMarkers(points: points, color: color),
                         MarkerLayer(
                           markers: [
                             if (_route.end case final end? when _route.hasSegments && !_route.isClosed)

@@ -264,17 +264,39 @@ void main() {
     await tester.scrollUntilVisible(find.text('Als GPX teilen'), 300, scrollable: find.byType(Scrollable).first);
     expect(find.text('Als GPX teilen'), findsOneWidget);
     expect(find.textContaining('Geplant für heute'), findsOneWidget);
+
+    // An Uhr senden: Auswahl der Hersteller mit passendem Format.
+    await tapCentered(tester, find.text('An Uhr senden'));
+    expect(find.text('Garmin'), findsOneWidget);
+    expect(find.text('Apple Watch'), findsOneWidget);
+    expect(find.text('FIT'), findsWidgets);
+    Navigator.of(tester.element(find.text('Garmin'))).pop();
+    await tester.pumpAndSettle();
+
+    // Von Hand abschließen: ins Archiv, nicht mehr „für heute“.
+    await tapCentered(tester, find.text('Als erledigt markieren'));
+    expect(store.archive.single.isCompleted, isTrue);
+    expect(store.plannedOn(CalendarDay.today()), isEmpty);
+    expect(find.textContaining('Erledigt am'), findsOneWidget);
+
+    // Kilometermarken auf der Karte der Route.
+    tester.state<ScrollableState>(find.byType(Scrollable).first).position.jumpTo(0);
+    await tester.pumpAndSettle();
+    expect(find.byType(KilometerMarkers), findsOneWidget);
+    expect(find.text('1'), findsWidgets);
     Navigator.of(tester.element(find.byType(RouteDetailScreen))).pop();
     await tester.pumpAndSettle();
     Navigator.of(tester.element(find.byType(RoutePlannerScreen))).pop();
     await tester.pumpAndSettle();
 
+    // Routen-Übersicht: Route steht im Archiv.
+    expect(find.text('ARCHIV'), findsOneWidget);
+    expect(find.textContaining('erledigt am'), findsOneWidget);
+
     // Gebiete einschalten: Karte erscheint.
-    expect(find.textContaining('Geplant für heute'), findsOneWidget);
-    await tester.tap(find.text('Gebiete anzeigen'));
-    await tester.pumpAndSettle();
+    await tapCentered(tester, find.text('Gebiete anzeigen'));
     expect(store.settings.explorationEnabled, isTrue);
-    await tester.tap(find.text('Meine Karte'));
+    await tapCentered(tester, find.text('Meine Karte'));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pumpAndSettle();
     expect(find.byType(ExplorationScreen), findsOneWidget);

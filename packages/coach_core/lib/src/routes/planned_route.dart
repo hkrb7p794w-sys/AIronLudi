@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import '../calendar/calendar_day.dart';
 import '../fit/fit_encoder.dart';
+import '../garmin/garmin_activity.dart';
 import '../util/enum_codec.dart';
 import '../util/swift_date.dart';
 import 'geo.dart';
@@ -22,6 +23,8 @@ final class PlannedRoute {
     this.slotID,
     this.slotTitle,
     this.preferenceShare,
+    this.completedAt,
+    this.activityID,
     Duration? duration,
     int? runThresholdPace,
   }) : stats = RouteStats.of(points),
@@ -51,6 +54,12 @@ final class PlannedRoute {
   CalendarDay? plannedDay;
   String? slotID;
   String? slotTitle;
+
+  /// Abgeschlossen (Archiv): wann und – falls erkannt – mit welcher Aktivität.
+  DateTime? completedAt;
+  int? activityID;
+
+  bool get isCompleted => completedAt != null;
 
   /// Anteil der Strecke auf den gewählten Wegearten (0…1), soweit messbar.
   final double? preferenceShare;
@@ -85,6 +94,8 @@ final class PlannedRoute {
     'plannedDay': ?plannedDay?.iso,
     'slotID': ?slotID,
     'slotTitle': ?slotTitle,
+    if (completedAt case final completed?) 'completedAt': swiftDateToJson(completed),
+    'activityID': ?activityID,
     if (preferenceShare case final share?) 'preferenceShare': (share * 100).round() / 100,
   };
 
@@ -125,6 +136,8 @@ final class PlannedRoute {
       slotID: json['slotID'] is String ? json['slotID'] as String : null,
       slotTitle: json['slotTitle'] is String ? json['slotTitle'] as String : null,
       preferenceShare: json['preferenceShare'] is num ? (json['preferenceShare'] as num).toDouble() : null,
+      completedAt: swiftDateFromJson(json['completedAt']),
+      activityID: json['activityID'] is num ? (json['activityID'] as num).toInt() : null,
     );
   }
 
@@ -144,7 +157,9 @@ final class RouteLibrary {
   final String username;
   final List<PlannedRoute> routes;
 
+  /// Offene Routen höchstens 60; das Archiv zusätzlich höchstens 200 (älteste fallen weg).
   static const maxRoutes = 60;
+  static const maxArchived = 200;
 
   /// Neue Route vorn; bei gleicher ID ersetzt. Ältere über [maxRoutes] fallen weg.
   void save(PlannedRoute route) {
@@ -152,7 +167,10 @@ final class RouteLibrary {
     routes
       ..removeWhere((item) => item.id == route.id)
       ..insert(0, route);
-    if (routes.length > maxRoutes) routes.removeRange(maxRoutes, routes.length);
+    final open = routes.where((item) => !item.isCompleted).toList();
+    if (open.length > maxRoutes) routes.removeWhere(open.sublist(maxRoutes).contains);
+    final archived = archive;
+    if (archived.length > maxArchived) routes.removeWhere(archived.sublist(maxArchived).contains);
   }
 
   void delete(String id) => routes.removeWhere((route) => route.id == id);
@@ -162,8 +180,20 @@ final class RouteLibrary {
   /// Routen, die für [day] in eine Einheit übernommen wurden.
   List<PlannedRoute> plannedOn(CalendarDay day) => [
     for (final route in routes)
-      if (route.plannedDay == day) route,
+      if (route.plannedDay == day && !route.isCompleted) route,
   ];
+
+  /// Offene (nicht abgeschlossene) Routen.
+  List<PlannedRoute> get open => [
+    for (final route in routes)
+      if (!route.isCompleted) route,
+  ];
+
+  /// Archiv: abgeschlossene Routen, zuletzt abgeschlossene zuerst.
+  List<PlannedRoute> get archive => [
+    for (final route in routes)
+      if (route.isCompleted) route,
+  ]..sort((a, b) => b.completedAt!.compareTo(a.completedAt!));
 
   Map<String, Object?> toJson() => {
     'username': username,
@@ -181,6 +211,39 @@ final class RouteLibrary {
           for (final item in list) ?PlannedRoute.fromJson(item, username: username),
       ],
     );
+  }
+}
+
+/// Erkennt, ob eine vorab geplante Route gelaufen bzw. gefahren wurde: Aktivität am geplanten Tag mit passender
+/// Sportart und ähnlicher Distanz (50–150 %). Ohne Distanz der Aktivität genügt die Sportart.
+abstract final class RouteCompletion {
+  static bool sportMatches(RouteDiscipline discipline, GarminActivity activity) {
+    final key = activity.typeKey?.toLowerCase() ?? '';
+    return switch (discipline) {
+      RouteDiscipline.run => activity.sport == ActivitySport.run,
+      RouteDiscipline.roadBike || RouteDiscipline.gravel => activity.sport == ActivitySport.bike,
+      RouteDiscipline.walk => key.contains('walk') || key.contains('hik'),
+    };
+  }
+
+  /// Passende Aktivität (die mit der ähnlichsten Distanz), sonst `null`.
+  static GarminActivity? match(PlannedRoute route, List<GarminActivity> activities, {Set<int> taken = const {}}) {
+    final day = route.plannedDay;
+    if (day == null || route.isCompleted) return null;
+    final planned = route.stats.distanceMeters;
+    GarminActivity? best;
+    var bestError = double.infinity;
+    for (final activity in activities) {
+      if (activity.day != day || taken.contains(activity.id) || !sportMatches(route.discipline, activity)) continue;
+      final distance = activity.distanceMeters;
+      final error = distance == null || planned <= 0 ? 0.5 : (distance - planned).abs() / planned;
+      if (distance != null && (distance < planned * 0.5 || distance > planned * 1.5)) continue;
+      if (error < bestError) {
+        best = activity;
+        bestError = error;
+      }
+    }
+    return best;
   }
 }
 

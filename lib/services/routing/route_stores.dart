@@ -77,6 +77,40 @@ final class RouteStore extends ChangeNotifier {
 
   List<PlannedRoute> plannedOn(CalendarDay day) => _library.plannedOn(day);
 
+  /// Offene Routen (geplant oder gespeichert, noch nicht abgeschlossen).
+  List<PlannedRoute> get openRoutes => _library.open;
+
+  /// Archiv: abgeschlossene, vorab geplante Routen.
+  List<PlannedRoute> get archive => _library.archive;
+
+  /// Geplante Routen, für deren Tag eine passende Aktivität vorliegt, ins Archiv übernehmen; Anzahl der neuen.
+  Future<int> completeFromActivities(List<GarminActivity> activities, {DateTime? now}) async {
+    if (hasForeignRoutes) return 0;
+    final taken = {for (final route in _library.routes) ?route.activityID};
+    var count = 0;
+    for (final route in _library.routes) {
+      final match = RouteCompletion.match(route, activities, taken: taken);
+      if (match == null) continue;
+      route
+        ..completedAt = now ?? DateTime.now()
+        ..activityID = match.id;
+      taken.add(match.id);
+      count++;
+    }
+    if (count == 0) return 0;
+    notifyListeners();
+    await _store.setJson(SettingsKeys.routes, _library.toJson());
+    return count;
+  }
+
+  /// Von Hand abschließen bzw. zurück in die Planung holen.
+  Future<void> setCompleted(PlannedRoute route, {required bool completed}) async {
+    route
+      ..completedAt = completed ? DateTime.now() : null
+      ..activityID = completed ? route.activityID : null;
+    await save(route);
+  }
+
   Future<void> save(PlannedRoute route) async {
     if (route.username != username) throw StateError('Die Route gehört nicht dem angemeldeten Benutzer.');
     if (hasForeignRoutes) throw StateError('Die gespeicherten Routen gehören einem anderen Benutzer.');

@@ -1140,6 +1140,71 @@ void main() {
     });
   });
 
+  group('Archiv und Kilometermarken', () {
+    PlannedRoute planned({RouteDiscipline discipline = RouteDiscipline.run, CalendarDay? day}) => PlannedRoute(
+      id: 'p-${discipline.rawValue}',
+      username: 'anna',
+      name: 'Runde',
+      request: RouteRequest(discipline: discipline, shape: RouteShape.loop, start: berlin, distanceMeters: 10000),
+      variant: RouteVariant.balanced,
+      points: [berlin, Geo.destination(berlin, 0, 5000), berlin],
+      engine: 'Test',
+      createdAt: DateTime.utc(2026, 11, 20),
+      plannedDay: day ?? CalendarDay(2026, 11, 22),
+    );
+
+    GarminActivity activity(int id, String type, double? meters, {String day = '2026-11-22 07:30:00'}) =>
+        GarminActivity(id)
+          ..typeKey = type
+          ..startLocal = day
+          ..distanceMeters = meters;
+
+    test('Aktivität am geplanten Tag mit passender Sportart und Distanz schließt die Route ab', () {
+      final route = planned();
+      final activities = [
+        activity(1, 'cycling', 10000),
+        activity(2, 'running', 3000),
+        activity(3, 'running', 9600),
+        activity(4, 'running', 10100, day: '2026-11-21 07:30:00'),
+      ];
+      expect(RouteCompletion.match(route, activities)!.id, 3);
+      expect(RouteCompletion.match(route, activities, taken: {3}), isNull);
+      expect(RouteCompletion.match(planned(discipline: RouteDiscipline.gravel), activities)!.id, 1);
+      expect(RouteCompletion.match(planned(discipline: RouteDiscipline.walk), [activity(5, 'walking', null)])!.id, 5);
+      expect(RouteCompletion.match(planned(day: CalendarDay(2026, 11, 23)), activities), isNull);
+    });
+
+    test('Archiv: abgeschlossen raus aus „heute“, eigene Liste, JSON', () {
+      final library = RouteLibrary(username: 'anna');
+      final route = planned();
+      library.save(route);
+      expect(library.plannedOn(CalendarDay(2026, 11, 22)).single.id, route.id);
+      route
+        ..completedAt = DateTime.utc(2026, 11, 22, 9)
+        ..activityID = 3;
+      library.save(route);
+      expect(library.plannedOn(CalendarDay(2026, 11, 22)), isEmpty);
+      expect(library.open, isEmpty);
+      expect(library.archive.single.activityID, 3);
+      final restored = RouteLibrary.fromJson(jsonDecode(jsonEncode(library.toJson())), username: 'anna')!;
+      expect(restored.archive.single.completedAt, DateTime.utc(2026, 11, 22, 9));
+      expect(restored.archive.single.isCompleted, isTrue);
+    });
+
+    test('Kilometermarken: jeder Kilometer, ohne Marke direkt am Ziel, Schritt je Zoom', () {
+      final line = [berlin, Geo.destination(berlin, 0, 3050)];
+      final marks = KilometerMarks.along(line);
+      expect(marks.map((mark) => mark.kilometer), [1, 2]);
+      expect(Geo.distance(berlin, marks.first.point), closeTo(1000, 1));
+      expect(KilometerMarks.along([berlin, Geo.destination(berlin, 0, 3500)]).map((mark) => mark.kilometer), [1, 2, 3]);
+      expect(KilometerMarks.along(line, stepKm: 2).map((mark) => mark.kilometer), [2]);
+      expect(KilometerMarks.step(400), 1);
+      expect(KilometerMarks.step(1500), 2);
+      expect(KilometerMarks.step(7000), 10);
+      expect(KilometerMarks.step(1e9), 50);
+    });
+  });
+
   test('Anzeige', () {
     expect(RouteFormat.distance(850), '850 m');
     expect(RouteFormat.distance(10249), '10,2 km');

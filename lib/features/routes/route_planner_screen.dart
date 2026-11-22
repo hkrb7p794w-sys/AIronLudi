@@ -821,6 +821,13 @@ class _Results extends StatelessWidget {
                 ),
                 Builder(
                   builder: (context) => OutlinedButton.icon(
+                    onPressed: () => unawaited(showSendToWatchSheet(context, route)),
+                    icon: const Icon(Icons.watch_outlined),
+                    label: const Text('An Uhr'),
+                  ),
+                ),
+                Builder(
+                  builder: (context) => OutlinedButton.icon(
                     onPressed: () => unawaited(shareRoute(context, route, fit: false)),
                     icon: const Icon(Icons.ios_share),
                     label: const Text('GPX'),

@@ -114,12 +114,38 @@ class _RouteDetailScreenState extends ConsumerState<RouteDetailScreen> {
                 trailing: const DisclosureChevron(),
                 onTap: () => unawaited(assignRouteToSession(context, ref, route)),
               ),
+              if (route.isCompleted)
+                ListTile(
+                  leading: const Icon(Icons.check_circle, color: Colors.green),
+                  title: Text(
+                    'Erledigt am ${GermanFormat.date(CalendarDay.fromDate(route.completedAt!.toLocal()))}'
+                    '${route.activityID == null ? '' : ' (Aktivität erkannt)'}',
+                  ),
+                  subtitle: const Text('Antippen holt die Route zurück in die Planung.'),
+                  onTap: () => unawaited(ref.read(routeStoreProvider).setCompleted(route, completed: false)),
+                )
+              else
+                ListTile(
+                  leading: const Icon(Icons.task_alt),
+                  title: const Text('Als erledigt markieren'),
+                  subtitle: const Text('Die Route wandert ins Archiv.'),
+                  onTap: () => unawaited(ref.read(routeStoreProvider).setCompleted(route, completed: true)),
+                ),
             ],
           ),
           FormSection(
             header: 'Export',
             footer: 'GPX für Uhren, Radcomputer und Karten-Apps; FIT-Kurs für Garmin (z. B. über Garmin Connect).',
             children: [
+              Builder(
+                builder: (context) => ListTile(
+                  leading: const Icon(Icons.watch_outlined),
+                  title: const Text('An Uhr senden'),
+                  subtitle: const Text('Garmin, Apple Watch, Coros, Suunto, Polar, Wahoo'),
+                  trailing: const DisclosureChevron(),
+                  onTap: () => unawaited(showSendToWatchSheet(context, route)),
+                ),
+              ),
               Builder(
                 builder: (context) => ListTile(
                   leading: const Icon(Icons.ios_share),
