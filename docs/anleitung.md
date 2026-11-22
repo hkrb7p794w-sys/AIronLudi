@@ -180,7 +180,12 @@ von Hand: denselben Link wieder öffnen.
    Aktivität vorliegt (oder per „Als erledigt markieren“). Auf jeder Route stehen Kilometermarken. **An Uhr senden**
    zeigt den Weg je Hersteller: Garmin über Garmin Connect („An Gerät senden“), Apple Watch über eine App mit
    Routen-Import, Coros, Suunto, Polar und Wahoo über ihre Apps.
-7. **Gebiete (optional):** *Training › Routen › Gebiete anzeigen*. Geschlossene Runden erobern die umschlossene
+7. **Gassi und unterwegs:** Beim Spazieren gibt es die Wegart *Hundewiese* (die Runde führt über eine). Auf der
+   Karte stehen Trinkbrunnen, beim Spazieren auch Hundewiesen und Kotbeutel. Das Lesezeichen oben im Planer speichert
+   eine **Vorlage** (z. B. „Gassi 3 km ab Zuhause“), die unter *Routen* mit einem Tipp plant. In einer gespeicherten
+   Route zeigt **Route folgen** deinen Standort live, die Restdistanz und vibriert, wenn du von der Route abkommst
+   (Bildschirm bleibt an).
+8. **Gebiete (optional):** *Training › Routen › Gebiete anzeigen*. Geschlossene Runden erobern die umschlossene
    Fläche, alle Läufe und Fahrten mit GPS füllen deine Kachel-Karte. Gezählt wird eine Aktivität, sobald ihr Verlauf
    einmal geladen wurde (Aktivität öffnen). Alles bleibt bei deinem Benutzer.
 
