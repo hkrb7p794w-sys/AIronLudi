@@ -51,6 +51,7 @@ final class RoutePlanner {
     List<RouteVariant> variants = RouteVariant.values,
     int? runThresholdPace,
     void Function(String message)? onProgress,
+    void Function(PlannedRoute route)? onRoute,
     bool Function()? isCancelled,
   }) async {
     if (request.problem case final problem?) throw ArgumentError(problem);
@@ -88,20 +89,21 @@ final class RoutePlanner {
         }
         // Nahezu gleiche Strecke wie ein schon gefundener Vorschlag: weglassen.
         if (result.any((other) => _similar(other.points, withElevation.points))) continue;
-        result.add(
-          PlannedRoute(
-            id: _newID(),
-            username: username,
-            name: PlannedRoute.suggestedName(request, variant, withElevation.distanceMeters),
-            request: request,
-            variant: variant,
-            points: PlannedRoute.storable(withElevation.points),
-            engine: withElevation.engine,
-            createdAt: _now(),
-            runThresholdPace: runThresholdPace,
-            preferenceShare: attractors.isEmpty ? null : PreferenceSnapper.coverage(withElevation.points, attractors),
-          ),
+        final route = PlannedRoute(
+          id: _newID(),
+          username: username,
+          name: PlannedRoute.suggestedName(request, variant, withElevation.distanceMeters),
+          request: request,
+          variant: variant,
+          points: PlannedRoute.storable(withElevation.points),
+          engine: withElevation.engine,
+          createdAt: _now(),
+          runThresholdPace: runThresholdPace,
+          preferenceShare: attractors.isEmpty ? null : PreferenceSnapper.coverage(withElevation.points, attractors),
         );
+        result.add(route);
+        // Jeder Vorschlag sofort, nicht erst wenn alle fertig sind.
+        onRoute?.call(route);
       } on RoutingUnavailable catch (error) {
         lastError = error;
       } on NoRouteFound catch (error) {

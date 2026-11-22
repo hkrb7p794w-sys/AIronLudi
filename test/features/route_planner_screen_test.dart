@@ -5,6 +5,7 @@ import 'package:aironludi/features/routes/my_location.dart';
 import 'package:aironludi/features/routes/route_detail_screen.dart';
 import 'package:aironludi/features/routes/route_draw_screen.dart';
 import 'package:aironludi/features/routes/route_parts.dart';
+import 'package:aironludi/features/routes/route_planner_controller.dart';
 import 'package:aironludi/features/routes/route_planner_screen.dart';
 import 'package:aironludi/features/routes/routes_screen.dart';
 import 'package:aironludi/services/routing/location_source.dart';
@@ -419,5 +420,44 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pumpAndSettle();
     expect(routing.disciplines.toSet(), {RouteDiscipline.walk});
+  });
+
+  testWidgets('Vorschläge bleiben beim Verlassen erhalten und kommen einzeln', (tester) async {
+    final routing = FakeRouting();
+    final container = await openPlanner(tester, routing);
+    final planner = container.read(routePlannerControllerProvider);
+    final counts = <int>[];
+    void listener() => counts.add(planner.routes.length);
+    planner.addListener(listener);
+    await tapCentered(tester, find.text('Aktueller Standort'), delta: -300);
+    await tapCentered(tester, find.text('Routen vorschlagen'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pumpAndSettle();
+    planner.removeListener(listener);
+    // Erst einer, dann zwei, dann drei Vorschläge.
+    expect(counts.toSet().containsAll({1, 2, 3}), isTrue);
+    expect(planner.routes.length, 3);
+
+    // Planer verlassen und wieder öffnen: Vorschläge und Start sind noch da.
+    Navigator.of(tester.element(find.byType(RoutePlannerScreen))).pop();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Neue Route planen'));
+    await tester.pumpAndSettle();
+    expect(find.text('Start: dein Standort'), findsOneWidget);
+    expect(find.text('Startpunkt ändern'), findsOneWidget);
+    expect(planner.routes.length, 3);
+    final calls = routing.calls;
+    await tapCentered(tester, find.text('Neu würfeln'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pumpAndSettle();
+    expect(routing.calls, greaterThan(calls));
+
+    // Zurücksetzen leert alles.
+    tester.state<ScrollableState>(find.byType(Scrollable).first).position.jumpTo(0);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Planer zurücksetzen'));
+    await tester.pumpAndSettle();
+    expect(planner.routes, isEmpty);
+    expect(planner.start, isNull);
   });
 }

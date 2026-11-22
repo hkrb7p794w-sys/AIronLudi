@@ -461,6 +461,22 @@ void main() {
       expect(other.calls.first, isNot(backend.calls.first));
     });
 
+    test('Vorschläge kommen einzeln, sobald sie fertig sind', () async {
+      final seen = <RouteVariant>[];
+      final routes = await planner(FakeBackend()).generate(
+        const RouteRequest(
+          discipline: RouteDiscipline.run,
+          shape: RouteShape.loop,
+          start: berlin,
+          distanceMeters: 8000,
+        ),
+        username: 'anna',
+        onRoute: (route) => seen.add(route.variant),
+      );
+      expect(seen, RouteVariant.values);
+      expect(routes.map((route) => route.variant), seen);
+    });
+
     test('Kein Weg am Wegpunkt: gedreht neu versucht', () async {
       final backend = FakeBackend(failFirst: 1);
       final routes = await planner(backend).generate(
