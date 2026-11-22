@@ -60,6 +60,7 @@ abstract final class SettingsKeys {
   static const routes = 'coach.routes';
   static const exploration = 'coach.exploration';
   static const routePlanner = 'coach.routePlanner';
+  static const favoritePlaces = 'coach.favoritePlaces';
 
   /// Worker-Adresse (gehört zur Sicherung, `AppBackup.isBackedUp`).
   static const workerURL = 'ai.workerURL';

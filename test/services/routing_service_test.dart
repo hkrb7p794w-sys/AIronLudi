@@ -286,7 +286,23 @@ void main() {
       await ben.resetExploration();
       await ben.delete('r-anna');
 
+      // Favoriten ebenso: nur für den eigenen Benutzer.
+      final anna2 = RouteStore(settings, username: 'anna');
+      await anna2.saveFavorite(
+        FavoritePlace(id: 'f1', name: 'Zuhause', point: start, createdAt: DateTime.utc(2026, 11, 22)),
+      );
+      final ben2 = RouteStore(settings, username: 'ben');
+      expect(ben2.favorites, isEmpty);
+      expect(ben2.hasForeignFavorites, isTrue);
+      await expectLater(
+        ben2.saveFavorite(FavoritePlace(id: 'f2', name: 'Park', point: end, createdAt: DateTime.utc(2026, 11, 22))),
+        throwsStateError,
+      );
+      await ben2.deleteFavorite('f1');
+
       final again = RouteStore(settings, username: 'anna');
+      expect(again.favorites.single.name, 'Zuhause');
+      expect(AppBackup.isBackedUp(SettingsKeys.favoritePlaces), isTrue);
       expect(again.routes.single.id, 'r-anna');
       expect(again.exploration.territories.length, 1);
       expect(AppBackup.isBackedUp(SettingsKeys.routes), isTrue);

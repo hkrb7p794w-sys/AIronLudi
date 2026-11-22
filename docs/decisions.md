@@ -1096,3 +1096,24 @@ Tests: `routes_test.dart` (Gruppe „Adresssuche“: Photon, Nominatim, Koordina
 (Photon zuerst, Nominatim nur ausdrücklich, Zwischenspeicher), `route_planner_screen_test.dart` (Start mit
 Vorschlägen, Ziel per Eingabetaste, Planen).
 
+## 2026-11-22 – Routenplaner: Vollbild-Karte, Favoriten, „Gravel“, Spazieren
+
+Auftrag des Nutzers: Karte beim Antippen im Vollbild, Orte als Favoriten, „Gravel“ statt „Gravel/Allround“,
+Disziplin „Spazieren“ (Gassi mit dem Hund).
+
+- **Antippen = Vollbild, langes Drücken = Punkt.** Damit ändert sich die Belegung aus #96: Ein Tipp auf die kleine
+  Karte setzt keinen Punkt mehr, sondern öffnet `FullscreenRouteMap` (Vorschläge mit Pfeilen, Auswahl unten, langes
+  Drücken setzt den Punkt und plant neu). Punkte setzen weiterhin: langes Drücken, Adresszeile, Standort und
+  „Startpunkt ändern“ (danach setzt ein Tipp den Punkt). Die Detailseite öffnet ihre Karte ebenso im Vollbild. Beim
+  freien Planen bleibt Tippen = Wegpunkt, die Karte füllt dort ohnehin den Bildschirm.
+- **Favoriten (`coach.favoritePlaces`)** mit `username` wie Routen; ein fremder Stand wird weder angezeigt noch
+  überschrieben. Speichern über den Stern in der Adresszeile (bei gesetztem Start bzw. Ziel, mit Namen), anzeigen beim
+  Antippen der Adresszeile (leer: alle, sonst passende), verwalten unter *Routen › Favorisierte Orte*. Ein Favorit
+  höchstens 30 m neben einem anderen ersetzt diesen, höchstens 40 Favoriten.
+- **Spazieren als eigene Disziplin** statt über „Laufen“: Das Wegenetz ist dasselbe (Fußwege), aber Dauer (4,5 km/h,
+  600 hm je Stunde statt Lauf-Pace), Grenzen (30 km, 1000 hm) und Wegwahl unterscheiden sich – ruhige Fußwege, Parks
+  und Wohnstraßen, sanfte Steigungen (`use_hills` 0,2, `walkway_factor` 0,7, `use_living_streets` 0,9). Export als
+  `walking` (GPX) bzw. Sportart 11 (FIT). Spaziergänge haben keine Einheiten im Ausdauerplan; „In Einheit übernehmen“
+  bietet daher nur Tage an.
+- **„Gravel“:** nur die Bezeichnung; der gespeicherte Rohwert bleibt `gravel`.
+

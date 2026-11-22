@@ -86,7 +86,11 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
 
   double get _minKm => 1;
   double get _maxKm => RouteRequest.maxDistance(_discipline) / 1000;
-  int get _maxElevation => _discipline.isBike ? 4000 : 2000;
+  int get _maxElevation => switch (_discipline) {
+    RouteDiscipline.roadBike || RouteDiscipline.gravel => 4000,
+    RouteDiscipline.run => 2000,
+    RouteDiscipline.walk => 1000,
+  };
 
   static String _kmText(double value) =>
       value == value.roundToDouble() ? '${value.round()}' : value.toStringAsFixed(1).replaceAll('.', ',');
@@ -149,10 +153,31 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     }
   }
 
+  /// Antippen öffnet die Karte im Vollbild; nur nach „Startpunkt ändern“ setzt der Tipp einen Punkt.
   void _tapMap(GeoPoint point) {
-    if (_pinsLocked) return;
-    _placePin(point);
+    if (_editingPins) {
+      _placePin(point);
+      return;
+    }
+    unawaited(_openFullscreen());
   }
+
+  Future<void> _openFullscreen() => FullscreenRouteMap.open(
+    context,
+    start: _start,
+    destination: _shape == RouteShape.toDestination ? _destination : null,
+    routes: _routes,
+    selected: _selected,
+    onSelect: (index) {
+      if (mounted) setState(() => _selected = index);
+    },
+    onLongPress: _planning
+        ? null
+        : (point) {
+            _longPressMap(point);
+            return (start: _start, destination: _shape == RouteShape.toDestination ? _destination : null);
+          },
+  );
 
   /// Langes Drücken setzt immer einen Punkt (ausdrücklich), auch über vorhandenen Vorschlägen.
   void _longPressMap(GeoPoint point) {
@@ -350,6 +375,20 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                   routingSource: current?.engine,
                 ),
                 Positioned(
+                  left: 8,
+                  bottom: 8,
+                  child: LiquidSurface(
+                    radius: LiquidRadii.pill,
+                    strong: true,
+                    shadow: false,
+                    child: IconButton(
+                      tooltip: 'Karte im Vollbild',
+                      icon: const Icon(Icons.open_in_full, size: 20),
+                      onPressed: () => unawaited(_openFullscreen()),
+                    ),
+                  ),
+                ),
+                Positioned(
                   left: 10,
                   right: 10,
                   top: 10,
@@ -372,6 +411,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                 value: _startAddress,
                 near: _near,
                 enabled: !_planning,
+                point: _start,
                 onSelected: (place) => _selectAddress(place, destination: false),
               ),
               ListTile(
@@ -488,6 +528,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                   value: _destinationAddress,
                   near: _near,
                   enabled: !_planning,
+                  point: _destination,
                   onSelected: (place) => _selectAddress(place, destination: true),
                 ),
               if (_shape == RouteShape.toDestination)
@@ -635,17 +676,17 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
   }
 
   String get _hint {
-    if (_start == null) return 'Adresse eingeben, auf die Karte tippen oder deinen Standort nutzen.';
+    if (_start == null) return 'Start: Adresse eingeben, Standort nutzen oder Karte lange drücken.';
     if (_editingPins) {
       return _pin == _PinTarget.destination
           ? 'Tippe auf die Karte für das neue Ziel.'
           : 'Tippe auf die Karte für den neuen Start.';
     }
-    if (_pinsLocked) return 'Ansicht: Zum Verschieben lange drücken oder „Startpunkt ändern“.';
+    if (_pinsLocked) return 'Antippen: Vollbild · lange drücken verschiebt den Start.';
     if (_shape == RouteShape.toDestination && (_destination == null || _pin == _PinTarget.destination)) {
-      return 'Ziel als Adresse eingeben oder auf die Karte tippen.';
+      return 'Ziel: Adresse eingeben oder Karte lange drücken.';
     }
-    return _routes.isEmpty ? 'Antippen verschiebt den Start.' : 'Wähle unten einen Vorschlag.';
+    return 'Antippen: Vollbild · lange drücken verschiebt den Start.';
   }
 
   void _setDistanceText(String text) {

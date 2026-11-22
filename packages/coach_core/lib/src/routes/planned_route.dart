@@ -203,7 +203,13 @@ abstract final class GpxExport {
       ..writeln('  </metadata>')
       ..writeln('  <trk>')
       ..writeln('    <name>${_escape(route.name)}</name>')
-      ..writeln('    <type>${route.discipline.isBike ? 'cycling' : 'running'}</type>')
+      ..writeln(
+        '    <type>${switch (route.discipline) {
+          RouteDiscipline.run => 'running',
+          RouteDiscipline.walk => 'walking',
+          _ => 'cycling',
+        }}</type>',
+      )
       ..writeln('    <trkseg>');
     for (final point in route.points) {
       final position = 'lat="${point.latitude.toStringAsFixed(6)}" lon="${point.longitude.toStringAsFixed(6)}"';
@@ -253,7 +259,12 @@ abstract final class FitCourseFile {
   static Uint8List bytes(PlannedRoute route, {required DateTime created}) {
     final encoder = FitEncoder();
     final stamp = FitEncoder.timestamp(created);
-    final sport = route.discipline.isBike ? 2 : 1;
+    // FIT-Sportarten: 1 Laufen, 2 Rad, 11 Gehen.
+    final sport = switch (route.discipline) {
+      RouteDiscipline.run => 1,
+      RouteDiscipline.walk => 11,
+      _ => 2,
+    };
     encoder
       ..add(
         global: 0,

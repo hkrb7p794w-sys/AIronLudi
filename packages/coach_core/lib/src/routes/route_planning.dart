@@ -15,7 +15,10 @@ enum RouteDiscipline implements RawEnum {
   roadBike('roadBike', 'Rennrad', 'figure.outdoor.cycle'),
 
   /// Gemischte und unbefestigte Wege (`gravel`, `track`).
-  gravel('gravel', 'Gravel/Allround', 'bicycle');
+  gravel('gravel', 'Gravel', 'bicycle'),
+
+  /// Gemütliche Runden, z. B. Gassi mit dem Hund: ruhige Fußwege, Parks, Grünflächen; Gehtempo statt Lauftempo.
+  walk('walk', 'Spazieren', 'figure.walk');
 
   const RouteDiscipline(this.rawValue, this.label, this.symbol);
 
@@ -24,13 +27,17 @@ enum RouteDiscipline implements RawEnum {
   final String label;
   final String symbol;
 
-  bool get isBike => this != run;
+  bool get isBike => this == roadBike || this == gravel;
+
+  /// Zu Fuß (Laufen, Spazieren): Fußwege-Profil der Router.
+  bool get onFoot => !isBike;
 
   /// Beschreibung der bevorzugten Wege (Auswahl im Planer).
   String get surfaces => switch (this) {
     run => 'Fuß- und Waldwege, Parks, ruhige Nebenstraßen',
     roadBike => 'Asphalt: Radwege und ruhige Straßen',
     gravel => 'Gemischt: Schotter, Feld- und Waldwege',
+    walk => 'Ruhige Fußwege, Parks und Grünflächen – ideal für Gassi-Runden',
   };
 }
 
@@ -164,7 +171,11 @@ final class RouteRequest {
 
   /// Grenzen der Eingabe.
   static const minDistance = 1000.0;
-  static double maxDistance(RouteDiscipline discipline) => discipline.isBike ? 250000 : 60000;
+  static double maxDistance(RouteDiscipline discipline) => switch (discipline) {
+    RouteDiscipline.roadBike || RouteDiscipline.gravel => 250000,
+    RouteDiscipline.run => 60000,
+    RouteDiscipline.walk => 30000,
+  };
 
   /// Fehler der Eingabe für die Anzeige, sonst `null`.
   String? get problem {
@@ -403,6 +414,9 @@ abstract final class RouteDuration {
 
   /// Rad in der Ebene (km/h) und Steigleistung (Höhenmeter je Stunde, VAM) für Freizeitfahrer.
   static const roadSpeed = 25.0, gravelSpeed = 19.0;
+
+  /// Spazieren: 4,5 km/h, Anstieg 600 hm je Stunde (Wanderfaustregel).
+  static const walkSpeed = 4.5, walkClimbRate = 600.0;
   static const roadClimbRate = 700.0, gravelClimbRate = 550.0;
 
   /// Lockere Pace aus der Schwellen-Pace (s/km): etwa 25 % langsamer.
@@ -420,6 +434,7 @@ abstract final class RouteDuration {
       RouteDiscipline.roadBike => distanceMeters / 1000 / roadSpeed * 3600 + ascentMeters / roadClimbRate * 3600 * 0.5,
       RouteDiscipline.gravel =>
         distanceMeters / 1000 / gravelSpeed * 3600 + ascentMeters / gravelClimbRate * 3600 * 0.5,
+      RouteDiscipline.walk => distanceMeters / 1000 / walkSpeed * 3600 + ascentMeters / walkClimbRate * 3600,
     };
     return Duration(seconds: seconds.round());
   }
