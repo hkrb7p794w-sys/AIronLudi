@@ -159,6 +159,8 @@ class PlannerMap extends StatelessWidget {
                 ],
               ),
               if (selected case final route?) DirectionArrows(points: route.points, color: variantColor(route.variant)),
+              if (selected case final route?)
+                KilometerMarkers(points: route.points, color: variantColor(route.variant)),
               MarkerLayer(
                 markers: [
                   if (destination case final destination?)
@@ -417,6 +419,57 @@ class DirectionArrows extends StatelessWidget {
                     boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 3, offset: Offset(0, 1))],
                   ),
                   child: const Icon(Icons.navigation, size: 10, color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Kilometermarken („1“, „2“ …) entlang der Strecke; bei weitem Zoom alle 2, 5, 10 … km, damit sie lesbar bleiben.
+class KilometerMarkers extends StatelessWidget {
+  const KilometerMarkers({super.key, required this.points, required this.color, this.minPixelSpacing = 56});
+
+  final List<GeoPoint> points;
+  final Color color;
+  final double minPixelSpacing;
+
+  @override
+  Widget build(BuildContext context) {
+    if (points.length < 2) return const SizedBox.shrink();
+    final camera = MapCamera.of(context);
+    final step = KilometerMarks.step(minPixelSpacing * RouteArrows.metersPerPixel(camera.center.latitude, camera.zoom));
+    final marks = KilometerMarks.along(points, stepKm: step);
+    return MarkerLayer(
+      markers: [
+        for (final mark in marks)
+          Marker(
+            point: latLng(mark.point),
+            width: 30,
+            height: 22,
+            child: IgnorePointer(
+              child: Semantics(
+                label: 'Kilometer ${mark.kilometer}',
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(LiquidRadii.pill),
+                    border: Border.all(color: color, width: 1.5),
+                    boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 3, offset: Offset(0, 1))],
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${mark.kilometer}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -686,4 +739,90 @@ Future<void> shareRoute(BuildContext context, PlannedRoute route, {required bool
       sharePositionOrigin: box == null ? null : box.localToGlobal(Offset.zero) & box.size,
     ),
   );
+}
+
+/// „An Uhr senden“: Datei im passenden Format über das Teilen-Menü an die App der Uhr geben, mit kurzer Anleitung je
+/// Hersteller. Garmin bekommt einen FIT-Kurs, alle anderen GPX.
+Future<void> showSendToWatchSheet(BuildContext context, PlannedRoute route) => showModalBottomSheet<void>(
+  context: context,
+  showDragHandle: true,
+  isScrollControlled: true,
+  builder: (sheet) => SafeArea(
+    child: ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(sheet).height * 0.8),
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+            child: Text('An Uhr senden', style: Theme.of(sheet).textTheme.titleLarge),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Text(
+              'Wähle deine Uhr. Im Teilen-Menü dann die App des Herstellers wählen – sie überträgt die Strecke beim '
+              'nächsten Synchronisieren.',
+              style: LiquidText.label(sheet),
+            ),
+          ),
+          for (final watch in WatchTarget.values)
+            Builder(
+              builder: (context) => ListTile(
+                leading: Icon(watch.icon),
+                title: Text(watch.label),
+                subtitle: Text(watch.steps),
+                isThreeLine: true,
+                trailing: Text(watch.fit ? 'FIT' : 'GPX', style: LiquidText.label(context)),
+                onTap: () async {
+                  await shareRoute(context, route, fit: watch.fit);
+                },
+              ),
+            ),
+        ],
+      ),
+    ),
+  ),
+);
+
+/// Uhren und Radcomputer mit dem Weg dorthin.
+enum WatchTarget {
+  garmin(
+    'Garmin',
+    Icons.watch,
+    true,
+    'Teilen › Garmin Connect öffnet den Kurs. Dort „An Gerät senden“; auf der Uhr unter Navigation › Kurse.',
+  ),
+  apple(
+    'Apple Watch',
+    Icons.watch_outlined,
+    false,
+    'Teilen › App mit Routen-Import (z. B. WorkOutDoors, Footpath). Die Watch-App zeigt die Strecke beim Training.',
+  ),
+  coros(
+    'Coros',
+    Icons.watch_outlined,
+    false,
+    'Teilen › COROS-App › Route importieren, dann mit der Uhr synchronisieren.',
+  ),
+  suunto('Suunto', Icons.watch_outlined, false, 'Teilen › Suunto-App › Route importieren und „In der Uhr verwenden“.'),
+  polar(
+    'Polar',
+    Icons.watch_outlined,
+    false,
+    'Datei in Polar Flow (Web oder App) unter Favoriten › Routen importieren.',
+  ),
+  wahoo(
+    'Wahoo / Radcomputer',
+    Icons.directions_bike,
+    false,
+    'Teilen › Wahoo-App (ELEMNT) › Route speichern, dann synchronisieren.',
+  );
+
+  const WatchTarget(this.label, this.icon, this.fit, this.steps);
+
+  final String label;
+  final IconData icon;
+  final bool fit;
+  final String steps;
 }

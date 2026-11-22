@@ -78,6 +78,8 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> with TrainingDa
     if (!mounted) return;
     _days = results.$1;
     _activities = results.$2;
+    // Vorab geplante Routen mit passender Aktivität ins Archiv.
+    unawaited(ref.read(routeStoreProvider).completeFromActivities(_activities));
     _gym = results.$3;
     _controller.update(
       days: _days,

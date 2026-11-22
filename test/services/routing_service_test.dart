@@ -300,6 +300,19 @@ void main() {
       );
       await ben2.deleteFavorite('f1');
 
+      // Archiv: Aktivität am geplanten Tag schließt die geplante Route ab (einmal).
+      final archiveStore = RouteStore(settings, username: 'anna');
+      final run = GarminActivity(42)
+        ..typeKey = 'running'
+        ..startLocal = '2026-11-21 08:00:00'
+        ..distanceMeters = Geo.length(const [start, end, start]);
+      expect(await archiveStore.completeFromActivities([run], now: DateTime.utc(2026, 11, 21, 10)), 1);
+      expect(archiveStore.archive.single.activityID, 42);
+      expect(archiveStore.openRoutes, isEmpty);
+      expect(await archiveStore.completeFromActivities([run]), 0);
+      await archiveStore.setCompleted(archiveStore.archive.single, completed: false);
+      expect(archiveStore.openRoutes.single.isCompleted, isFalse);
+
       final again = RouteStore(settings, username: 'anna');
       expect(again.favorites.single.name, 'Zuhause');
       expect(AppBackup.isBackedUp(SettingsKeys.favoritePlaces), isTrue);

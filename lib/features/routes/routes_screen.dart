@@ -4,6 +4,7 @@ import 'package:coach_core/coach_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/storage.dart';
 import '../../services/routing/routing_providers.dart';
 import '../../ui/components.dart';
 import '../../ui/liquid.dart';
@@ -13,14 +14,46 @@ import 'route_detail_screen.dart';
 import 'route_parts.dart';
 import 'route_planner_screen.dart';
 
-/// Routen: neue Route planen, gespeicherte Routen und – optional – Gebiete & Erkundung.
-class RoutesScreen extends ConsumerWidget {
+/// Routen: neue Route planen, offene Routen, Archiv der abgeschlossenen und – optional – Gebiete & Erkundung.
+class RoutesScreen extends ConsumerStatefulWidget {
   const RoutesScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RoutesScreen> createState() => _RoutesScreenState();
+}
+
+class _RoutesScreenState extends ConsumerState<RoutesScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Gelaufene bzw. gefahrene Routen ins Archiv übernehmen (Aktivität am geplanten Tag).
+    unawaited(_completeFromActivities());
+  }
+
+  Future<void> _completeFromActivities() async {
+    try {
+      final activities = await ref.read(activityRepositoryProvider).all();
+      if (!mounted) return;
+      final count = await ref.read(routeStoreProvider).completeFromActivities(activities);
+      if (count > 0 && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              count == 1 ? 'Eine Route ist erledigt – im Archiv.' : '$count Routen sind erledigt – im Archiv.',
+            ),
+          ),
+        );
+      }
+    } on Object {
+      // Ohne Aktivitäten bleibt alles offen.
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final store = ref.watch(routeStoreProvider);
-    final routes = store.routes;
+    final routes = store.openRoutes;
+    final archive = store.archive;
     final exploration = store.exploration;
     final enabled = store.settings.explorationEnabled;
     void open(Widget screen) => unawaited(Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen)));
@@ -67,7 +100,7 @@ class RoutesScreen extends ConsumerWidget {
               children: [],
             ),
           FormSection(
-            header: 'Gespeichert',
+            header: 'Geplant und gespeichert',
             footer: routes.isEmpty ? 'Gespeicherte und in Einheiten übernommene Routen erscheinen hier.' : null,
             children: [
               for (final route in routes)
@@ -83,6 +116,23 @@ class RoutesScreen extends ConsumerWidget {
                   ),
                   trailing: const DisclosureChevron(),
                   onTap: () => open(RouteDetailScreen(routeID: route.id)),
+                ),
+            ],
+          ),
+          FormSection(
+            header: 'Archiv',
+            footer: archive.isEmpty
+                ? 'Abgeschlossene Routen landen hier – automatisch, sobald am geplanten Tag eine passende Aktivität '
+                      'vorliegt, oder über „Als erledigt markieren“.'
+                : null,
+            children: [
+              for (final route in archive.take(5)) ArchivedRouteTile(route: route),
+              if (archive.length > 5)
+                ListTile(
+                  leading: const Icon(Icons.inventory_2_outlined),
+                  title: Text('Alle ${archive.length} anzeigen'),
+                  trailing: const DisclosureChevron(),
+                  onTap: () => open(const RouteArchiveScreen()),
                 ),
             ],
           ),
@@ -181,6 +231,57 @@ class PlannedRoutesTodaySection extends ConsumerWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// Eintrag im Archiv: Name, Distanz, wann abgeschlossen.
+class ArchivedRouteTile extends StatelessWidget {
+  const ArchivedRouteTile({super.key, required this.route});
+
+  final PlannedRoute route;
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    leading: Stack(
+      clipBehavior: Clip.none,
+      children: [
+        SportIcon(symbol: route.discipline.symbol, color: variantColor(route.variant), size: 32),
+        const Positioned(right: -4, bottom: -4, child: Icon(Icons.check_circle, size: 16, color: Colors.green)),
+      ],
+    ),
+    title: Text(route.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+    subtitle: Text(
+      [
+        RouteFormat.distance(route.stats.distanceMeters),
+        'erledigt am ${GermanFormat.date(CalendarDay.fromDate(route.completedAt!.toLocal()))}',
+      ].join(' · '),
+    ),
+    trailing: const DisclosureChevron(),
+    onTap: () => unawaited(
+      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => RouteDetailScreen(routeID: route.id))),
+    ),
+  );
+}
+
+/// Alle abgeschlossenen Routen.
+class RouteArchiveScreen extends ConsumerWidget {
+  const RouteArchiveScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final archive = ref.watch(routeStoreProvider).archive;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Archiv')),
+      body: ListView(
+        padding: const EdgeInsets.only(bottom: 32),
+        children: [
+          FormSection(
+            footer: '${archive.length} abgeschlossene Routen',
+            children: [for (final route in archive) ArchivedRouteTile(route: route)],
+          ),
+        ],
+      ),
     );
   }
 }

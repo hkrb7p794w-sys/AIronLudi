@@ -174,7 +174,11 @@ von Hand: denselben Link wieder öffnen.
 5. **Frei planen:** oben auf *Frei planen* umschalten. *Punkte*: Start und weitere Punkte antippen oder über die Lupe als Adresse suchen; *Zeichnen*: mit
    dem Finger eine grobe Linie ziehen. Jeder Abschnitt wird auf echte Wege gelegt; unten stehen Distanz, Höhenmeter
    und Dauer. ↶ nimmt den letzten Abschnitt zurück, ⟳ schließt den Rundweg zum Start, **Speichern** legt die Route ab.
-6. **Gebiete (optional):** *Training › Routen › Gebiete anzeigen*. Geschlossene Runden erobern die umschlossene
+6. **Archiv und Uhr:** Gelaufene bzw. gefahrene Routen wandern ins *Archiv*, sobald am geplanten Tag eine passende
+   Aktivität vorliegt (oder per „Als erledigt markieren“). Auf jeder Route stehen Kilometermarken. **An Uhr senden**
+   zeigt den Weg je Hersteller: Garmin über Garmin Connect („An Gerät senden“), Apple Watch über eine App mit
+   Routen-Import, Coros, Suunto, Polar und Wahoo über ihre Apps.
+7. **Gebiete (optional):** *Training › Routen › Gebiete anzeigen*. Geschlossene Runden erobern die umschlossene
    Fläche, alle Läufe und Fahrten mit GPS füllen deine Kachel-Karte. Gezählt wird eine Aktivität, sobald ihr Verlauf
    einmal geladen wurde (Aktivität öffnen). Alles bleibt bei deinem Benutzer.
 
