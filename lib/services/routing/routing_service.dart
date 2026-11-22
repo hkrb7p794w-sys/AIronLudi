@@ -414,3 +414,51 @@ final class OsmPlaceSearch implements PlaceSearch {
     return parse(_HttpEngine.decode(response));
   });
 }
+
+/// Punkte unterwegs (Trinkbrunnen, Hundewiesen, Kotbeutel) über Overpass, mit denselben Ausweich-Servern wie die
+/// Wegarten. Zwischengespeichert je Strecke.
+final class OverpassPoiSource implements RoutePoiSource {
+  OverpassPoiSource(this.transport, {RateGate? gate, List<Uri>? servers})
+    : gate = gate ?? RateGate(const Duration(seconds: 2)),
+      servers = servers ?? OverpassFormat.uris;
+
+  final HttpTransport transport;
+  final RateGate gate;
+  final List<Uri> servers;
+  final Map<String, List<RoutePoi>> _cache = {};
+
+  @override
+  Future<List<RoutePoi>> pois(List<GeoPoint> route, {required Set<PoiKind> kinds}) async {
+    if (route.length < 2 || kinds.isEmpty) return const [];
+    final query = PoiFormat.query(route, kinds);
+    if (_cache[query] case final cached?) return cached;
+    for (final server in servers) {
+      try {
+        final response = await gate.run(
+          () => sendWithRetry(
+            transport,
+            HttpRequest(
+              method: 'POST',
+              url: server,
+              headers: const {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'User-Agent': _HttpEngine.userAgent,
+              },
+              body: utf8.encode('data=${Uri.encodeQueryComponent(query)}'),
+              timeout: const Duration(seconds: 30),
+            ),
+          ),
+        );
+        if (!response.isSuccess) continue;
+        final pois = PoiFormat.along(route, PoiFormat.parse(_HttpEngine.decode(response)));
+        if (_cache.length >= 30) _cache.remove(_cache.keys.first);
+        return _cache[query] = pois;
+      } on HttpTransportException {
+        continue;
+      } on RoutingUnavailable {
+        continue;
+      }
+    }
+    throw const RoutingUnavailable('Punkte unterwegs sind gerade nicht abrufbar.');
+  }
+}

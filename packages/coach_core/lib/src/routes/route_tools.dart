@@ -42,6 +42,7 @@ abstract final class OverpassFormat {
   static bool needed(Set<RoutePreference> preferences, RouteDiscipline discipline) =>
       preferences.contains(RoutePreference.nature) ||
       preferences.contains(RoutePreference.water) ||
+      (preferences.contains(RoutePreference.dogPark) && discipline == RouteDiscipline.walk) ||
       (preferences.contains(RoutePreference.paved) && discipline.isBike);
 
   /// Overpass-QL: Knoten **auf** passenden Wegen im Umkreis. Bewusst nicht `out center`: Der Mittelpunkt des
@@ -72,6 +73,10 @@ abstract final class OverpassFormat {
     }
     if (preferences.contains(RoutePreference.paved) && discipline.isBike) {
       parts.add('way["highway"="cycleway"]$around->.s$sets;');
+      sets++;
+    }
+    if (preferences.contains(RoutePreference.dogPark)) {
+      parts.add('way["leisure"="dog_park"]$around->.s$sets;');
       sets++;
     }
     final union = [for (var index = 0; index < sets; index++) '.s$index;'].join();
@@ -140,6 +145,31 @@ abstract final class PreferenceSnapper {
       }
     }
     return result..add(waypoints.last);
+  }
+
+  /// Den Zwischenpunkt, der einem der [targets] am nächsten liegt, durch diesen ersetzen (z. B. Hundewiese als fester
+  /// Wegpunkt). Ohne Zwischenpunkt wird einer eingefügt.
+  static List<GeoPoint> force(List<GeoPoint> waypoints, List<GeoPoint> targets) {
+    if (targets.isEmpty || waypoints.length < 2) return waypoints;
+    if (waypoints.length == 2) {
+      final middle = Geo.midpoint(waypoints.first, waypoints.last);
+      final target = targets.reduce((a, b) => Geo.distance(a, middle) <= Geo.distance(b, middle) ? a : b);
+      return [waypoints.first, target, waypoints.last];
+    }
+    var bestIndex = 1;
+    var bestTarget = targets.first;
+    var bestDistance = double.infinity;
+    for (var index = 1; index < waypoints.length - 1; index++) {
+      for (final target in targets) {
+        final distance = Geo.distance(waypoints[index], target);
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          bestIndex = index;
+          bestTarget = target;
+        }
+      }
+    }
+    return [...waypoints]..[bestIndex] = bestTarget;
   }
 
   /// Anteil der Strecke (0…1), der höchstens [radius] neben einem Anziehungspunkt liegt (alle 100 m gemessen).
@@ -475,7 +505,7 @@ final class DrawnRoute {
     var bestDistance = maxDistance;
     for (final (index, line) in segments.indexed) {
       for (var step = 1; step < line.length; step++) {
-        final distance = _distanceToSegment(point, line[step - 1], line[step]);
+        final distance = Geo.distanceToSegment(point, line[step - 1], line[step]);
         if (distance <= bestDistance) {
           best = index;
           bestDistance = distance;
@@ -497,17 +527,6 @@ final class DrawnRoute {
       }
     }
     return best;
-  }
-
-  static double _distanceToSegment(GeoPoint point, GeoPoint a, GeoPoint b) {
-    final cosLat = math.cos(point.latitude * math.pi / 180);
-    double x(GeoPoint p) => p.longitude * math.pi / 180 * Geo.earthRadius * cosLat;
-    double y(GeoPoint p) => p.latitude * math.pi / 180 * Geo.earthRadius;
-    final dx = x(b) - x(a);
-    final dy = y(b) - y(a);
-    final length = dx * dx + dy * dy;
-    final t = length == 0 ? 0.0 : (((x(point) - x(a)) * dx + (y(point) - y(a)) * dy) / length).clamp(0.0, 1.0);
-    return math.sqrt(math.pow(x(point) - (x(a) + t * dx), 2) + math.pow(y(point) - (y(a) + t * dy), 2));
   }
 
   /// Letzte Aktion zurücknehmen.

@@ -7,11 +7,13 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../services/routing/routing_providers.dart';
 import '../../ui/liquid.dart';
 import 'my_location.dart';
 
@@ -166,6 +168,7 @@ class PlannerMap extends StatelessWidget {
               if (selected case final route?) DirectionArrows(points: route.points, color: variantColor(route.variant)),
               if (selected case final route?)
                 KilometerMarkers(points: route.points, color: variantColor(route.variant)),
+              if (selected case final route?) RoutePoiLayer(route: route),
               MyLocationLayer(point: myLocation),
               MarkerLayer(
                 markers: [
@@ -492,6 +495,53 @@ class KilometerMarkers extends StatelessWidget {
   }
 }
 
+/// Punkte unterwegs (Trinkbrunnen, Hundewiesen, Kotbeutel) als kleine Symbole auf der Karte.
+class RoutePoiLayer extends ConsumerWidget {
+  const RoutePoiLayer({super.key, required this.route});
+
+  final PlannedRoute route;
+
+  static IconData icon(PoiKind kind) => switch (kind) {
+    PoiKind.water => Icons.water_drop,
+    PoiKind.dogPark => Icons.pets,
+    PoiKind.bags => Icons.shopping_bag_outlined,
+  };
+
+  static Color color(PoiKind kind) => switch (kind) {
+    PoiKind.water => const Color(0xFF0A84FF),
+    PoiKind.dogPark => const Color(0xFF30C26B),
+    PoiKind.bags => const Color(0xFF8E8E93),
+  };
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pois = ref.watch(routePoisProvider(route)).value ?? const <RoutePoi>[];
+    if (pois.isEmpty) return const SizedBox.shrink();
+    return MarkerLayer(
+      markers: [
+        for (final poi in pois)
+          Marker(
+            point: latLng(poi.point),
+            width: 24,
+            height: 24,
+            child: Tooltip(
+              message: poi.name == null ? poi.kind.label : '${poi.kind.label}: ${poi.name}',
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: color(poi.kind), width: 2),
+                  boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 3, offset: Offset(0, 1))],
+                ),
+                child: Icon(icon(poi.kind), size: 13, color: color(poi.kind)),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 /// Umschalter „Automatisch / Frei zeichnen“ als Liquid-Pille.
 class PlannerModeSwitch extends StatelessWidget {
   const PlannerModeSwitch({super.key, required this.automatic, required this.onChanged});
@@ -519,15 +569,19 @@ class PlannerModeSwitch extends StatelessWidget {
 
 /// Auswahl der Umgebung: Mix oder Wald/Wasser/Asphalt (Natur und Asphalt schließen sich aus).
 class PreferenceChips extends StatelessWidget {
-  const PreferenceChips({super.key, required this.selected, required this.onChanged});
+  const PreferenceChips({super.key, required this.selected, required this.onChanged, this.discipline});
 
   final Set<RoutePreference> selected;
   final ValueChanged<Set<RoutePreference>> onChanged;
+
+  /// Nur passende Wegarten anbieten (Hundewiese beim Spazieren).
+  final RouteDiscipline? discipline;
 
   static IconData icon(RoutePreference preference) => switch (preference) {
     RoutePreference.nature => Icons.forest_outlined,
     RoutePreference.water => Icons.water_outlined,
     RoutePreference.paved => Icons.add_road,
+    RoutePreference.dogPark => Icons.pets,
   };
 
   @override
@@ -543,7 +597,7 @@ class PreferenceChips extends StatelessWidget {
         shape: const StadiumBorder(),
         onSelected: (_) => onChanged(const {}),
       ),
-      for (final preference in RoutePreference.values)
+      for (final preference in RoutePreference.available(discipline ?? RouteDiscipline.run))
         FilterChip(
           avatar: Icon(icon(preference), size: 18),
           label: Text(preference.label),

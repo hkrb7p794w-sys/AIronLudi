@@ -75,7 +75,10 @@ enum RoutePreference implements RawEnum {
   water('water', 'Am Wasser', 'Entlang von Kanälen, Flüssen und Seen – auf Uferwegen, ohne Fähre'),
 
   /// Befestigte Straßen und Radwege (`highway=cycleway`, `surface=asphalt`).
-  paved('paved', 'Straße & Asphalt', 'Befestigte Wege, Radwege und ruhige Straßen');
+  paved('paved', 'Straße & Asphalt', 'Befestigte Wege, Radwege und ruhige Straßen'),
+
+  /// Nur beim Spazieren: Die Runde führt über eine Hundewiese in der Nähe (`leisure=dog_park`).
+  dogPark('dogPark', 'Hundewiese', 'Die Runde führt über eine Hundewiese in der Nähe');
 
   const RoutePreference(this.rawValue, this.label, this.detail);
 
@@ -85,6 +88,12 @@ enum RoutePreference implements RawEnum {
   final String detail;
 
   static const mixLabel = 'Ausgewogener Mix';
+
+  /// Wählbare Wegarten je Disziplin (Hundewiese nur beim Spazieren).
+  static List<RoutePreference> available(RouteDiscipline discipline) => [
+    for (final preference in values)
+      if (preference != dogPark || discipline == RouteDiscipline.walk) preference,
+  ];
 
   /// Natur und Asphalt schließen sich aus; Wasser passt zu beidem.
   static Set<RoutePreference> toggle(Set<RoutePreference> current, RoutePreference preference) {

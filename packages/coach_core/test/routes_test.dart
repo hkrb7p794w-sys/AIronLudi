@@ -1336,6 +1336,118 @@ void main() {
     expect(RouteForWorkout.suggest(isBike: false, isRun: true, minutes: 0), isNull);
   });
 
+  group('Gassi-Extras', () {
+    test('Hundewiese nur beim Spazieren, als fester Wegpunkt', () async {
+      expect(RoutePreference.available(RouteDiscipline.walk), contains(RoutePreference.dogPark));
+      expect(RoutePreference.available(RouteDiscipline.run), isNot(contains(RoutePreference.dogPark)));
+      expect(OverpassFormat.needed({RoutePreference.dogPark}, RouteDiscipline.walk), isTrue);
+      expect(OverpassFormat.query(berlin, 2000, {RoutePreference.dogPark}), contains('"leisure"="dog_park"'));
+      final park = Geo.destination(berlin, 60, 700);
+      final backend = FakeBackend();
+      final notices = <String>[];
+      await RoutePlanner(backend, features: FakeFeatures([park])).generate(
+        const RouteRequest(
+          discipline: RouteDiscipline.walk,
+          shape: RouteShape.loop,
+          start: berlin,
+          distanceMeters: 3000,
+          preferences: {RoutePreference.dogPark},
+        ),
+        username: 'anna',
+        variants: const [RouteVariant.balanced],
+        onNotice: notices.add,
+      );
+      expect(backend.calls.every((waypoints) => waypoints.contains(park)), isTrue);
+      expect(notices, isEmpty);
+      await RoutePlanner(FakeBackend(), features: FakeFeatures(const [])).generate(
+        const RouteRequest(
+          discipline: RouteDiscipline.walk,
+          shape: RouteShape.loop,
+          start: berlin,
+          distanceMeters: 3000,
+          preferences: {RoutePreference.dogPark},
+        ),
+        username: 'anna',
+        variants: const [RouteVariant.balanced],
+        onNotice: notices.add,
+      );
+      expect(notices.single, contains('keine Hundewiese'));
+      // Zwei Punkte (zum Ziel, direkt): Hundewiese wird eingefügt.
+      expect(PreferenceSnapper.force([berlin, hamburg], [park]), [berlin, park, hamburg]);
+    });
+
+    test('Punkte unterwegs: Abfrage, Lesen mit Merkmalen, nur nahe der Strecke, Zusammenfassung', () {
+      final route = [berlin, Geo.destination(berlin, 90, 2000)];
+      final query = PoiFormat.query(route, PoiFormat.kindsFor(walk: true));
+      expect(query, contains('drinking_water'));
+      expect(query, contains('excrement_bags'));
+      expect(query, contains('out center tags'));
+      expect(PoiFormat.query(route, PoiFormat.kindsFor(walk: false)), isNot(contains('dog_park')));
+      final near = Geo.destination(Geo.destination(berlin, 90, 500), 0, 50);
+      final far = Geo.destination(berlin, 0, 1000);
+      final pois = PoiFormat.parse({
+        'elements': [
+          {
+            'type': 'node',
+            'lat': near.latitude,
+            'lon': near.longitude,
+            'tags': {'amenity': 'drinking_water'},
+          },
+          {
+            'type': 'node',
+            'lat': near.latitude + 0.0001,
+            'lon': near.longitude,
+            'tags': {'amenity': 'drinking_water'},
+          },
+          {
+            'type': 'way',
+            'center': {'lat': far.latitude, 'lon': far.longitude},
+            'tags': {'leisure': 'dog_park', 'name': 'Hundeauslauf'},
+          },
+          {
+            'type': 'node',
+            'lat': near.latitude,
+            'lon': near.longitude + 0.003,
+            'tags': {'vending': 'excrement_bags'},
+          },
+          {
+            'type': 'node',
+            'lat': 1,
+            'lon': 1,
+            'tags': {'shop': 'bakery'},
+          },
+        ],
+      });
+      expect(pois.length, 4);
+      expect(pois[2].name, 'Hundeauslauf');
+      final along = PoiFormat.along(route, pois);
+      // Doppelter Trinkbrunnen zusammengefasst, Hundewiese zu weit weg.
+      expect(along.map((poi) => poi.kind), [PoiKind.water, PoiKind.bags]);
+      expect(PoiFormat.summary(along), '1 Trinkbrunnen · 1 Kotbeutel');
+    });
+
+    test('Vorlagen je Benutzer', () {
+      const template = RouteTemplate(
+        id: 't1',
+        name: 'Gassi ab Zuhause',
+        discipline: RouteDiscipline.walk,
+        shape: RouteShape.loop,
+        kilometers: 3,
+        start: berlin,
+        startLabel: 'Zuhause',
+        preferences: {RoutePreference.dogPark},
+      );
+      expect(template.summary, 'Spazieren · 3 km · Rundweg · Hundewiese');
+      final templates = RouteTemplates(username: 'anna')..save(template);
+      final json = jsonDecode(jsonEncode(templates.toJson()));
+      final restored = RouteTemplates.fromJson(json, username: 'anna')!;
+      expect(restored.templates.single.toJson(), template.toJson());
+      expect(RouteTemplates.fromJson(json, username: 'ben'), isNull);
+      restored.delete('t1');
+      expect(restored.templates, isEmpty);
+    });
+  });
+
   test('Anzeige', () {
     expect(RouteFormat.distance(850), '850 m');
     expect(RouteFormat.distance(10249), '10,2 km');

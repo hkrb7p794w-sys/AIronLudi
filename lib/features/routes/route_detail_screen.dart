@@ -97,6 +97,14 @@ class _RouteDetailScreenState extends ConsumerState<RouteDetailScreen> {
                 ),
                 RouteStatsRow(route: route),
                 ElevationProfileChart(route: route),
+                if (ref.watch(routePoisProvider(route)).value case final pois? when pois.isNotEmpty)
+                  Row(
+                    spacing: 8,
+                    children: [
+                      Icon(Icons.place_outlined, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      Expanded(child: Text('Unterwegs: ${PoiFormat.summary(pois)}')),
+                    ],
+                  ),
               ],
             ),
           ),

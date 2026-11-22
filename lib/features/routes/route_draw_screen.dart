@@ -397,6 +397,7 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
                   },
                 ),
                 PreferenceChips(
+                  discipline: _discipline,
                   selected: _preferences,
                   onChanged: (selection) {
                     setState(() => _preferences = selection);

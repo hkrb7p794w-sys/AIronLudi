@@ -283,25 +283,31 @@ class _AddressFieldState extends ConsumerState<AddressField> {
 }
 
 /// Name für einen Favoriten erfragen (z. B. „Zuhause“, „Hundewiese“); `null` bei Abbruch.
-Future<String?> askFavoriteName(BuildContext context, {String initial = ''}) async {
+Future<String?> askFavoriteName(BuildContext context, {String initial = ''}) =>
+    askName(context, title: 'Als Favorit speichern', initial: initial, hint: 'z. B. Zuhause, Hundewiese, Treffpunkt');
+
+/// Namen erfragen; `null` bei Abbruch oder leerem Namen.
+Future<String?> askName(BuildContext context, {required String title, String initial = '', String? hint}) async {
   final name = await showDialog<String>(
     context: context,
-    builder: (_) => _FavoriteNameDialog(initial: initial),
+    builder: (_) => _NameDialog(title: title, initial: initial, hint: hint),
   );
   return name == null || name.isEmpty ? null : name;
 }
 
 /// Eigenes Widget, damit das Textfeld erst nach dem Ausblenden des Dialogs freigegeben wird.
-class _FavoriteNameDialog extends StatefulWidget {
-  const _FavoriteNameDialog({required this.initial});
+class _NameDialog extends StatefulWidget {
+  const _NameDialog({required this.title, required this.initial, this.hint});
 
+  final String title;
   final String initial;
+  final String? hint;
 
   @override
-  State<_FavoriteNameDialog> createState() => _FavoriteNameDialogState();
+  State<_NameDialog> createState() => _NameDialogState();
 }
 
-class _FavoriteNameDialogState extends State<_FavoriteNameDialog> {
+class _NameDialogState extends State<_NameDialog> {
   late final _controller = TextEditingController(text: widget.initial);
 
   @override
@@ -312,12 +318,12 @@ class _FavoriteNameDialogState extends State<_FavoriteNameDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Als Favorit speichern'),
+    title: Text(widget.title),
     content: TextField(
       controller: _controller,
       autofocus: true,
       textCapitalization: TextCapitalization.sentences,
-      decoration: const InputDecoration(hintText: 'z. B. Zuhause, Hundewiese, Treffpunkt'),
+      decoration: InputDecoration(hintText: widget.hint),
       onSubmitted: (text) => Navigator.pop(context, text.trim()),
     ),
     actions: [

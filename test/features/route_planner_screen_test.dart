@@ -100,6 +100,17 @@ final class FakeFeatures implements RouteFeatureSource {
   }
 }
 
+/// Punkte unterwegs ohne Netz: ein Trinkbrunnen am Start.
+final class FakePois implements RoutePoiSource {
+  int requests = 0;
+
+  @override
+  Future<List<RoutePoi>> pois(List<GeoPoint> route, {required Set<PoiKind> kinds}) async {
+    requests++;
+    return [RoutePoi(kind: PoiKind.water, point: route.first, name: 'Brunnen')];
+  }
+}
+
 /// Overpass gestört.
 final class FailingFeatures extends FakeFeatures {
   @override
@@ -132,6 +143,7 @@ Future<ProviderContainer> openPlanner(
           routingBackendProvider.overrideWithValue(routing),
           routeFeatureSourceProvider.overrideWithValue(features ?? FakeFeatures()),
           placeSearchProvider.overrideWithValue(places ?? FakePlaces()),
+          routePoiSourceProvider.overrideWithValue(FakePois()),
           locationSourceProvider.overrideWithValue(FakeLocation()),
         ],
       ),
@@ -185,6 +197,7 @@ void main() {
           overrides: [
             routingBackendProvider.overrideWithValue(routing),
             routeFeatureSourceProvider.overrideWithValue(features),
+            routePoiSourceProvider.overrideWithValue(FakePois()),
             locationSourceProvider.overrideWithValue(FakeLocation()),
           ],
         ),
@@ -198,7 +211,6 @@ void main() {
 
     await tapCentered(tester, find.text('Routen'));
     expect(find.byType(RoutesScreen), findsOneWidget);
-    expect(find.text('Gebiete anzeigen'), findsOneWidget);
     expect(find.text('Meine Karte'), findsNothing);
 
     await tester.tap(find.text('Neue Route planen'));
@@ -562,5 +574,54 @@ void main() {
     await tester.pumpAndSettle();
     expect(routing.calls, calls + 2);
     expect(find.text('Punkt 1'), findsOneWidget);
+  });
+
+  testWidgets('Gassi: Hundewiese nur beim Spazieren, Punkte unterwegs, Vorlage mit einem Tipp', (tester) async {
+    final routing = FakeRouting();
+    final container = await openPlanner(tester, routing);
+    expect(find.text('Hundewiese'), findsNothing);
+    await tapCentered(tester, find.text('Spazieren'));
+    expect(find.text('Hundewiese'), findsOneWidget);
+    await tapCentered(tester, find.text('Hundewiese'));
+    final planner = container.read(routePlannerControllerProvider);
+    expect(planner.preferences, {RoutePreference.dogPark});
+    await tapCentered(tester, find.text('Aktueller Standort'), delta: -300);
+    await tapCentered(tester, find.text('Routen vorschlagen'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pumpAndSettle();
+    expect(routing.disciplines.toSet(), {RouteDiscipline.walk});
+
+    // Punkte unterwegs: Trinkbrunnen auf der Karte.
+    tester.state<ScrollableState>(find.byType(Scrollable).first).position.jumpTo(0);
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Trinkbrunnen: Brunnen'), findsOneWidget);
+
+    // Als Vorlage speichern.
+    await tester.tap(find.byTooltip('Als Vorlage speichern'));
+    await tester.pumpAndSettle();
+    expect(find.text('Als Vorlage speichern'), findsOneWidget);
+    await tester.enterText(find.descendant(of: find.byType(AlertDialog), matching: find.byType(TextField)), 'Gassi');
+    await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text('Speichern')));
+    await tester.pumpAndSettle();
+    final store = container.read(routeStoreProvider);
+    expect(store.templates.single.name, 'Gassi');
+    expect(store.templates.single.preferences, {RoutePreference.dogPark});
+
+    // Wechsel zu Laufen entfernt die Hundewiese.
+    await tapCentered(tester, find.text('Laufen'), delta: -300);
+    expect(planner.preferences, isEmpty);
+
+    // In der Übersicht: Vorlage antippen plant sofort wieder als Spaziergang.
+    ScaffoldMessenger.of(tester.element(find.byType(RoutePlannerScreen))).hideCurrentSnackBar();
+    Navigator.of(tester.element(find.byType(RoutePlannerScreen))).pop();
+    await tester.pumpAndSettle();
+    final calls = routing.calls;
+    await tapCentered(tester, find.text('Gassi'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pumpAndSettle();
+    expect(find.byType(RoutePlannerScreen), findsOneWidget);
+    expect(routing.calls, greaterThan(calls));
+    expect(planner.discipline, RouteDiscipline.walk);
+    expect(planner.routes, isNotEmpty);
   });
 }
