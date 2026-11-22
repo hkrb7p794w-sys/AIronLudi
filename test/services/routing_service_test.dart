@@ -104,7 +104,23 @@ void main() {
         backend.route([start, end], discipline: RouteDiscipline.run, variant: RouteVariant.balanced),
         throwsA(isA<RoutingUnavailable>()),
       );
-      expect(transport.requests.length, 2);
+      // Je Router ein zweiter Versuch nach dem Verbindungsabbruch.
+      expect(transport.requests.length, 4);
+    });
+
+    test('Einzelner Verbindungsabbruch: zweiter Versuch gelingt', () async {
+      var calls = 0;
+      final transport = FakeHttpTransport((request) {
+        calls++;
+        if (calls == 1) throw const HttpTransportException('Verbindung abgebrochen');
+        return json(valhallaTrip([start, end]));
+      });
+      final path = await ValhallaEngine(
+        transport,
+        gate: instantGate(),
+      ).route([start, end], discipline: RouteDiscipline.run, variant: RouteVariant.balanced);
+      expect(path.points.length, 2);
+      expect(calls, 2);
     });
 
     test('Höhen über Valhalla', () async {
@@ -138,37 +154,46 @@ void main() {
       );
       final body = jsonDecode(utf8.decode(transport.requests.first.body!)) as Map<String, Object?>;
       expect(((body['costing_options']! as Map)['bicycle'] as Map)['bicycle_type'], 'Mountain');
-      expect(transport.requests.last.url.queryParameters['profile'], 'mtb-zossebart');
+      expect(transport.requests.last.url.queryParameters['profile'], 'mtb');
     });
 
-    test('Overpass: POST mit Abfrage, Mittelpunkte, Zwischenspeicher, Fehler ergibt leere Liste', () async {
-      var status = 200;
-      final transport = FakeHttpTransport(
-        (request) => json({
-          'elements': [
-            {'type': 'node', 'id': 7, 'lat': 52.521, 'lon': 13.41},
-          ],
-        }, status: status),
-      );
-      final source = OverpassFeatureSource(transport, gate: instantGate());
-      final points = await source.attractors(start, 3000, {RoutePreference.water});
-      expect(points, [const GeoPoint(52.521, 13.41)]);
-      final request = transport.requests.single;
-      expect(request.method, 'POST');
-      expect(request.url, OverpassFormat.uri);
-      final query = Uri.splitQueryString(utf8.decode(request.body!))['data']!;
-      expect(query, contains('waterway'));
-      expect(query, contains('node(w.all)'));
-      await source.attractors(start, 3000, {RoutePreference.water});
-      expect(transport.requests.length, 1);
-      status = 504;
-      expect(await source.attractors(start, 3000, {RoutePreference.nature}), isEmpty);
-      final offline = OverpassFeatureSource(
-        FakeHttpTransport((request) => throw const HttpTransportException('offline')),
-        gate: instantGate(),
-      );
-      expect(await offline.attractors(start, 3000, {RoutePreference.water}), isEmpty);
-    });
+    test(
+      'Overpass: POST mit Abfrage, Knoten, Zwischenspeicher, Ausweichen auf Spiegel, Ausfall meldet Fehler',
+      () async {
+        final down = <String>{};
+        final transport = FakeHttpTransport((request) {
+          if (down.contains(request.url.host)) return json({'error': 'busy'}, status: 504);
+          return json({
+            'elements': [
+              {'type': 'node', 'id': 7, 'lat': 52.521, 'lon': 13.41},
+            ],
+          });
+        });
+        final source = OverpassFeatureSource(transport, gate: instantGate());
+        final points = await source.attractors(start, 3000, {RoutePreference.water});
+        expect(points, [const GeoPoint(52.521, 13.41)]);
+        final request = transport.requests.single;
+        expect(request.method, 'POST');
+        expect(request.url, OverpassFormat.uri);
+        final query = Uri.splitQueryString(utf8.decode(request.body!))['data']!;
+        expect(query, contains('waterway'));
+        expect(query, contains('node(w.all)'));
+        await source.attractors(start, 3000, {RoutePreference.water});
+        expect(transport.requests.length, 1);
+        // Hauptserver gestört: der erste Spiegel antwortet.
+        down.add(OverpassFormat.uris.first.host);
+        expect(await source.attractors(start, 3000, {RoutePreference.nature}), isNotEmpty);
+        expect(transport.requests.last.url, OverpassFormat.uris[1]);
+        // Alle gestört: Fehler statt still leerer Liste (der Planer zeigt dann einen Hinweis).
+        down.addAll([for (final uri in OverpassFormat.uris) uri.host]);
+        await expectLater(source.attractors(start, 4000, {RoutePreference.nature}), throwsA(isA<RoutingUnavailable>()));
+        final offline = OverpassFeatureSource(
+          FakeHttpTransport((request) => throw const HttpTransportException('offline')),
+          gate: instantGate(),
+        );
+        await expectLater(offline.attractors(start, 3000, {RoutePreference.water}), throwsA(isA<RoutingUnavailable>()));
+      },
+    );
 
     test('Adresssuche: Photon zuerst, bei Ausfall Nominatim – beim Tippen nie Nominatim', () async {
       var photonDown = false;

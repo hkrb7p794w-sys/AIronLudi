@@ -58,6 +58,21 @@ final class RateGate {
   }
 }
 
+/// Sendet; bricht die Verbindung ab (Mobilfunk, Funkloch), ein zweiter Versuch nach kurzer Pause. Im Echttest gegen
+/// die öffentlichen Dienste kamen solche Abbrüche gelegentlich vor.
+Future<HttpResponse> sendWithRetry(
+  HttpTransport transport,
+  HttpRequest request, {
+  Duration pause = const Duration(milliseconds: 600),
+}) async {
+  try {
+    return await transport.send(request);
+  } on HttpTransportException {
+    await Future<void>.delayed(pause);
+    return transport.send(request);
+  }
+}
+
 /// Gemeinsame HTTP-Behandlung: Status 429/5xx als [RoutingUnavailable] (mit `Retry-After`), fehlende Antwort ebenso.
 abstract base class _HttpEngine implements RoutingEngine {
   _HttpEngine(this.transport, {required this.gate});
@@ -70,7 +85,7 @@ abstract base class _HttpEngine implements RoutingEngine {
   Future<HttpResponse> send(HttpRequest request) => gate.run(() async {
     final HttpResponse response;
     try {
-      response = await transport.send(request);
+      response = await sendWithRetry(transport, request);
     } on HttpTransportException catch (error) {
       throw RoutingUnavailable('$name nicht erreichbar: ${error.message}');
     }
@@ -269,12 +284,19 @@ final class FallbackRoutingBackend implements RoutingBackend {
 /// Wege der gewünschten Art aus OpenStreetMap über die Overpass-API (ohne Schlüssel, höchstens eine Anfrage je zwei
 /// Sekunden). Fehler ergeben eine leere Liste: Der Planer routet dann nur mit der Wegbewertung.
 final class OverpassFeatureSource implements RouteFeatureSource {
-  OverpassFeatureSource(this.transport, {RateGate? gate}) : gate = gate ?? RateGate(const Duration(seconds: 2));
+  OverpassFeatureSource(this.transport, {RateGate? gate, List<Uri>? servers})
+    : gate = gate ?? RateGate(const Duration(seconds: 2)),
+      servers = servers ?? OverpassFormat.uris;
 
   final HttpTransport transport;
   final RateGate gate;
-  final Map<String, List<GeoPoint>> _cache = {};
 
+  /// Hauptserver und Spiegel in dieser Reihenfolge; ein gestörter Server wird einige Minuten übersprungen.
+  final List<Uri> servers;
+  final Map<String, List<GeoPoint>> _cache = {};
+  final Map<String, DateTime> _disabledUntil = {};
+
+  /// Leere Liste: keine passenden Wege in der Nähe. Wirft [RoutingUnavailable], wenn kein Server antwortet.
   @override
   Future<List<GeoPoint>> attractors(
     GeoPoint center,
@@ -284,32 +306,41 @@ final class OverpassFeatureSource implements RouteFeatureSource {
   }) async {
     final query = OverpassFormat.query(center, radiusMeters, preferences, discipline: discipline);
     if (_cache[query] case final cached?) return cached;
-    try {
-      final response = await gate.run(
-        () => transport.send(
-          HttpRequest(
-            method: 'POST',
-            url: OverpassFormat.uri,
-            headers: const {
-              'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-              'User-Agent': _HttpEngine.userAgent,
-            },
-            body: utf8.encode('data=${Uri.encodeQueryComponent(query)}'),
-            timeout: const Duration(seconds: 30),
+    final now = DateTime.now();
+    final available = [
+      for (final server in servers)
+        if (!(_disabledUntil[server.host]?.isAfter(now) ?? false)) server,
+    ];
+    for (final server in available.isEmpty ? servers : available) {
+      try {
+        final response = await gate.run(
+          () => transport.send(
+            HttpRequest(
+              method: 'POST',
+              url: server,
+              headers: const {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'User-Agent': _HttpEngine.userAgent,
+              },
+              body: utf8.encode('data=${Uri.encodeQueryComponent(query)}'),
+              timeout: const Duration(seconds: 30),
+            ),
           ),
-        ),
-      );
-      if (response.status == 429 || response.status >= 500) {
-        gate.backOff(Duration(seconds: int.tryParse(response.headers['retry-after'] ?? '') ?? 10));
-        return const [];
+        );
+        if (!response.isSuccess) {
+          _disabledUntil[server.host] = DateTime.now().add(const Duration(minutes: 3));
+          continue;
+        }
+        final points = OverpassFormat.parse(_HttpEngine.decode(response));
+        if (_cache.length >= 20) _cache.remove(_cache.keys.first);
+        return _cache[query] = points;
+      } on HttpTransportException {
+        _disabledUntil[server.host] = DateTime.now().add(const Duration(minutes: 3));
+      } on RoutingUnavailable {
+        _disabledUntil[server.host] = DateTime.now().add(const Duration(minutes: 3));
       }
-      if (!response.isSuccess) return const [];
-      final points = OverpassFormat.parse(_HttpEngine.decode(response));
-      if (_cache.length >= 20) _cache.remove(_cache.keys.first);
-      return _cache[query] = points;
-    } on Object {
-      return const [];
     }
+    throw const RoutingUnavailable('Die Wegdaten (Overpass) sind gerade nicht erreichbar.');
   }
 }
 
@@ -363,7 +394,8 @@ final class OsmPlaceSearch implements PlaceSearch {
   Future<List<Place>> _get(RateGate gate, Uri uri, List<Place> Function(Object? json) parse) => gate.run(() async {
     final HttpResponse response;
     try {
-      response = await transport.send(
+      response = await sendWithRetry(
+        transport,
         HttpRequest(
           method: 'GET',
           url: uri,

@@ -19,7 +19,13 @@ abstract interface class RouteFeatureSource {
 
 /// Overpass-API (`overpass-api.de`, ohne Schlüssel): Abfrage und Antwort.
 abstract final class OverpassFormat {
-  static final uri = Uri.parse('https://overpass-api.de/api/interpreter');
+  /// Hauptserver und öffentliche Spiegel (gleiche Abfragesprache); fällt einer aus, fragt die App den nächsten.
+  static final uris = [
+    Uri.parse('https://overpass-api.de/api/interpreter'),
+    Uri.parse('https://overpass.kumi.systems/api/interpreter'),
+    Uri.parse('https://overpass.private.coffee/api/interpreter'),
+  ];
+  static Uri get uri => uris.first;
   static const engineName = 'Overpass';
 
   /// Größter Suchradius (größere Abfragen dauern auf dem öffentlichen Server zu lange).

@@ -1048,7 +1048,7 @@ Straße, Mix), Distanz enger einhalten, Richtungspfeile, Modus „Frei planen / 
   ausgewogener Mix. Natur und Asphalt schließen sich aus. Umgesetzt in zwei Stufen:
   1. **Router-Gewichtung:** Valhalla `pedestrian` (`use_tracks`, `walkway_factor`, `sidewalk_factor`,
      `use_living_streets`) bzw. `bicycle` (`bicycle_type`, `use_roads`, `avoid_bad_surfaces`); BRouter-Profile
-     (`mtb-zossebart`, `fastbike-lowtraffic`, `trekking`, `shortest`).
+     (`mtb`, `gravel`, `fastbike-lowtraffic`, `trekking-noferries`, `trekking`, `shortest`; ursprünglich `mtb-zossebart`, das es auf brouter.de nicht gibt – siehe Echttest 2026-11-22).
   2. **Wegpunkte auf passende Wege (Overpass):** Valhalla kennt kein „nah am Wasser“. Daher sucht der Planer über die
      Overpass-API (`overpass-api.de`, ohne Schlüssel, höchstens eine Anfrage je 2 s, Ergebnisse zwischengespeichert)
      Wege der Art im Umkreis – Pfade/Tracks/Fuß- und Radwege höchstens 40 m neben `waterway=canal|river` bzw.
@@ -1142,4 +1142,26 @@ Auftrag des Nutzers: Symbol zum Finden des eigenen Standorts wie bei Google Maps
 (mindestens Zoom 15) und zeigt einen blauen Punkt. Er setzt bewusst keinen Start – dafür gibt es „Aktueller
 Standort“ bzw. langes Drücken. Der Punkt folgt nicht laufend (keine Ortung im Hintergrund, kein Akkuverbrauch);
 erneutes Antippen aktualisiert ihn.
+
+## 2026-11-22 – Echttest des Routenplaners gegen die öffentlichen Dienste
+
+Mit Netzfreigabe für die Dienste lief `packages/coach_core/tool/live_check.dart` (von Hand, nicht in CI) gegen die
+echten Server. Ergebnisse und Folgen:
+
+- **Planer auf echten Wegen (Berlin, Valhalla):** Rundweg Laufen 10 km → 9,95 / 9,81 / 9,84 km, Rennrad 40 km →
+  40,23 / 40,37 / 40,77 km, Spazieren Richtung 4 km → 3,99 km, Gravel zum Ziel 15 km → 15,01 / 14,69 / 15,15 km. Alle
+  Varianten in ±2,5 %; 6–13 Anfragen und 11–25 s je Planung (Rate-Limit). Valhalla `/route` und `/height` für alle
+  vier Disziplinen in Ordnung.
+- **BRouter:** `mtb-zossebart` gibt es nicht (Status 500) → `mtb` (Gravel + Natur), `gravel` (Gravel), neu
+  `trekking-noferries` für „Am Wasser“ beim Rad. Alle übrigen Profile lieferten Strecke mit Höhe.
+- **Höhenmeter waren zu hoch:** Das Geländemodell misst auch Bäume, Gebäude und Brücken. Für 9 km durch Berlin
+  ergab die Rohsumme 184 hm, die bisherige 3-m-Schwelle 132 hm. Jetzt werden die Höhen vorher über 200 m Strecke
+  geglättet (gleitender Mittelwert) – 61 hm, realistisch. Echte Anstiege bleiben erhalten (Test: 100 hm auf 2 km).
+- **Overpass** war aus der Cloud-Umgebung nicht erreichbar (overpass-api.de bricht ab, die Spiegel antworten nicht,
+  auch nicht auf eine Minimalabfrage) – vom Handy aus erwartet erreichbar, aber hier ungeprüft. Neu: zwei öffentliche
+  Spiegel (`overpass.kumi.systems`, `overpass.private.coffee`) als Ausweich; ein gestörter Server wird 3 Minuten
+  übersprungen. Antwortet keiner, meldet die Quelle jetzt einen Fehler statt still nichts.
+- **Photon** antwortete, aber nicht jedes Mal (Verbindungsabbruch). **Nominatim** antwortete (einmal mit 629, beim
+  nächsten Mal korrekt). Neu: bei Verbindungsabbruch ein zweiter Versuch nach 0,6 s für alle Router und die
+  Adresssuche (`sendWithRetry`).
 

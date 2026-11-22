@@ -248,16 +248,19 @@ abstract final class BRouterFormat {
   }) => switch (discipline) {
     RouteDiscipline.run ||
     RouteDiscipline.walk => preferences.contains(RoutePreference.paved) ? 'shortest' : 'hiking-mountain',
+    // Profile, die es auf brouter.de gibt (im Echttest geprüft); „Am Wasser“ ohne Fähren.
     RouteDiscipline.roadBike =>
       preferences.contains(RoutePreference.nature) || variant == RouteVariant.green
           ? 'fastbike-lowtraffic'
-          : 'fastbike',
+          : (preferences.contains(RoutePreference.water) ? 'trekking-noferries' : 'fastbike'),
     RouteDiscipline.gravel =>
       preferences.contains(RoutePreference.paved)
           ? 'trekking'
-          : (preferences.contains(RoutePreference.nature) || variant == RouteVariant.green
-                ? 'mtb-zossebart'
-                : 'trekking'),
+          : preferences.contains(RoutePreference.nature)
+          ? 'mtb'
+          : preferences.contains(RoutePreference.water)
+          ? 'trekking-noferries'
+          : 'gravel',
   };
 
   static Uri uri(
