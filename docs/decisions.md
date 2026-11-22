@@ -1078,3 +1078,21 @@ Tests: `routes_test.dart` (Gruppen „Wegarten, Pfeile, Zeichnen“ und „Plane
 u. a. nichtlinearer Test-Router auf ±2,5 %), `routing_service_test.dart` (Wegarten an beide Router, Overpass),
 `route_planner_screen_test.dart` (Ansichtsmodus beim Antippen, Wegarten, frei planen bis zum Speichern).
 
+## 2026-11-22 – Routenplaner: Start und Ziel per Adresszeile
+
+Auftrag des Nutzers: Start und Ziel individuell als Adresse eingeben.
+
+- **Dienste ohne Schlüssel:** Photon (`photon.komoot.io`, OSM-Daten) für Vorschläge beim Tippen – erst nach 450 ms
+  Pause und ab drei Zeichen, höchstens eine Anfrage je 600 ms, nach Nähe sortiert (Start bzw. Kartenmitte).
+  Nominatim (`nominatim.openstreetmap.org`) nur bei ausdrücklicher Suche (Eingabetaste) und nur, wenn Photon nichts
+  liefert oder ausfällt: Die Nutzungsregeln der OSM Foundation verbieten Vorschläge beim Tippen und erlauben höchstens
+  eine Anfrage je Sekunde. Ergebnisse werden zwischengespeichert; Koordinaten („52.52, 13.40“) gehen ohne Anfrage.
+- **Ausdrückliche Eingabe:** Eine gewählte Adresse setzt den Punkt auch über vorhandenen Vorschlägen (wie langes
+  Drücken) und verwirft sie; ein Pin oder der Standort leert das Adressfeld wieder.
+- **Frei planen:** Lupe in der Leiste – ohne Start wird die Adresse zum Start, sonst wird die Route auf Wegen bis zu
+  ihr verlängert.
+
+Tests: `routes_test.dart` (Gruppe „Adresssuche“: Photon, Nominatim, Koordinaten), `routing_service_test.dart`
+(Photon zuerst, Nominatim nur ausdrücklich, Zwischenspeicher), `route_planner_screen_test.dart` (Start mit
+Vorschlägen, Ziel per Eingabetaste, Planen).
+

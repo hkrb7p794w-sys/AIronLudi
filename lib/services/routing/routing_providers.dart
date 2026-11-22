@@ -30,6 +30,13 @@ final routeFeatureSourceProvider = Provider<RouteFeatureSource?>((ref) {
   return OverpassFeatureSource(transport);
 });
 
+/// Adresssuche für Start und Ziel (Photon, Nominatim); in Tests überschreibbar.
+final placeSearchProvider = Provider<PlaceSearch>((ref) {
+  final transport = DioTransport();
+  ref.onDispose(transport.close);
+  return OsmPlaceSearch(transport);
+});
+
 final locationSourceProvider = Provider<LocationSource>((ref) => const DeviceLocationSource());
 
 final explorationImportProvider = Provider<ExplorationImport>(
