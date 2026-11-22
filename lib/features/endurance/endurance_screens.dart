@@ -10,6 +10,7 @@ import '../../app/user_providers.dart';
 import '../../services/endurance/workout_exporter_service.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../routes/route_for_slot.dart';
 import 'endurance_controller.dart';
 
 /// „4:30“ bzw. „1:50“ in Sekunden; `null` bei leerer oder ungültiger Eingabe.
@@ -446,6 +447,7 @@ class EnduranceWorkoutScreen extends ConsumerWidget {
                 LabeledRow(label: 'Ursprünglich', value: slot.baseline.summary),
               ],
             ),
+          RouteForSlotSection(slot: slot, runThresholdPace: controller.plan?.request.thresholds.runThresholdPace),
           WorkoutDetailSections(workout: slot.current, day: slot.day, onSend: () => controller.send(slot)),
         ],
       ),

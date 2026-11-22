@@ -1234,6 +1234,20 @@ void main() {
     });
   });
 
+  test('Wunschdistanz aus einer Einheit des Ausdauerplans', () {
+    // 60 min locker bei 4:00-Schwelle (5:00 /km) → 12 km.
+    expect(RouteForWorkout.suggest(isBike: false, isRun: true, minutes: 60, runThresholdPace: 240)?.kilometers, 12);
+    // Ohne Schwelle 6:00 /km: 45 min → 7,5 km.
+    expect(RouteForWorkout.suggest(isBike: false, isRun: true, minutes: 45)?.kilometers, 7.5);
+    // Geplante Strecke hat Vorrang.
+    expect(RouteForWorkout.suggest(isBike: false, isRun: true, minutes: 90, meters: 21100)?.kilometers, 21);
+    final bike = RouteForWorkout.suggest(isBike: true, isRun: false, minutes: 120)!;
+    expect(bike.discipline, RouteDiscipline.roadBike);
+    expect(bike.kilometers, 50);
+    expect(RouteForWorkout.suggest(isBike: false, isRun: false, minutes: 60), isNull);
+    expect(RouteForWorkout.suggest(isBike: false, isRun: true, minutes: 0), isNull);
+  });
+
   test('Anzeige', () {
     expect(RouteFormat.distance(850), '850 m');
     expect(RouteFormat.distance(10249), '10,2 km');

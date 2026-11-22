@@ -460,4 +460,34 @@ void main() {
     expect(planner.routes, isEmpty);
     expect(planner.start, isNull);
   });
+
+  testWidgets('Route für eine Einheit des Ausdauerplans: vorbelegt und beim Speichern zugeordnet', (tester) async {
+    final routing = FakeRouting();
+    final container = await openPlanner(tester, routing);
+    Navigator.of(tester.element(find.byType(RoutePlannerScreen))).pop();
+    await tester.pumpAndSettle();
+    final planner = container.read(routePlannerControllerProvider);
+    final day = CalendarDay.today().adding(2);
+    final suggestion = RouteForWorkout.suggest(isBike: false, isRun: true, minutes: 60, runThresholdPace: 240)!;
+    planner.prepareForSlot(
+      discipline: suggestion.discipline,
+      kilometers: suggestion.kilometers,
+      day: day,
+      slotID: 'slot-42',
+      title: 'Langer Lauf',
+    );
+    await tester.tap(find.text('Neue Route planen'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Für „Langer Lauf“'), findsOneWidget);
+    expect(planner.kilometers, 12);
+    await tapCentered(tester, find.text('Aktueller Standort'), delta: -300);
+    await tapCentered(tester, find.text('Routen vorschlagen'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pumpAndSettle();
+    await tapCentered(tester, find.text('Speichern'));
+    final saved = container.read(routeStoreProvider).openRoutes.single;
+    expect(saved.slotID, 'slot-42');
+    expect(saved.slotTitle, 'Langer Lauf');
+    expect(saved.plannedDay, day);
+  });
 }

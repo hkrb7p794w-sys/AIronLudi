@@ -188,6 +188,26 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
       body: ListView(
         padding: const EdgeInsets.only(bottom: 40),
         children: [
+          if (c.forSlot case final slot?)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(LiquidSpacing.page, 4, LiquidSpacing.page, 4),
+              child: LiquidCard(
+                padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
+                tint: theme.colorScheme.primary,
+                child: Row(
+                  spacing: 10,
+                  children: [
+                    const Icon(Icons.event_note),
+                    Expanded(child: Text('Für „${slot.title}“ am ${GermanFormat.date(slot.day)}', maxLines: 2)),
+                    IconButton(
+                      tooltip: 'Ohne Einheit planen',
+                      icon: const Icon(Icons.close),
+                      onPressed: () => c.update((planner) => planner.forSlot = null),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.fromLTRB(LiquidSpacing.page, 4, LiquidSpacing.page, 12),
             child: PlannerModeSwitch(automatic: true, onChanged: (automatic) => automatic ? null : _openDrawing()),
