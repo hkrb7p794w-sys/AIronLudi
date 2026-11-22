@@ -156,7 +156,8 @@ von Hand: denselben Link wieder öffnen.
 
 1. *Training › Routen › Neue Route planen:* Start als **Adresse** eingeben (Vorschläge erscheinen beim Tippen,
    Eingabetaste sucht), mit **Aktueller Standort** (fragt einmal nach der Freigabe) oder durch **langes Drücken** auf
-   die Karte. Antippen der Karte öffnet sie im Vollbild. Mit dem **Stern** neben der Adresse merkst du einen Ort als
+   die Karte. Antippen der Karte öffnet sie im Vollbild. Der Knopf ◎ (*Mein Standort*) zeigt dich als blauen Punkt
+   und zentriert die Karte – den Start ändert er nicht. Mit dem **Stern** neben der Adresse merkst du einen Ort als
    Favorit (z. B. Zuhause); Favoriten erscheinen beim Antippen der Adresszeile und lassen sich unter *Routen ›
    Favorisierte Orte* umbenennen oder löschen. **Disziplin:** Laufen (Fuß- und Waldwege, Parks), Rennrad (Asphalt), Gravel
    (Schotter, Feld- und Waldwege) oder Spazieren (ruhige Wege und Parks, z. B. Gassi mit dem Hund). **Umgebung:** *Wald & Natur*, *Am Wasser* (Kanäle, Flüsse, Seen),

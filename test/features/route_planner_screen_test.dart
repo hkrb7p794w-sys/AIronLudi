@@ -1,6 +1,7 @@
 // Routenplaner im Reiter Training: Einstieg, Standort als Start, Vorschläge, Speichern, Übernahme für heute, Gebiete.
 import 'package:aironludi/features/routes/address_field.dart';
 import 'package:aironludi/features/routes/exploration_screen.dart';
+import 'package:aironludi/features/routes/my_location.dart';
 import 'package:aironludi/features/routes/route_detail_screen.dart';
 import 'package:aironludi/features/routes/route_draw_screen.dart';
 import 'package:aironludi/features/routes/route_parts.dart';
@@ -402,6 +403,15 @@ void main() {
     await openPlanner(tester, routing);
     expect(find.text('Gravel'), findsOneWidget);
     expect(find.text('Gravel/Allround'), findsNothing);
+    // „Mein Standort“: blauer Punkt auf der Karte, aber kein Start.
+    tester.state<ScrollableState>(find.byType(Scrollable).first).position.jumpTo(0);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Mein Standort').first);
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+    await tester.pumpAndSettle();
+    expect(tester.widget<MyLocationLayer>(find.byType(MyLocationLayer).first).point, home);
+    expect(find.text('oder einen Pin auf der Karte setzen'), findsOneWidget);
+    expect(routing.calls, 0);
     await tapCentered(tester, find.text('Spazieren'));
     expect(find.text(RouteDiscipline.walk.surfaces), findsOneWidget);
     await tapCentered(tester, find.text('Aktueller Standort'), delta: -300);

@@ -13,6 +13,7 @@ import '../../ui/components.dart';
 import '../../ui/liquid.dart';
 import '../endurance/endurance_controller.dart';
 import 'address_field.dart';
+import 'my_location.dart';
 import 'route_detail_screen.dart';
 import 'route_draw_screen.dart';
 import 'route_parts.dart';
@@ -50,6 +51,9 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
   bool _startFromLocation = false;
   GeoPoint? _destination;
   bool _locating = false;
+
+  /// Eigener Standort auf der Karte (blauer Punkt, „Mein Standort“); setzt keinen Start.
+  GeoPoint? _myLocation;
 
   /// Adressen aus der Adresszeile (`null`: Punkt kam von Karte oder Standort).
   String? _startAddress;
@@ -372,7 +376,13 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                   selected: current,
                   onTap: _planning ? null : _tapMap,
                   onLongPress: _planning ? null : _longPressMap,
+                  myLocation: _myLocation,
                   routingSource: current?.engine,
+                ),
+                Positioned(
+                  right: 8,
+                  bottom: 30,
+                  child: LocateMeButton(map: _map, onLocated: (point) => setState(() => _myLocation = point)),
                 ),
                 Positioned(
                   left: 8,

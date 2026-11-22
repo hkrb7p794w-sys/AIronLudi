@@ -13,6 +13,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../ui/liquid.dart';
+import 'my_location.dart';
 
 LatLng latLng(GeoPoint point) => LatLng(point.latitude, point.longitude);
 
@@ -87,6 +88,7 @@ class PlannerMap extends StatelessWidget {
     this.height = 320,
     this.rounded = true,
     this.initialPoints = const [],
+    this.myLocation,
     this.routingSource,
   });
 
@@ -104,6 +106,9 @@ class PlannerMap extends StatelessWidget {
 
   /// Beim Aufbau auf diese Punkte ausrichten (z. B. alle Vorschläge im Vollbild).
   final List<GeoPoint> initialPoints;
+
+  /// Eigener Standort (blauer Punkt), nach „Mein Standort“.
+  final GeoPoint? myLocation;
   final String? routingSource;
 
   /// Mitte Deutschlands, solange kein Start bekannt ist.
@@ -161,6 +166,7 @@ class PlannerMap extends StatelessWidget {
               if (selected case final route?) DirectionArrows(points: route.points, color: variantColor(route.variant)),
               if (selected case final route?)
                 KilometerMarkers(points: route.points, color: variantColor(route.variant)),
+              MyLocationLayer(point: myLocation),
               MarkerLayer(
                 markers: [
                   if (destination case final destination?)
@@ -260,6 +266,7 @@ class _FullscreenRouteMapState extends State<FullscreenRouteMap> {
   late GeoPoint? _destination = widget.destination;
   late List<PlannedRoute> _routes = widget.routes;
   late int _selected = widget.selected.clamp(0, widget.routes.isEmpty ? 0 : widget.routes.length - 1);
+  GeoPoint? _myLocation;
 
   PlannedRoute? get _current => _routes.isEmpty ? null : _routes[_selected];
 
@@ -297,7 +304,13 @@ class _FullscreenRouteMapState extends State<FullscreenRouteMap> {
                 if (_routes.isEmpty) ...[?_start, ?_destination],
               ],
               routingSource: current?.engine,
+              myLocation: _myLocation,
             ),
+          ),
+          Positioned(
+            right: 12,
+            bottom: padding.bottom + (_routes.length > 1 ? 84 : 24),
+            child: LocateMeButton(map: _map, onLocated: (point) => setState(() => _myLocation = point)),
           ),
           Positioned(
             top: padding.top + 10,

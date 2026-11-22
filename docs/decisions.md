@@ -1135,3 +1135,11 @@ sich Routen an die Uhr übertragen lassen.
   Garmin-Connect-Zugang der App (Kurs anlegen im `course-service`, wie „An Uhr senden“ beim Ausdauerplan); das
   Format dieser Schnittstelle ist nicht dokumentiert und ließ sich hier nicht prüfen. Deshalb vorerst nicht eingebaut.
 
+## 2026-11-22 – Routenplaner: „Mein Standort“ auf jeder Karte
+
+Auftrag des Nutzers: Symbol zum Finden des eigenen Standorts wie bei Google Maps. Knopf ◎ auf allen Routenkarten
+(Planer, Vollbild, frei planen, Gebiete): bestimmt den Standort (Freigabe wie beim Start), zentriert die Karte
+(mindestens Zoom 15) und zeigt einen blauen Punkt. Er setzt bewusst keinen Start – dafür gibt es „Aktueller
+Standort“ bzw. langes Drücken. Der Punkt folgt nicht laufend (keine Ortung im Hintergrund, kein Akkuverbrauch);
+erneutes Antippen aktualisiert ihn.
+

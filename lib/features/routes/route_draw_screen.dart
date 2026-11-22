@@ -11,6 +11,7 @@ import '../../services/routing/routing_providers.dart';
 import '../../ui/liquid.dart';
 import '../endurance/endurance_controller.dart';
 import 'address_field.dart';
+import 'my_location.dart';
 import 'route_detail_screen.dart';
 import 'route_parts.dart';
 import 'route_planner_screen.dart';
@@ -41,6 +42,7 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
   final List<GeoPoint> _stroke = [];
   bool _busy = false;
   String? _engine;
+  GeoPoint? _myLocation;
 
   @override
   void initState() {
@@ -413,6 +415,7 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
                               ),
                           ],
                         ),
+                        MyLocationLayer(point: _myLocation),
                         osmAttribution(routingSource: _engine),
                       ],
                     ),
@@ -458,17 +461,25 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
                   left: LiquidSpacing.page,
                   right: LiquidSpacing.page,
                   bottom: LiquidSpacing.page + MediaQuery.paddingOf(context).bottom,
-                  child: _TelemetryBar(
-                    distance: stats.distanceMeters,
-                    ascent: stats.hasElevation ? stats.ascentMeters : null,
-                    duration: duration,
-                    pendingMeters: _stroke.length > 1 ? Geo.length(_stroke) : null,
-                    busy: _busy,
-                    surroundings: '${_discipline.label} · ${RoutePreference.describe(_preferences)}',
-                    onUndo: _busy || _route.isEmpty ? null : _undo,
-                    onClose: _busy || !_route.canClose ? null : () => unawaited(_close()),
-                    onReset: _busy || _route.isEmpty ? null : () => unawaited(_reset()),
-                    onSave: _busy || points.length < 2 ? null : () => unawaited(_save()),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: 10,
+                    children: [
+                      LocateMeButton(map: _map, onLocated: (point) => setState(() => _myLocation = point)),
+                      _TelemetryBar(
+                        distance: stats.distanceMeters,
+                        ascent: stats.hasElevation ? stats.ascentMeters : null,
+                        duration: duration,
+                        pendingMeters: _stroke.length > 1 ? Geo.length(_stroke) : null,
+                        busy: _busy,
+                        surroundings: '${_discipline.label} · ${RoutePreference.describe(_preferences)}',
+                        onUndo: _busy || _route.isEmpty ? null : _undo,
+                        onClose: _busy || !_route.canClose ? null : () => unawaited(_close()),
+                        onReset: _busy || _route.isEmpty ? null : () => unawaited(_reset()),
+                        onSave: _busy || points.length < 2 ? null : () => unawaited(_save()),
+                      ),
+                    ],
                   ),
                 ),
               ],
