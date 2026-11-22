@@ -121,6 +121,56 @@ void main() {
       expect(transport.requests.single.url, ValhallaFormat.heightUri);
     });
 
+    test('Wegarten gehen an Valhalla und BRouter', () async {
+      final transport = FakeHttpTransport((request) {
+        if (request.url.host == 'valhalla1.openstreetmap.de') return json({'error': 'busy'}, status: 503);
+        return json(brouterTrip([start, end]));
+      });
+      final backend = FallbackRoutingBackend([
+        ValhallaEngine(transport, gate: instantGate()),
+        BRouterEngine(transport, gate: instantGate()),
+      ]);
+      await backend.route(
+        [start, end],
+        discipline: RouteDiscipline.gravel,
+        variant: RouteVariant.balanced,
+        preferences: {RoutePreference.nature},
+      );
+      final body = jsonDecode(utf8.decode(transport.requests.first.body!)) as Map<String, Object?>;
+      expect(((body['costing_options']! as Map)['bicycle'] as Map)['bicycle_type'], 'Mountain');
+      expect(transport.requests.last.url.queryParameters['profile'], 'mtb-zossebart');
+    });
+
+    test('Overpass: POST mit Abfrage, Mittelpunkte, Zwischenspeicher, Fehler ergibt leere Liste', () async {
+      var status = 200;
+      final transport = FakeHttpTransport(
+        (request) => json({
+          'elements': [
+            {
+              'type': 'way',
+              'center': {'lat': 52.521, 'lon': 13.41},
+            },
+          ],
+        }, status: status),
+      );
+      final source = OverpassFeatureSource(transport, gate: instantGate());
+      final points = await source.attractors(start, 3000, {RoutePreference.water});
+      expect(points, [const GeoPoint(52.521, 13.41)]);
+      final request = transport.requests.single;
+      expect(request.method, 'POST');
+      expect(request.url, OverpassFormat.uri);
+      expect(Uri.splitQueryString(utf8.decode(request.body!))['data'], contains('waterway'));
+      await source.attractors(start, 3000, {RoutePreference.water});
+      expect(transport.requests.length, 1);
+      status = 504;
+      expect(await source.attractors(start, 3000, {RoutePreference.nature}), isEmpty);
+      final offline = OverpassFeatureSource(
+        FakeHttpTransport((request) => throw const HttpTransportException('offline')),
+        gate: instantGate(),
+      );
+      expect(await offline.attractors(start, 3000, {RoutePreference.water}), isEmpty);
+    });
+
     test('Rate-Limit: Anfragen nacheinander mit Mindestabstand', () async {
       var now = DateTime.utc(2026, 11, 21, 8);
       final waits = <Duration>[];

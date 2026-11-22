@@ -13,13 +13,16 @@ import '../../ui/components.dart';
 import '../../ui/liquid.dart';
 import '../endurance/endurance_controller.dart';
 import 'route_detail_screen.dart';
+import 'route_draw_screen.dart';
 import 'route_parts.dart';
 
 /// Was ein Antippen der Karte setzt.
 enum _PinTarget { start, destination }
 
-/// Routenplaner auf OpenStreetMap: Start (Standort oder Pin), Rundweg / zum Ziel / Richtung, Distanz und optional
-/// Höhenmeter; erzeugt 2–3 Vorschläge mit Karte, Höhenprofil, Kennzahlen, „Neu würfeln“, Übernahme und Export.
+/// Routenplaner auf OpenStreetMap: Start (Standort oder Pin), Rundweg / zum Ziel / Richtung, Distanz, Wegearten und
+/// optional Höhenmeter; erzeugt 2–3 Vorschläge mit Karte, Richtungspfeilen, Höhenprofil, Kennzahlen, „Neu würfeln“,
+/// Übernahme und Export. Liegen Vorschläge vor, ist die Karte nur zum Ansehen: Punkte setzt dann nur ein langes
+/// Drücken oder „Startpunkt ändern“ – versehentliches Antippen beim Zoomen löscht nichts mehr.
 class RoutePlannerScreen extends ConsumerStatefulWidget {
   const RoutePlannerScreen({super.key});
 
@@ -37,6 +40,10 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
   int _elevation = 150;
   CompassDirection _direction = CompassDirection.north;
   _PinTarget _pin = _PinTarget.start;
+  Set<RoutePreference> _preferences = {};
+
+  /// Nach „Startpunkt ändern“: der nächste Tipp setzt den Punkt, auch wenn Vorschläge vorliegen.
+  bool _editingPins = false;
 
   GeoPoint? _start;
   bool _startFromLocation = false;
@@ -59,6 +66,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     _shape = settings.shape;
     _kilometers = settings.distanceKilometers.clamp(_minKm, _maxKm);
     _distanceField = TextEditingController(text: _kmText(_kilometers));
+    _preferences = {...settings.preferences};
     if (settings.elevationGain case final gain?) {
       _wantsElevation = true;
       _elevation = gain;
@@ -91,8 +99,12 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
       bearingDegrees: _shape == RouteShape.direction ? _direction.degrees : null,
       distanceMeters: _kilometers * 1000,
       elevationGainMeters: _wantsElevation ? _elevation.toDouble() : null,
+      preferences: _preferences,
     );
   }
+
+  /// Vorschläge liegen vor: Antippen verschiebt keine Punkte (Ansichtsmodus).
+  bool get _pinsLocked => _routes.isNotEmpty && !_editingPins;
 
   void _clearResults() {
     _routes = const [];
@@ -132,8 +144,20 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
   }
 
   void _tapMap(GeoPoint point) {
+    if (_pinsLocked) return;
+    _placePin(point);
+  }
+
+  /// Langes Drücken setzt immer einen Punkt (ausdrücklich), auch über vorhandenen Vorschlägen.
+  void _longPressMap(GeoPoint point) {
+    HapticFeedback.mediumImpact();
+    _placePin(point);
+  }
+
+  void _placePin(GeoPoint point) {
     HapticFeedback.selectionClick();
     setState(() {
+      _editingPins = false;
       if (_shape == RouteShape.toDestination && _pin == _PinTarget.destination) {
         _destination = point;
         _pin = _PinTarget.start;
@@ -144,6 +168,30 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
       }
       _clearResults();
     });
+  }
+
+  void _changeStart() => setState(() {
+    _editingPins = true;
+    _pin = _PinTarget.start;
+  });
+
+  void _reset() => setState(() {
+    _start = null;
+    _destination = null;
+    _startFromLocation = false;
+    _editingPins = false;
+    _pin = _PinTarget.start;
+    _clearResults();
+  });
+
+  void _openDrawing() {
+    unawaited(
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => RouteDrawScreen(start: _start, discipline: _discipline, preferences: _preferences),
+        ),
+      ),
+    );
   }
 
   Future<void> _plan({bool reroll = false}) async {
@@ -170,24 +218,27 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
           ..discipline = _discipline
           ..shape = _shape
           ..distanceKilometers = _kilometers
-          ..elevationGain = _wantsElevation ? _elevation : null,
+          ..elevationGain = _wantsElevation ? _elevation : null
+          ..preferences = {..._preferences},
       ),
     );
     try {
-      final routes = await RoutePlanner(ref.read(routingBackendProvider)).generate(
-        request,
-        username: store.username,
-        seed: _seed,
-        runThresholdPace: ref.read(enduranceControllerProvider).plan?.request.thresholds.runThresholdPace,
-        onProgress: (message) {
-          if (mounted) setState(() => _progress = message);
-        },
-        isCancelled: () => !mounted,
-      );
+      final routes =
+          await RoutePlanner(ref.read(routingBackendProvider), features: ref.read(routeFeatureSourceProvider)).generate(
+            request,
+            username: store.username,
+            seed: _seed,
+            runThresholdPace: ref.read(enduranceControllerProvider).plan?.request.thresholds.runThresholdPace,
+            onProgress: (message) {
+              if (mounted) setState(() => _progress = message);
+            },
+            isCancelled: () => !mounted,
+          );
       if (!mounted) return;
       setState(() {
         _routes = routes;
         _selected = 0;
+        _editingPins = false;
       });
       PlannerMap.fit(_map, [for (final route in routes) ...Geo.thin(route.points, 200)]);
     } on NoRouteFound catch (error) {
@@ -227,10 +278,24 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     final current = _current;
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Route planen')),
+      appBar: AppBar(
+        title: const Text('Route planen'),
+        actions: [
+          if (_start != null)
+            IconButton(
+              tooltip: 'Planer zurücksetzen',
+              onPressed: _planning ? null : _reset,
+              icon: const Icon(Icons.restart_alt),
+            ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.only(bottom: 40),
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(LiquidSpacing.page, 4, LiquidSpacing.page, 12),
+            child: PlannerModeSwitch(automatic: true, onChanged: (automatic) => automatic ? null : _openDrawing()),
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(LiquidSpacing.page, 8, LiquidSpacing.page, 0),
             child: Stack(
@@ -242,6 +307,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                   routes: _routes,
                   selected: current,
                   onTap: _planning ? null : _tapMap,
+                  onLongPress: _planning ? null : _longPressMap,
                   routingSource: current?.engine,
                 ),
                 Positioned(
@@ -250,7 +316,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                   top: 10,
                   child: IgnorePointer(
                     child: LiquidSwitcher(
-                      child: _MapHint(key: ValueKey('$_start$_destination$_shape$_pin'), text: _hint),
+                      child: _MapHint(key: ValueKey('$_start$_destination$_shape$_pin$_pinsLocked'), text: _hint),
                     ),
                   ),
                 ),
@@ -274,6 +340,18 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                 ),
                 onTap: _locating || _planning ? null : () => unawaited(_useLocation()),
               ),
+              if (_routes.isNotEmpty)
+                ListTile(
+                  leading: Icon(
+                    Icons.edit_location_alt_outlined,
+                    color: _editingPins ? theme.colorScheme.primary : null,
+                  ),
+                  title: Text(_shape == RouteShape.toDestination ? 'Start oder Ziel ändern' : 'Startpunkt ändern'),
+                  subtitle: Text(
+                    _editingPins ? 'Tippe jetzt auf die Karte.' : 'Oder einen Punkt auf der Karte lange drücken.',
+                  ),
+                  onTap: _planning ? null : _changeStart,
+                ),
             ],
           ),
           FormSection(
@@ -304,12 +382,34 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
             ],
           ),
           FormSection(
+            header: 'Umgebung',
+            footer: _preferences.isEmpty
+                ? 'Ausgewogener Mix aus Natur- und befestigten Wegen.'
+                : [
+                    for (final preference in RoutePreference.values)
+                      if (_preferences.contains(preference)) preference.detail,
+                  ].join(' · '),
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: PreferenceChips(
+                  selected: _preferences,
+                  onChanged: (selection) => setState(() {
+                    _preferences = selection;
+                    _clearResults();
+                  }),
+                ),
+              ),
+            ],
+          ),
+          FormSection(
             header: 'Strecke',
             footer: switch (_shape) {
               RouteShape.loop => 'Start und Ziel sind gleich – die Route schließt sich als Runde.',
               RouteShape.toDestination =>
                 'Setze das Ziel mit einem Pin. Ist es näher als die Wunschdistanz, baut der Planer einen Umweg ein.',
-              RouteShape.direction => 'Offenes Ziel: Die Route führt etwa die Wunschdistanz in diese Richtung.',
+              RouteShape.direction => 'Offenes Ziel: Die Route führt genau die Wunschdistanz in diese Richtung.',
+              RouteShape.drawn => null,
             },
             children: [
               Padding(
@@ -317,7 +417,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                 child: SegmentedButton<RouteShape>(
                   showSelectedIcon: false,
                   segments: [
-                    for (final shape in RouteShape.values) ButtonSegment(value: shape, label: Text(shape.label)),
+                    for (final shape in RouteShape.generated) ButtonSegment(value: shape, label: Text(shape.label)),
                   ],
                   selected: {_shape},
                   onSelectionChanged: (selection) => setState(() {
@@ -368,7 +468,9 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
           ),
           FormSection(
             header: 'Ziel',
-            footer: 'Toleranz der Distanz: etwa ±${(RouteRequest.tolerance * 100).round()} %.',
+            footer:
+                'Der Planer passt die Wegpunkte an, bis die Distanz auf ±${GermanFormat.decimal(RouteRequest.tolerance * 100)} % '
+                'stimmt (bei Strecken zum festen Ziel, soweit das Wegenetz es zulässt).',
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 12, 0),
@@ -473,6 +575,12 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
 
   String get _hint {
     if (_start == null) return 'Tippe auf die Karte, um den Start zu setzen – oder nutze deinen Standort.';
+    if (_editingPins) {
+      return _pin == _PinTarget.destination
+          ? 'Tippe auf die Karte für das neue Ziel.'
+          : 'Tippe auf die Karte für den neuen Start.';
+    }
+    if (_pinsLocked) return 'Ansicht: Zum Verschieben lange drücken oder „Startpunkt ändern“.';
     if (_shape == RouteShape.toDestination && (_destination == null || _pin == _PinTarget.destination)) {
       return 'Tippe auf die Karte, um das Ziel zu setzen.';
     }
@@ -578,6 +686,11 @@ class _Results extends StatelessWidget {
                 children: [
                   Text(route.name, style: Theme.of(context).textTheme.titleMedium),
                   RouteStatsRow(route: route),
+                  if (route.preferenceShare case final share?)
+                    AppChip(
+                      text: 'ca. ${(share * 100).round()} % ${RoutePreference.describe(route.request.preferences)}',
+                      color: variantColor(route.variant),
+                    ),
                   ElevationProfileChart(route: route),
                   if (!route.request.withinTolerance(route.stats.distanceMeters))
                     Text(

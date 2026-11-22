@@ -23,6 +23,13 @@ final routingBackendProvider = Provider<RoutingBackend>((ref) {
   return FallbackRoutingBackend.standard(transport);
 });
 
+/// Wege der gewünschten Art (Wald, Wasser, Radwege) aus OSM über Overpass; in Tests überschreibbar.
+final routeFeatureSourceProvider = Provider<RouteFeatureSource?>((ref) {
+  final transport = DioTransport();
+  ref.onDispose(transport.close);
+  return OverpassFeatureSource(transport);
+});
+
 final locationSourceProvider = Provider<LocationSource>((ref) => const DeviceLocationSource());
 
 final explorationImportProvider = Provider<ExplorationImport>(

@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Netz: Garmin, Cloudflare Worker (KI, Konto, Freunde), Open Food Facts, Kartenkacheln, Routenplaner (Valhalla, BRouter). -->
+    <!-- Netz: Garmin, Cloudflare Worker (KI, Konto, Freunde), Open Food Facts, Kartenkacheln, Routenplaner (Valhalla, BRouter, Overpass). -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Mahlzeit-Fotos (Kamera-App) und Barcode-Scanner (mobile_scanner). -->

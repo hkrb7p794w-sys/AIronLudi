@@ -1036,3 +1036,41 @@ Tests: `packages/coach_core/test/routes_test.dart` (Geometrie, Wegpunkte, Router
 Export, Gebiete), `test/services/routing_service_test.dart` (Ausweichen, Rate-Limit, Benutzer-Trennung),
 `test/features/route_planner_screen_test.dart` (Ablauf vom Reiter Training bis zur Übernahme und Gebieten).
 
+## 2026-11-22 – Routenplaner: Ansichtsmodus, Wegearten, ±2,5 %, Richtungspfeile, frei planen
+
+Auftrag des Nutzers: Fehler „Antippen beim Zoomen löscht die Route“ beheben, Umgebung wählbar (Wald, Wasser,
+Straße, Mix), Distanz enger einhalten, Richtungspfeile, Modus „Frei planen / zeichnen“.
+
+- **Ansichts- und Bearbeitungsmodus:** Sobald Vorschläge vorliegen, verschiebt ein einfaches Antippen der Karte keine
+  Punkte mehr (auch der erste Tipp eines Doppeltipps zum Zoomen löste bisher `onTap` aus). Punkte setzen dann nur
+  **langes Drücken**, **„Startpunkt ändern“** (der nächste Tipp setzt den Punkt) oder **Planer zurücksetzen**.
+- **Wegearten (`RoutePreference`):** Mehrfachauswahl Wald & Natur, Am Wasser, Straße & Asphalt; keine Auswahl =
+  ausgewogener Mix. Natur und Asphalt schließen sich aus. Umgesetzt in zwei Stufen:
+  1. **Router-Gewichtung:** Valhalla `pedestrian` (`use_tracks`, `walkway_factor`, `sidewalk_factor`,
+     `use_living_streets`) bzw. `bicycle` (`bicycle_type`, `use_roads`, `avoid_bad_surfaces`); BRouter-Profile
+     (`mtb-zossebart`, `fastbike-lowtraffic`, `trekking`, `shortest`).
+  2. **Wegpunkte auf passende Wege (Overpass):** Valhalla kennt kein „nah am Wasser“. Daher sucht der Planer über die
+     Overpass-API (`overpass-api.de`, ohne Schlüssel, höchstens eine Anfrage je 2 s, Ergebnisse zwischengespeichert)
+     Wege der Art im Umkreis – Pfade/Tracks/Fuß- und Radwege höchstens 40 m neben `waterway=canal|river` bzw.
+     `natural=water`, unbefestigte `highway=path|track|bridleway` und `leisure=park`, beim Rad mit Asphalt
+     `highway=cycleway` – und zieht die Zwischenpunkte auf den nächsten solchen Weg (höchstens 45 % des
+     Schleifenradius bzw. 12 % der Strecke). Der Anteil der Strecke in 150 m Nähe solcher Wege fließt leicht in die
+     Bewertung ein und wird angezeigt („ca. 62 % Am Wasser“). Fällt Overpass aus, routet der Planer nur mit der
+     Gewichtung. Waldflächen als Polygone (`landuse=forest`, `natural=wood`) werden nicht abgefragt, weil
+     `map_to_area` auf dem öffentlichen Server zu langsam ist; Wald- und Forstwege sind fast immer `track`/`path`.
+- **Distanz ±2,5 %** (vorher ±7 %): bis zu sechs Anfragen je Variante; nach der ersten Antwort proportional, sobald
+  eine zu kurze und eine zu lange Antwort vorliegen, per Sekantenverfahren dazwischen. Offene Ziele (Richtung) werden
+  bewusst etwas zu lang geplant und **exakt** auf die Wunschdistanz gekürzt. Strecken zum festen Ziel, deren
+  Luftlinie schon länger ist, bleiben unverkürzbar (Hinweis in der Anzeige).
+- **Richtungspfeile:** etwa alle 90 Bildpunkte (zoomabhängig, höchstens 80) auf der gewählten Route, gedreht nach der
+  Fahrtrichtung des Abschnitts; die Karte dreht sich nicht, daher genügt die Richtung über Grund.
+- **Frei planen:** eigener Bildschirm, umschaltbar mit „Automatisch“. Werkzeuge *Punkte* (Antippen, Doppeltipp-Zoom
+  aus, damit kein Punkt doppelt entsteht) und *Zeichnen* (Karte steht still; der Strich wird vereinfacht und mit
+  höchstens 16 Wegpunkten geroutet). Jeder Abschnitt wird mit Sportart und Wegearten auf OSM-Wege gelegt, Höhen über
+  Valhalla `/height`. Rückgängig entfernt den letzten Abschnitt, „Rundweg schließen“ routet zum Start. Gespeichert
+  als `RouteShape.drawn` mit `username` wie alle Routen.
+
+Tests: `routes_test.dart` (Gruppen „Wegarten, Pfeile, Zeichnen“ und „Planer mit Wegarten und exakter Distanz“,
+u. a. nichtlinearer Test-Router auf ±2,5 %), `routing_service_test.dart` (Wegarten an beide Router, Overpass),
+`route_planner_screen_test.dart` (Ansichtsmodus beim Antippen, Wegarten, frei planen bis zum Speichern).
+

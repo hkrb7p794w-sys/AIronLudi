@@ -43,13 +43,56 @@ enum RouteShape implements RawEnum {
   toDestination('toDestination', 'Zum Ziel'),
 
   /// Offenes Ziel: Himmelsrichtung und Distanz.
-  direction('direction', 'Richtung');
+  direction('direction', 'Richtung'),
+
+  /// Frei gezeichnet bzw. aus angetippten Wegpunkten (Modus „Frei planen“).
+  drawn('drawn', 'Frei geplant');
 
   const RouteShape(this.rawValue, this.label);
 
   @override
   final String rawValue;
   final String label;
+
+  /// Formen, die der Planer automatisch erzeugt.
+  static const generated = [loop, toDestination, direction];
+}
+
+/// Bevorzugte Umgebung bzw. Wegeart. Keine Auswahl = ausgewogener Mix.
+enum RoutePreference implements RawEnum {
+  /// Wald- und Forstwege, Trails, Parks (`highway=track|path`, `landuse=forest`, `natural=wood`, `leisure=park`).
+  nature('nature', 'Wald & Natur', 'Wald- und Forstwege, Trails, Parks'),
+
+  /// Ufer- und Leinpfade an Kanälen, Flüssen und Seen (`waterway=canal|river`, `natural=water`).
+  water('water', 'Am Wasser', 'Uferwege an Kanälen, Flüssen und Seen'),
+
+  /// Befestigte Straßen und Radwege (`highway=cycleway`, `surface=asphalt`).
+  paved('paved', 'Straße & Asphalt', 'Befestigte Wege, Radwege und ruhige Straßen');
+
+  const RoutePreference(this.rawValue, this.label, this.detail);
+
+  @override
+  final String rawValue;
+  final String label;
+  final String detail;
+
+  static const mixLabel = 'Ausgewogener Mix';
+
+  /// Natur und Asphalt schließen sich aus; Wasser passt zu beidem.
+  static Set<RoutePreference> toggle(Set<RoutePreference> current, RoutePreference preference) {
+    if (current.contains(preference)) return {...current}..remove(preference);
+    return {
+      ...current.where((item) => !(preference == nature && item == paved) && !(preference == paved && item == nature)),
+      preference,
+    };
+  }
+
+  static String describe(Set<RoutePreference> preferences) => preferences.isEmpty
+      ? mixLabel
+      : [
+          for (final preference in values)
+            if (preferences.contains(preference)) preference.label,
+        ].join(' + ');
 }
 
 /// Charakter eines Vorschlags.
@@ -97,6 +140,7 @@ final class RouteRequest {
     this.destination,
     this.bearingDegrees,
     this.elevationGainMeters,
+    this.preferences = const {},
   });
 
   final RouteDiscipline discipline;
@@ -111,8 +155,11 @@ final class RouteRequest {
   /// Gewünschte kumulierte Höhenmeter (Anstieg); `null`: egal.
   final double? elevationGainMeters;
 
-  /// Erlaubte Abweichung der Distanz (±7 %).
-  static const tolerance = 0.07;
+  /// Bevorzugte Wegearten (leer: ausgewogener Mix).
+  final Set<RoutePreference> preferences;
+
+  /// Erlaubte Abweichung der Distanz (±2,5 %, bei 10 km also ±250 m).
+  static const tolerance = 0.025;
 
   /// Grenzen der Eingabe.
   static const minDistance = 1000.0;
@@ -121,6 +168,7 @@ final class RouteRequest {
   /// Fehler der Eingabe für die Anzeige, sonst `null`.
   String? get problem {
     if (!start.isValid) return 'Bitte einen Startpunkt wählen.';
+    if (shape == RouteShape.drawn) return null;
     if (distanceMeters < minDistance) return 'Die Distanz muss mindestens 1 km betragen.';
     if (distanceMeters > maxDistance(discipline)) {
       return 'Höchstens ${maxDistance(discipline) ~/ 1000} km für ${discipline.label}.';
@@ -145,6 +193,7 @@ final class RouteRequest {
     bearingDegrees: bearingDegrees,
     distanceMeters: distanceMeters,
     elevationGainMeters: elevationGainMeters,
+    preferences: preferences,
   );
 
   Map<String, Object?> toJson() => {
@@ -155,6 +204,11 @@ final class RouteRequest {
     'bearing': ?bearingDegrees,
     'distance': distanceMeters,
     'elevationGain': ?elevationGainMeters,
+    if (preferences.isNotEmpty)
+      'preferences': [
+        for (final preference in RoutePreference.values)
+          if (preferences.contains(preference)) preference.rawValue,
+      ],
   };
 
   static RouteRequest? fromJson(Object? json) {
@@ -174,6 +228,7 @@ final class RouteRequest {
       bearingDegrees: bearing is num ? bearing.toDouble() : null,
       distanceMeters: distance.toDouble(),
       elevationGainMeters: gain is num ? gain.toDouble() : null,
+      preferences: {...enumListFromRaw(RoutePreference.values, json['preferences'])},
     );
   }
 }

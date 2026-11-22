@@ -52,6 +52,44 @@ abstract final class ValhallaFormat {
     RouteVariant variant, {
     double? elevationGain,
     double? distanceMeters,
+    Set<RoutePreference> preferences = const {},
+  }) {
+    final base = _costing(discipline, variant, elevationGain: elevationGain, distanceMeters: distanceMeters);
+    return (costing: base.costing, options: {...base.options, ..._preferenceOptions(discipline, preferences)});
+  }
+
+  /// Gewichtung der gewählten Wegearten (überschreibt die Werte der Variante).
+  static Map<String, Object?> _preferenceOptions(RouteDiscipline discipline, Set<RoutePreference> preferences) {
+    final nature = preferences.contains(RoutePreference.nature);
+    final paved = preferences.contains(RoutePreference.paved);
+    final water = preferences.contains(RoutePreference.water);
+    switch (discipline) {
+      case RouteDiscipline.run:
+        return {
+          if (nature) ...{'use_tracks': 1.0, 'walkway_factor': 0.6, 'sidewalk_factor': 1.6, 'use_living_streets': 0.3},
+          if (paved) ...{'use_tracks': 0.0, 'walkway_factor': 1.0, 'sidewalk_factor': 0.8, 'use_living_streets': 0.8},
+          if (water && !nature && !paved) ...{'use_tracks': 0.8, 'walkway_factor': 0.7},
+        };
+      case RouteDiscipline.roadBike:
+        return {
+          if (nature) ...{'use_roads': 0.0, 'avoid_bad_surfaces': 0.6, 'use_living_streets': 0.9},
+          if (paved) ...{'use_roads': 0.6, 'avoid_bad_surfaces': 1.0},
+          if (water && !paved) 'avoid_bad_surfaces': 0.7,
+        };
+      case RouteDiscipline.gravel:
+        return {
+          if (nature) ...{'bicycle_type': 'Mountain', 'use_roads': 0.0, 'avoid_bad_surfaces': 0.0},
+          if (paved) ...{'bicycle_type': 'Hybrid', 'use_roads': 0.5, 'avoid_bad_surfaces': 0.8},
+          if (water && !paved) ...{'use_roads': 0.1, 'avoid_bad_surfaces': 0.1},
+        };
+    }
+  }
+
+  static ({String costing, Map<String, Object?> options}) _costing(
+    RouteDiscipline discipline,
+    RouteVariant variant, {
+    double? elevationGain,
+    double? distanceMeters,
   }) {
     // Höhenmeter-Fokus: bei flacher Vorgabe Hügel meiden, sonst suchen.
     final hillsForTarget = switch ((elevationGain, distanceMeters)) {
@@ -109,8 +147,15 @@ abstract final class ValhallaFormat {
     required RouteVariant variant,
     double? elevationGain,
     double? distanceMeters,
+    Set<RoutePreference> preferences = const {},
   }) {
-    final cost = costing(discipline, variant, elevationGain: elevationGain, distanceMeters: distanceMeters);
+    final cost = costing(
+      discipline,
+      variant,
+      elevationGain: elevationGain,
+      distanceMeters: distanceMeters,
+      preferences: preferences,
+    );
     return {
       'locations': [
         for (final (index, point) in waypoints.indexed)
@@ -178,21 +223,37 @@ abstract final class ValhallaFormat {
 abstract final class BRouterFormat {
   static const engineName = 'BRouter';
 
-  static String profile(RouteDiscipline discipline, RouteVariant variant) => switch (discipline) {
-    RouteDiscipline.run => 'hiking-mountain',
-    RouteDiscipline.roadBike => variant == RouteVariant.green ? 'fastbike-lowtraffic' : 'fastbike',
-    RouteDiscipline.gravel => variant == RouteVariant.green ? 'mtb-zossebart' : 'trekking',
+  static String profile(
+    RouteDiscipline discipline,
+    RouteVariant variant, {
+    Set<RoutePreference> preferences = const {},
+  }) => switch (discipline) {
+    RouteDiscipline.run => preferences.contains(RoutePreference.paved) ? 'shortest' : 'hiking-mountain',
+    RouteDiscipline.roadBike =>
+      preferences.contains(RoutePreference.nature) || variant == RouteVariant.green
+          ? 'fastbike-lowtraffic'
+          : 'fastbike',
+    RouteDiscipline.gravel =>
+      preferences.contains(RoutePreference.paved)
+          ? 'trekking'
+          : (preferences.contains(RoutePreference.nature) || variant == RouteVariant.green
+                ? 'mtb-zossebart'
+                : 'trekking'),
   };
 
-  static Uri uri(List<GeoPoint> waypoints, {required RouteDiscipline discipline, required RouteVariant variant}) =>
-      Uri.https('brouter.de', '/brouter', {
-        'lonlats': [
-          for (final point in waypoints) '${point.longitude.toStringAsFixed(6)},${point.latitude.toStringAsFixed(6)}',
-        ].join('|'),
-        'profile': profile(discipline, variant),
-        'alternativeidx': '0',
-        'format': 'geojson',
-      });
+  static Uri uri(
+    List<GeoPoint> waypoints, {
+    required RouteDiscipline discipline,
+    required RouteVariant variant,
+    Set<RoutePreference> preferences = const {},
+  }) => Uri.https('brouter.de', '/brouter', {
+    'lonlats': [
+      for (final point in waypoints) '${point.longitude.toStringAsFixed(6)},${point.latitude.toStringAsFixed(6)}',
+    ].join('|'),
+    'profile': profile(discipline, variant, preferences: preferences),
+    'alternativeidx': '0',
+    'format': 'geojson',
+  });
 
   static RoutedPath parse(String body) {
     final Object? json;
