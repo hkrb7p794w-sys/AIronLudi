@@ -423,7 +423,8 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Routenplaner: Start und Ziel per Adresszeile (Photon mit Vorschlägen beim Tippen, Nominatim bei ausdrücklicher Suche, Koordinaten), Adresssuche auch beim freien Planen | erledigt (#97) |
 | Routenplaner: Karte im Vollbild (Antippen; langes Drücken setzt Punkte), Favoriten-Orte je Benutzer (Stern, Liste in der Adresszeile, Verwaltung), „Gravel“, Disziplin Spazieren (Gassi) | erledigt (#98) |
 | Routenplaner: Archiv abgeschlossener Routen (automatisch über passende Aktivität oder von Hand), Kilometermarken auf allen Routen, „An Uhr senden“ mit Anleitung je Hersteller | erledigt (#99) |
-| Routenplaner: Knopf „Mein Standort“ auf allen Karten (blauer Punkt, zentrieren) | in PR |
+| Routenplaner: Knopf „Mein Standort“ auf allen Karten (blauer Punkt, zentrieren) | erledigt (#100) |
+| Routenplaner: Echttest gegen die öffentlichen Dienste (`tool/live_check.dart`), BRouter-Profile korrigiert, Höhen geglättet, Overpass-Spiegel, zweiter Versuch bei Verbindungsabbruch | in PR |
 | Heute entschlackt: Ringe für Schlaf, Erholung und Strain (0–21) mit Ampelfarben, Training heute mit Strain je Einheit, Bereiche ein-/ausblendbar (auch AI); weitere Sportarten (Bouldern, Klettern, Yoga, HIIT …); „Wochenplan importieren“ unter Training › Plan; eigene Makroziele (Gramm/Prozent, Ruhetage); Produktsuche (eigene, BLS, Open Food Facts) | erledigt |
 | Erfassen mit Suche zuerst: Vorschläge zur Mahlzeit, „+“ in den Korb, mehrere Lebensmittel auf einmal eintragen, andere Wege als Reiter | in PR |
 | UI-Redesign „Clean Liquid Design“ (`lib/ui/liquid.dart`, `AppTheme`): Glasflächen mit Lichtkante über Lichtflecken-Hintergrund, große Radien, Pillen-Knöpfe, schwebende Tab-Leiste, Verlaufs-Ringe und -Balken mit Federanimation, taktile Rückmeldung, Vorschau der Live-Aktivität (`docs/decisions.md`, 18.11.2026) | in PR |

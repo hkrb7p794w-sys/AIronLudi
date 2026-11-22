@@ -249,15 +249,23 @@ void main() {
 
   group('Höhe, Dauer, Bewertung', () {
     test('Anstieg mit Rauschschwelle', () {
-      List<GeoPoint> line(List<double> heights) => [
-        for (final (index, height) in heights.indexed) Geo.destination(berlin, 90, index * 100.0).withElevation(height),
+      List<GeoPoint> line(List<double> heights, {double spacing = 100}) => [
+        for (final (index, height) in heights.indexed)
+          Geo.destination(berlin, 90, index * spacing).withElevation(height),
       ];
-      final stats = RouteStats.of(line([100, 101, 102, 101, 110, 120, 118, 119, 100]));
+      // Punkte weiter auseinander als das Glättungsfenster: nur die Schwelle wirkt.
+      final stats = RouteStats.of(line([100, 101, 102, 101, 110, 120, 118, 119, 100], spacing: 400));
       expect(stats.ascentMeters, 20);
       expect(stats.descentMeters, 20);
       expect(stats.minElevation, 100);
       expect(stats.maxElevation, 120);
-      expect(stats.distanceMeters, closeTo(800, 1));
+      expect(stats.distanceMeters, closeTo(3200, 2));
+      // Rauschen des Geländemodells (±4 m alle 20 m) auf flacher Strecke: kaum Höhenmeter.
+      final noisy = line([for (var index = 0; index < 250; index++) 40 + (index.isEven ? 4.0 : -4.0)], spacing: 20);
+      expect(RouteStats.of(noisy).ascentMeters, lessThan(5));
+      // Echter Anstieg (100 m auf 2 km) bleibt erhalten.
+      final climb = line([for (var index = 0; index <= 100; index++) 50 + index.toDouble()], spacing: 20);
+      expect(RouteStats.of(climb).ascentMeters, closeTo(100, 12));
       expect(RouteStats.of([berlin, hamburg]).hasElevation, isFalse);
       final profile = RouteStats.profile(line(List.filled(300, 50)), samples: 50);
       expect(profile.length, lessThanOrEqualTo(51));
@@ -392,7 +400,7 @@ void main() {
       );
       expect(uri.host, 'brouter.de');
       expect(uri.queryParameters['lonlats'], '13.405000,52.520000|9.993700,53.551100');
-      expect(uri.queryParameters['profile'], 'trekking');
+      expect(uri.queryParameters['profile'], 'gravel');
       final path = BRouterFormat.parse(
         jsonEncode({
           'type': 'FeatureCollection',
@@ -716,7 +724,12 @@ void main() {
       expect(roadPaved['avoid_bad_surfaces'], 1.0);
       expect(
         BRouterFormat.profile(RouteDiscipline.gravel, RouteVariant.balanced, preferences: {RoutePreference.nature}),
-        'mtb-zossebart',
+        'mtb',
+      );
+      expect(BRouterFormat.profile(RouteDiscipline.gravel, RouteVariant.balanced), 'gravel');
+      expect(
+        BRouterFormat.profile(RouteDiscipline.roadBike, RouteVariant.balanced, preferences: {RoutePreference.water}),
+        'trekking-noferries',
       );
     });
 
