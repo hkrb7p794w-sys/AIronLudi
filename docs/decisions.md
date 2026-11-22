@@ -1056,7 +1056,11 @@ Straße, Mix), Distanz enger einhalten, Richtungspfeile, Modus „Frei planen / 
      `highway=cycleway` – und zieht die Zwischenpunkte auf den nächsten solchen Weg (höchstens 45 % des
      Schleifenradius bzw. 12 % der Strecke). Der Anteil der Strecke in 150 m Nähe solcher Wege fließt leicht in die
      Bewertung ein und wird angezeigt („ca. 62 % Am Wasser“). Fällt Overpass aus, routet der Planer nur mit der
-     Gewichtung. Waldflächen als Polygone (`landuse=forest`, `natural=wood`) werden nicht abgefragt, weil
+     Gewichtung. **„Am Wasser“ heißt entlang, nie durch:** Als Anziehungspunkte dienen Knoten *auf* den Wegen
+  (`node(w)`, auf 80 m ausgedünnt), nicht der Mittelpunkt ihres umgebenden Rechtecks – der läge bei einem Uferweg in
+  einer Flussbiegung im Wasser. Fähren sind bei Valhalla abgewertet (`use_ferry` 0); meldet die Antwort trotzdem
+  `has_ferry` bzw. enthält eine BRouter-Strecke `route=ferry`, wird sie verworfen und mit gedrehtem Wegpunkt neu
+  geplant. Brücken bleiben erlaubt. Waldflächen als Polygone (`landuse=forest`, `natural=wood`) werden nicht abgefragt, weil
      `map_to_area` auf dem öffentlichen Server zu langsam ist; Wald- und Forstwege sind fast immer `track`/`path`.
 - **Distanz ±2,5 %** (vorher ±7 %): bis zu sechs Anfragen je Variante; nach der ersten Antwort proportional, sobald
   eine zu kurze und eine zu lange Antwort vorliegen, per Sekantenverfahren dazwischen. Offene Ziele (Richtung) werden

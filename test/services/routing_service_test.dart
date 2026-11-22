@@ -146,10 +146,7 @@ void main() {
       final transport = FakeHttpTransport(
         (request) => json({
           'elements': [
-            {
-              'type': 'way',
-              'center': {'lat': 52.521, 'lon': 13.41},
-            },
+            {'type': 'node', 'id': 7, 'lat': 52.521, 'lon': 13.41},
           ],
         }, status: status),
       );
@@ -159,7 +156,9 @@ void main() {
       final request = transport.requests.single;
       expect(request.method, 'POST');
       expect(request.url, OverpassFormat.uri);
-      expect(Uri.splitQueryString(utf8.decode(request.body!))['data'], contains('waterway'));
+      final query = Uri.splitQueryString(utf8.decode(request.body!))['data']!;
+      expect(query, contains('waterway'));
+      expect(query, contains('node(w.all)'));
       await source.attractors(start, 3000, {RoutePreference.water});
       expect(transport.requests.length, 1);
       status = 504;

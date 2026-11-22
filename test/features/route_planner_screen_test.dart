@@ -177,7 +177,7 @@ void main() {
 
     // Umgebung: am Wasser.
     await tapCentered(tester, find.text('Am Wasser'), delta: -300);
-    expect(find.text('Uferwege an Kanälen, Flüssen und Seen'), findsOneWidget);
+    expect(find.text(RoutePreference.water.detail), findsOneWidget);
 
     await tapCentered(tester, find.text('Routen vorschlagen'));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));

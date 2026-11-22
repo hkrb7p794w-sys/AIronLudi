@@ -727,7 +727,9 @@ void main() {
       expect(query, contains('(around.w:40)'));
       expect(query, contains('around:3000,52.52000,13.40500'));
       expect(query, contains('leisure'));
-      expect(query, contains('(.s0;.s1;.s2;);out center qt 400;'));
+      // Knoten auf den Wegen statt Mittelpunkt des Rechtecks (der läge bei Flussbiegungen im Wasser).
+      expect(query, contains('(.s0;.s1;.s2;)->.all;node(w.all);out skel qt 2000;'));
+      expect(query, isNot(contains('out center')));
       expect(OverpassFormat.query(berlin, 50000, {RoutePreference.water}), contains('around:12000,'));
       expect(OverpassFormat.needed({RoutePreference.paved}, RouteDiscipline.run), isFalse);
       expect(OverpassFormat.needed({RoutePreference.paved}, RouteDiscipline.roadBike), isTrue);
@@ -744,6 +746,51 @@ void main() {
         ],
       });
       expect(points, [const GeoPoint(52.5, 13.4), const GeoPoint(52.6, 13.5)]);
+      // Dicht liegende Knoten werden ausgedünnt: höchstens einer je 80 m.
+      final dense = [for (var index = 0; index < 100; index++) Geo.destination(berlin, 90, index * 10.0)];
+      final spread = OverpassFormat.spread(dense);
+      expect(spread.length, inInclusiveRange(12, 14));
+      expect(OverpassFormat.spread(dense, max: 5).length, 5);
+    });
+
+    test('Nie übers Wasser: Routen mit Fähre werden verworfen', () {
+      expect(
+        () => ValhallaFormat.parseRoute({
+          'trip': {
+            'legs': [
+              {
+                'shape': Geo.encodePolyline([berlin, hamburg]),
+              },
+            ],
+            'summary': {'length': 255, 'has_ferry': true},
+          },
+        }),
+        throwsA(isA<NoRouteFound>()),
+      );
+      Map<String, Object?> brouter(String tags) => {
+        'features': [
+          {
+            'properties': {
+              'track-length': '1000',
+              'messages': [
+                ['Longitude', 'Latitude', 'Elevation', 'Distance', 'WayTags'],
+                ['13405000', '52520000', '34', '500', tags],
+              ],
+            },
+            'geometry': {
+              'coordinates': [
+                [13.405, 52.52, 34.0],
+                [13.41, 52.53, 35.0],
+              ],
+            },
+          },
+        ],
+      };
+      expect(
+        () => BRouterFormat.parse(jsonEncode(brouter('route=ferry highway=service'))),
+        throwsA(isA<NoRouteFound>()),
+      );
+      expect(BRouterFormat.parse(jsonEncode(brouter('highway=path surface=gravel'))).distanceMeters, 1000);
     });
 
     test('Wegpunkte auf passende Wege ziehen und Anteil messen', () {

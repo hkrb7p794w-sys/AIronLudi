@@ -63,8 +63,9 @@ enum RoutePreference implements RawEnum {
   /// Wald- und Forstwege, Trails, Parks (`highway=track|path`, `landuse=forest`, `natural=wood`, `leisure=park`).
   nature('nature', 'Wald & Natur', 'Wald- und Forstwege, Trails, Parks'),
 
-  /// Ufer- und Leinpfade an Kanälen, Flüssen und Seen (`waterway=canal|river`, `natural=water`).
-  water('water', 'Am Wasser', 'Uferwege an Kanälen, Flüssen und Seen'),
+  /// Ufer- und Leinpfade entlang von Kanälen, Flüssen und Seen (`waterway=canal|river`, `natural=water`) – immer an
+  /// Land: Wegpunkte liegen auf Wegen, Fähren sind ausgeschlossen.
+  water('water', 'Am Wasser', 'Entlang von Kanälen, Flüssen und Seen – auf Uferwegen, ohne Fähre'),
 
   /// Befestigte Straßen und Radwege (`highway=cycleway`, `surface=asphalt`).
   paved('paved', 'Straße & Asphalt', 'Befestigte Wege, Radwege und ruhige Straßen');

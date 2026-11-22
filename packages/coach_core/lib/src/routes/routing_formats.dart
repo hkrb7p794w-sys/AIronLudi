@@ -196,6 +196,10 @@ abstract final class ValhallaFormat {
     }
     if (points.length < 2) throw const NoRouteFound('Kein Weg gefunden.');
     final summary = trip['summary'];
+    // Nie übers Wasser: Fähren sind abgewertet (`use_ferry` 0), aber nicht verboten – eine Route mit Fähre verwerfen.
+    if (summary is Map && summary['has_ferry'] == true) {
+      throw const NoRouteFound('Die Route würde eine Fähre nutzen.');
+    }
     final kilometers = summary is Map ? summary['length'] : null;
     return RoutedPath(
       points: points,
@@ -280,6 +284,15 @@ abstract final class BRouterFormat {
     ];
     if (points.length < 2) throw const NoRouteFound('Kein Weg gefunden.');
     final properties = feature is Map ? feature['properties'] : null;
+    // BRouter kann Fähren nicht ausschließen: steht `route=ferry` in den Wegmerkmalen, die Route verwerfen.
+    final messages = properties is Map ? properties['messages'] : null;
+    if (messages is List<Object?>) {
+      for (final message in messages.skip(1)) {
+        if (message is List<Object?> && message.any((field) => '$field'.contains('route=ferry'))) {
+          throw const NoRouteFound('Die Route würde eine Fähre nutzen.');
+        }
+      }
+    }
     final length = properties is Map ? double.tryParse('${properties['track-length']}') : null;
     return RoutedPath(points: points, distanceMeters: length ?? Geo.length(points), engine: engineName);
   }

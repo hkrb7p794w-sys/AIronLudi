@@ -25,8 +25,12 @@ abstract final class OverpassFormat {
   /// Größter Suchradius (größere Abfragen dauern auf dem öffentlichen Server zu lange).
   static const maxRadius = 12000.0;
 
-  /// Höchstzahl gelieferter Wege je Abfrage.
-  static const maxResults = 400;
+  /// Höchstzahl gelieferter Wegpunkte (Knoten) je Abfrage.
+  static const maxResults = 2000;
+
+  /// Höchstzahl der Anziehungspunkte nach dem Ausdünnen (einer je [spreadMeters]).
+  static const maxAttractors = 400;
+  static const spreadMeters = 80.0;
 
   /// Braucht die Auswahl überhaupt Punkte aus OSM? Asphalt beim Laufen regelt allein die Wegbewertung.
   static bool needed(Set<RoutePreference> preferences, RouteDiscipline discipline) =>
@@ -34,7 +38,8 @@ abstract final class OverpassFormat {
       preferences.contains(RoutePreference.water) ||
       (preferences.contains(RoutePreference.paved) && discipline.isBike);
 
-  /// Overpass-QL: Mittelpunkte passender Wege im Umkreis.
+  /// Overpass-QL: Knoten **auf** passenden Wegen im Umkreis. Bewusst nicht `out center`: Der Mittelpunkt des
+  /// umgebenden Rechtecks eines gebogenen Uferwegs liegt oft im Wasser – ein Wegpunkt dort hieße „durch den Kanal“.
   static String query(
     GeoPoint center,
     double radiusMeters,
@@ -64,11 +69,13 @@ abstract final class OverpassFormat {
       sets++;
     }
     final union = [for (var index = 0; index < sets; index++) '.s$index;'].join();
-    return '[out:json][timeout:20];${parts.join()}($union);out center qt $maxResults;';
+    return '[out:json][timeout:20];${parts.join()}($union)->.all;node(w.all);out skel qt $maxResults;';
   }
 
-  /// Mittelpunkte aus der Antwort (`out center`).
-  static List<GeoPoint> parse(Object? json) {
+  /// Knoten aus der Antwort, räumlich ausgedünnt (höchstens einer je [spreadMeters]).
+  static List<GeoPoint> parse(Object? json) => spread(_points(json));
+
+  static List<GeoPoint> _points(Object? json) {
     if (json is! Map) throw const RoutingUnavailable('Antwort von Overpass unlesbar.');
     final elements = json['elements'];
     if (elements is! List) return const [];
@@ -79,6 +86,23 @@ abstract final class OverpassFormat {
         else if (element case {'lat': final num latitude, 'lon': final num longitude})
           GeoPoint(latitude.toDouble(), longitude.toDouble()),
     ];
+  }
+
+  /// Ein Punkt je Rasterzelle von [cellMeters], höchstens [max] (gleichmäßig über die Liste).
+  static List<GeoPoint> spread(List<GeoPoint> points, {double cellMeters = spreadMeters, int max = maxAttractors}) {
+    if (points.isEmpty) return const [];
+    final origin = points.first;
+    final cosLat = math.cos(origin.latitude * math.pi / 180);
+    final seen = <(int, int)>{};
+    final result = <GeoPoint>[];
+    for (final point in points) {
+      final cell = (
+        ((point.longitude - origin.longitude) * math.pi / 180 * Geo.earthRadius * cosLat / cellMeters).floor(),
+        ((point.latitude - origin.latitude) * math.pi / 180 * Geo.earthRadius / cellMeters).floor(),
+      );
+      if (seen.add(cell)) result.add(point);
+    }
+    return Geo.thin(result, max);
   }
 }
 
