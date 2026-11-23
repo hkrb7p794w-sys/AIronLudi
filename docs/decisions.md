@@ -1219,3 +1219,67 @@ Punkt 9 der Verbesserungsliste.
 - **Ausweichen:** ohne Anmeldung, bei Ablehnung oder Fehler steht die Meldung im Blatt „An Uhr senden“, darunter der
   bisherige Weg über die FIT-Datei. Auf die Uhr kommt der Kurs weiterhin über „An Gerät senden“ in Garmin Connect;
   einen dokumentierten Weg, ihn direkt aufs Gerät zu schieben, gibt es nicht.
+
+## 2026-11-23 – Routenplaner: Kartendienste mit Schlüssel über den Worker
+
+Punkt 10 der Verbesserungsliste.
+
+- **Schlüssel nur im Worker** (`ORS_API_KEY`, `MAPTILER_API_KEY`, `worker/src/maps.ts`), Zugriff nur mit Anmeldung
+  (Haupt-, Gast- oder Sitzungs-Token). Beide optional: ohne sie bleibt alles wie bisher.
+- **openrouteservice nur als Ausweich für Rundwege:** Liefern Valhalla und BRouter für eine Rundweg-Variante nichts
+  (gestört oder kein Weg), fragt der Planer `round_trip` von openrouteservice, Länge bis zu dreimal proportional
+  nachgeführt. Bewusst nicht als erster Weg: Die Wegpunkt-Planung kennt Wegarten, Hundewiese, Varianten und die
+  ±2,5 %-Regel; `round_trip` trifft die Länge nur grob.
+- **Kacheln von MapTiler** (Raster 256 px; `streets-v2`, `streets-v2-dark`, `outdoor-v2`): im Dunkelmodus der dunkle
+  Stil. Die App fragt `/v1/health` einmal je Sitzung; meldet der Worker keine Kacheln, bleibt es bei OSM. Das Token
+  geht als `Authorization`-Header nur an den eigenen Worker.
+- **Zwischenspeicher:** Cloudflare-Cache-API (Rundwege 1 Tag, gerundeter Start ~10 m; Kacheln 7 Tage), damit die
+  freien Kontingente reichen. In den Cache kommt die Antwort mit `public`, an die App geht sie mit `private`.
+- **Tageslimit:** Rundwege je Person 200/Tag (KV `LEAGUE`, Schlüssel `maps:<Tag>:<Person>`), Kacheln ohne Limit.
+
+## 2026-11-23 – Routenplaner: Wetter und Wind für den geplanten Tag
+
+Punkt 11 der Verbesserungsliste.
+
+- **Quelle:** Open-Meteo (frei, ohne Schlüssel, direkt aus der App), stündlich am Start der Route für den geplanten
+  Tag (sonst heute); Vorhersage bis 15 Tage voraus, sonst nur ein Hinweis. Eine halbe Stunde im Speicher.
+- **Spanne:** wählbare Startzeit (7, 10, 13, 16, 19 Uhr; heute die nächste) über die geschätzte Dauer: Temperatur
+  von–bis, schlechtestes Wetter, höchste Regenwahrscheinlichkeit, mittlerer Wind (Richtung als Vektor gemittelt),
+  Böen.
+- **Wind je Hälfte:** Gegenwind-Anteil = Windstärke × cos(Fahrtrichtung − Herkunft des Winds), nach Streckenlänge
+  gemittelt. Ab 10 km/h ein Hinweis. Rundweg mit mindestens 6 km/h mehr Gegenwind in der zweiten Hälfte:
+  „Richtung umkehren“ (Gegenwind, solange man frisch ist). Umkehren behält ID und Planung; ein Garmin-Kurs passt
+  dann nicht mehr und wird vergessen.
+- **Bewusst nicht:** Wetter beim Planen selbst (Wind ändert die Vorschläge nicht – die Regeln für Distanz und Wegarten
+  bleiben vorn).
+
+## 2026-11-23 – Routen in eigener Tabelle (Schema 2)
+
+Punkt 12 der Verbesserungsliste.
+
+- **Warum:** Alle Routen lagen als ein JSON-Wert `coach.routes` in den Einstellungen; jedes Speichern schrieb bis zu
+  260 Routen mit je bis zu 2000 Punkten neu. Jetzt `RouteRecords` (Schlüssel Benutzer + ID, `savedAt`, JSON
+  `PlannedRoute`): Speichern schreibt nur die eine Zeile.
+- **Upgrade:** Schema 1 → 2 legt die Tabelle an. Beim ersten Öffnen übernimmt der Routen-Speicher den Stand unter
+  `coach.routes` (nur Routen des eigenen Benutzers, Reihenfolge bleibt) und entfernt den Schlüssel. Ein Stand eines
+  anderen Benutzers bleibt unberührt liegen (wie bisher).
+- **Sicherung unverändert:** `BackupService.make` schreibt die Routen aus der Tabelle als `coach.routes` – gleiches
+  Format wie vorher, ältere Sicherungen bleiben einspielbar. Beim Einspielen landet der Wert in den Einstellungen und
+  wird sofort zusammengeführt: **fehlende Routen kommen dazu, vorhandene bleiben** (wie Krafteinheiten und
+  Mahlzeiten; vorher ersetzte die Sicherung alle Routen).
+- **Isolation je Benutzer:** Zeilen tragen den Benutzer; ein anderer Benutzer sieht und ändert sie nicht, kann aber
+  eigene Routen speichern (vorher sperrte ein fremder Stand das Speichern ganz).
+- Gebiete, Favoriten, Vorlagen und Planer-Einstellungen bleiben in den Einstellungen (klein bzw. als Ganzes genutzt).
+
+## 2026-11-23 – Gebiete ohne vorheriges Öffnen der Aktivitäten
+
+Punkt 13 der Verbesserungsliste.
+
+- **Still nach jedem Abruf** (Reiter Training): Aktivitäten, deren FIT-Datei schon im Zwischenspeicher liegt (der
+  Abruf lädt die der letzten Wochen ohnehin für Runden und Splits), kommen ohne Download in die Erkundung.
+- **Auf Wunsch** (*Meine Karte › Letzte 12 Wochen laden*): fehlende Dateien von Garmin, jüngste zuerst, höchstens 15
+  je Durchgang mit 1,5 s Pause; nach zwei Fehlern in Folge (abgemeldet, gedrosselt) hört der Durchgang auf. Was fehlt,
+  meldet die App („… fehlen noch“). Nur Garmin-Aktivitäten (Apple Health liefert keine Strecke als Datei).
+- **Bewusst nicht:** Laden im Hintergrund bei geschlossener App und ohne Wunsch ältere Monate – Garmin drosselt den
+  inoffiziellen Zugang, und die Gebiete sind optional.
+

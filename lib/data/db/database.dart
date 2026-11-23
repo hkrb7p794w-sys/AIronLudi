@@ -121,6 +121,21 @@ class SettingRecords extends Table {
   Set<Column<Object>> get primaryKey => {key};
 }
 
+/// Eine gespeicherte Route des Routenplaners (JSON `PlannedRoute`), je Benutzer. Bis Schema 2 lagen alle Routen als
+/// ein Wert `coach.routes` in den Einstellungen; die Sicherung schreibt sie weiter unter diesem Schlüssel.
+@DataClassName('RouteRow')
+class RouteRecords extends Table {
+  TextColumn get username => text()();
+  TextColumn get id => text()();
+
+  /// Zuletzt gespeichert (Reihenfolge der Ablage, neueste zuerst).
+  DateTimeColumn get savedAt => dateTime()();
+  BlobColumn get payload => blob()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {username, id};
+}
+
 @DriftDatabase(
   tables: [
     DailyMetricsRecords,
@@ -131,6 +146,7 @@ class SettingRecords extends Table {
     FoodRecords,
     GymSessionRecords,
     SettingRecords,
+    RouteRecords,
   ],
 )
 final class CoachDatabase extends _$CoachDatabase {
@@ -141,11 +157,15 @@ final class CoachDatabase extends _$CoachDatabase {
   factory CoachDatabase.open({String name = 'coach'}) => CoachDatabase(driftDatabase(name: name));
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (migrator) => migrator.createAll(),
+    onUpgrade: (migrator, from, to) async {
+      // 2: Routen in eigener Tabelle (übernommen beim ersten Öffnen des Routen-Speichers).
+      if (from < 2) await migrator.createTable(routeRecords);
+    },
     beforeOpen: (details) async => customStatement('PRAGMA foreign_keys = ON'),
   );
 }

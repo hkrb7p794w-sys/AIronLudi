@@ -53,6 +53,8 @@ jobs:
       WHOOP_CLIENT_ID: ${{ secrets.WHOOP_CLIENT_ID }}
       WHOOP_CLIENT_SECRET: ${{ secrets.WHOOP_CLIENT_SECRET }}
       RELEASES_READ_TOKEN: ${{ secrets.RELEASES_READ_TOKEN }}
+      ORS_API_KEY: ${{ secrets.ORS_API_KEY }}
+      MAPTILER_API_KEY: ${{ secrets.MAPTILER_API_KEY }}
     steps:
       - name: Secrets prüfen
         id: secrets
@@ -98,6 +100,9 @@ jobs:
           fi
           # Android-APK aus dem privaten Release-Repo (android.ts, docs/einrichtung.md).
           [ -n "$RELEASES_READ_TOKEN" ] && names="$names"$'\n'"RELEASES_READ_TOKEN"
+          # Kartendienste für den Routenplaner (maps.ts), beide optional.
+          [ -n "$ORS_API_KEY" ] && names="$names"$'\n'"ORS_API_KEY"
+          [ -n "$MAPTILER_API_KEY" ] && names="$names"$'\n'"MAPTILER_API_KEY"
           { echo "names<<EOF"; echo "$names"; echo "EOF"; } >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@v7

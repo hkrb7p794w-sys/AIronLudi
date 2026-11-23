@@ -2,6 +2,7 @@ import 'package:coach_core/coach_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
+import '../../data/repositories/route_repository.dart';
 import '../../data/storage.dart';
 import '../../data/users/current_user.dart';
 import '../http/http_transport.dart';
@@ -10,11 +11,17 @@ import 'exploration_import.dart';
 import 'garmin_course_service.dart';
 import 'location_source.dart';
 import 'route_stores.dart';
+import 'route_weather_service.dart';
 import 'routing_service.dart';
+import 'worker_maps.dart';
 
 /// Routen, Gebiete und Planer-Einstellungen des aktiven Benutzers (je Benutzer ein eigener Container).
 final routeStoreProvider = ChangeNotifierProvider<RouteStore>(
-  (ref) => RouteStore(ref.watch(settingsStoreProvider), username: ref.watch(currentUserProvider).username),
+  (ref) => RouteStore(
+    ref.watch(settingsStoreProvider),
+    username: ref.watch(currentUserProvider).username,
+    routes: RouteRepository(ref.watch(databaseProvider)),
+  ),
 );
 
 /// Router mit Ausweichen (Valhalla → BRouter); in Tests überschreibbar.
@@ -59,7 +66,10 @@ final routePoisProvider = FutureProvider.autoDispose.family<List<RoutePoi>, Plan
 final locationSourceProvider = Provider<LocationSource>((ref) => const DeviceLocationSource());
 
 final explorationImportProvider = Provider<ExplorationImport>(
-  (ref) => ExplorationImport(store: ref.watch(routeStoreProvider), sync: ref.watch(garminSyncServiceProvider)),
+  (ref) => ExplorationImport(
+    store: ref.watch(routeStoreProvider),
+    files: GarminActivityFiles(ref.watch(garminSyncServiceProvider)),
+  ),
 );
 
 /// Kurse direkt in Garmin Connect anlegen (Garmin-Konto aus den Einstellungen); in Tests überschreibbar.
@@ -67,3 +77,21 @@ final garminCourseTargetProvider = Provider<GarminCourseTarget>((ref) {
   final connect = ref.watch(garminConnectProvider);
   return GarminCourseTarget(isLoggedIn: () => connect.isLoggedIn, sender: connect.sendJson);
 });
+
+/// Rundweg-Ausweich über den Worker (openrouteservice); in Tests überschreibbar.
+final roundTripSourceProvider = Provider<RoundTripSource?>((ref) => WorkerRoundTripSource(ref.watch(aiClientProvider)));
+
+/// Kacheln über den Worker (mit dunklem Stil), sonst `null` = OSM-Kacheln. Einmal je Sitzung gefragt.
+final workerTilesProvider = FutureProvider<WorkerTiles?>((ref) => WorkerTiles.probe(ref.watch(aiClientProvider)));
+
+/// Wetter für den geplanten Tag (Open-Meteo); in Tests überschreibbar.
+final weatherSourceProvider = Provider<WeatherSource>((ref) {
+  final transport = DioTransport();
+  ref.onDispose(transport.close);
+  return OpenMeteoWeather(transport);
+});
+
+/// Stündliche Vorhersage am Start einer Route für einen Tag.
+final routeForecastProvider = FutureProvider.autoDispose.family<List<WeatherHour>, (GeoPoint, CalendarDay)>(
+  (ref, key) => ref.read(weatherSourceProvider).forecast(key.$1, key.$2),
+);

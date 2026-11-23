@@ -480,7 +480,7 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
                         ),
                       ),
                       children: [
-                        ...osmBaseLayers(),
+                        const BaseTiles(),
                         PolylineLayer(
                           polylines: [
                             if (points.length > 1)

@@ -15,6 +15,8 @@
  * /v1/social/…          – Freunde und Feed zwischen Konten (siehe social.ts), nur mit Sitzung
  * /v1/whoop/…          – WHOOP-Anmeldung: Code bzw. Refresh-Token tauschen (siehe whoop.ts); GET /w/whoop ohne
  *                         Anmeldung leitet nach der Freigabe bei WHOOP in die App zurück
+ * /v1/maps/…            – Rundwege (openrouteservice) und Kartenkacheln (MapTiler) mit Schlüssel im Worker (siehe
+ *                         maps.ts), mit Anmeldung
  * /v1/account/…         – Konten: Registrieren mit Einladung, Anmelden, Sitzungen (siehe accounts.ts). Überall, wo ein
  *                         Gast-Token gilt, gilt auch das Sitzungs-Token eines Kontos.
  *      { "task": "ping", "input": { … }, "images": [{ "mimeType": "image/jpeg", "data": "<base64>" }] }
@@ -27,6 +29,7 @@ import { authenticate, bearerToken, guestToken, newGuestID, principalKey, tokens
 import type { SqlDatabase } from "./db";
 import { handleGame } from "./game";
 import { handleLeague, type LeagueStore } from "./league";
+import { type CounterStore, handleMaps, type MapsCache, mapsInfo } from "./maps";
 import { listPriceUsd, parsePreference, providerInfo } from "./providers";
 import { handleShare, type ShareStore, sharePage } from "./share";
 import { handleSideStore } from "./sidestore";
@@ -75,7 +78,18 @@ function parseImages(value: unknown): ImageInput[] | string {
 
 export { tokensMatch };
 
-export async function handle(request: Request, env: Env, deps: Deps = defaultDeps): Promise<Response> {
+/** Cloudflare-Cache, falls vorhanden (in Tests und lokal ohne Cache). */
+function defaultCache(): MapsCache | undefined {
+  const storage = (globalThis as { caches?: { default?: MapsCache } }).caches;
+  return storage?.default;
+}
+
+export async function handle(
+  request: Request,
+  env: Env,
+  deps: Deps = defaultDeps,
+  cache?: MapsCache,
+): Promise<Response> {
   const { pathname } = new URL(request.url);
 
   const sidestore = await handleSideStore(request, env.COACH_APP_TOKEN, env.RELEASES);
@@ -100,6 +114,7 @@ export async function handle(request: Request, env: Env, deps: Deps = defaultDep
       providerList: providerInfo(env),
       configured: Boolean(env.COACH_APP_TOKEN),
       whoop: whoopConfigured(env),
+      maps: mapsInfo(env),
     });
   }
 
@@ -119,6 +134,22 @@ export async function handle(request: Request, env: Env, deps: Deps = defaultDep
     const principal = await authenticate(request.headers.get("authorization") ?? "", env, deps.now());
     if (!principal) return json(401, { error: "Nicht autorisiert", code: "unauthorized" });
     return (await handleWhoop(request, env, deps)) ?? json(404, { error: "Nicht gefunden" });
+  }
+
+  if (pathname.startsWith("/v1/maps/")) {
+    if (!env.COACH_APP_TOKEN)
+      return json(503, { error: "Worker ist nicht konfiguriert (COACH_APP_TOKEN fehlt)" });
+    const principal = await authenticate(request.headers.get("authorization") ?? "", env, deps.now());
+    if (!principal) return json(401, { error: "Nicht autorisiert", code: "unauthorized" });
+    return (
+      (await handleMaps(request, {
+        env,
+        deps,
+        principal: principalKey(principal),
+        cache: cache ?? defaultCache(),
+        counters: env.LEAGUE as unknown as CounterStore | undefined,
+      })) ?? json(404, { error: "Nicht gefunden" })
+    );
   }
 
   if (pathname === "/v1/app/android") {

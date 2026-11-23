@@ -30,12 +30,15 @@ abstract interface class RoutingBackend {
 /// zu langen Strecke interpoliert), bis die Distanz in ±2,5 % liegt. Offene Ziele werden exakt gekürzt. Mit
 /// gewählten Wegearten (Wald, Wasser, Radwege) zieht der Planer die Wegpunkte auf passende OSM-Wege.
 final class RoutePlanner {
-  RoutePlanner(this.backend, {this.features, String Function()? newID, DateTime Function()? now})
+  RoutePlanner(this.backend, {this.features, this.roundTrips, String Function()? newID, DateTime Function()? now})
     : _newID = newID ?? const Uuid().v4,
       _now = now ?? DateTime.now;
 
   final RoutingBackend backend;
   final RouteFeatureSource? features;
+
+  /// Ausweich für Rundwege (openrouteservice über den Worker), falls eingerichtet.
+  final RoundTripSource? roundTrips;
   final String Function() _newID;
   final DateTime Function() _now;
 
@@ -107,14 +110,29 @@ final class RoutePlanner {
       if (isCancelled?.call() ?? false) break;
       onProgress?.call('${variant.label} wird berechnet …');
       try {
-        final found = await _variant(
-          request,
-          variant,
-          seed: seed,
-          attractors: attractors,
-          dogParks: dogParks,
-          onProgress: onProgress,
-        );
+        RoutedPath? found;
+        Object? failure;
+        try {
+          found = await _variant(
+            request,
+            variant,
+            seed: seed,
+            attractors: attractors,
+            dogParks: dogParks,
+            onProgress: onProgress,
+          );
+        } on RoutingUnavailable catch (error) {
+          failure = error;
+        } on NoRouteFound catch (error) {
+          failure = error;
+        }
+        // Rundweg: Liefern Valhalla und BRouter nichts, hilft openrouteservice (falls im Worker eingerichtet).
+        if (found == null && roundTrips != null && request.shape == RouteShape.loop) {
+          onProgress?.call('${variant.label}: Ausweich über openrouteservice …');
+          found = await _roundTrip(request, variant, seed: seed);
+        } else if (failure != null) {
+          throw failure;
+        }
         if (found == null) continue;
         var withElevation = found;
         if (!found.hasElevation) {
@@ -304,6 +322,25 @@ final class RoutePlanner {
         // Offene Ziele lieber etwas zu lang planen: der Rest wird gekürzt.
         overshoot: open ? 1.06 : 1,
       ).clamp(initial * 0.3, initial * 3);
+    }
+    return best;
+  }
+
+  /// Rundweg vom Ausweich-Dienst; dessen Länge wird bis zu dreimal proportional nachgeführt.
+  Future<RoutedPath?> _roundTrip(RouteRequest request, RouteVariant variant, {required int seed}) async {
+    final target = request.distanceMeters;
+    var length = target;
+    RoutedPath? best;
+    for (var attempt = 0; attempt < 3; attempt++) {
+      final path = await roundTrips!.roundTrip(
+        request.start,
+        discipline: request.discipline,
+        lengthMeters: length,
+        seed: seed * 31 + variant.index * 7 + attempt,
+      );
+      if (best == null || (path.distanceMeters - target).abs() < (best.distanceMeters - target).abs()) best = path;
+      if (request.withinTolerance(path.distanceMeters) || path.distanceMeters <= 0) break;
+      length = (length * target / path.distanceMeters).clamp(target * 0.5, target * 1.5);
     }
     return best;
   }
