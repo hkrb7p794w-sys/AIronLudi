@@ -334,6 +334,15 @@ final class GarminSyncService {
     return count;
   }
 
+  /// Datei der Uhr für eine Aktivität: aus dem Zwischenspeicher, sonst von Garmin (ohne Budget – der Aufrufer
+  /// begrenzt selbst, z. B. die Gebiete). Wirft bei Netz- oder Anmeldefehlern.
+  Future<Uint8List> activityFile(int id) async {
+    if (reportStore.cachedFile(id) case final cached?) return cached;
+    final data = await _client.data(GarminEndpoint.activityFile(id));
+    reportStore.cacheFile(data, id: id);
+    return data;
+  }
+
   /// Datei der Uhr: aus dem Zwischenspeicher, sonst von Garmin (begrenzt je Abruf). `null` = Budget aufgebraucht.
   Future<Uint8List?> _fileData(int id) async {
     if (reportStore.cachedFile(id) case final cached?) return cached;

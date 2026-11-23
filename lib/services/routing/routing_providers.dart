@@ -66,7 +66,10 @@ final routePoisProvider = FutureProvider.autoDispose.family<List<RoutePoi>, Plan
 final locationSourceProvider = Provider<LocationSource>((ref) => const DeviceLocationSource());
 
 final explorationImportProvider = Provider<ExplorationImport>(
-  (ref) => ExplorationImport(store: ref.watch(routeStoreProvider), sync: ref.watch(garminSyncServiceProvider)),
+  (ref) => ExplorationImport(
+    store: ref.watch(routeStoreProvider),
+    files: GarminActivityFiles(ref.watch(garminSyncServiceProvider)),
+  ),
 );
 
 /// Kurse direkt in Garmin Connect anlegen (Garmin-Konto aus den Einstellungen); in Tests überschreibbar.

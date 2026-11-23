@@ -7,6 +7,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/storage.dart';
+import '../../services/routing/exploration_import.dart';
 import '../../services/routing/routing_providers.dart';
 import '../../ui/components.dart';
 import '../../ui/liquid.dart';
@@ -37,25 +38,40 @@ class _ExplorationScreenState extends ConsumerState<ExplorationScreen> {
     unawaited(_import(silent: true));
   }
 
-  Future<void> _import({bool silent = false}) async {
+  /// Fortschritt beim Laden fehlender Dateien („3 von 12“), sonst `null`.
+  String? _progress;
+
+  /// [download]: fehlende Dateien der letzten Wochen von Garmin laden; sonst nur schon geladene übernehmen.
+  Future<void> _import({bool silent = false, bool download = false}) async {
     if (_importing) return;
     setState(() => _importing = true);
     try {
       final activities = await ref.read(activityRepositoryProvider).all();
-      final result = await ref.read(explorationImportProvider).importCached(activities);
+      final importer = ref.read(explorationImportProvider);
+      final result = download
+          ? await importer.importRecent(
+              activities,
+              today: CalendarDay.today(),
+              onProgress: (done, total) {
+                if (mounted) setState(() => _progress = '$done von $total');
+              },
+              isCancelled: () => !mounted,
+            )
+          : await importer.importCached(activities);
       if (!mounted || silent && result.tracks == 0) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            result.tracks == 0
-                ? 'Keine neuen Strecken. Aktivitäten zählen, sobald ihr Verlauf einmal geladen wurde (Aktivität öffnen).'
-                : '${result.tracks} Strecken übernommen: ${result.newTiles} neue Kacheln'
-                      '${result.territories > 0 ? ', ${result.territories} neue Gebiete' : ''}.',
-          ),
-        ),
-      );
+      final gained = result.tracks == 0
+          ? 'Keine neuen Strecken.'
+          : '${result.tracks} Strecken übernommen: ${result.newTiles} neue Kacheln'
+                '${result.territories > 0 ? ', ${result.territories} neue Gebiete' : ''}.';
+      final rest = result.remaining > 0 ? ' ${result.remaining} fehlen noch – später noch einmal laden.' : '';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$gained$rest')));
     } finally {
-      if (mounted) setState(() => _importing = false);
+      if (mounted) {
+        setState(() {
+          _importing = false;
+          _progress = null;
+        });
+      }
     }
   }
 
@@ -97,8 +113,8 @@ class _ExplorationScreenState extends ConsumerState<ExplorationScreen> {
         title: const Text('Meine Karte'),
         actions: [
           IconButton(
-            tooltip: 'Aktivitäten übernehmen',
-            onPressed: _importing ? null : () => unawaited(_import()),
+            tooltip: 'Aktivitäten der letzten ${ExplorationImport.recentWeeks} Wochen laden',
+            onPressed: _importing ? null : () => unawaited(_import(download: true)),
             icon: _importing
                 ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2.5))
                 : const Icon(Icons.sync),
@@ -201,10 +217,27 @@ class _ExplorationScreenState extends ConsumerState<ExplorationScreen> {
             ),
           FormSection(
             footer:
+                'Neue Aktivitäten kommen nach jedem Abruf von selbst dazu. Ältere der letzten '
+                '${ExplorationImport.recentWeeks} Wochen lädt die App auf Wunsch von Garmin – höchstens '
+                '${ExplorationImport.maxDownloads} je Durchgang, mit Pausen.',
+            children: [
+              ListTile(
+                leading: _importing
+                    ? const SizedBox.square(dimension: 24, child: CircularProgressIndicator(strokeWidth: 2.5))
+                    : const Icon(Icons.cloud_download_outlined),
+                title: Text('Letzte ${ExplorationImport.recentWeeks} Wochen laden'),
+                subtitle: _progress == null ? null : Text('Strecke $_progress …'),
+                enabled: !_importing,
+                onTap: () => unawaited(_import(download: true)),
+              ),
+            ],
+          ),
+          FormSection(
+            footer:
                 'Eine Kachel entspricht einer OSM-Kachel der Zoomstufe ${ExplorationTile.zoom} (etwa 190 × 190 m). Eine '
                 'Runde gilt als geschlossen, wenn Start und Ziel höchstens ${ExplorationRules.closeDistance.round()} m '
                 'auseinander liegen und sie mindestens 2 ha umschließt. Gezählt werden Läufe, Radfahrten, Wanderungen '
-                'und Spaziergänge mit GPS, deren Verlauf schon einmal geladen wurde.',
+                'und Spaziergänge mit GPS.',
             children: [
               ListTile(
                 leading: const Icon(Icons.delete_outline),

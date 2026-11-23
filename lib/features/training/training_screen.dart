@@ -66,6 +66,14 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> with TrainingDa
   @override
   Future<void> reloadTrainingData() => _reload();
 
+  Future<void> _explore(List<GarminActivity> activities) async {
+    try {
+      await ref.read(explorationImportProvider).importCached(activities);
+    } on Object {
+      // Nur eine Ergänzung.
+    }
+  }
+
   Future<void> _reload() async {
     final today = CalendarDay.today();
     final sync = ref.read(garminSyncServiceProvider);
@@ -80,6 +88,8 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> with TrainingDa
     _activities = results.$2;
     // Vorab geplante Routen mit passender Aktivität ins Archiv.
     unawaited(ref.read(routeStoreProvider).completeFromActivities(_activities));
+    // Gebiete (falls eingeschaltet): schon geladene Strecken still übernehmen – ohne die Aktivität zu öffnen.
+    unawaited(_explore(_activities));
     _gym = results.$3;
     _controller.update(
       days: _days,

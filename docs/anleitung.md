@@ -192,8 +192,9 @@ von Hand: denselben Link wieder öffnen.
    Gegenwind, schlägt die App **Richtung umkehren** vor. Mit eingerichtetem Worker (MapTiler) ist die Karte im
    Dunkelmodus dunkel.
 9. **Gebiete (optional):** *Training › Routen › Gebiete anzeigen*. Geschlossene Runden erobern die umschlossene
-   Fläche, alle Läufe und Fahrten mit GPS füllen deine Kachel-Karte. Gezählt wird eine Aktivität, sobald ihr Verlauf
-   einmal geladen wurde (Aktivität öffnen). Alles bleibt bei deinem Benutzer.
+   Fläche, alle Läufe und Fahrten mit GPS füllen deine Kachel-Karte. Neue Aktivitäten kommen nach jedem Abruf von
+   selbst dazu; **Letzte 12 Wochen laden** holt ältere von Garmin (höchstens 15 je Durchgang). Alles bleibt bei
+   deinem Benutzer.
 
 Die Routen kommen von öffentlichen, kostenlosen OSM-Diensten (Valhalla der FOSSGIS, ersatzweise BRouter; passende
 Wege über Overpass; Adressen über Photon bzw. Nominatim). Sind sie

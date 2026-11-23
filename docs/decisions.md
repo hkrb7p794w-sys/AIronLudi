@@ -1271,3 +1271,15 @@ Punkt 12 der Verbesserungsliste.
   eigene Routen speichern (vorher sperrte ein fremder Stand das Speichern ganz).
 - Gebiete, Favoriten, Vorlagen und Planer-Einstellungen bleiben in den Einstellungen (klein bzw. als Ganzes genutzt).
 
+## 2026-11-23 – Gebiete ohne vorheriges Öffnen der Aktivitäten
+
+Punkt 13 der Verbesserungsliste.
+
+- **Still nach jedem Abruf** (Reiter Training): Aktivitäten, deren FIT-Datei schon im Zwischenspeicher liegt (der
+  Abruf lädt die der letzten Wochen ohnehin für Runden und Splits), kommen ohne Download in die Erkundung.
+- **Auf Wunsch** (*Meine Karte › Letzte 12 Wochen laden*): fehlende Dateien von Garmin, jüngste zuerst, höchstens 15
+  je Durchgang mit 1,5 s Pause; nach zwei Fehlern in Folge (abgemeldet, gedrosselt) hört der Durchgang auf. Was fehlt,
+  meldet die App („… fehlen noch“). Nur Garmin-Aktivitäten (Apple Health liefert keine Strecke als Datei).
+- **Bewusst nicht:** Laden im Hintergrund bei geschlossener App und ohne Wunsch ältere Monate – Garmin drosselt den
+  inoffiziellen Zugang, und die Gebiete sind optional.
+
