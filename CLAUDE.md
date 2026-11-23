@@ -17,6 +17,7 @@ der nativen iPhone-App aus `hkrb7p794w-sys/Coach-App` (Swift, Stand `793d408`). 
 | `ios/Runner/`, `android/app/` | Native Konfiguration; Widgets/Live-Aktivitäten bleiben nativ (siehe Migrationsplan 4.2) |
 | `worker/` | Cloudflare Worker „coach-ai“ (TypeScript): KI-Weiterleitung, Konten, Freunde, Kartendienste, SideStore-Quelle, Android-Download; Prompts in `src/tasks.ts` (seit 16.11.2026 hier statt in Coach-App) |
 | `docs/migrationsplan.md` | Audit und Checkliste – bei jeder PR den Stand (Abschnitt 8) nachführen |
+| `docs/FUEL_PLANNER_SCIENCE.md` | Wissenschaftliche Grundlage und Regeln des Fuel Planners (`coach_core/src/fuel`) – Zahlen nur dort und in den Tests ändern |
 | `docs/einrichtung.md`, `docs/anleitung.md` | Einrichtung für die Betreiberin bzw. den Betreiber; Installationsanleitungen |
 
 ## Grundregeln

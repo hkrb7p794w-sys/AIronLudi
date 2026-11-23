@@ -1283,3 +1283,38 @@ Punkt 13 der Verbesserungsliste.
 - **Bewusst nicht:** Laden im Hintergrund bei geschlossener App und ohne Wunsch ältere Monate – Garmin drosselt den
   inoffiziellen Zugang, und die Gebiete sind optional.
 
+
+## 2026-11-23 – Fuel Planner (Verpflegung vor, während und nach dem Training)
+
+Neu in AIronLudi (keine Entsprechung in der Swift-App). **Research-First:** Die Regeln stehen mit Quellen in
+`docs/FUEL_PLANNER_SCIENCE.md` (ACSM 2016/2007, ISSN 2017/2021, Jeukendrup 2014/2017, Burke 2011, Podlogar 2022,
+Morton 2026, Pfeiffer 2012, Barnes 2019, Moore 2015, King 2022 – über PubMed geprüft); jede Zahl ist in
+`packages/coach_core/test/fuel_planner_test.dart` abgesichert.
+
+- **Regeln entscheiden:** `FuelRules` (reines Dart) rechnet Kohlenhydrate je Stunde aus einer Tabelle nach Dauer und
+  Intensität, begrenzt durch Magen-Verträglichkeit (Einsteiger 60, Gewohnt 90, Gut-Trained 120 g/h) und Disziplin
+  (Laufen 90, Rad 120, Triathlon 100, Schwimmen 60); Krafttraining nur bei langen/nüchternen Einheiten 30 g/h. Dazu
+  Glukose-Fruktose-Verhältnis, Schweißrate (gemessen oder geschätzt), Trinken (Verlust < 2 %, nie mehr als
+  geschwitzt), Natrium, Koffein (3–6 mg/kg, ⅔ vorher und ⅓ im letzten Drittel ab 150 min), Pre-Zeitpunkte,
+  Carboloading und Post (Doppeltag ≤ 8 h: 1,0–1,2 g/kg/h). Keine KI.
+- **Wettkampf als Schalter**, nicht als vierte Intensität: Ein Ironman ist kein Schwellentraining, braucht aber die
+  höchste Verpflegung. Aus dem Ausdauerplan: Einheit „Wettkampf“ → Schwelle + Wettkampf.
+- **Produkte zuordnen deterministisch:** erstes Getränk für die Flüssigkeit (so viel, wie die Kohlenhydrate zulassen),
+  Gels/Riegel in ganzen Portionen über einen laufenden Saldo im Wechsel, Salztabletten über den Natrium-Saldo,
+  Rest Wasser. Packliste mit Flaschen und Pulver für eigene Mischungen. Mitgelieferte Produkte sind markenneutral
+  mit typischen Etikettwerten.
+- **DIY-Mischungen:** Maltodextrin 95 %, Dextrose (Monohydrat) 91 %, Zucker zur Hälfte Fruktose, Kochsalz 39,3 %
+  Natrium; Hinweis über 10 % Konzentration.
+- **Tagebuch:** Vorher/danach als ein Eintrag „(Plan)“ mit den Makros plus Wasser (die Lebensmittel stehen noch nicht
+  fest), unterwegs mit den echten Produkten. Kategorie Snack, Uhrzeit aus Startzeit und Phase, auf dem Tag des Plans.
+  Die „(Plan)“-Einträge kommen nicht in die Liste eigener Lebensmittel. Die Ernährung lädt jetzt bei jeder Änderung
+  der Mahlzeiten-Tabelle neu (`mealDataChangesProvider`), damit Einträge aus dem Ausdauerplan sofort erscheinen.
+- **Speicher:** `coach.fuelPlanner` in den Einstellungen des Benutzers (klein, als Ganzes genutzt, landet so
+  automatisch in der Sicherung) mit `username` wie die Favoriten des Routenplaners: fremder Stand wird nicht geladen
+  und nicht überschrieben. Gespeichert wird das Szenario samt Produkt-IDs; der Plan wird immer neu gerechnet, damit
+  Regeländerungen alte Pläne mitnehmen.
+- **Einstiege:** Ernährung › Fuel Planner (frei) und jede Einheit des Ausdauerplans (› Verpflegung planen, übernimmt
+  Sportart, Dauer, Strecke, Intensität, Tag und Gewicht aus den Ernährungseinstellungen bzw. der Uhr).
+- **Bewusst nicht (vorerst):** Wetter automatisch (Temperatur ist eine Eingabe; die Vorhersage des Routenplaners
+  braucht einen Ort), Einstieg aus dem Wochenplan für Krafteinheiten (manuell mit Sportart Kraft), Mitteilungen
+  während der Einheit.

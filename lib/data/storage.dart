@@ -99,3 +99,10 @@ final trainingDataChangesProvider = Provider<Stream<void>>((ref) {
       .tableUpdates(TableUpdateQuery.onAllTables([db.dailyMetricsRecords, db.activityRecords, db.gymSessionRecords]))
       .map((_) {});
 });
+
+/// Meldet jede Änderung an Mahlzeiten (auch aus anderen Bereichen, z. B. dem Fuel Planner), damit die Ernährung neu
+/// lädt.
+final mealDataChangesProvider = Provider<Stream<void>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return db.tableUpdates(TableUpdateQuery.onAllTables([db.mealRecords])).map((_) {});
+});

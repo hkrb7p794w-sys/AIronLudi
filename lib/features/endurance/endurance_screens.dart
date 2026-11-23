@@ -10,6 +10,7 @@ import '../../app/user_providers.dart';
 import '../../services/endurance/workout_exporter_service.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../fuel/fuel_for_slot.dart';
 import '../routes/route_for_slot.dart';
 import 'endurance_controller.dart';
 
@@ -449,6 +450,7 @@ class EnduranceWorkoutScreen extends ConsumerWidget {
             ),
           RouteForSlotSection(slot: slot, runThresholdPace: controller.plan?.request.thresholds.runThresholdPace),
           WorkoutDetailSections(workout: slot.current, day: slot.day, onSend: () => controller.send(slot)),
+          FuelForSlotSection(slot: slot),
         ],
       ),
     );
