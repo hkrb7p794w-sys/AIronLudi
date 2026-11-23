@@ -1599,6 +1599,125 @@ void main() {
     expect(() => WorkerRoundTripFormat.parse({'points': <Object?>[]}), throwsA(isA<RoutingUnavailable>()));
   });
 
+  group('Wetter für die Route', () {
+    // Hin nach Norden, zurück nach Süden (je 2 km).
+    final outAndBack = [
+      for (var index = 0; index <= 20; index++) Geo.destination(berlin, 0, index * 100.0),
+      for (var index = 19; index >= 0; index--) Geo.destination(berlin, 0, index * 100.0),
+    ];
+    PlannedRoute route(List<GeoPoint> points) => PlannedRoute(
+      id: 'w',
+      username: 'anna',
+      name: 'Wetter',
+      request: const RouteRequest(
+        discipline: RouteDiscipline.roadBike,
+        shape: RouteShape.loop,
+        start: berlin,
+        distanceMeters: 4000,
+      ),
+      variant: RouteVariant.balanced,
+      points: points,
+      engine: 'Test',
+      createdAt: DateTime.utc(2026, 11, 23),
+    );
+    Map<String, Object?> forecast({double windFrom = 180, double wind = 20}) => {
+      'hourly': {
+        'time': [for (var hour = 0; hour < 24; hour++) '2026-11-24T${hour.toString().padLeft(2, '0')}:00'],
+        'temperature_2m': [for (var hour = 0; hour < 24; hour++) 5 + hour / 2],
+        'wind_speed_10m': [for (var hour = 0; hour < 24; hour++) wind],
+        'wind_direction_10m': [for (var hour = 0; hour < 24; hour++) windFrom],
+        'wind_gusts_10m': [for (var hour = 0; hour < 24; hour++) wind + 15],
+        'precipitation_probability': [for (var hour = 0; hour < 24; hour++) hour == 10 ? 60 : 10],
+        'precipitation': [for (var hour = 0; hour < 24; hour++) hour == 10 ? 0.8 : 0],
+        'weather_code': [for (var hour = 0; hour < 24; hour++) hour == 10 ? 61 : 3],
+      },
+    };
+
+    test('Anfrage und Stunden', () {
+      final uri = OpenMeteoFormat.uri(berlin, const CalendarDay(2026, 11, 24));
+      expect(uri.host, 'api.open-meteo.com');
+      expect(uri.queryParameters['start_date'], '2026-11-24');
+      expect(uri.queryParameters['latitude'], '52.520');
+      final hours = OpenMeteoFormat.parse(forecast());
+      expect(hours.length, 24);
+      expect(hours[10].precipitationProbability, 60);
+      expect(hours[10].time.hour, 10);
+      expect(() => OpenMeteoFormat.parse({'daily': <String, Object?>{}}), throwsFormatException);
+      const today = CalendarDay(2026, 11, 23);
+      expect(OpenMeteoFormat.covers(today.adding(15), today: today), isTrue);
+      expect(OpenMeteoFormat.covers(today.adding(16), today: today), isFalse);
+      expect(OpenMeteoFormat.covers(today.adding(-1), today: today), isFalse);
+    });
+
+    test('Spanne über die Dauer, Gegenwind je Hälfte, Hinweis andersherum', () {
+      // Wind aus Süden: hin (Norden) Rückenwind, zurück Gegenwind → andersherum wäre besser.
+      final weather = RouteWeather.of(
+        route(outAndBack),
+        OpenMeteoFormat.parse(forecast()),
+        startHour: 9,
+        duration: const Duration(minutes: 90),
+      )!;
+      expect(weather.hours.length, 2);
+      expect(weather.minTemperature, 9.5);
+      expect(weather.maxTemperature, 10);
+      expect(weather.maxPrecipitationProbability, 60);
+      expect(weather.headline, '10 °C · Regen · Regen 60 %');
+      expect(weather.windLine, 'Wind 20 km/h aus S, Böen 35');
+      expect(weather.wind.firstHalf, closeTo(-20, 0.5));
+      expect(weather.wind.secondHalf, closeTo(20, 0.5));
+      expect(weather.suggestsReverse, isTrue);
+      expect(weather.windAdvice, contains('andersherum'));
+
+      // Wind aus Norden: Gegenwind zuerst – kein Hinweis.
+      final north = RouteWeather.of(
+        route(outAndBack),
+        OpenMeteoFormat.parse(forecast(windFrom: 0)),
+        startHour: 9,
+        duration: const Duration(minutes: 30),
+      )!;
+      expect(north.suggestsReverse, isFalse);
+      expect(north.windAdvice, 'Erste Hälfte Gegenwind, zweite Hälfte Rückenwind.');
+      // Mittlere Richtung über 360°: 350° und 10° ergeben Nord.
+      expect(RouteWeather.compass(355), 'N');
+      // Schwacher Wind: kein Hinweis; außerhalb der Vorhersage: nichts.
+      final calm = RouteWeather.of(
+        route(outAndBack),
+        OpenMeteoFormat.parse(forecast(wind: 5)),
+        startHour: 9,
+        duration: const Duration(hours: 1),
+      )!;
+      expect(calm.windAdvice, isNull);
+      expect(RouteWeather.of(route(outAndBack), const [], startHour: 9, duration: const Duration(hours: 1)), isNull);
+    });
+
+    test('Route umkehren: Punkte andersherum, Auf- und Abstieg getauscht, Kurs verworfen', () {
+      final hill = [
+        for (var index = 0; index <= 20; index++)
+          Geo.destination(berlin, 0, index * 100.0).withElevation(30 + index * 2.0),
+        for (var index = 19; index >= 0; index--) Geo.destination(berlin, 90, index * 50.0).withElevation(30),
+      ];
+      final original = route(hill)
+        ..plannedDay = const CalendarDay(2026, 11, 24)
+        ..garminCourseID = 9;
+      final turned = original.reversed();
+      expect(turned.id, original.id);
+      expect(turned.points.first, original.points.last);
+      expect(turned.stats.ascentMeters, closeTo(original.stats.descentMeters, 0.01));
+      expect(turned.plannedDay, original.plannedDay);
+      expect(turned.garminCourseID, isNull);
+    });
+
+    test('Andersherum gelaufen: Gegenwind zuerst, kein Hinweis', () {
+      final southFirst = [
+        for (var index = 0; index <= 20; index++) Geo.destination(berlin, 180, index * 100.0),
+        for (var index = 19; index >= 0; index--) Geo.destination(berlin, 180, index * 100.0),
+      ];
+      final halves = RouteWind.halves(southFirst, windFrom: 180, windSpeed: 20);
+      expect(halves.firstHalf, greaterThan(0));
+      expect(RouteWind.suggestsReverse(halves), isFalse);
+    });
+  });
+
   test('Anzeige', () {
     expect(RouteFormat.distance(850), '850 m');
     expect(RouteFormat.distance(10249), '10,2 km');

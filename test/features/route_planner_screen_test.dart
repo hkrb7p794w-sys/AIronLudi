@@ -15,6 +15,7 @@ import 'package:aironludi/features/routes/route_planner_screen.dart';
 import 'package:aironludi/features/routes/routes_screen.dart';
 import 'package:aironludi/services/routing/garmin_course_service.dart';
 import 'package:aironludi/services/routing/location_source.dart';
+import 'package:aironludi/services/routing/route_weather_service.dart';
 import 'package:aironludi/services/routing/routing_providers.dart';
 import 'package:aironludi/ui/liquid.dart';
 import 'package:coach_core/coach_core.dart';
@@ -137,6 +138,28 @@ final class FailingFeatures extends FakeFeatures {
   }
 }
 
+/// Vorhersage: 8 °C, Wind 20 km/h aus Süden, den ganzen Tag.
+final class FakeWeather implements WeatherSource {
+  int calls = 0;
+
+  @override
+  Future<List<WeatherHour>> forecast(GeoPoint point, CalendarDay day) async {
+    calls++;
+    return [
+      for (var hour = 0; hour < 24; hour++)
+        WeatherHour(
+          time: DateTime(day.year, day.month, day.day, hour),
+          temperature: 8,
+          windSpeed: 20,
+          windFrom: 180,
+          windGusts: 40,
+          precipitationProbability: 10,
+          weatherCode: 3,
+        ),
+    ];
+  }
+}
+
 /// Garmin-Konto, das jeden Kurs mit der ID 42 annimmt.
 final fakeGarmin = GarminCourseTarget(
   isLoggedIn: () => true,
@@ -166,6 +189,7 @@ Future<ProviderContainer> openPlanner(
           routePoiSourceProvider.overrideWithValue(FakePois()),
           locationSourceProvider.overrideWithValue(location ?? FakeLocation()),
           garminCourseTargetProvider.overrideWithValue(fakeGarmin),
+          weatherSourceProvider.overrideWithValue(FakeWeather()),
         ],
       ),
     ) as Widget,
@@ -211,6 +235,7 @@ void main() {
     addTearDown(tester.view.reset);
     final routing = FakeRouting();
     final features = FakeFeatures();
+    final weather = FakeWeather();
     await tester.pumpWidget(
       await tester.runAsync(
         () => app(
@@ -221,6 +246,7 @@ void main() {
             routePoiSourceProvider.overrideWithValue(FakePois()),
             locationSourceProvider.overrideWithValue(FakeLocation()),
             garminCourseTargetProvider.overrideWithValue(fakeGarmin),
+            weatherSourceProvider.overrideWithValue(weather),
           ],
         ),
       ) as Widget,
@@ -314,6 +340,12 @@ void main() {
     await tester.scrollUntilVisible(find.text('Als GPX teilen'), 300, scrollable: find.byType(Scrollable).first);
     expect(find.text('Als GPX teilen'), findsOneWidget);
     expect(find.textContaining('Geplant für heute'), findsOneWidget);
+    // Wetter für den geplanten Tag am Start.
+    await tester.scrollUntilVisible(find.text('Wetter heute'), -300, scrollable: find.byType(Scrollable).first);
+    expect(find.text('Wetter heute'), findsOneWidget);
+    expect(find.textContaining('8 °C · bewölkt'), findsOneWidget);
+    expect(find.text('Wind 20 km/h aus S, Böen 40'), findsOneWidget);
+    expect(weather.calls, 1);
 
     // An Uhr senden: Auswahl der Hersteller mit passendem Format.
     await tapCentered(tester, find.text('An Uhr senden'));

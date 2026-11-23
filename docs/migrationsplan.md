@@ -429,6 +429,7 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Routenplaner: Gassi-Extras (Hundewiese als Wegpunkt, Trinkbrunnen/Hundewiesen/Kotbeutel unterwegs, Vorlagen) und „Route folgen“ (Standort live, Restdistanz, Warnung abseits) | erledigt (#103) |
 | Routenplaner: Kurs direkt an Garmin Connect senden (ersetzt beim erneuten Senden, sonst FIT teilen) | erledigt (#104) |
 | Routenplaner: Kartendienste mit Schlüssel über den Worker (openrouteservice-Rundwege als Ausweich, MapTiler-Kacheln mit Dunkelmodus, Cache, Tageslimit) | in PR |
+| Routenplaner: Wetter und Wind für den geplanten Tag (Open-Meteo, Wind je Hälfte, Richtung umkehren) | in PR |
 | Heute entschlackt: Ringe für Schlaf, Erholung und Strain (0–21) mit Ampelfarben, Training heute mit Strain je Einheit, Bereiche ein-/ausblendbar (auch AI); weitere Sportarten (Bouldern, Klettern, Yoga, HIIT …); „Wochenplan importieren“ unter Training › Plan; eigene Makroziele (Gramm/Prozent, Ruhetage); Produktsuche (eigene, BLS, Open Food Facts) | erledigt |
 | Erfassen mit Suche zuerst: Vorschläge zur Mahlzeit, „+“ in den Korb, mehrere Lebensmittel auf einmal eintragen, andere Wege als Reiter | in PR |
 | UI-Redesign „Clean Liquid Design“ (`lib/ui/liquid.dart`, `AppTheme`): Glasflächen mit Lichtkante über Lichtflecken-Hintergrund, große Radien, Pillen-Knöpfe, schwebende Tab-Leiste, Verlaufs-Ringe und -Balken mit Federanimation, taktile Rückmeldung, Vorschau der Live-Aktivität (`docs/decisions.md`, 18.11.2026) | in PR |

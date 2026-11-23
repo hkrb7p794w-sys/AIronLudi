@@ -187,7 +187,11 @@ von Hand: denselben Link wieder öffnen.
    eine **Vorlage** (z. B. „Gassi 3 km ab Zuhause“), die unter *Routen* mit einem Tipp plant. In einer gespeicherten
    Route zeigt **Route folgen** deinen Standort live, die Restdistanz und vibriert, wenn du von der Route abkommst
    (Bildschirm bleibt an).
-8. **Gebiete (optional):** *Training › Routen › Gebiete anzeigen*. Geschlossene Runden erobern die umschlossene
+8. **Wetter und Wind:** In einer gespeicherten Route steht das Wetter für den geplanten Tag (sonst heute) – Startzeit
+   wählen, dann Temperatur, Regen und Wind über die geschätzte Dauer. Hättest du auf einem Rundweg zum Schluss
+   Gegenwind, schlägt die App **Richtung umkehren** vor. Mit eingerichtetem Worker (MapTiler) ist die Karte im
+   Dunkelmodus dunkel.
+9. **Gebiete (optional):** *Training › Routen › Gebiete anzeigen*. Geschlossene Runden erobern die umschlossene
    Fläche, alle Läufe und Fahrten mit GPS füllen deine Kachel-Karte. Gezählt wird eine Aktivität, sobald ihr Verlauf
    einmal geladen wurde (Aktivität öffnen). Alles bleibt bei deinem Benutzer.
 

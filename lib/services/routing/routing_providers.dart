@@ -10,6 +10,7 @@ import 'exploration_import.dart';
 import 'garmin_course_service.dart';
 import 'location_source.dart';
 import 'route_stores.dart';
+import 'route_weather_service.dart';
 import 'routing_service.dart';
 import 'worker_maps.dart';
 
@@ -74,3 +75,15 @@ final roundTripSourceProvider = Provider<RoundTripSource?>((ref) => WorkerRoundT
 
 /// Kacheln über den Worker (mit dunklem Stil), sonst `null` = OSM-Kacheln. Einmal je Sitzung gefragt.
 final workerTilesProvider = FutureProvider<WorkerTiles?>((ref) => WorkerTiles.probe(ref.watch(aiClientProvider)));
+
+/// Wetter für den geplanten Tag (Open-Meteo); in Tests überschreibbar.
+final weatherSourceProvider = Provider<WeatherSource>((ref) {
+  final transport = DioTransport();
+  ref.onDispose(transport.close);
+  return OpenMeteoWeather(transport);
+});
+
+/// Stündliche Vorhersage am Start einer Route für einen Tag.
+final routeForecastProvider = FutureProvider.autoDispose.family<List<WeatherHour>, (GeoPoint, CalendarDay)>(
+  (ref, key) => ref.read(weatherSourceProvider).forecast(key.$1, key.$2),
+);

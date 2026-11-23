@@ -7,6 +7,7 @@ import 'package:aironludi/data/settings/settings_store.dart';
 import 'package:aironludi/services/http/http_transport.dart';
 import 'package:aironludi/services/routing/garmin_course_service.dart';
 import 'package:aironludi/services/routing/route_stores.dart';
+import 'package:aironludi/services/routing/route_weather_service.dart';
 import 'package:aironludi/services/routing/routing_service.dart';
 import 'package:coach_core/coach_core.dart';
 import 'package:drift/native.dart';
@@ -293,6 +294,33 @@ void main() {
       await gate.run(() async {});
       expect(waits.last, const Duration(seconds: 5));
     });
+  });
+
+  test('Wetter: Open-Meteo stündlich, eine halbe Stunde zwischengespeichert', () async {
+    final urls = <Uri>[];
+    var clock = DateTime.utc(2026, 11, 23, 8);
+    final weather = OpenMeteoWeather(
+      FakeHttpTransport((request) {
+        urls.add(request.url);
+        return json({
+          'hourly': {
+            'time': ['2026-11-24T10:00', '2026-11-24T11:00'],
+            'temperature_2m': [7.5, 8],
+            'wind_speed_10m': [12, 14],
+            'wind_direction_10m': [250, 260],
+          },
+        });
+      }),
+      now: () => clock,
+    );
+    final hours = await weather.forecast(start, const CalendarDay(2026, 11, 24));
+    expect(hours.length, 2);
+    expect(urls.single.host, 'api.open-meteo.com');
+    await weather.forecast(start, const CalendarDay(2026, 11, 24));
+    expect(urls.length, 1);
+    clock = clock.add(const Duration(minutes: 31));
+    await weather.forecast(start, const CalendarDay(2026, 11, 24));
+    expect(urls.length, 2);
   });
 
   group('Kurs an Garmin', () {

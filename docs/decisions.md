@@ -1237,3 +1237,19 @@ Punkt 10 der Verbesserungsliste.
   freien Kontingente reichen. In den Cache kommt die Antwort mit `public`, an die App geht sie mit `private`.
 - **Tageslimit:** Rundwege je Person 200/Tag (KV `LEAGUE`, Schlüssel `maps:<Tag>:<Person>`), Kacheln ohne Limit.
 
+## 2026-11-23 – Routenplaner: Wetter und Wind für den geplanten Tag
+
+Punkt 11 der Verbesserungsliste.
+
+- **Quelle:** Open-Meteo (frei, ohne Schlüssel, direkt aus der App), stündlich am Start der Route für den geplanten
+  Tag (sonst heute); Vorhersage bis 15 Tage voraus, sonst nur ein Hinweis. Eine halbe Stunde im Speicher.
+- **Spanne:** wählbare Startzeit (7, 10, 13, 16, 19 Uhr; heute die nächste) über die geschätzte Dauer: Temperatur
+  von–bis, schlechtestes Wetter, höchste Regenwahrscheinlichkeit, mittlerer Wind (Richtung als Vektor gemittelt),
+  Böen.
+- **Wind je Hälfte:** Gegenwind-Anteil = Windstärke × cos(Fahrtrichtung − Herkunft des Winds), nach Streckenlänge
+  gemittelt. Ab 10 km/h ein Hinweis. Rundweg mit mindestens 6 km/h mehr Gegenwind in der zweiten Hälfte:
+  „Richtung umkehren“ (Gegenwind, solange man frisch ist). Umkehren behält ID und Planung; ein Garmin-Kurs passt
+  dann nicht mehr und wird vergessen.
+- **Bewusst nicht:** Wetter beim Planen selbst (Wind ändert die Vorschläge nicht – die Regeln für Distanz und Wegarten
+  bleiben vorn).
+

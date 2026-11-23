@@ -11,6 +11,7 @@ import '../../ui/liquid.dart';
 import '../endurance/endurance_controller.dart';
 import 'follow_route_screen.dart';
 import 'route_parts.dart';
+import 'route_weather_card.dart';
 
 /// Gespeicherte Route: Karte, Kennzahlen, Höhenprofil; übernehmen in eine Einheit, exportieren, umbenennen, löschen.
 class RouteDetailScreen extends ConsumerStatefulWidget {
@@ -109,6 +110,13 @@ class _RouteDetailScreenState extends ConsumerState<RouteDetailScreen> {
               ],
             ),
           ),
+          if (!route.isCompleted) ...[
+            const SizedBox(height: LiquidSpacing.m),
+            RouteWeatherCard(
+              route: route,
+              onReverse: (reversed) => unawaited(saveReversedRoute(context, ref, reversed)),
+            ),
+          ],
           FormSection(
             header: 'Training',
             footer: planned == null

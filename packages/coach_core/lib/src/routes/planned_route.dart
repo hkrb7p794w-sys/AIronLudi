@@ -83,6 +83,25 @@ final class PlannedRoute {
     return Geo.thin(simplified, maxStoredPoints);
   }
 
+  /// Dieselbe Route andersherum (z. B. wegen des Winds). Ein Kurs in Garmin Connect passt dann nicht mehr.
+  PlannedRoute reversed() => PlannedRoute(
+    id: id,
+    username: username,
+    name: name,
+    request: request,
+    variant: variant,
+    points: points.reversed.toList(),
+    engine: engine,
+    createdAt: createdAt,
+    plannedDay: plannedDay,
+    slotID: slotID,
+    slotTitle: slotTitle,
+    preferenceShare: preferenceShare,
+    completedAt: completedAt,
+    activityID: activityID,
+    duration: duration,
+  );
+
   Map<String, Object?> toJson() => {
     'id': id,
     'username': username,
