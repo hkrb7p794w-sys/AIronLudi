@@ -15,7 +15,7 @@ der nativen iPhone-App aus `hkrb7p794w-sys/Coach-App` (Swift, Stand `793d408`). 
 | `lib/services/`, `lib/platform/` | Dienste (Garmin, Health, KI, Mitteilungen …) und Plattformbrücken |
 | `lib/features/<bereich>/` | Screens und Controller (Riverpod) je Bereich |
 | `ios/Runner/`, `android/app/` | Native Konfiguration; Widgets/Live-Aktivitäten bleiben nativ (siehe Migrationsplan 4.2) |
-| `worker/` | Cloudflare Worker „coach-ai“ (TypeScript): KI-Weiterleitung, Konten, Freunde, SideStore-Quelle, Android-Download; Prompts in `src/tasks.ts` (seit 16.11.2026 hier statt in Coach-App) |
+| `worker/` | Cloudflare Worker „coach-ai“ (TypeScript): KI-Weiterleitung, Konten, Freunde, Kartendienste, SideStore-Quelle, Android-Download; Prompts in `src/tasks.ts` (seit 16.11.2026 hier statt in Coach-App) |
 | `docs/migrationsplan.md` | Audit und Checkliste – bei jeder PR den Stand (Abschnitt 8) nachführen |
 | `docs/einrichtung.md`, `docs/anleitung.md` | Einrichtung für die Betreiberin bzw. den Betreiber; Installationsanleitungen |
 

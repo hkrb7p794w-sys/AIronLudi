@@ -16,6 +16,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/routing/garmin_course_service.dart';
 import '../../services/routing/routing_providers.dart';
+import '../../services/routing/worker_maps.dart';
 import '../../ui/liquid.dart';
 import 'my_location.dart';
 
@@ -36,45 +37,65 @@ abstract final class OsmTiles {
   static bool cacheDisabled = false;
 }
 
-/// OSM-Kacheln mit Quellenangabe (wie `RouteMap`).
-List<Widget> osmBaseLayers() => [
-  TileLayer(
-    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    userAgentPackageName: 'io.github.hkrb7p794w.gym',
-    tileProvider: OsmTiles.cacheDisabled ? NetworkTileProvider(cachingProvider: DisabledMapCachingProvider()) : null,
-  ),
-];
+/// Kartenkacheln: über den Worker (MapTiler, im Dunkelmodus dunkel), sonst OSM. Gibt es keinen Worker mit Kacheln,
+/// bleibt alles wie bisher.
+class BaseTiles extends ConsumerWidget {
+  const BaseTiles({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final worker = ref.watch(workerTilesProvider).value;
+    final cacheOff = OsmTiles.cacheDisabled ? DisabledMapCachingProvider() : null;
+    if (worker != null) {
+      return TileLayer(
+        urlTemplate: worker.urlTemplate(dark: Theme.of(context).brightness == Brightness.dark),
+        userAgentPackageName: 'io.github.hkrb7p794w.gym',
+        tileProvider: NetworkTileProvider(headers: worker.headers, cachingProvider: cacheOff),
+      );
+    }
+    return TileLayer(
+      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      userAgentPackageName: 'io.github.hkrb7p794w.gym',
+      tileProvider: cacheOff == null ? null : NetworkTileProvider(cachingProvider: cacheOff),
+    );
+  }
+}
 
 /// Quellenangabe unten rechts als kleine Glas-Pille (bricht nicht über den Rand wie `SimpleAttributionWidget`).
 Widget osmAttribution({String? routingSource}) => _Attribution(routingSource: routingSource);
 
-class _Attribution extends StatelessWidget {
+class _Attribution extends ConsumerWidget {
   const _Attribution({this.routingSource});
 
   final String? routingSource;
 
   @override
-  Widget build(BuildContext context) => Align(
-    alignment: Alignment.bottomRight,
-    child: Padding(
-      padding: const EdgeInsets.all(6),
-      child: LiquidSurface(
-        radius: LiquidRadii.pill,
-        strong: true,
-        shadow: false,
-        blur: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          child: Text(
-            routingSource == null ? '© OpenStreetMap-Mitwirkende' : '© OpenStreetMap-Mitwirkende · $routingSource',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 10),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tiles = ref.watch(workerTilesProvider).value == null
+        ? '© OpenStreetMap-Mitwirkende'
+        : WorkerTiles.attribution;
+    return Align(
+      alignment: Alignment.bottomRight,
+      child: Padding(
+        padding: const EdgeInsets.all(6),
+        child: LiquidSurface(
+          radius: LiquidRadii.pill,
+          strong: true,
+          shadow: false,
+          blur: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            child: Text(
+              routingSource == null ? tiles : '$tiles · $routingSource',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 10),
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// Interaktive Karte des Planers: Start (grün), Ziel (rot), Vorschläge als Linien mit Richtungspfeilen auf der
@@ -148,7 +169,7 @@ class PlannerMap extends StatelessWidget {
               interactionOptions: const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
             ),
             children: [
-              ...osmBaseLayers(),
+              const BaseTiles(),
               PolylineLayer(
                 polylines: [
                   for (final route in others)

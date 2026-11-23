@@ -48,6 +48,11 @@ export interface Env {
   /** WHOOP-App aus dem Developer-Dashboard (siehe whoop.ts); das Secret bleibt im Worker. */
   WHOOP_CLIENT_ID?: string;
   WHOOP_CLIENT_SECRET?: string;
+  /** Kartendienste für den Routenplaner (siehe maps.ts): openrouteservice (Rundwege) und MapTiler (Kacheln). */
+  ORS_API_KEY?: string;
+  MAPTILER_API_KEY?: string;
+  /** Rundwege je Person und Tag (Standard 200, 0 = unbegrenzt). */
+  MAPS_DAILY_LIMIT?: string;
 }
 
 /** Ausschnitt des Workers-AI-Bindings, den der Worker nutzt (Tests ersetzen ihn). */

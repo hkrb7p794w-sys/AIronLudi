@@ -1219,3 +1219,21 @@ Punkt 9 der Verbesserungsliste.
 - **Ausweichen:** ohne Anmeldung, bei Ablehnung oder Fehler steht die Meldung im Blatt „An Uhr senden“, darunter der
   bisherige Weg über die FIT-Datei. Auf die Uhr kommt der Kurs weiterhin über „An Gerät senden“ in Garmin Connect;
   einen dokumentierten Weg, ihn direkt aufs Gerät zu schieben, gibt es nicht.
+
+## 2026-11-23 – Routenplaner: Kartendienste mit Schlüssel über den Worker
+
+Punkt 10 der Verbesserungsliste.
+
+- **Schlüssel nur im Worker** (`ORS_API_KEY`, `MAPTILER_API_KEY`, `worker/src/maps.ts`), Zugriff nur mit Anmeldung
+  (Haupt-, Gast- oder Sitzungs-Token). Beide optional: ohne sie bleibt alles wie bisher.
+- **openrouteservice nur als Ausweich für Rundwege:** Liefern Valhalla und BRouter für eine Rundweg-Variante nichts
+  (gestört oder kein Weg), fragt der Planer `round_trip` von openrouteservice, Länge bis zu dreimal proportional
+  nachgeführt. Bewusst nicht als erster Weg: Die Wegpunkt-Planung kennt Wegarten, Hundewiese, Varianten und die
+  ±2,5 %-Regel; `round_trip` trifft die Länge nur grob.
+- **Kacheln von MapTiler** (Raster 256 px; `streets-v2`, `streets-v2-dark`, `outdoor-v2`): im Dunkelmodus der dunkle
+  Stil. Die App fragt `/v1/health` einmal je Sitzung; meldet der Worker keine Kacheln, bleibt es bei OSM. Das Token
+  geht als `Authorization`-Header nur an den eigenen Worker.
+- **Zwischenspeicher:** Cloudflare-Cache-API (Rundwege 1 Tag, gerundeter Start ~10 m; Kacheln 7 Tage), damit die
+  freien Kontingente reichen. In den Cache kommt die Antwort mit `public`, an die App geht sie mit `private`.
+- **Tageslimit:** Rundwege je Person 200/Tag (KV `LEAGUE`, Schlüssel `maps:<Tag>:<Person>`), Kacheln ohne Limit.
+

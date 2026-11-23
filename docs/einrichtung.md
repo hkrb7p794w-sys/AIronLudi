@@ -63,6 +63,7 @@ schließt beide aus.
 | `COACH_APP_TOKEN` | App-Token |
 | `GEMINI_API_KEY`, `GROQ_API_KEY`, `CEREBRAS_API_KEY`, `MISTRAL_API_KEY`, `GH_MODELS_TOKEN` | KI-Keys (Abschnitt 2) |
 | `WHOOP_CLIENT_ID`, `WHOOP_CLIENT_SECRET` | optional, Abschnitt 6 |
+| `ORS_API_KEY`, `MAPTILER_API_KEY` | optional, Kartendienste für den Routenplaner (Abschnitt 8) |
 | `RELEASES_TOKEN`, `RELEASES_READ_TOKEN` | Android-Download über das private Repo (Abschnitt unten) |
 | `ANDROID_KEYSTORE_B64`, `ANDROID_KEYSTORE_PASSWORD` | Signaturschlüssel der Android-App (Keystore vom 16.11.2026, Alias `aironludi`). **Nicht mehr wechseln:** Jede spätere Version muss mit genau diesem Schlüssel signiert sein, sonst lässt sie sich nicht als Update installieren. Datei und Passwort sicher aufbewahren |
 
@@ -127,3 +128,20 @@ Garmin hat keinen zentralen Zugang – jede Person meldet sich selbst an:
   einfügen › **Speichern und verbinden**. Garmin und die App warnen vor dem Ablauf.
 
 Probleme: *Einstellungen › Technik › Diagnose › Garmin-Diagnose*.
+
+## 8. Kartendienste für den Routenplaner (optional, einmal zentral)
+
+Ohne diese Schlüssel plant die App mit Valhalla und BRouter (FOSSGIS) und zeigt OSM-Kacheln – alles funktioniert. Mit
+ihnen kommen über den Worker hinzu (die Schlüssel bleiben dort, nie in der App):
+
+- **`ORS_API_KEY` – openrouteservice:** Ausweich für Rundwege, wenn Valhalla und BRouter gestört sind. Kostenloses
+  Konto unter <https://openrouteservice.org/dev/#/signup>, dort *Dashboard › Tokens* einen Token (Standard) anlegen.
+  Der Worker begrenzt Rundwege auf 200 je Person und Tag (Variable `MAPS_DAILY_LIMIT`, 0 = unbegrenzt) und hält
+  Antworten einen Tag im Cloudflare-Cache.
+- **`MAPTILER_API_KEY` – MapTiler:** Kartenkacheln mit dunklem Stil im Dunkelmodus. Kostenloses Konto unter
+  <https://cloud.maptiler.com/account/keys/>, den Standard-Key kopieren und unter *Allowed HTTP origins* nichts
+  eintragen (der Worker ruft ohne Origin auf). Kacheln liegen 7 Tage im Cloudflare-Cache.
+
+Beide als GitHub-Secret (Abschnitt 4) eintragen und *Actions › Worker › Run workflow* starten. Ob sie greifen, zeigt
+`https://<worker>/v1/health` unter `maps` (`roundTrip`, `tiles`). Die App fragt das beim Öffnen der Karte ab.
+

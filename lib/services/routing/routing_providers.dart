@@ -11,6 +11,7 @@ import 'garmin_course_service.dart';
 import 'location_source.dart';
 import 'route_stores.dart';
 import 'routing_service.dart';
+import 'worker_maps.dart';
 
 /// Routen, Gebiete und Planer-Einstellungen des aktiven Benutzers (je Benutzer ein eigener Container).
 final routeStoreProvider = ChangeNotifierProvider<RouteStore>(
@@ -67,3 +68,9 @@ final garminCourseTargetProvider = Provider<GarminCourseTarget>((ref) {
   final connect = ref.watch(garminConnectProvider);
   return GarminCourseTarget(isLoggedIn: () => connect.isLoggedIn, sender: connect.sendJson);
 });
+
+/// Rundweg-Ausweich über den Worker (openrouteservice); in Tests überschreibbar.
+final roundTripSourceProvider = Provider<RoundTripSource?>((ref) => WorkerRoundTripSource(ref.watch(aiClientProvider)));
+
+/// Kacheln über den Worker (mit dunklem Stil), sonst `null` = OSM-Kacheln. Einmal je Sitzung gefragt.
+final workerTilesProvider = FutureProvider<WorkerTiles?>((ref) => WorkerTiles.probe(ref.watch(aiClientProvider)));

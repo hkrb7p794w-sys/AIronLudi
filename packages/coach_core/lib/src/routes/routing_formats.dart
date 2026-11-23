@@ -315,3 +315,56 @@ abstract final class BRouterFormat {
     return RoutedPath(points: points, distanceMeters: length ?? Geo.length(points), engine: engineName);
   }
 }
+
+/// Rundwege von openrouteservice über den eigenen Worker (`/v1/maps/roundtrip`, Schlüssel nur im Worker). Der Planer
+/// nimmt sie, wenn Valhalla und BRouter für einen Rundweg nichts liefern.
+abstract interface class RoundTripSource {
+  /// Wirft [NoRouteFound] oder [RoutingUnavailable].
+  Future<RoutedPath> roundTrip(
+    GeoPoint start, {
+    required RouteDiscipline discipline,
+    required double lengthMeters,
+    required int seed,
+  });
+}
+
+/// Anfrage und Antwort von `/v1/maps/roundtrip` (siehe `worker/src/maps.ts`).
+abstract final class WorkerRoundTripFormat {
+  static const path = 'v1/maps/roundtrip';
+
+  static Map<String, Object?> body(
+    GeoPoint start, {
+    required RouteDiscipline discipline,
+    required double lengthMeters,
+    required int seed,
+  }) => {
+    'lat': start.latitude,
+    'lon': start.longitude,
+    'lengthMeters': lengthMeters.round().clamp(500, 100000),
+    'discipline': discipline.name,
+    'seed': seed.abs() % 1000,
+  };
+
+  /// `{points: [[lat, lon, ele?], …], distanceMeters, engine}`; wirft [RoutingUnavailable] bei unbrauchbarer Antwort.
+  static RoutedPath parse(Object? json) {
+    if (json case {'points': final List<Object?> raw, 'distanceMeters': final num distance}) {
+      final points = <GeoPoint>[
+        for (final point in raw)
+          if (point case [final num lat, final num lon, ...final rest])
+            GeoPoint(
+              lat.toDouble(),
+              lon.toDouble(),
+              elevation: rest.isNotEmpty && rest.first is num ? (rest.first! as num).toDouble() : null,
+            ),
+      ];
+      if (points.length >= 2) {
+        return RoutedPath(
+          points: points,
+          distanceMeters: distance.toDouble(),
+          engine: json['engine'] is String ? json['engine']! as String : 'openrouteservice',
+        );
+      }
+    }
+    throw const RoutingUnavailable('Unerwartete Antwort für den Rundweg.');
+  }
+}

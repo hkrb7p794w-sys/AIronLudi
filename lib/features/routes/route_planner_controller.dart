@@ -21,7 +21,8 @@ final class RoutePlannerController extends ChangeNotifier {
     required this._backend,
     required this._features,
     required this._runThresholdPace,
-  }) {
+    RoundTripSource? Function()? roundTrips,
+  }) : _roundTrips = roundTrips ?? (() => null) {
     final settings = store.settings;
     discipline = settings.discipline;
     shape = settings.shape;
@@ -36,6 +37,7 @@ final class RoutePlannerController extends ChangeNotifier {
   final RouteStore store;
   final RoutingBackend Function() _backend;
   final RouteFeatureSource? Function() _features;
+  final RoundTripSource? Function() _roundTrips;
   final int? Function() _runThresholdPace;
 
   // Vorgaben
@@ -271,7 +273,7 @@ final class RoutePlannerController extends ChangeNotifier {
       ),
     );
     try {
-      final result = await RoutePlanner(_backend(), features: _features()).generate(
+      final result = await RoutePlanner(_backend(), features: _features(), roundTrips: _roundTrips()).generate(
         request,
         username: store.username,
         seed: seed,
@@ -346,6 +348,7 @@ final routePlannerControllerProvider = ChangeNotifierProvider<RoutePlannerContro
     store: ref.read(routeStoreProvider),
     backend: () => ref.read(routingBackendProvider),
     features: () => ref.read(routeFeatureSourceProvider),
+    roundTrips: () => ref.read(roundTripSourceProvider),
     runThresholdPace: () => ref.read(enduranceControllerProvider).plan?.request.thresholds.runThresholdPace,
   ),
 );

@@ -130,7 +130,7 @@ class _ExplorationScreenState extends ConsumerState<ExplorationScreen> {
                     interactionOptions: const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
                   ),
                   children: [
-                    ...osmBaseLayers(),
+                    const BaseTiles(),
                     PolygonLayer(
                       polygons: [
                         for (final entry in drawn)

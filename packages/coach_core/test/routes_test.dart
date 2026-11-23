@@ -61,6 +61,27 @@ final class FakeBackend implements RoutingBackend {
   }
 }
 
+/// Rundweg-Ausweich: Kreis um den Start, 8 % länger als angefragt.
+final class FakeRoundTrips implements RoundTripSource {
+  final List<double> lengths = [];
+
+  @override
+  Future<RoutedPath> roundTrip(
+    GeoPoint start, {
+    required RouteDiscipline discipline,
+    required double lengthMeters,
+    required int seed,
+  }) async {
+    lengths.add(lengthMeters);
+    final radius = lengthMeters * 1.08 / (2 * math.pi);
+    final center = Geo.destination(start, seed * 40.0 % 360, radius);
+    final points = [
+      for (var step = 0; step <= 72; step++) Geo.destination(center, (seed * 40.0 + 180 + step * 5) % 360, radius),
+    ];
+    return RoutedPath(points: points, distanceMeters: Geo.length(points), engine: 'openrouteservice');
+  }
+}
+
 final class FakeFeatures implements RouteFeatureSource {
   FakeFeatures(this.points, {this.fails = false});
 
@@ -1518,6 +1539,64 @@ void main() {
     expect(GarminCourse.courseID({'courseId': 12345, 'courseName': 'x'}), 12345);
     expect(GarminCourse.courseID({'error': 'x'}), isNull);
     expect(GarminCourse.link(12345).toString(), 'https://connect.garmin.com/modern/course/12345');
+  });
+
+  test('Rundweg-Ausweich: openrouteservice nur, wenn Valhalla und BRouter nichts liefern; Länge nachgeführt', () async {
+    final roundTrips = FakeRoundTrips();
+    final planner = RoutePlanner(FakeBackend(unavailable: true), roundTrips: roundTrips);
+    const request = RouteRequest(
+      discipline: RouteDiscipline.run,
+      shape: RouteShape.loop,
+      start: berlin,
+      distanceMeters: 8000,
+    );
+    final routes = await planner.generate(request, username: 'anna', variants: [RouteVariant.balanced]);
+    expect(routes.single.engine, 'openrouteservice');
+    expect(request.withinTolerance(routes.single.stats.distanceMeters), isTrue);
+    expect(roundTrips.lengths.length, 2);
+    expect(roundTrips.lengths.last, lessThan(8000));
+
+    // Ohne Störung bleibt es beim normalen Router.
+    final normal = FakeRoundTrips();
+    await RoutePlanner(FakeBackend(), roundTrips: normal).generate(request, username: 'anna');
+    expect(normal.lengths, isEmpty);
+    // Ziel und Richtung nutzen den Ausweich nicht.
+    await expectLater(
+      RoutePlanner(FakeBackend(unavailable: true), roundTrips: normal).generate(
+        const RouteRequest(
+          discipline: RouteDiscipline.run,
+          shape: RouteShape.direction,
+          start: berlin,
+          distanceMeters: 8000,
+          bearingDegrees: 90,
+        ),
+        username: 'anna',
+      ),
+      throwsA(isA<RoutingUnavailable>()),
+    );
+    expect(normal.lengths, isEmpty);
+  });
+
+  test('Rundweg-Format des Workers', () {
+    expect(WorkerRoundTripFormat.body(berlin, discipline: RouteDiscipline.gravel, lengthMeters: 12345.6, seed: -1003), {
+      'lat': berlin.latitude,
+      'lon': berlin.longitude,
+      'lengthMeters': 12346,
+      'discipline': 'gravel',
+      'seed': 3,
+    });
+    final path = WorkerRoundTripFormat.parse({
+      'points': [
+        [52.5, 13.4, 34.2],
+        [52.51, 13.41],
+      ],
+      'distanceMeters': 1500,
+      'engine': 'openrouteservice',
+    });
+    expect(path.points.first.elevation, 34.2);
+    expect(path.points.last.elevation, isNull);
+    expect(path.distanceMeters, 1500);
+    expect(() => WorkerRoundTripFormat.parse({'points': <Object?>[]}), throwsA(isA<RoutingUnavailable>()));
   });
 
   test('Anzeige', () {
