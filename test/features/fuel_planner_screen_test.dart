@@ -1,5 +1,6 @@
 // Fuel Planner: Einstieg in der Ernährung, Plan berechnen, speichern, ins Tagebuch übernehmen (ohne Doppelzählung);
 // Einstieg aus Ausdauer- und Wochenplan mit Erkennung geänderter Einheiten; Wetter; Speicher strikt je Benutzer.
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:aironludi/data/db/database.dart';
@@ -13,6 +14,7 @@ import 'package:aironludi/features/fuel/fuel_for_slot.dart';
 import 'package:aironludi/features/fuel/fuel_plan_screen.dart';
 import 'package:aironludi/features/fuel/fuel_planner_screen.dart';
 import 'package:aironludi/features/fuel/fuel_scenario_screen.dart';
+import 'package:aironludi/features/fuel/fuel_stock_screen.dart';
 import 'package:aironludi/features/nutrition/nutrition_controller.dart';
 import 'package:aironludi/features/plan/plan_screen.dart';
 import 'package:aironludi/services/ai/ai_client.dart';
@@ -124,6 +126,30 @@ void main() {
         GutTolerance.trained,
       );
     });
+  });
+
+  test('Vorrat: Plan bucht ab, erneutes Übernehmen nicht doppelt, Rückgängig bucht zurück', () async {
+    final db = CoachDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final settings = await SettingsStore.open(db);
+    final store = FuelStore(settings, username: 'anna');
+    await store.setStock('builtin.gel', const FuelStock(count: 6, bestBefore: CalendarDay(2026, 12, 20)));
+    final id = await store.savePlan(halfMarathon().scenario, ['builtin.gel']);
+    // Mit „Vorrat zuerst“ ist das Vorrätige auch ohne Auswahl im Plan.
+    expect(store.setupWithStock(const [], raceDay).single, FuelProducts.classicGel);
+    final before = store.plan(id)!;
+    await store.markLogged(id, ['a'], consumed: {'builtin.gel': 5});
+    expect(store.stock['builtin.gel']!.count, 1);
+    final afterFirst = store.plan(id)!;
+    await store.markLogged(id, ['b'], consumed: {'builtin.gel': 4}); // erneut: erst 5 zurück, dann 4 ab
+    expect(store.stock['builtin.gel']!.count, 2);
+    await store.restoreLogged(afterFirst); // Rückgängig des zweiten Übernehmens
+    expect(store.stock['builtin.gel']!.count, 1);
+    await store.restoreLogged(before); // und des ersten
+    expect(store.stock['builtin.gel']!.count, 6);
+    expect(store.stock['builtin.gel']!.bestBefore, const CalendarDay(2026, 12, 20));
+    await store.saveProfile(store.profile.copyWith(useStockFirst: false));
+    expect(store.setupWithStock(const [], raceDay), isEmpty);
   });
 
   group('Tagebuch ohne Doppelzählung', () {
@@ -446,5 +472,96 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Wetter ab 9 Uhr: 24 °C, 80 % Luftfeuchte'), findsOneWidget);
     expect(find.text('24 °C'), findsOneWidget);
+  });
+
+  testWidgets('Plan: Vorschläge mit Lebensmitteln, Alltag unterwegs, So nimmst du es, Vorrat in der Packliste', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
+    await tester.pumpAndSettle();
+    final container = ProviderScope.containerOf(tester.element(find.byType(LiquidTabBar)));
+    // Im Speicher sofort gesetzt; das Schreiben in die Datenbank läuft nebenher.
+    unawaited(container.read(fuelStoreProvider).setStock('builtin.gel', const FuelStock(count: 3)));
+    final navigator = Navigator.of(tester.element(find.byType(LiquidTabBar)));
+    navigator.push(
+      MaterialPageRoute<void>(
+        builder: (_) => FuelPlanScreen(
+          scenario: FuelScenario(
+            sport: FuelSport.bike,
+            minutes: 180,
+            weightKilograms: 70,
+            intensity: FuelIntensity.tempo,
+            day: CalendarDay.today(),
+          ),
+          productIDs: const [],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    // Sportnahrung: das vorrätige Gel ist automatisch eingeplant.
+    await tester.scrollUntilVisible(find.text('Packliste'), 300, scrollable: find.byType(Scrollable).first);
+    expect(find.textContaining('aus dem Vorrat'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('So nimmst du es'), 300, scrollable: find.byType(Scrollable).first);
+    expect(find.textContaining('nachspülen'), findsOneWidget);
+
+    // Alltag: Apfelschorle, Banane & Co.
+    await tester.scrollUntilVisible(find.text('Alltag'), -300, scrollable: find.byType(Scrollable).first);
+    await tester.tap(find.text('Alltag'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Apfelschorle mit einer Prise Salz'), findsWidgets);
+    await tester.scrollUntilVisible(find.text('So nimmst du es'), 300, scrollable: find.byType(Scrollable).first);
+    expect(find.textContaining('Saft und Wasser 1 : 1'), findsOneWidget);
+    expect(find.textContaining('aus dem Vorrat'), findsNothing);
+
+    // Vorher: konkreter Vorschlag, „Andere Idee“ wechselt.
+    await tester.scrollUntilVisible(find.text('Vorher'), -300, scrollable: find.byType(Scrollable).first);
+    await tester.tap(find.text('Vorher'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Scheiben Toastbrot'), findsWidgets);
+    List<String> shown() => [
+      for (final template in FuelMeals.templates)
+        if (find.text(template.name).evaluate().isNotEmpty) template.name,
+    ];
+    final before = shown();
+    final other = find.text('Andere Idee').first;
+    await tester.ensureVisible(other);
+    await tester.pumpAndSettle();
+    await tester.tap(other);
+    await tester.pumpAndSettle();
+    expect(shown(), isNot(before));
+    expect(find.textContaining('Ballaststoff- und fettarm'), findsOneWidget);
+
+    await tester.tap(find.text('Sichern'));
+    await tester.pumpAndSettle();
+    final saved = container.read(fuelStoreProvider).plans.single;
+    expect(saved.everyday, isTrue);
+    expect(saved.mealChoices, isNotEmpty);
+  });
+
+  testWidgets('Vorrat: Produkt hinzufügen, mehr, weniger', (tester) async {
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
+    await tester.pumpAndSettle();
+    final container = ProviderScope.containerOf(tester.element(find.byType(LiquidTabBar)));
+    Navigator.of(tester.element(find.byType(LiquidTabBar)))
+        .push(MaterialPageRoute<void>(builder: (_) => const FuelStockScreen()));
+    await tester.pumpAndSettle();
+    expect(find.text('Noch nichts – unten ein Produkt hinzufügen.'), findsOneWidget);
+    await tester.tap(find.text('Koffein-Gel'));
+    await tester.pumpAndSettle();
+    expect(container.read(fuelStoreProvider).stock['builtin.gelcaffeine']!.count, 1);
+    await tester.tap(find.byTooltip('Eins mehr'));
+    await tester.tap(find.byTooltip('Eins mehr'));
+    await tester.pumpAndSettle();
+    expect(container.read(fuelStoreProvider).stock['builtin.gelcaffeine']!.count, 3);
+    await tester.tap(find.byTooltip('Eins weniger'));
+    await tester.pumpAndSettle();
+    expect(container.read(fuelStoreProvider).stock['builtin.gelcaffeine']!.count, 2);
+    expect(fuelStockSummary(container.read(fuelStoreProvider), CalendarDay.today()), '2 Portionen von 1 Produkt');
   });
 }

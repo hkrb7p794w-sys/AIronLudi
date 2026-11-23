@@ -1352,3 +1352,27 @@ Eine kritische Durchsicht des ersten Stands fand echte Fehler; alle behoben, die
   gewählten Gels/Riegeln höchstens die Hälfte der offenen Kohlenhydrate, und im letzten Drittel kommt das
   Koffein-Produkt vor dem Getränk. Außerdem: Abschnitt (Rad/Laufen) als eigene Zeile im Zeitstrahl, Schnellwahl
   „1:15 h“ statt „1,3 h“, unten genug Abstand über der Tab-Leiste.
+
+## 2026-11-23 – Fuel Planner: wie man es zu sich nimmt, Vorrat, Alltagslebensmittel
+
+Auf Wunsch des Nutzers: nicht nur *was*, sondern *wie* – und mit dem, was da ist.
+
+- **Lebensmittel aus dem BLS:** 28 Lebensmittel mit BLS-Code und Werten je 100 g in `FuelFoods`, per Test gegen
+  `assets/bls.tsv` geprüft – so stimmen Plan und Ernährungstagebuch überein. Fruktose fehlt im BLS-Auszug und ist
+  geschätzt (Spezifikation 9/10.1).
+- **Vorschläge statt nur Grammzahlen:** Vorlagen je Zeitpunkt, skaliert auf das Ziel (Protein zuerst, Kohlenhydrate
+  gleichmäßig), drei Vorschläge mit „Andere Idee“; die Wahl wird im Plan gespeichert (`mealChoices`). Im Tagebuch
+  bleiben vorher/danach Platzhalter (die echte Mahlzeit ersetzt sie wie bisher).
+- **„Nur was ich zu Hause habe“** im Profil: fehlende Zutaten fallen weg, „Aus dem, was du da hast“ kombiniert alles
+  Vorhandene; der Plan zeigt ehrlich, wie viel Prozent gedeckt sind.
+- **Alltag unterwegs:** Umschalter Sportnahrung | Alltag. Alltags-Snacks sind `FuelProduct`s (`food.*`), laufen
+  durch denselben Planer (Salden, Koffein-Budget – Cola zählt) und landen als BLS-Lebensmittel im Tagebuch.
+- **Reihenfolge:** Vorrat zuerst, dann feste Kost in der ersten Hälfte, Gels danach, beim Laufen nur Leichtes.
+- **Vorrat:** `FuelStock` (Anzahl, Mindesthaltbarkeit) je Produkt; „Vorrat zuerst aufbrauchen“ (Standard an) plant
+  Vorrätiges automatisch ein, bald ablaufendes zuerst; Packliste mit Vorrat/Einkauf; Abbuchen beim Übernehmen,
+  `consumedStock` im Plan, damit erneutes Übernehmen und „Rückgängig“ genau zurückbuchen. Leere Einträge bleiben mit
+  Mindesthaltbarkeit stehen.
+- **So nimmst du es:** `FuelHowTo` – Tipps je Produktart/Snack, Sportart und Phase.
+- **Natrium-Ring** bis 150 % grün (Überdeckung unkritisch, anders als bei Flüssigkeit).
+- **Gefunden beim Testen:** Schnelles Doppeltippen auf „+“ im Vorrat zählte nur einmal (alter Stand im Knopf) –
+  jetzt wird beim Tippen der aktuelle Stand gelesen.

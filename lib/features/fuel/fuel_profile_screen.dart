@@ -178,6 +178,37 @@ class _FuelProfileScreenState extends ConsumerState<FuelProfileScreen> {
             ],
           ),
           FormSection(
+            header: 'Zu Hause meist vorrätig',
+            footer:
+                'Für Vorschläge mit normalen Lebensmitteln (vorher, danach und „Alltag“ unterwegs). Mit „nur daraus“ '
+                'deckt der Plan den Bedarf im Zweifel nur annähernd – und sagt, wie viel.',
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: FlowChips<FuelFood>(
+                  items: FuelFoods.choosable,
+                  label: (food) => food.name,
+                  isSelected: (food) => p.home.contains(food.id),
+                  onToggle: (food) => _set(
+                    p.copyWith(
+                      home: p.home.contains(food.id)
+                          ? [
+                              for (final id in p.home)
+                                if (id != food.id) id,
+                            ]
+                          : [...p.home, food.id],
+                    ),
+                  ),
+                ),
+              ),
+              SwitchListTile(
+                title: const Text('Vorschläge nur daraus'),
+                value: p.onlyHome,
+                onChanged: p.home.isEmpty && !p.onlyHome ? null : (value) => _set(p.copyWith(onlyHome: value)),
+              ),
+            ],
+          ),
+          FormSection(
             header: 'Standard-Produkte unterwegs',
             footer: 'Werden in jedem neuen Plan vorausgewählt.',
             children: [

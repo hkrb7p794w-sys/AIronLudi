@@ -8,6 +8,7 @@ import '../../services/fuel/fuel_store.dart';
 import '../../ui/components.dart';
 import '../../ui/liquid.dart';
 import 'fuel_parts.dart';
+import 'fuel_stock_screen.dart';
 
 /// Eigene Gels, Getränke, Riegel und DIY-Mischungen; darunter die mitgelieferten (nur lesen).
 class FuelProductsScreen extends ConsumerWidget {
@@ -23,6 +24,12 @@ class FuelProductsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Meine Produkte'),
         actions: [
+          IconButton(
+            tooltip: 'Vorrat',
+            icon: const Icon(Icons.inventory_2_outlined),
+            onPressed: () =>
+                unawaited(Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const FuelStockScreen()))),
+          ),
           IconButton(tooltip: 'Produkt anlegen', icon: const Icon(Icons.add), onPressed: () => unawaited(open())),
         ],
       ),
@@ -40,7 +47,7 @@ class FuelProductsScreen extends ConsumerWidget {
                 ListTile(
                   leading: Icon(_icon(product.kind)),
                   title: Text(product.name),
-                  subtitle: Text(fuelProductSummary(product)),
+                  subtitle: Text(_withStock(product, store)),
                   trailing: const DisclosureChevron(),
                   onTap: () => unawaited(open(product)),
                 ),
@@ -59,13 +66,19 @@ class FuelProductsScreen extends ConsumerWidget {
                 ListTile(
                   leading: Icon(_icon(product.kind)),
                   title: Text(product.name),
-                  subtitle: Text(fuelProductSummary(product)),
+                  subtitle: Text(_withStock(product, store)),
                 ),
             ],
           ),
         ],
       ),
     );
+  }
+
+  static String _withStock(FuelProduct product, FuelStore store) {
+    final count = store.stock[product.id]?.count ?? 0;
+    final summary = fuelProductSummary(product);
+    return count <= 0 ? summary : '$summary · ${GermanFormat.decimal(count)} im Vorrat';
   }
 
   static IconData _icon(FuelProductKind kind) => switch (kind) {

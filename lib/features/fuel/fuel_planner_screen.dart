@@ -13,6 +13,7 @@ import 'fuel_plan_screen.dart';
 import 'fuel_products_screen.dart';
 import 'fuel_profile_screen.dart';
 import 'fuel_scenario_screen.dart';
+import 'fuel_stock_screen.dart';
 
 /// Neues Szenario mit Gewicht und Profil des Benutzers.
 FuelScenario newFuelScenario(WidgetRef ref, {FuelSport sport = FuelSport.run, int minutes = 90}) {
@@ -118,6 +119,15 @@ class FuelPlannerScreen extends ConsumerWidget {
                 ),
               ),
               ListTile(
+                leading: const Icon(Icons.inventory_2_outlined),
+                title: const Text('Vorrat'),
+                subtitle: Text(fuelStockSummary(store, CalendarDay.today())),
+                trailing: const DisclosureChevron(),
+                onTap: () => unawaited(
+                  Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const FuelStockScreen())),
+                ),
+              ),
+              ListTile(
                 leading: const Icon(Icons.person_outline),
                 title: const Text('Mein Profil'),
                 subtitle: Text(
@@ -196,12 +206,8 @@ class _PlanTile extends ConsumerWidget {
         ),
         trailing: const DisclosureChevron(),
         onTap: () => unawaited(
-          Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) =>
-                  FuelPlanScreen(scenario: s, productIDs: saved.productIDs, planID: saved.id, link: _link(ref, s)),
-            ),
-          ),
+          Navigator.of(context)
+              .push(MaterialPageRoute<void>(builder: (_) => FuelPlanScreen.saved(saved, link: _link(ref, s)))),
         ),
       ),
     );

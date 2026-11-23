@@ -5,6 +5,7 @@ import 'dart:math' as math;
 
 import '../nutrition/meal.dart';
 import '../nutrition/nutrient.dart';
+import 'fuel_food.dart';
 import 'fuel_plan.dart';
 import 'fuel_product.dart';
 
@@ -126,7 +127,9 @@ abstract final class FuelDiary {
       }
     }
     return [
-      for (final MapEntry(key: product, value: count) in servings.entries) _productItem(product, count),
+      for (final MapEntry(key: product, value: count) in servings.entries)
+        // Alltags-Snacks mit den BLS-Werten ihrer Lebensmittel (z. B. Toast und Konfitüre getrennt).
+        ...(FuelSnacks.byProductId(product.id)?.items(count) ?? [_productItem(product, count)]),
       if (water > 0) MealItem.water(milliliters: water),
     ];
   }
