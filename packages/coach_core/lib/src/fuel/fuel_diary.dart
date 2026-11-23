@@ -1,5 +1,8 @@
-// Fuel Planner: Plan → Einträge fürs Ernährungstagebuch (Spezifikation 7). Vorher und danach als Makro-Eintrag
-// „(Plan)“ plus Wasser, unterwegs mit den echten Produkten und Mengen.
+// Fuel Planner: Plan → Einträge fürs Ernährungstagebuch (Spezifikation 7). Vorher und danach als Platzhalter
+// „(Plan)“ mit den Makros plus Wasser, unterwegs mit den echten Produkten und Mengen. Platzhalter werden ersetzt,
+// sobald die echte Mahlzeit eingetragen wird – so zählt nichts doppelt.
+import 'dart:math' as math;
+
 import '../nutrition/meal.dart';
 import '../nutrition/nutrient.dart';
 import 'fuel_plan.dart';
@@ -19,6 +22,57 @@ final class FuelDiaryEntry {
 }
 
 abstract final class FuelDiary {
+  /// Endung des Platzhalters („Vor dem Training (Plan)“).
+  static const placeholderSuffix = '(Plan)';
+
+  /// Eine echte Mahlzeit ersetzt einen Platzhalter, wenn sie höchstens so weit entfernt liegt …
+  static const replaceWindow = Duration(minutes: 90);
+
+  /// … und mindestens so viel Energie hat (sonst wäre es nur ein Kaffee): 100 kcal bzw. 30 % des Platzhalters.
+  static const replaceMinKilocalories = 100.0;
+  static const replaceMinShare = 0.3;
+
+  static final _marker = RegExp(r'\[fuel:([^:\]]+):(pre|intra|post)\]');
+
+  /// Hinweis der Mahlzeit mit Markierung: erkennt Einträge eines Plans wieder (erneut übernehmen ersetzt sie).
+  static String hint(String planID, FuelPhase phase) => phase == FuelPhase.intra
+      ? 'Aus dem Fuel Planner. [fuel:$planID:${phase.name}]'
+      : 'Platzhalter aus dem Fuel Planner – wird ersetzt, sobald du deine echte Mahlzeit einträgst. '
+            '[fuel:$planID:${phase.name}]';
+
+  /// Hinweis eines bearbeiteten Eintrags (ohne Markierung: wird weder ersetzt noch erneut überschrieben).
+  static const editedHint = 'Aus dem Fuel Planner, von dir angepasst.';
+
+  /// Hinweis ohne die technische Markierung (für die Anzeige).
+  static String visibleHint(String hint) => hint.replaceAll(_marker, '').trim();
+
+  /// Plan und Phase aus dem Hinweis; `null` ohne Markierung.
+  static ({String planID, FuelPhase phase})? marker(String hint) {
+    final match = _marker.firstMatch(hint);
+    if (match == null) return null;
+    return (planID: match.group(1)!, phase: FuelPhase.values.byName(match.group(2)!));
+  }
+
+  /// Noch ein Platzhalter (vorher/danach) und nicht schon durch echte Lebensmittel ersetzt?
+  static bool isPlaceholder({required String hint, required List<MealItem> items}) {
+    final found = marker(hint);
+    return found != null &&
+        found.phase != FuelPhase.intra &&
+        items.any((item) => item.name.endsWith(placeholderSuffix));
+  }
+
+  /// Ersetzt die echte Mahlzeit den Platzhalter (gleicher Tag vorausgesetzt)?
+  static bool replaces({
+    required DateTime placeholderAt,
+    required double placeholderKilocalories,
+    required DateTime mealAt,
+    required double mealKilocalories,
+    bool mealIsWaterOnly = false,
+  }) =>
+      !mealIsWaterOnly &&
+      mealAt.difference(placeholderAt).abs() <= replaceWindow &&
+      mealKilocalories >= math.max(replaceMinKilocalories, replaceMinShare * placeholderKilocalories);
+
   static String title(FuelPhase phase) => switch (phase) {
     FuelPhase.pre => 'Vor dem Training',
     FuelPhase.intra => 'Verpflegung unterwegs',
@@ -46,7 +100,7 @@ abstract final class FuelDiary {
   static List<MealItem> _macroItems(FuelAmounts amounts, FuelPhase phase) => [
     if (amounts.kilocalories > 0)
       MealItem(
-        name: '${title(phase)} (Plan)',
+        name: '${title(phase)} $placeholderSuffix',
         grams: 100,
         amountText: '1 Portion',
         portion: const Portion('Portion', 100),

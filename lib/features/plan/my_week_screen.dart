@@ -162,9 +162,18 @@ class _MyWeekScreenState extends ConsumerState<MyWeekScreen> {
                         if (run.weekday == weekday) run,
                     ],
                     results: sessions.resultsOn(date),
-                    select: (slot) =>
-                        Navigator.of(context)
-                            .push(MaterialPageRoute<void>(builder: (_) => SessionGuideScreen(slot: slot))),
+                    select: (slot) => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => SessionGuideScreen(
+                          slot: slot,
+                          day: date,
+                          minutes: runWeek?.sessions
+                              .where((run) => run.weekday == weekday && run.slot == slot)
+                              .firstOrNull
+                              ?.minutes,
+                        ),
+                      ),
+                    ),
                     actions: future ? _PlanDayMenu(day: date) : null,
                   );
                   if (!canAdjust) return row;

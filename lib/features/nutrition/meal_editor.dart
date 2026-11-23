@@ -129,7 +129,7 @@ class _MealEditorScreenState extends ConsumerState<MealEditorScreen> {
               if (draft.hint.isNotEmpty)
                 ListTile(
                   leading: const Icon(Icons.info_outline),
-                  title: Text(draft.hint, style: muted),
+                  title: Text(FuelDiary.visibleHint(draft.hint), style: muted),
                 ),
             ],
           ),

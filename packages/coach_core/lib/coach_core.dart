@@ -51,6 +51,7 @@ export 'src/fuel/fuel_plan.dart';
 export 'src/fuel/fuel_product.dart';
 export 'src/fuel/fuel_rules.dart';
 export 'src/fuel/fuel_scenario.dart';
+export 'src/fuel/fuel_weather.dart';
 export 'src/game/game.dart';
 export 'src/garmin/activity_kind.dart';
 export 'src/garmin/daily_metrics.dart';

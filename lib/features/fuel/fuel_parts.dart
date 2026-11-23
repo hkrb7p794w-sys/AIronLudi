@@ -217,15 +217,6 @@ class FuelTimelineRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final amounts = step.amounts;
-    final parts = [
-      if (step.portions.isNotEmpty || step.water > 0)
-        [
-          for (final portion in step.portions) portion.line,
-          if (step.water > 0) '${step.water.round()} ml Wasser',
-        ].join(' + ')
-      else
-        step.title,
-    ];
     final values = [
       if (amounts.carbs > 0) '${amounts.carbs.round()} g KH',
       if (amounts.protein > 0) '${amounts.protein.round()} g Protein',
@@ -275,7 +266,7 @@ class FuelTimelineRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 spacing: 2,
                 children: [
-                  Text(parts.first, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                  Text(step.content, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
                   if (values.isNotEmpty) Text(values.join(' · '), style: LiquidText.label(context)),
                   if (step.detail.isNotEmpty) Text(step.detail, style: LiquidText.label(context)),
                 ],

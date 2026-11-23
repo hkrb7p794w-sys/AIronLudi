@@ -15,6 +15,7 @@ final class WeatherHour {
     this.precipitationProbability,
     this.precipitation,
     this.weatherCode,
+    this.humidity,
   });
 
   /// Ortszeit als „Wanduhrzeit“ (ohne Zeitzone).
@@ -29,6 +30,9 @@ final class WeatherHour {
 
   /// mm in der Stunde.
   final double? precipitation;
+
+  /// Relative Luftfeuchte in % (für den Fuel Planner); `null` ohne Angabe.
+  final int? humidity;
 
   /// WMO-Wettercode.
   final int? weatherCode;
@@ -47,7 +51,7 @@ abstract final class OpenMeteoFormat {
     'longitude': point.longitude.toStringAsFixed(3),
     'hourly':
         'temperature_2m,precipitation_probability,precipitation,weather_code,wind_speed_10m,wind_direction_10m,'
-        'wind_gusts_10m',
+        'wind_gusts_10m,relative_humidity_2m',
     'wind_speed_unit': 'kmh',
     'timezone': 'auto',
     'start_date': day.iso,
@@ -66,6 +70,7 @@ abstract final class OpenMeteoFormat {
       final probability = series('precipitation_probability');
       final precipitation = series('precipitation');
       final code = series('weather_code');
+      final humidity = series('relative_humidity_2m');
       double? at(List<Object?> values, int index) =>
           index < values.length && values[index] is num ? (values[index]! as num).toDouble() : null;
       return [
@@ -86,6 +91,7 @@ abstract final class OpenMeteoFormat {
                 precipitationProbability: at(probability, index)?.round(),
                 precipitation: at(precipitation, index),
                 weatherCode: at(code, index)?.round(),
+                humidity: at(humidity, index)?.round(),
               ),
       ];
     }

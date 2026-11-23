@@ -1,5 +1,5 @@
 // Fuel Planner: die Regeln aus docs/FUEL_PLANNER_SCIENCE.md, jede Zahl genau einmal. Abschnittsnummern verweisen
-// auf die Spezifikation.
+// auf die Spezifikation. Werte zwischen den Stützstellen werden linear verbunden – keine Sprünge an Grenzen.
 import 'dart:math' as math;
 
 import 'fuel_scenario.dart';
@@ -18,7 +18,7 @@ enum FuelRatio {
   /// Empfohlener Fruktose-Anteil an den Kohlenhydraten.
   final double fructoseShare;
 
-  /// Abweichung nach unten, ab der gewarnt wird (Prozentpunkte als Anteil).
+  /// Abweichung nach unten, ab der gewarnt wird (eigene Festlegung, Spezifikation 9).
   static const tolerance = 0.08;
 }
 
@@ -26,10 +26,13 @@ enum FuelRatio {
 final class FuelCaffeine {
   const FuelCaffeine({required this.total, required this.before, required this.late, this.lateMinute});
 
+  /// Obergrenze für den ganzen Plan (vorher und unterwegs zusammen).
   final double total;
 
   /// 60 min vor dem Start.
   final double before;
+
+  /// Budget unterwegs (ab [lateMinute]).
   final double late;
 
   /// Beginn des letzten Drittels (nur über 150 min).
@@ -46,36 +49,97 @@ final class FuelCarbLoading {
   final double gramsPerDay;
 }
 
+/// Abschnitt einer Einheit mit eigener Verpflegung (beim Triathlon Schwimmen, Rad, Laufen).
+final class FuelSegment {
+  const FuelSegment({
+    required this.sport,
+    required this.start,
+    required this.end,
+    required this.carbsPerHour,
+    required this.fluidPerHour,
+    required this.sodiumPerHour,
+    this.canEat = true,
+  });
+
+  final FuelSport sport;
+
+  /// Minuten ab Start.
+  final int start;
+  final int end;
+  final int carbsPerHour;
+  final int fluidPerHour;
+  final int sodiumPerHour;
+
+  /// Beim Schwimmen im Triathlon: keine Aufnahme möglich.
+  final bool canEat;
+
+  int get minutes => end - start;
+}
+
 abstract final class FuelRules {
-  // 2.1 Grundwert in g/h: Zeilen nach Dauer, Spalten locker, Tempo, Schwelle, Wettkampf.
-  static const _carbTable = <(int, List<int>)>[
-    (150, [60, 80, 90, 100]),
-    (90, [40, 60, 75, 90]),
-    (60, [0, 30, 45, 60]),
-    (45, [0, 0, 15, 30]),
+  /// Linear zwischen Stützstellen; vor der ersten und nach der letzten konstant.
+  static double interpolate(List<(num, double)> points, num x) {
+    if (x <= points.first.$1) return points.first.$2;
+    for (var index = 1; index < points.length; index++) {
+      final (x1, y1) = points[index];
+      if (x <= x1) {
+        final (x0, y0) = points[index - 1];
+        return y0 + (y1 - y0) * (x - x0) / (x1 - x0);
+      }
+    }
+    return points.last.$2;
+  }
+
+  // 2.1 Stützstellen in g/h je Spalte (locker, Tempo, Schwelle, Wettkampf) bei 45, 60, 90 und 150 min.
+  static const _carbPoints = <List<(num, double)>>[
+    [(45, 0), (60, 0), (90, 40), (150, 60)],
+    [(45, 0), (60, 30), (90, 60), (150, 80)],
+    [(45, 15), (60, 45), (90, 75), (150, 90)],
+    [(45, 30), (60, 60), (90, 90), (150, 100)],
   ];
 
+  /// Unter 45 min nichts (Glykogen reicht), danach gleitend.
   static int baseCarbsPerHour({required int minutes, required FuelIntensity intensity, required bool isRace}) {
-    final column = isRace ? 3 : intensity.index;
-    for (final (from, values) in _carbTable) {
-      if (minutes >= from) return values[column];
-    }
-    return 0;
+    if (minutes < 45) return 0;
+    return roundTo(interpolate(_carbPoints[isRace ? 3 : intensity.index], minutes), 5).round();
   }
 
-  /// 2.2 Zuschlag für Gut-Trained ab 150 min bei Schwelle oder Wettkampf.
+  /// 2.2 Zuschlag für Gut-Trained bei Schwelle oder Wettkampf: von 120 bis 150 min auf +20 g/h.
   static const trainedBonus = 20;
 
-  /// Ziel Kohlenhydrate unterwegs in g/h (2.1–2.3).
-  static int carbsPerHour(FuelScenario s) {
-    if (s.sport == FuelSport.strength) return strengthCarbsPerHour(s);
-    var target = baseCarbsPerHour(minutes: s.minutes, intensity: s.intensity, isRace: s.isRace);
+  static int _bonus(FuelScenario s) {
     final hard = s.isRace || s.intensity == FuelIntensity.threshold;
-    if (s.minutes >= 150 && hard && s.gut == GutTolerance.trained) target += trainedBonus;
-    return [target, s.gut.maxCarbsPerHour, s.sport.maxCarbsPerHour].reduce(math.min);
+    if (!hard || s.gut != GutTolerance.trained) return 0;
+    return roundTo(interpolate([(120, 0), (150, trainedBonus.toDouble())], s.minutes), 5).round();
   }
 
-  /// 2.3 Krafttraining (King 2022).
+  /// Ziel ohne die Grenze der Verträglichkeit (nur Disziplin) – für den Gut-Training-Hinweis.
+  static int carbsPerHourWithoutGutLimit(FuelScenario s, {FuelSport? sport}) {
+    final discipline = sport ?? s.sport;
+    if (discipline == FuelSport.strength) return strengthCarbsPerHour(s);
+    final target = baseCarbsPerHour(minutes: s.minutes, intensity: s.intensity, isRace: s.isRace) + _bonus(s);
+    return math.min(target, discipline.maxCarbsPerHour);
+  }
+
+  /// Ziel Kohlenhydrate unterwegs in g/h (2.1–2.3). Triathlon: zeitgewichtet über Rad und Laufen.
+  static int carbsPerHour(FuelScenario s) {
+    if (s.sport == FuelSport.triathlon) {
+      final eating = [
+        for (final segment in segments(s))
+          if (segment.canEat && segment.minutes > 0) segment,
+      ];
+      final minutes = eating.fold(0, (sum, segment) => sum + segment.minutes);
+      if (minutes <= 0) return 0;
+      final grams = eating.fold(0.0, (sum, segment) => sum + segment.carbsPerHour * segment.minutes);
+      return roundTo(grams / minutes, 5).round();
+    }
+    return _carbsFor(s, s.sport);
+  }
+
+  static int _carbsFor(FuelScenario s, FuelSport sport) =>
+      math.min(carbsPerHourWithoutGutLimit(s, sport: sport), s.gut.maxCarbsPerHour);
+
+  /// 2.3 Krafttraining (King 2022): Nutzen ab 45 min nüchtern bzw. bei langen, umfangreichen Einheiten.
   static int strengthCarbsPerHour(FuelScenario s) {
     if (s.fasted && s.minutes >= 45) return 30;
     if (s.minutes >= 75 && s.intensity != FuelIntensity.easy) return 30;
@@ -83,7 +147,7 @@ abstract final class FuelRules {
     return 0;
   }
 
-  /// Locker unter 90 min: Kohlenhydrate sind optional (bis 30 g/h).
+  /// Locker unter 90 min: Kohlenhydrate sind optional.
   static bool carbsOptional(FuelScenario s) =>
       s.sport.isEndurance && !s.isRace && s.intensity == FuelIntensity.easy && s.minutes >= 45 && s.minutes < 90;
 
@@ -98,45 +162,91 @@ abstract final class FuelRules {
       ? FuelRatio.twoToOne
       : FuelRatio.single;
 
-  /// 2.5 Gut-Training-Hinweis.
-  static bool needsGutTraining(FuelScenario s, int carbsPerHour) {
-    final below = switch (s.gut) {
-      GutTolerance.beginner => null,
-      GutTolerance.habituated => GutTolerance.beginner.maxCarbsPerHour,
-      GutTolerance.trained => GutTolerance.habituated.maxCarbsPerHour,
-    };
-    return (below != null && carbsPerHour > below) || (s.isRace && s.minutes >= 150);
+  /// 2.5 Gut-Training-Hinweis: wenn die Verträglichkeit das Ziel tatsächlich begrenzt, oder vor einem langen
+  /// Wettkampf, solange der Darm noch nicht auf hohe Mengen trainiert ist.
+  static bool needsGutTraining(FuelScenario s) {
+    final sports = s.sport == FuelSport.triathlon ? const [FuelSport.bike, FuelSport.run] : [s.sport];
+    final limited = sports.any((sport) => carbsPerHourWithoutGutLimit(s, sport: sport) > s.gut.maxCarbsPerHour);
+    return limited || (s.isRace && s.minutes >= 150 && s.gut != GutTolerance.trained);
   }
 
-  // 3.1 Pre.
+  // 2.6 Triathlon: Anteile an der Gesamtzeit (Mittel aus Sprint bis Langdistanz), eigene Schätzung.
+  static const triathlonSwimShare = 0.12;
+  static const triathlonBikeShare = 0.52;
+
+  /// Schwimmen, Rad, Laufen in Minuten (eigene Angaben haben Vorrang).
+  static ({int swim, int bike, int run}) triathlonSplit(FuelScenario s) {
+    final swim = (s.swimMinutes ?? (s.minutes * triathlonSwimShare).round()).clamp(0, s.minutes);
+    final bike = (s.bikeMinutes ?? (s.minutes * triathlonBikeShare).round()).clamp(0, s.minutes - swim);
+    return (swim: swim, bike: bike, run: s.minutes - swim - bike);
+  }
+
+  /// Abschnitte mit Zielwerten. Ohne Triathlon ein einziger Abschnitt.
+  static List<FuelSegment> segments(FuelScenario s, {double? sweat}) {
+    if (s.sport != FuelSport.triathlon) {
+      final rate = sweat ?? sweatRate(s);
+      return [
+        FuelSegment(
+          sport: s.sport,
+          start: 0,
+          end: s.minutes,
+          carbsPerHour: _carbsFor(s, s.sport),
+          fluidPerHour: fluidPerHour(s, sweat: rate),
+          sodiumPerHour: sodiumPerHour(s, sweat: rate),
+        ),
+      ];
+    }
+    final split = triathlonSplit(s);
+    FuelSegment part(FuelSport sport, int start, int end) {
+      final derived = s.copyWith(sport: sport);
+      final rate = s.sweatRateLitersPerHour ?? sweatRate(derived);
+      return FuelSegment(
+        sport: sport,
+        start: start,
+        end: end,
+        carbsPerHour: _carbsFor(s, sport),
+        fluidPerHour: fluidPerHour(derived, sweat: rate),
+        sodiumPerHour: sodiumPerHour(derived, sweat: rate),
+      );
+    }
+
+    return [
+      FuelSegment(
+        sport: FuelSport.swim,
+        start: 0,
+        end: split.swim,
+        carbsPerHour: 0,
+        fluidPerHour: 0,
+        sodiumPerHour: 0,
+        canEat: false,
+      ),
+      part(FuelSport.bike, split.swim, split.swim + split.bike),
+      part(FuelSport.run, split.swim + split.bike, s.minutes),
+    ];
+  }
+
+  // 3.1 Pre: Kohlenhydrate der Mahlzeit 3–4 h vorher in g/kg.
 
   static double preMealCarbsPerKilogram(FuelScenario s) {
-    final double value;
-    if (s.isRace && s.minutes >= 150) {
-      value = 3.0;
-    } else if (s.isRace && s.minutes >= 90) {
-      value = 2.5;
-    } else if (s.minutes >= 90) {
-      value = 2.0;
-    } else if (s.minutes >= 60 || s.intensity != FuelIntensity.easy || s.isRace) {
-      value = 1.5;
-    } else {
-      value = 1.0;
-    }
-    return s.gut == GutTolerance.beginner ? math.max(1.0, value - 0.5) : value;
+    var value = s.isRace
+        ? interpolate(const [(45, 1.5), (90, 2.5), (150, 3.0)], s.minutes)
+        : interpolate(const [(45, 1.0), (60, 1.5), (90, 2.0)], s.minutes);
+    if (s.intensity != FuelIntensity.easy) value = math.max(value, 1.5);
+    if (s.gut == GutTolerance.beginner) value = math.max(1.0, value - 0.5);
+    return (value * 10).roundToDouble() / 10;
   }
 
   /// Snack 1–2 h vorher (ab 90 min oder Wettkampf).
   static bool hasPreSnack(FuelScenario s) => s.sport.isEndurance && (s.minutes >= 90 || s.isRace);
 
-  /// Schnelle Kohlenhydrate 15–30 min vorher.
+  /// Schnelle Kohlenhydrate 15–30 min vorher (beim Schwimmen und Triathlon der wichtigste Zeitpunkt vor dem Wasser).
   static bool hasPreBooster(FuelScenario s) {
     if (!s.sport.isEndurance) return false;
-    if (s.sport == FuelSport.swim && s.minutes >= 45) return true;
+    if ((s.sport == FuelSport.swim || s.sport == FuelSport.triathlon) && s.minutes >= 45) return true;
     return s.minutes >= 60 && (s.isRace || s.intensity != FuelIntensity.easy);
   }
 
-  /// 3.2
+  /// 3.2 Carboloading ist eine Entscheidung (laden oder nicht), daher in Stufen.
   static FuelCarbLoading? carbLoading(FuelScenario s) {
     if (!s.sport.isEndurance) return null;
     final (int days, double perKg) = switch (s) {
@@ -149,7 +259,7 @@ abstract final class FuelRules {
     return FuelCarbLoading(days: days, gramsPerKilogram: perKg, gramsPerDay: roundTo(perKg * s.weightKilograms, 10));
   }
 
-  // 4.1 Schweißrate in l/h.
+  // 4.1 Schweißrate in l/h – eigene Schätzung, kalibriert auf Barnes 2019 (Spezifikation 9).
 
   static double sweatRate(FuelScenario s) {
     final measured = s.sweatRateLitersPerHour;
@@ -165,35 +275,31 @@ abstract final class FuelRules {
     return (rate.clamp(0.2, 2.5) * 100).roundToDouble() / 100;
   }
 
-  /// 4.2 Trinken unterwegs in ml/h.
+  /// Ist die Schweißrate geschätzt (nicht gemessen)?
+  static bool sweatIsEstimated(FuelScenario s) => (s.sweatRateLitersPerHour ?? 0) <= 0;
+
+  /// 4.2 Trinken unterwegs in ml/h. Untergrenze wächst von 45 bis 75 min auf 40 % der Schweißrate.
   static int fluidPerHour(FuelScenario s, {double? sweat}) {
     if (s.minutes < 45) return 0;
     final rate = sweat ?? sweatRate(s);
     final loss = rate * s.hours;
     final allowed = 0.02 * s.weightKilograms;
     var intake = math.max(0.0, loss - allowed) / s.hours;
-    if (s.minutes >= 60) intake = math.max(intake, 0.4 * rate);
+    intake = math.max(intake, 0.4 * rate * ((s.minutes - 45) / 30).clamp(0, 1));
     intake = math.min(intake, math.min(rate, s.gut.maxFluidPerHour / 1000));
     return roundTo(intake * 1000, 50).round();
   }
 
-  /// 4.3 Natrium unterwegs in mg/h.
+  /// 4.3 Natrium unterwegs in mg/h: Anteil des Verlusts wächst von 60 bis 150 min auf 50 %, bei ≥ 25 °C × 1,2.
   static int sodiumPerHour(FuelScenario s, {double? sweat}) {
     final rate = sweat ?? sweatRate(s);
     final hot = s.temperatureCelsius >= 25;
-    final salty = s.sodiumPerLiter != null
-        ? s.sodiumPerLiter! >= SweatSaltiness.high.sodiumPerLiter
-        : s.saltiness == SweatSaltiness.high;
-    final double share;
-    if (s.minutes < 60) {
-      share = 0;
-    } else if (s.minutes <= 120) {
-      share = hot || salty ? 0.3 : 0;
-    } else {
-      share = hot ? 0.6 : 0.5;
-    }
+    final share = 0.5 * ((s.minutes - 60) / 90).clamp(0, 1) * (hot ? 1.2 : 1.0);
     return math.min(1500, roundTo(rate * s.sweatSodiumPerLiter * share, 50)).round();
   }
+
+  /// ACSM 2007: Getränke mit 20–30 mmol/l Natrium (≈ 460–690 mg/l) und 5–10 % Kohlenhydraten.
+  static const acsmDrinkSodium = (low: 460, high: 690);
 
   // 4.4 Koffein.
 
@@ -212,6 +318,10 @@ abstract final class FuelRules {
     return FuelCaffeine(total: total, before: before, late: total - before, lateMinute: (s.minutes * 2 / 3).round());
   }
 
+  /// Höchstens so viel Koffein im ganzen Plan (6 mg/kg, höchstens 400 mg).
+  static double caffeineCeiling(FuelScenario s) =>
+      math.min(caffeineMaxPerKg * s.weightKilograms, caffeineMaxMilligrams);
+
   /// Start ab 15 Uhr: Koffein kann den Schlaf stören.
   static bool caffeineHurtsSleep(FuelScenario s) => s.caffeine && (s.startMinuteOfDay ?? 0) >= 15 * 60;
 
@@ -223,9 +333,13 @@ abstract final class FuelRules {
   /// Doppeltag: nächste Einheit in höchstens 8 h.
   static bool rapidRefuel(FuelScenario s) => s.hoursUntilNext != null && s.hoursUntilNext! <= 8;
 
-  /// Kohlenhydrate nach der Einheit ohne Doppeltag (g/kg).
-  static double postCarbsPerKilogram(FuelScenario s) =>
-      s.sport.isEndurance && (s.minutes >= 90 || s.isRace || s.intensity == FuelIntensity.threshold) ? 1.0 : 0.5;
+  /// Kohlenhydrate nach der Einheit ohne Doppeltag (g/kg): Ausdauer gleitend von 0,5 (60 min) auf 1,0 (90 min),
+  /// hart immer 1,0; Kraft 0,5.
+  static double postCarbsPerKilogram(FuelScenario s) {
+    if (!s.sport.isEndurance) return 0.5;
+    if (s.isRace || s.intensity == FuelIntensity.threshold) return 1.0;
+    return (interpolate(const [(60, 0.5), (90, 1.0)], s.minutes) * 10).roundToDouble() / 10;
+  }
 
   /// Rate beim schnellen Auffüllen (g/kg/h) und Zahl der Stunden.
   static (double rate, int hours) rapidRate(FuelScenario s) {
