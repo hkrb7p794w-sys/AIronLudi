@@ -51,7 +51,13 @@ void main() {
       expect(find.text('Heute'), findsWidgets);
     }
 
-    final firstUnit = find.descendant(of: find.byType(PlanScreen), matching: find.byType(ListTile)).first;
+    // Erste antippbare Einheit (manche Wochen beginnen mit einer Überschrift zum Wochenziel).
+    final firstUnit = find
+        .descendant(
+          of: find.byType(PlanScreen),
+          matching: find.byWidgetPredicate((widget) => widget is ListTile && widget.onTap != null),
+        )
+        .first;
     await tester.tap(firstUnit);
     await tester.pumpAndSettle();
     expect(find.byType(PlanUnitDetailScreen), findsOneWidget);
@@ -113,12 +119,16 @@ void main() {
     expect(ManualActivity.isManual(stored.single.id), isTrue);
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('Fußball'), 300, scrollable: find.byType(Scrollable).first);
-    expect(find.text('Fußball'), findsOneWidget);
+    // Nachgetragen wird mit Beginn vor einer Stunde: Kurz nach Mitternacht am Montag liegt das in der Vorwoche.
+    final today = CalendarDay.today();
+    final monday = today.adding(-today.weekdayIndex);
+    if (stored.single.day case final day? when day >= monday) {
+      await tester.scrollUntilVisible(find.text('Fußball'), 300, scrollable: find.byType(Scrollable).first);
+      expect(find.text('Fußball'), findsOneWidget);
+    }
 
     // Entschiedene verpasste Einheiten: Einträge älter als zwei Wochen fallen heraus.
     final settings = container.read(coachSettingsProvider);
-    final today = CalendarDay.today();
     settings.handledMissed = ['${today.adding(-20).iso}-0-run-easy'];
     MissedSessionSection.handle(settings, ['${today.iso}-0-run-easy']);
     expect(settings.handledMissed, ['${today.iso}-0-run-easy']);
