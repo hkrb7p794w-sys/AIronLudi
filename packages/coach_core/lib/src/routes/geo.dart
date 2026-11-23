@@ -227,6 +227,29 @@ abstract final class Geo {
     return [for (var index = 0; index < maxPoints; index++) points[(index * step).round()]];
   }
 
+  /// Kürzester Abstand (m) von [point] zur Strecke [a]–[b] (ebene Näherung, für kurze Abschnitte genau genug).
+  static double distanceToSegment(GeoPoint point, GeoPoint a, GeoPoint b) {
+    final cosLat = math.cos(_rad(point.latitude));
+    double x(GeoPoint p) => _rad(p.longitude) * earthRadius * cosLat;
+    double y(GeoPoint p) => _rad(p.latitude) * earthRadius;
+    final dx = x(b) - x(a);
+    final dy = y(b) - y(a);
+    final length = dx * dx + dy * dy;
+    final t = length == 0 ? 0.0 : (((x(point) - x(a)) * dx + (y(point) - y(a)) * dy) / length).clamp(0.0, 1.0);
+    return math.sqrt(math.pow(x(point) - (x(a) + t * dx), 2) + math.pow(y(point) - (y(a) + t * dy), 2));
+  }
+
+  /// Kürzester Abstand (m) von [point] zur Linie [line].
+  static double distanceToLine(GeoPoint point, List<GeoPoint> line) {
+    if (line.isEmpty) return double.infinity;
+    if (line.length == 1) return distance(point, line.first);
+    var best = double.infinity;
+    for (var index = 1; index < line.length; index++) {
+      best = math.min(best, distanceToSegment(point, line[index - 1], line[index]));
+    }
+    return best;
+  }
+
   /// Fläche des (geschlossenen gedachten) Polygons in m² (Gauß'sche Trapezformel, ebene Näherung).
   static double area(List<GeoPoint> polygon) {
     if (polygon.length < 3) return 0;

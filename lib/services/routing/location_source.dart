@@ -5,6 +5,9 @@ import 'package:geolocator/geolocator.dart';
 abstract interface class LocationSource {
   /// Wirft [LocationProblem] mit einer verständlichen Meldung.
   Future<GeoPoint> current();
+
+  /// Laufende Positionen (nur solange jemand zuhört, nur im Vordergrund); Fehler als [LocationProblem].
+  Stream<GeoPoint> watch();
 }
 
 final class LocationProblem implements Exception {
@@ -47,6 +50,15 @@ final class DeviceLocationSource implements LocationSource {
       if (last != null) return GeoPoint(last.latitude, last.longitude);
       throw const LocationProblem('Der Standort ließ sich gerade nicht bestimmen. Setze den Start auf der Karte.');
     }
+  }
+
+  @override
+  Stream<GeoPoint> watch() async* {
+    // Freigabe wie bei [current] prüfen (wirft verständliche Meldungen).
+    await current();
+    yield* Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.best, distanceFilter: 5),
+    ).map((position) => GeoPoint(position.latitude, position.longitude));
   }
 
   static Future<void> openSettings() => Geolocator.openAppSettings();

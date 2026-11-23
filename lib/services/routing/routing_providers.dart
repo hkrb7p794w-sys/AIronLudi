@@ -37,6 +37,24 @@ final placeSearchProvider = Provider<PlaceSearch>((ref) {
   return OsmPlaceSearch(transport);
 });
 
+/// Punkte unterwegs (Trinkbrunnen, Hundewiesen, Kotbeutel); in Tests überschreibbar.
+final routePoiSourceProvider = Provider<RoutePoiSource>((ref) {
+  final transport = DioTransport();
+  ref.onDispose(transport.close);
+  return OverpassPoiSource(transport);
+});
+
+/// Punkte unterwegs für eine Route (leer, wenn der Dienst nicht antwortet – sie sind nur eine Ergänzung).
+final routePoisProvider = FutureProvider.autoDispose.family<List<RoutePoi>, PlannedRoute>((ref, route) async {
+  try {
+    return await ref
+        .read(routePoiSourceProvider)
+        .pois(route.points, kinds: PoiFormat.kindsFor(walk: route.discipline == RouteDiscipline.walk));
+  } on Object {
+    return const [];
+  }
+});
+
 final locationSourceProvider = Provider<LocationSource>((ref) => const DeviceLocationSource());
 
 final explorationImportProvider = Provider<ExplorationImport>(

@@ -42,6 +42,7 @@ abstract final class OverpassFormat {
   static bool needed(Set<RoutePreference> preferences, RouteDiscipline discipline) =>
       preferences.contains(RoutePreference.nature) ||
       preferences.contains(RoutePreference.water) ||
+      (preferences.contains(RoutePreference.dogPark) && discipline == RouteDiscipline.walk) ||
       (preferences.contains(RoutePreference.paved) && discipline.isBike);
 
   /// Overpass-QL: Knoten **auf** passenden Wegen im Umkreis. Bewusst nicht `out center`: Der Mittelpunkt des
@@ -72,6 +73,10 @@ abstract final class OverpassFormat {
     }
     if (preferences.contains(RoutePreference.paved) && discipline.isBike) {
       parts.add('way["highway"="cycleway"]$around->.s$sets;');
+      sets++;
+    }
+    if (preferences.contains(RoutePreference.dogPark)) {
+      parts.add('way["leisure"="dog_park"]$around->.s$sets;');
       sets++;
     }
     final union = [for (var index = 0; index < sets; index++) '.s$index;'].join();
@@ -140,6 +145,31 @@ abstract final class PreferenceSnapper {
       }
     }
     return result..add(waypoints.last);
+  }
+
+  /// Den Zwischenpunkt, der einem der [targets] am nächsten liegt, durch diesen ersetzen (z. B. Hundewiese als fester
+  /// Wegpunkt). Ohne Zwischenpunkt wird einer eingefügt.
+  static List<GeoPoint> force(List<GeoPoint> waypoints, List<GeoPoint> targets) {
+    if (targets.isEmpty || waypoints.length < 2) return waypoints;
+    if (waypoints.length == 2) {
+      final middle = Geo.midpoint(waypoints.first, waypoints.last);
+      final target = targets.reduce((a, b) => Geo.distance(a, middle) <= Geo.distance(b, middle) ? a : b);
+      return [waypoints.first, target, waypoints.last];
+    }
+    var bestIndex = 1;
+    var bestTarget = targets.first;
+    var bestDistance = double.infinity;
+    for (var index = 1; index < waypoints.length - 1; index++) {
+      for (final target in targets) {
+        final distance = Geo.distance(waypoints[index], target);
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          bestIndex = index;
+          bestTarget = target;
+        }
+      }
+    }
+    return [...waypoints]..[bestIndex] = bestTarget;
   }
 
   /// Anteil der Strecke (0…1), der höchstens [radius] neben einem Anziehungspunkt liegt (alle 100 m gemessen).
@@ -475,7 +505,7 @@ final class DrawnRoute {
     var bestDistance = maxDistance;
     for (final (index, line) in segments.indexed) {
       for (var step = 1; step < line.length; step++) {
-        final distance = _distanceToSegment(point, line[step - 1], line[step]);
+        final distance = Geo.distanceToSegment(point, line[step - 1], line[step]);
         if (distance <= bestDistance) {
           best = index;
           bestDistance = distance;
@@ -499,17 +529,6 @@ final class DrawnRoute {
     return best;
   }
 
-  static double _distanceToSegment(GeoPoint point, GeoPoint a, GeoPoint b) {
-    final cosLat = math.cos(point.latitude * math.pi / 180);
-    double x(GeoPoint p) => p.longitude * math.pi / 180 * Geo.earthRadius * cosLat;
-    double y(GeoPoint p) => p.latitude * math.pi / 180 * Geo.earthRadius;
-    final dx = x(b) - x(a);
-    final dy = y(b) - y(a);
-    final length = dx * dx + dy * dy;
-    final t = length == 0 ? 0.0 : (((x(point) - x(a)) * dx + (y(point) - y(a)) * dy) / length).clamp(0.0, 1.0);
-    return math.sqrt(math.pow(x(point) - (x(a) + t * dx), 2) + math.pow(y(point) - (y(a) + t * dy), 2));
-  }
-
   /// Letzte Aktion zurücknehmen.
   void undo() {
     if (_history.isEmpty) {
@@ -529,4 +548,91 @@ final class DrawnRoute {
   }
 
   RouteStats get stats => RouteStats.of(points);
+}
+
+/// Stand beim Folgen einer Route.
+final class FollowState {
+  const FollowState({
+    required this.progressMeters,
+    required this.totalMeters,
+    required this.offRouteMeters,
+    required this.isOffRoute,
+    required this.arrived,
+  });
+
+  /// Zurückgelegt entlang der Route (Projektion der Position auf die Linie).
+  final double progressMeters;
+  final double totalMeters;
+
+  /// Abstand der Position zur Route.
+  final double offRouteMeters;
+  final bool isOffRoute;
+  final bool arrived;
+
+  double get remainingMeters => (totalMeters - progressMeters).clamp(0, totalMeters).toDouble();
+  double get fraction => totalMeters <= 0 ? 0 : (progressMeters / totalMeters).clamp(0, 1).toDouble();
+}
+
+/// Folgt einer Route mit Positionen vom Gerät: Fortschritt entlang der Linie (nur vorwärts suchend, damit Rundwege
+/// am Start nicht gleich als „fertig“ gelten), Abweichung und Ankunft.
+final class RouteFollower {
+  RouteFollower(List<GeoPoint> route, {this.offRouteDistance = 50, this.confirmations = 2})
+    : _points = route,
+      _cumulative = Geo.cumulative(route);
+
+  final List<GeoPoint> _points;
+  final List<double> _cumulative;
+
+  /// Ab dieser Entfernung zur Linie gilt man als abseits …
+  final double offRouteDistance;
+
+  /// … und zwar erst nach so vielen Messungen in Folge (GPS springt gelegentlich).
+  final int confirmations;
+
+  double _progress = 0;
+  int _offCount = 0;
+
+  double get totalMeters => _cumulative.isEmpty ? 0 : _cumulative.last;
+
+  /// Suchfenster nach vorn bzw. zurück (m) ab dem bisherigen Fortschritt.
+  static const lookAhead = 1500.0, lookBack = 150.0;
+
+  FollowState update(GeoPoint position) {
+    if (_points.length < 2) {
+      return const FollowState(progressMeters: 0, totalMeters: 0, offRouteMeters: 0, isOffRoute: false, arrived: false);
+    }
+    var bestDistance = double.infinity;
+    var bestProgress = _progress;
+    for (var index = 1; index < _points.length; index++) {
+      final from = _cumulative[index - 1];
+      final to = _cumulative[index];
+      if (to < _progress - lookBack || from > _progress + lookAhead) continue;
+      final a = _points[index - 1];
+      final b = _points[index];
+      final distance = Geo.distanceToSegment(position, a, b);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        final length = to - from;
+        final along = length <= 0 ? 0.0 : (Geo.distance(a, position).clamp(0, length)).toDouble();
+        bestProgress = from + along;
+      }
+    }
+    final onRoute = bestDistance <= offRouteDistance;
+    if (onRoute) {
+      _offCount = 0;
+      // Fortschritt nur nach vorn (kleine Rücksprünge des GPS ignorieren).
+      if (bestProgress > _progress) _progress = bestProgress;
+    } else {
+      _offCount++;
+    }
+    final arrived =
+        _progress >= totalMeters - 30 || (totalMeters - _progress < 60 && Geo.distance(position, _points.last) < 30);
+    return FollowState(
+      progressMeters: _progress,
+      totalMeters: totalMeters,
+      offRouteMeters: bestDistance,
+      isOffRoute: _offCount >= confirmations,
+      arrived: arrived,
+    );
+  }
 }

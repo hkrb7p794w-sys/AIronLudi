@@ -241,6 +241,37 @@ void main() {
       expect(transport.requests.length, count);
     });
 
+    test('Punkte unterwegs über Overpass: nur nahe der Strecke, Ausweichen, Ausfall meldet Fehler', () async {
+      final down = <String>{};
+      final transport = FakeHttpTransport((request) {
+        if (down.contains(request.url.host)) return json({'error': 'busy'}, status: 504);
+        return json({
+          'elements': [
+            {
+              'type': 'node',
+              'lat': 52.52,
+              'lon': 13.405,
+              'tags': {'amenity': 'drinking_water'},
+            },
+            {
+              'type': 'node',
+              'lat': 53.0,
+              'lon': 13.0,
+              'tags': {'amenity': 'drinking_water'},
+            },
+          ],
+        });
+      });
+      final source = OverpassPoiSource(transport, gate: instantGate());
+      final pois = await source.pois(const [start, end], kinds: {PoiKind.water});
+      expect(pois.single.point, const GeoPoint(52.52, 13.405));
+      expect(Uri.splitQueryString(utf8.decode(transport.requests.single.body!))['data'], contains('drinking_water'));
+      down.add(OverpassFormat.uris.first.host);
+      expect(await source.pois(const [start, end], kinds: {PoiKind.water, PoiKind.dogPark}), isNotEmpty);
+      down.addAll([for (final uri in OverpassFormat.uris) uri.host]);
+      await expectLater(source.pois(const [start, end], kinds: {PoiKind.bags}), throwsA(isA<RoutingUnavailable>()));
+    });
+
     test('Rate-Limit: Anfragen nacheinander mit Mindestabstand', () async {
       var now = DateTime.utc(2026, 11, 21, 8);
       final waits = <Duration>[];
@@ -338,7 +369,35 @@ void main() {
       await archiveStore.setCompleted(archiveStore.archive.single, completed: false);
       expect(archiveStore.openRoutes.single.isCompleted, isFalse);
 
+      // Vorlagen ebenso nur für den eigenen Benutzer.
+      await anna2.saveTemplate(
+        const RouteTemplate(
+          id: 't1',
+          name: 'Gassi',
+          discipline: RouteDiscipline.walk,
+          shape: RouteShape.loop,
+          kilometers: 3,
+          start: start,
+        ),
+      );
+      expect(ben2.templates, isEmpty);
+      expect(RouteStore(settings, username: 'ben').hasForeignTemplates, isTrue);
+      await expectLater(
+        RouteStore(settings, username: 'ben').saveTemplate(
+          const RouteTemplate(
+            id: 't2',
+            name: 'X',
+            discipline: RouteDiscipline.run,
+            shape: RouteShape.loop,
+            kilometers: 5,
+            start: end,
+          ),
+        ),
+        throwsStateError,
+      );
+
       final again = RouteStore(settings, username: 'anna');
+      expect(again.templates.single.name, 'Gassi');
       expect(again.favorites.single.name, 'Zuhause');
       expect(AppBackup.isBackedUp(SettingsKeys.favoritePlaces), isTrue);
       expect(again.routes.single.id, 'r-anna');

@@ -58,18 +58,20 @@ final class RoutePlanner {
     if (request.problem case final problem?) throw ArgumentError(problem);
     if (request.shape == RouteShape.drawn) throw ArgumentError('Frei geplante Routen erzeugt der Planer nicht.');
     var attractors = const <GeoPoint>[];
-    if (features != null && OverpassFormat.needed(request.preferences, request.discipline)) {
+    var dogParks = const <GeoPoint>[];
+    final wayPreferences = {...request.preferences}..remove(RoutePreference.dogPark);
+    final area = searchArea(request);
+    if (features != null && OverpassFormat.needed(wayPreferences, request.discipline)) {
       onProgress?.call('Passende Wege werden gesucht …');
-      final area = searchArea(request);
       final wanted = RoutePreference.describe({
-        for (final preference in request.preferences)
+        for (final preference in wayPreferences)
           if (preference != RoutePreference.paved || request.discipline.isBike) preference,
       });
       try {
         attractors = await features!.attractors(
           area.center,
           area.radius,
-          request.preferences,
+          wayPreferences,
           discipline: request.discipline,
         );
         if (attractors.isEmpty) {
@@ -85,13 +87,34 @@ final class RoutePlanner {
         );
       }
     }
+    // Hundewiese (Spazieren): eine Wiese in der Nähe wird fester Wegpunkt der Runde.
+    if (features != null &&
+        request.preferences.contains(RoutePreference.dogPark) &&
+        request.discipline == RouteDiscipline.walk) {
+      onProgress?.call('Hundewiesen werden gesucht …');
+      try {
+        dogParks = await features!.attractors(area.center, area.radius, {
+          RoutePreference.dogPark,
+        }, discipline: request.discipline);
+        if (dogParks.isEmpty) onNotice?.call('In der Nähe ist keine Hundewiese eingetragen – geplant ohne.');
+      } on Object {
+        onNotice?.call('Hundewiesen sind gerade nicht abrufbar – geplant ohne.');
+      }
+    }
     final result = <PlannedRoute>[];
     Object? lastError;
     for (final variant in variants) {
       if (isCancelled?.call() ?? false) break;
       onProgress?.call('${variant.label} wird berechnet …');
       try {
-        final found = await _variant(request, variant, seed: seed, attractors: attractors, onProgress: onProgress);
+        final found = await _variant(
+          request,
+          variant,
+          seed: seed,
+          attractors: attractors,
+          dogParks: dogParks,
+          onProgress: onProgress,
+        );
         if (found == null) continue;
         var withElevation = found;
         if (!found.hasElevation) {
@@ -158,6 +181,7 @@ final class RoutePlanner {
     RouteVariant variant, {
     required int seed,
     required List<GeoPoint> attractors,
+    List<GeoPoint> dogParks = const [],
     void Function(String message)? onProgress,
   }) async {
     final variantSeed = seed * 31 + variant.index;
@@ -209,6 +233,7 @@ final class RoutePlanner {
         };
         waypoints = PreferenceSnapper.snap(waypoints, attractors, maxShift: shift);
       }
+      if (dogParks.isNotEmpty) waypoints = PreferenceSnapper.force(waypoints, dogParks);
       RoutedPath path;
       try {
         path = await backend.route(

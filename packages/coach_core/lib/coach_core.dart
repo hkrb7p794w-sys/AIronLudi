@@ -150,6 +150,8 @@ export 'src/routes/geocoding.dart';
 export 'src/routes/planned_route.dart';
 export 'src/routes/route_planner.dart';
 export 'src/routes/route_planning.dart';
+export 'src/routes/route_pois.dart';
+export 'src/routes/route_templates.dart';
 export 'src/routes/route_tools.dart';
 export 'src/routes/routing_formats.dart';
 export 'src/settings/app_settings.dart';

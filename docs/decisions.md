@@ -1188,3 +1188,22 @@ Umsetzung der Verbesserungsliste, Punkte 2–6 und 14:
   Nachbarn, löschen: die neue Verbindung, einfügen: beide Hälften); misslingt das, wird die Änderung zurückgenommen.
   „Rückgängig“ nimmt jede letzte Aktion zurück, auch „Zurücksetzen“.
 
+## 2026-11-22 – Routenplaner: Gassi-Extras und „Route folgen“
+
+Punkte 7 und 8 der Verbesserungsliste.
+
+- **Hundewiese (nur Spazieren):** Wegart `dogPark`. Overpass sucht `leisure=dog_park`; die nächste Wiese wird fester
+  Wegpunkt der Runde (`PreferenceSnapper.force`), unabhängig von den übrigen Wegarten. Ohne Treffer ein Hinweis.
+  Wechselt man die Disziplin, fällt die Wegart weg.
+- **Punkte unterwegs:** Trinkbrunnen (`amenity=drinking_water`) bei allen Disziplinen, beim Spazieren zusätzlich
+  Hundewiesen und Kotbeutel (`vending=excrement_bags`, `amenity=dog_toilet`). Abgefragt im Rechteck der Route,
+  angezeigt nur bis 120 m neben der Linie, je Art höchstens einer je 300 m. Fehlt Overpass, fehlen nur die Symbole.
+- **Vorlagen (`coach.routeTemplates`, mit `username`):** Disziplin, Form (Rundweg/Richtung), Distanz, Wegarten und
+  Start; Name vorgeschlagen aus Favorit bzw. Adresse („Gassi 3 km ab Zuhause“). Antippen unter *Routen* plant sofort.
+- **Route folgen:** Fortschritt als Projektion auf die Linie, gesucht nur im Fenster 150 m zurück bis 1,5 km voraus –
+  sonst gälte ein Rundweg am Start sofort als fertig. Abseits ab 50 m (Rad 60 m) nach zwei Messungen in Folge
+  (GPS-Sprünge), dann starke Vibration; Ankunft, wenn weniger als 30 m fehlen. Ortung nur im Vordergrund
+  (`geolocator`-Stream, alle 5 m), Bildschirm bleibt an. **Bewusst nicht:** Ortung bei gesperrtem Bildschirm – das
+  bräuchte unter iOS `UIBackgroundModes: location` und „Immer“-Freigabe, unter Android einen Vordergrunddienst, und
+  kostet Akku.
+

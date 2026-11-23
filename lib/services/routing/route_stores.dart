@@ -19,6 +19,9 @@ final class RouteStore extends ChangeNotifier {
     _favorites =
         FavoritePlaces.fromJson(_store.json(SettingsKeys.favoritePlaces), username: username) ??
         FavoritePlaces(username: username);
+    _templates =
+        RouteTemplates.fromJson(_store.json(SettingsKeys.routeTemplates), username: username) ??
+        RouteTemplates(username: username);
   }
 
   final SettingsStore _store;
@@ -27,6 +30,28 @@ final class RouteStore extends ChangeNotifier {
   late ExplorationState _exploration;
   late RoutePlannerSettings _settings;
   late FavoritePlaces _favorites;
+  late RouteTemplates _templates;
+
+  /// Vorlagen („Gassi 3 km ab Zuhause“).
+  List<RouteTemplate> get templates => List.unmodifiable(_templates.templates);
+
+  bool get hasForeignTemplates =>
+      _store.contains(SettingsKeys.routeTemplates) &&
+      RouteTemplates.fromJson(_store.json(SettingsKeys.routeTemplates), username: username) == null;
+
+  Future<void> saveTemplate(RouteTemplate template) async {
+    if (hasForeignTemplates) throw StateError('Die Vorlagen gehören einem anderen Benutzer.');
+    _templates.save(template);
+    notifyListeners();
+    await _store.setJson(SettingsKeys.routeTemplates, _templates.toJson());
+  }
+
+  Future<void> deleteTemplate(String id) async {
+    if (hasForeignTemplates) return;
+    _templates.delete(id);
+    notifyListeners();
+    await _store.setJson(SettingsKeys.routeTemplates, _templates.toJson());
+  }
 
   /// Favorisierte Orte (Start/Ziel mit einem Tipp).
   List<FavoritePlace> get favorites => List.unmodifiable(_favorites.places);

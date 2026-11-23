@@ -12,6 +12,7 @@ import 'address_field.dart';
 import 'exploration_screen.dart';
 import 'route_detail_screen.dart';
 import 'route_parts.dart';
+import 'route_planner_controller.dart';
 import 'route_planner_screen.dart';
 
 /// Routen: neue Route planen, offene Routen, Archiv der abgeschlossenen und – optional – Gebiete & Erkundung.
@@ -133,6 +134,35 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> {
                   title: Text('Alle ${archive.length} anzeigen'),
                   trailing: const DisclosureChevron(),
                   onTap: () => open(const RouteArchiveScreen()),
+                ),
+            ],
+          ),
+          FormSection(
+            header: 'Vorlagen',
+            footer: store.templates.isEmpty
+                ? 'Im Planer speichert das Lesezeichen oben die Vorgaben samt Start als Vorlage – z. B. „Gassi 3 km ab '
+                      'Zuhause“. Antippen plant sie dann mit einem Tipp.'
+                : 'Antippen plant die Vorlage sofort.',
+            children: [
+              for (final template in store.templates)
+                ListTile(
+                  leading: SportIcon(symbol: template.discipline.symbol, color: Colors.teal, size: 32),
+                  title: Text(template.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  subtitle: Text(
+                    [template.summary, ?template.startLabel].join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: PopupMenuButton<String>(
+                    tooltip: 'Vorlage bearbeiten',
+                    onSelected: (_) => unawaited(store.deleteTemplate(template.id)),
+                    itemBuilder: (_) => const [PopupMenuItem(value: 'delete', child: Text('Löschen'))],
+                  ),
+                  onTap: () {
+                    final planner = ref.read(routePlannerControllerProvider)..applyTemplate(template);
+                    open(const RoutePlannerScreen());
+                    unawaited(planner.plan());
+                  },
                 ),
             ],
           ),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../services/routing/location_source.dart';
 import '../../services/routing/routing_providers.dart';
@@ -158,6 +159,38 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     }
   }
 
+  /// Aktuelle Vorgaben samt Start als Vorlage („Gassi 3 km ab Zuhause“).
+  Future<void> _saveTemplate() async {
+    final c = _c;
+    final start = c.start;
+    if (start == null) return;
+    final favorite = ref.read(routeStoreProvider).favoriteNear(start);
+    final place = favorite?.name ?? c.startAddress?.split(', ').first;
+    final suggestion =
+        '${c.discipline == RouteDiscipline.walk ? 'Gassi' : c.discipline.label} '
+        '${_kmText(c.kilometers)} km${place == null ? '' : ' ab $place'}';
+    final name = await askName(context, title: 'Als Vorlage speichern', initial: suggestion, hint: 'z. B. Gassi 3 km');
+    if (name == null || !mounted) return;
+    await ref
+        .read(routeStoreProvider)
+        .saveTemplate(
+          RouteTemplate(
+            id: const Uuid().v4(),
+            name: name,
+            discipline: c.discipline,
+            shape: c.shape,
+            kilometers: c.kilometers,
+            start: start,
+            startLabel: favorite?.name ?? c.startAddress,
+            preferences: c.preferences,
+          ),
+        );
+    if (mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Vorlage „$name“ gespeichert – unter Routen.')));
+    }
+  }
+
   Future<void> _assign(PlannedRoute route) async {
     if (await assignRouteToSession(context, ref, route) && mounted) _c.markSaved(route);
   }
@@ -177,6 +210,12 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
       appBar: AppBar(
         title: const Text('Route planen'),
         actions: [
+          if (c.start != null && c.shape != RouteShape.toDestination)
+            IconButton(
+              tooltip: 'Als Vorlage speichern',
+              onPressed: c.planning ? null : () => unawaited(_saveTemplate()),
+              icon: const Icon(Icons.bookmark_add_outlined),
+            ),
           if (c.start != null)
             IconButton(
               tooltip: 'Planer zurücksetzen',
@@ -341,6 +380,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
               Padding(
                 padding: const EdgeInsets.all(12),
                 child: PreferenceChips(
+                  discipline: c.discipline,
                   selected: c.preferences,
                   onChanged: (selection) => c.update((planner) {
                     planner.preferences = selection;

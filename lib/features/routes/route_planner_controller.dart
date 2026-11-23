@@ -130,6 +130,11 @@ final class RoutePlannerController extends ChangeNotifier {
 
   void setDiscipline(RouteDiscipline value) => update((planner) {
     discipline = value;
+    // Hundewiese gibt es nur beim Spazieren.
+    preferences = {
+      for (final preference in preferences)
+        if (RoutePreference.available(value).contains(preference)) preference,
+    };
     kilometers = kilometers.clamp(minKm, maxKm).toDouble();
     elevation = math.min(elevation, maxElevation);
     clearResults();
@@ -211,6 +216,26 @@ final class RoutePlannerController extends ChangeNotifier {
     this.discipline = discipline;
     this.kilometers = kilometers.clamp(minKm, maxKm).toDouble();
     forSlot = (day: day, slotID: slotID, title: title);
+    clearResults();
+  });
+
+  /// Vorlage übernehmen (Disziplin, Form, Distanz, Wegarten, Start); geplant wird mit [plan].
+  void applyTemplate(RouteTemplate template) => update((planner) {
+    discipline = template.discipline;
+    shape = template.shape;
+    kilometers = template.kilometers.clamp(minKm, maxKm).toDouble();
+    preferences = {
+      for (final preference in template.preferences)
+        if (RoutePreference.available(template.discipline).contains(preference)) preference,
+    };
+    start = template.start;
+    startAddress = template.startLabel;
+    startFromLocation = false;
+    destination = null;
+    destinationAddress = null;
+    forSlot = null;
+    editingPins = false;
+    pin = PinTarget.start;
     clearResults();
   });
 
