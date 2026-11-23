@@ -14,6 +14,7 @@ import '../../ui/components.dart';
 import '../../ui/large_title.dart';
 import '../../ui/liquid.dart';
 import '../evidence/evidence_views.dart';
+import '../fuel/fuel_planner_screen.dart';
 import '../recipes/recipe_views.dart';
 import '../settings/nutrition_settings_screen.dart';
 import 'bls_views.dart';
@@ -64,10 +65,26 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     )..addListener(_controllerChanged);
     _query.addListener(() => setState(() {}));
     unawaited(_reload().then((_) => _controller.retryPending(_foods)));
+    // Mahlzeiten von anderswo (z. B. Fuel Planner aus einer Einheit des Ausdauerplans) sofort zeigen.
+    _mealChanges = ref.read(mealDataChangesProvider).listen((_) => _reloadSoon());
+  }
+
+  StreamSubscription<void>? _mealChanges;
+  bool _reloadQueued = false;
+
+  /// Mehrere Änderungen kurz hintereinander: einmal neu laden.
+  void _reloadSoon() {
+    if (_reloadQueued) return;
+    _reloadQueued = true;
+    scheduleMicrotask(() {
+      _reloadQueued = false;
+      if (mounted) unawaited(_reload());
+    });
   }
 
   @override
   void dispose() {
+    unawaited(_mealChanges?.cancel());
     _controller
       ..removeListener(_controllerChanged)
       ..dispose();
@@ -294,6 +311,13 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                       trailing: const DisclosureChevron(),
                       onTap: () =>
                           _push((_) => OwnRecipesScreen(log: (recipe, grams) => _logOwnRecipe(recipe, grams: grams))),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.local_drink_outlined),
+                      title: const Text('Fuel Planner'),
+                      subtitle: const Text('Verpflegung vor, während und nach dem Training'),
+                      trailing: const DisclosureChevron(),
+                      onTap: () => _push((_) => const FuelPlannerScreen()),
                     ),
                     ListTile(
                       leading: const Icon(Icons.monitor_weight_outlined),

@@ -101,5 +101,8 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pumpAndSettle();
     expect(find.textContaining('Anmeldung mit dem Garmin-Konto'), findsWidgets);
+    // Verpflegung zur Einheit (Fuel Planner).
+    await tester.scrollUntilVisible(find.text('Verpflegung planen'), 300, scrollable: find.byType(Scrollable).first);
+    expect(find.text('Verpflegung planen'), findsOneWidget);
   });
 }
