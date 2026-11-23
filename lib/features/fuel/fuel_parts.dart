@@ -240,6 +240,8 @@ class FuelTimelineRow extends StatelessWidget {
                     textAlign: TextAlign.right,
                     style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                   ),
+                  if (step.segment case final segment?)
+                    Text(segment.label, style: LiquidText.label(context).copyWith(fontSize: 11, color: segment.color)),
                   if (clock case final clock?) Text(clock, style: LiquidText.label(context).copyWith(fontSize: 11)),
                 ],
               ),

@@ -190,7 +190,9 @@ void main() {
         setup: [FuelProducts.isoDrink, FuelProducts.classicGel],
       );
       expect(plan.intra.every((step) => step.minute > 40), isTrue);
-      expect(plan.intra.first.timeLabel, 'Rad · Minute 60');
+      expect(plan.intra.first.timeLabel, 'Minute 60');
+      expect(plan.intra.first.segment, FuelSport.bike);
+      expect(plan.intra.first.line, startsWith('Rad, Minute 60: '));
       expect(plan.intra.last.segment, FuelSport.run);
       expect(plan.intra.every((step) => step.minute <= 320), isTrue);
       expect(plan.pre.last.detail, 'Gel vor dem Schwimmen – im Wasser gibt es nichts.');
@@ -448,6 +450,30 @@ void main() {
         plan.packing.map((item) => item.product),
         containsAll([FuelProducts.isoDrink, FuelProducts.highCarbDrink]),
       );
+    });
+
+    test('Getränk und Gel gewählt: beide kommen vor (Screenshot: nur Getränk)', () {
+      final plan = FuelPlanner.plan(
+        scenario(sport: FuelSport.bike, minutes: 240, race: true, gut: GutTolerance.trained),
+        setup: [FuelProducts.highCarbDrink, FuelProducts.highCarbGel],
+      );
+      expect(
+        plan.packing.map((item) => item.product),
+        containsAll([FuelProducts.highCarbDrink, FuelProducts.highCarbGel]),
+      );
+      final fromDrink = plan.intra.expand((step) => step.portions).where((p) => p.product.isDrink);
+      final drinkCarbs = fromDrink.fold(0.0, (sum, p) => sum + p.amounts.carbs);
+      expect(drinkCarbs / plan.intraDelivered.carbs, lessThan(0.65));
+      expect(plan.carbCoverage, closeTo(1, 0.1));
+    });
+
+    test('Koffein-Gel neben kohlenhydratreichem Getränk: Budget im letzten Drittel wird genutzt', () {
+      final plan = FuelPlanner.plan(
+        scenario(sport: FuelSport.bike, minutes: 240, race: true, gut: GutTolerance.trained, caffeine: true),
+        setup: [FuelProducts.highCarbDrink, FuelProducts.caffeineGel],
+      );
+      expect(plan.all.caffeine, 215); // 140 vorher + 75 im Gel
+      expect(plan.intra.firstWhere((step) => step.amounts.caffeine > 0).minute, 160);
     });
 
     test('Kurz: keine Einnahme, Wasser nach Durst', () {

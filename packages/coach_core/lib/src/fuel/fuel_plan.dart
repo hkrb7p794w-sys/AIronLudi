@@ -135,10 +135,10 @@ final class FuelStep {
   /// Abschnitt beim Triathlon (Rad, Laufen); sonst `null`.
   final FuelSport? segment;
 
-  /// Zeitangabe: „3–4 h vorher“ bzw. „Minute 20“ (Triathlon: „Rad · Minute 60“) bzw. „+1 h“.
+  /// Zeitangabe: „3–4 h vorher“ bzw. „Minute 20“ bzw. „+1 h“ (Abschnitt beim Triathlon: [segment]).
   String get timeLabel => switch (phase) {
     FuelPhase.pre => FuelPlanner.preLabel(minute),
-    FuelPhase.intra => segment == null ? 'Minute $minute' : '${segment!.label} · Minute $minute',
+    FuelPhase.intra => 'Minute $minute',
     FuelPhase.post => minute == 0 ? 'Direkt danach' : '+${GermanFormat.decimal(minute / 60)} h',
   };
 
@@ -153,8 +153,8 @@ final class FuelStep {
     return parts.isEmpty ? title : parts.join(' + ');
   }
 
-  /// „Minute 20: 1 × Gel klassisch (25 g KH) + 200 ml Wasser“.
-  String get line => '$timeLabel: $content';
+  /// „Minute 20: 1 × Gel klassisch (25 g KH) + 200 ml Wasser“ (Triathlon: „Rad, Minute 60: …“).
+  String get line => '${segment == null ? '' : '${segment!.label}, '}$timeLabel: $content';
 }
 
 enum FuelNoteKind { info, warning }
@@ -304,6 +304,9 @@ abstract final class FuelPlanner {
 
   /// Mehr Portionen fester Produkte je Einnahme sind unrealistisch.
   static const maxServingsPerIntake = 3;
+
+  /// Sind Gels oder Riegel gewählt, deckt ein Getränk höchstens diesen Anteil der offenen Kohlenhydrate je Einnahme.
+  static const drinkCarbShareWithSolids = 0.5;
 
   /// Ein Koffein-Produkt darf das Rest-Budget um bis zu 20 % überschreiten (feste Dosis je Gel).
   static const caffeineProductTolerance = 0.8;
@@ -529,14 +532,21 @@ abstract final class FuelPlanner {
         caffeineSpent += product.caffeine * servings;
       }
 
-      // 1. Getränk: offene Flüssigkeit, so weit die Kohlenhydrate es zulassen; Flaschen im Wechsel.
+      // 0. Im letzten Drittel zuerst das Koffein-Produkt, damit das Budget nicht hinter einem Getränk verschwindet.
+      if (lateWindow) {
+        final caffeineSolid = solids.firstWhereOrNull((p) => p.caffeine > 0 && caffeineAllowed(p));
+        if (caffeineSolid != null && wantCarbs - gotCarbs >= caffeineSolid.carbs / 2) take(caffeineSolid, 1);
+      }
+
+      // 1. Getränk: offene Flüssigkeit, so weit die Kohlenhydrate es zulassen (mit gewählten Gels/Riegeln höchstens
+      // die Hälfte der offenen Kohlenhydrate – Abwechslung statt nur Getränk); Flaschen im Wechsel.
       var drinkMl = 0.0;
       if (drinks.isNotEmpty && wantFluid - gotFluid > 0) {
         var drink = drinks[bottle % drinks.length];
         if (!caffeineAllowed(drink)) {
           drink = drinks.firstWhereOrNull((d) => d.caffeine <= 0) ?? drink;
         }
-        final openCarbs = math.max(0.0, wantCarbs - gotCarbs);
+        final openCarbs = math.max(0.0, wantCarbs - gotCarbs) * (solids.isEmpty ? 1 : drinkCarbShareWithSolids);
         final byCarbs = drink.carbsPerMilliliter > 0 ? openCarbs / drink.carbsPerMilliliter : double.infinity;
         drinkMl = _ml(math.min(wantFluid - gotFluid, byCarbs));
         if (drinkMl > 0 && caffeineAllowed(drink)) {
@@ -553,7 +563,7 @@ abstract final class FuelPlanner {
       }
 
       // 2. Gels, Riegel …: ganze Portionen über den Saldo, im Wechsel; Koffein nur im Budget.
-      var count = 0;
+      var count = portions.keys.where((p) => p.kind.isSolid).length;
       while (solids.isNotEmpty && count < maxServingsPerIntake) {
         // Im letzten Drittel zuerst das Koffein-Produkt (solange es ins Budget passt).
         FuelProduct? product = lateWindow ? solids.firstWhereOrNull((p) => p.caffeine > 0 && caffeineAllowed(p)) : null;

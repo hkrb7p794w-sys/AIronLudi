@@ -172,6 +172,13 @@ class _FuelScenarioScreenState extends ConsumerState<FuelScenarioScreen> {
 
   static String _clock(int minutes) => '${minutes ~/ 60}:${(minutes % 60).toString().padLeft(2, '0')}';
 
+  /// „45 min“, „2 h“, „1:15 h“ – nie „1,3 h“ für 75 Minuten.
+  static String _chip(int minutes) => minutes < 60
+      ? '$minutes min'
+      : minutes % 60 == 0
+      ? '${minutes ~/ 60} h'
+      : '${_clock(minutes)} h';
+
   Future<void> _pickDay() async {
     final today = CalendarDay.today();
     final current = _s.day ?? today;
@@ -279,7 +286,7 @@ class _FuelScenarioScreenState extends ConsumerState<FuelScenarioScreen> {
                       Padding(
                         padding: const EdgeInsets.only(right: 6),
                         child: ChoiceChip(
-                          label: Text(minutes < 60 ? '$minutes min' : '${GermanFormat.decimal(minutes / 60)} h'),
+                          label: Text(_chip(minutes)),
                           selected: s.minutes == minutes,
                           onSelected: (_) => _set(s.copyWith(minutes: minutes)),
                         ),

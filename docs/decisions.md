@@ -1347,3 +1347,8 @@ Eine kritische Durchsicht des ersten Stands fand echte Fehler; alle behoben, die
 - **Neu:** Wetter aus der Vorhersage (Open-Meteo bekommt `relative_humidity_2m`; Ort Route › „Zuhause“ › Standort)
   und Einstieg aus dem Wochenplan (alle Sportarten außer „Anderes“, auch Kraft; Minuten aus dem Laufplan der Woche).
 - **Ehrlichkeit:** Abschnitt 9 der Spezifikation trennt belegte, abgeleitete und selbst geschätzte Zahlen.
+- **Durch Screenshots gefunden (Testbilder mit echter Schrift):** Neben einem kohlenhydratreichen Getränk kamen
+  gewählte Gels nie dran, und das Koffein-Budget des letzten Drittels ging verloren. Jetzt deckt ein Getränk mit
+  gewählten Gels/Riegeln höchstens die Hälfte der offenen Kohlenhydrate, und im letzten Drittel kommt das
+  Koffein-Produkt vor dem Getränk. Außerdem: Abschnitt (Rad/Laufen) als eigene Zeile im Zeitstrahl, Schnellwahl
+  „1:15 h“ statt „1,3 h“, unten genug Abstand über der Tab-Leiste.

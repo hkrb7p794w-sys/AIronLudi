@@ -158,7 +158,9 @@ Dosis = mg/kg (1–6, Standard 3) × Gewicht, höchstens 6 mg/kg und 400 mg. Bis
   nicht in den letzten 10 min bzw. 5 min vor einem Wechsel. Jede Einnahme deckt einen Takt.
 - **Laufende Salden** für Kohlenhydrate, Flüssigkeit und Natrium – Rundungen gleichen sich über die Einheit aus
   (Flüssigkeit trifft das Soll auf ±25 ml, getestet für jeden Takt).
-- Zuordnung: (1) Getränke im Wechsel Flasche für Flasche, so viel wie offen ist und die Kohlenhydrate zulassen;
+- Zuordnung: (0) im letzten Drittel zuerst ein Koffein-Produkt, solange es ins Budget passt (sonst ginge das Budget
+  hinter einem kohlenhydratreichen Getränk verloren); (1) Getränke im Wechsel Flasche für Flasche, so viel wie offen
+  ist und die Kohlenhydrate zulassen – mit gewählten Gels/Riegeln höchstens die Hälfte der offenen Kohlenhydrate;
   (2) Gels/Riegel/Kaudragees/Essen in ganzen Portionen, im Wechsel, bis 3 je Einnahme, Koffein nach 4.4;
   (3) Salztabletten über den Natrium-Saldo; (4) Wasser für den Rest, auf 50 ml. Ohne Auswahl „Gel klassisch“.
 - Einnahmen ohne Inhalt (z. B. nur 20 ml offen) erscheinen nicht.
@@ -215,4 +217,5 @@ Dosis = mg/kg (1–6, Standard 3) × Gewicht, höchstens 6 mg/kg und 400 mg. Bis
 | Fett der Plan-Mahlzeiten (0,15/0,2 g/kg) | **eigene Festlegung** („wenig Fett“ ist belegt, die Zahl nicht) |
 | Fruktose-Warnschwelle 8 Prozentpunkte, Kohlenhydrat-Warnung 15 %/15 g, Natrium-Warnung 70 % | **eigene Festlegung** (Rundung einer Portion) |
 | Platzhalter-Regel (±90 min, ≥ 100 kcal bzw. 30 %) | **eigene Festlegung** (App-Verhalten, keine Physiologie) |
+| Getränk höchstens 50 % der Kohlenhydrate, wenn Gels/Riegel gewählt sind | **eigene Festlegung** (Abwechslung; Studien nutzen beide Formen) |
 | Luftfeuchte-Stufen (70 % bei ≥ 20 °C, 40 %) | **eigene Festlegung** |
