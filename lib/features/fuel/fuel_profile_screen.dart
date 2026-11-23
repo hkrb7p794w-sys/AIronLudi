@@ -64,7 +64,7 @@ class _FuelProfileScreenState extends ConsumerState<FuelProfileScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Mein Profil')),
       body: ListView(
-        padding: const EdgeInsets.only(bottom: 40),
+        padding: const EdgeInsets.only(bottom: 120),
         children: [
           if (store.hasForeignData)
             const FormSection(

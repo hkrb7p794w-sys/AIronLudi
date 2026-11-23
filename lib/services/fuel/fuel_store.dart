@@ -89,6 +89,7 @@ final class FuelStore extends ChangeNotifier {
       productIDs: productIDs,
       savedAt: _now(),
       loggedAt: existing?.loggedAt,
+      loggedMealIDs: existing?.loggedMealIDs ?? const [],
     );
     _library.savePlan(saved);
     await _persist();
@@ -100,12 +101,23 @@ final class FuelStore extends ChangeNotifier {
     return _persist();
   }
 
-  Future<void> markLogged(String id) async {
+  /// Ins Tagebuch übernommen, mit den angelegten Mahlzeiten.
+  Future<void> markLogged(String id, List<String> mealIDs) async {
     final existing = plan(id);
     if (existing == null) return;
-    _library.savePlan(existing.copyWith(loggedAt: _now()));
+    _library.savePlan(existing.copyWith(loggedAt: _now(), loggedMealIDs: mealIDs));
     await _persist();
   }
+
+  /// „Rückgängig“: früheren Stand wiederherstellen (vorher nicht im Tagebuch bzw. mit den alten Einträgen).
+  Future<void> restoreLogged(SavedFuelPlan previous) async {
+    if (plan(previous.id) == null) return;
+    _library.savePlan(previous);
+    await _persist();
+  }
+
+  /// Wie viele gespeicherte Pläne ein Produkt nutzen (Hinweis beim Löschen).
+  int plansUsing(String productID) => _library.plans.where((plan) => plan.productIDs.contains(productID)).length;
 }
 
 final fuelStoreProvider = ChangeNotifierProvider<FuelStore>(

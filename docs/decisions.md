@@ -1318,3 +1318,37 @@ Morton 2026, Pfeiffer 2012, Barnes 2019, Moore 2015, King 2022 – über PubMed 
 - **Bewusst nicht (vorerst):** Wetter automatisch (Temperatur ist eine Eingabe; die Vorhersage des Routenplaners
   braucht einen Ort), Einstieg aus dem Wochenplan für Krafteinheiten (manuell mit Sportart Kraft), Mitteilungen
   während der Einheit.
+
+## 2026-11-23 – Fuel Planner, zweite Runde (nach eigener Kritik)
+
+Eine kritische Durchsicht des ersten Stands fand echte Fehler; alle behoben, die Zahlen stehen in
+`docs/FUEL_PLANNER_SCIENCE.md`.
+
+- **Koffein (Sicherheitsfehler):** Mit nur einem Koffein-Gel gewählt plante der Planer 1275 mg (21 mg/kg). Jetzt hat
+  unterwegs nur das Budget des letzten Drittels Platz; Koffein-Produkte erst ab dann, höchstens 20 % über dem Rest
+  und nie über 6 mg/kg bzw. 400 mg im ganzen Plan; sonst ein Gel ohne Koffein. Koffein aus = keine Koffein-Produkte.
+- **Keine Sprünge mehr:** Kohlenhydrate, Pre- und Post-Kohlenhydrate, Trink-Untergrenze und Natrium-Anteil sind
+  linear zwischen Stützstellen (89 vs. 90 min locker: vorher 0 vs. 40 g/h, jetzt 40 vs. 40). Carboloading bleibt in
+  Stufen – es ist eine Entscheidung, kein Messwert.
+- **Triathlon in Abschnitten:** Im Wasser keine Einnahme (vorher „Minute 20: Iso-Drink“), Rad- und Laufgrenzen je
+  Abschnitt, Gel vor dem Start. Eigene Schwimm- und Radminuten möglich.
+- **Trinken mit Saldo:** Flüssigkeit wie Kohlenhydrate über einen laufenden Saldo (vorher je nach Takt 86–114 %).
+- **Mehrere Getränke** im Wechsel Flasche für Flasche (vorher wurde das zweite still ignoriert).
+- **Tagebuch ohne Doppelzählung:** Vorher/danach sind markierte Platzhalter, die einer echten Mahlzeit im Zeitfenster
+  weichen (Regel in `FuelDiary.replaces`, Aufruf in `NutritionController.log/save`); schon eingetragene Mahlzeiten
+  wählen die Phase beim Übernehmen ab; erneutes Übernehmen ersetzt die eigenen Einträge (IDs im gespeicherten Plan,
+  Markierung im Hinweis); „Rückgängig“ stellt alles wieder her. Bearbeitete Einträge verlieren die Markierung.
+- **Veraltete Pläne:** Plan zu einer Einheit erkennt Änderungen (Sportart, Dauer, Strecke, Intensität, Wettkampf,
+  Tag) und bietet „anpassen“ an; gelöschte Produkte werden gemeldet, Löschen warnt vor genutzten Produkten.
+- **Weniger Text:** Dauerhinweise („nicht mehr trinken als geschwitzt“, Natrium je Liter) stehen jetzt bei den Ringen;
+  Warnungen als Karten, übrige Hinweise eingeklappt. Gut-Training nur, wenn die Verträglichkeit das Ziel begrenzt.
+- **Editor:** Vorlagen (Halbmarathon, Marathon, Mitteldistanz, Kraft …), Dauer mit ±5 min, Schnellwahl und h:mm statt
+  Schieber 15–720 min, Selten-Genutztes eingeklappt.
+- **Neu:** Wetter aus der Vorhersage (Open-Meteo bekommt `relative_humidity_2m`; Ort Route › „Zuhause“ › Standort)
+  und Einstieg aus dem Wochenplan (alle Sportarten außer „Anderes“, auch Kraft; Minuten aus dem Laufplan der Woche).
+- **Ehrlichkeit:** Abschnitt 9 der Spezifikation trennt belegte, abgeleitete und selbst geschätzte Zahlen.
+- **Durch Screenshots gefunden (Testbilder mit echter Schrift):** Neben einem kohlenhydratreichen Getränk kamen
+  gewählte Gels nie dran, und das Koffein-Budget des letzten Drittels ging verloren. Jetzt deckt ein Getränk mit
+  gewählten Gels/Riegeln höchstens die Hälfte der offenen Kohlenhydrate, und im letzten Drittel kommt das
+  Koffein-Produkt vor dem Getränk. Außerdem: Abschnitt (Rad/Laufen) als eigene Zeile im Zeitstrahl, Schnellwahl
+  „1:15 h“ statt „1,3 h“, unten genug Abstand über der Tab-Leiste.

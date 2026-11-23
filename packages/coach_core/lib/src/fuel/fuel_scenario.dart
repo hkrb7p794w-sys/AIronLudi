@@ -2,6 +2,9 @@
 // das persönliche Profil (Verträglichkeit, Schweiß). Grundlage: docs/FUEL_PLANNER_SCIENCE.md, Abschnitt 1.
 import '../calendar/calendar_day.dart';
 import '../endurance/endurance_plan.dart';
+import '../profile/session_match.dart';
+import '../profile/user_profile.dart';
+import '../profile/week_schedule.dart';
 import '../util/enum_codec.dart';
 
 /// Sportart aus Sicht der Verpflegung (Magen-Darm-Belastung, Schweiß, Gelegenheit zum Essen).
@@ -44,6 +47,15 @@ enum FuelSport implements RawEnum {
     EnduranceSport.bike => bike,
     EnduranceSport.swim => swim,
   };
+
+  /// Sportart des Wochenplans; „Anderes“ (Yoga, Wandern) hat keinen Verpflegungsplan.
+  static FuelSport? ofTraining(TrainingSport sport) => switch (sport) {
+    TrainingSport.run => run,
+    TrainingSport.bike => bike,
+    TrainingSport.swim => swim,
+    TrainingSport.strength => strength,
+    TrainingSport.other => null,
+  };
 }
 
 /// Intensität ohne Wettkampf (der ist ein eigener Schalter, siehe [FuelScenario.isRace]).
@@ -71,6 +83,12 @@ enum FuelIntensity implements RawEnum {
     EnduranceWorkoutType.long => easy,
     EnduranceWorkoutType.tempo => tempo,
     EnduranceWorkoutType.threshold || EnduranceWorkoutType.vo2max || EnduranceWorkoutType.race => threshold,
+  };
+
+  /// Intensität einer Einheit des Wochenplans (lang zählt als locker, die Dauer macht den Unterschied).
+  static FuelIntensity ofSession(SessionIntensity intensity) => switch (intensity) {
+    SessionIntensity.easy || SessionIntensity.long => easy,
+    SessionIntensity.hard => threshold,
   };
 }
 
@@ -246,6 +264,8 @@ final class FuelScenario {
     this.day,
     this.startMinuteOfDay,
     this.slotID,
+    this.swimMinutes,
+    this.bikeMinutes,
   });
 
   /// Aus einer Einheit des Ausdauerplans: Sportart, Dauer, Strecke und Intensität übernommen, der Rest vom Profil.
@@ -269,6 +289,31 @@ final class FuelScenario {
     slotID: slotID,
     age: age,
   );
+
+  /// Aus einer Einheit des Wochenplans (auch Krafttraining); `null` für „Anderes“.
+  static FuelScenario? fromSession(
+    SessionSlot slot, {
+    required double weightKilograms,
+    int? minutes,
+    FuelProfile profile = const FuelProfile(),
+    CalendarDay? day,
+    String? slotID,
+    int? age,
+  }) {
+    final sport = FuelSport.ofTraining(slot.sport);
+    if (sport == null) return null;
+    return FuelScenario.withProfile(
+      profile,
+      sport: sport,
+      minutes: minutes ?? SessionMatcher.defaultMinutes(slot),
+      weightKilograms: weightKilograms,
+      title: slot.title,
+      intensity: FuelIntensity.ofSession(slot.intensity),
+      day: day,
+      slotID: slotID,
+      age: age,
+    );
+  }
 
   /// Neues Szenario mit den Werten des Profils.
   factory FuelScenario.withProfile(
@@ -335,8 +380,36 @@ final class FuelScenario {
   /// Startzeit (Minuten nach Mitternacht), für den Koffein-Hinweis und Uhrzeiten im Zeitstrahl.
   final int? startMinuteOfDay;
 
-  /// Zugehörige Einheit des Ausdauerplans.
+  /// Zugehörige Einheit des Ausdauer- bzw. Wochenplans.
   final String? slotID;
+
+  /// Triathlon: Minuten im Wasser bzw. auf dem Rad; `null` = übliche Anteile (Spezifikation 2.6).
+  final int? swimMinutes;
+  final int? bikeMinutes;
+
+  /// Stimmen Sportart, Dauer, Strecke, Intensität, Wettkampf und Tag noch mit der Einheit überein?
+  bool matchesWorkout(EnduranceWorkout workout, {CalendarDay? day}) {
+    final fresh = FuelScenario.fromWorkout(workout, weightKilograms: weightKilograms, day: day);
+    return fresh.sport == sport &&
+        fresh.minutes == minutes &&
+        fresh.distanceMeters == distanceMeters &&
+        fresh.intensity == intensity &&
+        fresh.isRace == isRace &&
+        (day == null || this.day == day);
+  }
+
+  /// Werte der (geänderten) Einheit übernehmen; eigene Einstellungen (Wetter, Magen, Produkte …) bleiben.
+  FuelScenario updatedFromWorkout(EnduranceWorkout workout, {CalendarDay? day}) {
+    final fresh = FuelScenario.fromWorkout(workout, weightKilograms: weightKilograms, day: day);
+    return copyWith(
+      sport: fresh.sport,
+      minutes: fresh.minutes,
+      distanceMeters: () => fresh.distanceMeters,
+      intensity: fresh.intensity,
+      isRace: fresh.isRace,
+      day: () => day ?? this.day,
+    );
+  }
 
   double get hours => minutes / 60;
 
@@ -372,6 +445,8 @@ final class FuelScenario {
     CalendarDay? Function()? day,
     int? Function()? startMinuteOfDay,
     String? Function()? slotID,
+    int? Function()? swimMinutes,
+    int? Function()? bikeMinutes,
   }) => FuelScenario(
     sport: sport ?? this.sport,
     minutes: minutes ?? this.minutes,
@@ -396,6 +471,8 @@ final class FuelScenario {
     day: day == null ? this.day : day(),
     startMinuteOfDay: startMinuteOfDay == null ? this.startMinuteOfDay : startMinuteOfDay(),
     slotID: slotID == null ? this.slotID : slotID(),
+    swimMinutes: swimMinutes == null ? this.swimMinutes : swimMinutes(),
+    bikeMinutes: bikeMinutes == null ? this.bikeMinutes : bikeMinutes(),
   );
 
   Map<String, Object?> toJson() => {
@@ -422,6 +499,8 @@ final class FuelScenario {
     'day': ?day?.iso,
     'start': ?startMinuteOfDay,
     'slotID': ?slotID,
+    'swim': ?swimMinutes,
+    'bike': ?bikeMinutes,
   };
 
   static FuelScenario? fromJson(Object? json) {
@@ -458,6 +537,8 @@ final class FuelScenario {
       day: day is String ? CalendarDay.tryParse(day) : null,
       startMinuteOfDay: jsonInt(json['start']),
       slotID: slot is String ? slot : null,
+      swimMinutes: jsonInt(json['swim']),
+      bikeMinutes: jsonInt(json['bike']),
     );
   }
 }

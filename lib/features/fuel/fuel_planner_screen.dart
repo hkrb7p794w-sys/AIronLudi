@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/fuel/fuel_store.dart';
 import '../../ui/components.dart';
 import '../../ui/liquid.dart';
+import '../endurance/endurance_controller.dart';
 import 'fuel_parts.dart';
 import 'fuel_plan_screen.dart';
 import 'fuel_products_screen.dart';
@@ -54,7 +55,7 @@ class FuelPlannerScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Fuel Planner')),
       body: ListView(
-        padding: const EdgeInsets.only(bottom: 40),
+        padding: const EdgeInsets.only(bottom: 120),
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(LiquidSpacing.page, 8, LiquidSpacing.page, 4),
@@ -155,6 +156,19 @@ class _PlanTile extends ConsumerWidget {
 
   final SavedFuelPlan saved;
 
+  /// Gehört der Plan zu einer Einheit des Ausdauerplans, wird sie auf Änderungen geprüft.
+  static FuelPlanLink? _link(WidgetRef ref, FuelScenario scenario) {
+    final id = scenario.slotID;
+    if (id == null) return null;
+    final slot = ref.read(enduranceControllerProvider).plan?.slot(id);
+    if (slot == null || slot.current.isRest) return null;
+    return FuelPlanLink(
+      label: 'Einheit',
+      matches: (s) => s.matchesWorkout(slot.current, day: slot.day),
+      update: (s) => s.updatedFromWorkout(slot.current, day: slot.day),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = saved.scenario;
@@ -184,7 +198,8 @@ class _PlanTile extends ConsumerWidget {
         onTap: () => unawaited(
           Navigator.of(context).push(
             MaterialPageRoute<void>(
-              builder: (_) => FuelPlanScreen(scenario: s, productIDs: saved.productIDs, planID: saved.id),
+              builder: (_) =>
+                  FuelPlanScreen(scenario: s, productIDs: saved.productIDs, planID: saved.id, link: _link(ref, s)),
             ),
           ),
         ),

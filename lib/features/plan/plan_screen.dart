@@ -11,6 +11,7 @@ import '../../ui/components.dart';
 import '../../ui/liquid.dart';
 import '../../ui/sport_style.dart';
 import '../evidence/evidence_views.dart';
+import '../fuel/fuel_for_slot.dart';
 import 'plan_controller.dart';
 
 /// Farbe und Symbol je Einheit (wie `SportStyle.swift`).
@@ -597,9 +598,13 @@ List<Widget> unitGuideSections(UnitGuide guide) => [
 
 /// Eine Einheit des eigenen Wochenplans im Detail (Port von `SessionGuideView`).
 class SessionGuideScreen extends StatelessWidget {
-  const SessionGuideScreen({super.key, required this.slot});
+  const SessionGuideScreen({super.key, required this.slot, this.day, this.minutes});
 
   final SessionSlot slot;
+
+  /// Tag und geplante Minuten der Einheit im Wochenplan (für den Verpflegungsplan).
+  final CalendarDay? day;
+  final int? minutes;
 
   @override
   Widget build(BuildContext context) {
@@ -632,6 +637,7 @@ class SessionGuideScreen extends StatelessWidget {
             ],
           ),
           ...unitGuideSections(UnitGuides.guideForSlot(slot)),
+          FuelForSessionSection(slot: slot, day: day, minutes: minutes),
           FormSection(
             children: [
               EvidenceDisclosure(

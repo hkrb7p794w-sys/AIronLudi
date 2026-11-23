@@ -117,6 +117,7 @@ final class FuelStep {
     this.amounts = FuelAmounts.zero,
     this.portions = const [],
     this.water = 0,
+    this.segment,
   });
 
   final FuelPhase phase;
@@ -131,23 +132,29 @@ final class FuelStep {
   /// Wasser in ml (unterwegs).
   final double water;
 
-  /// Zeitangabe: „3–4 h vorher“ bzw. „Minute 20“ bzw. „+1 h“.
+  /// Abschnitt beim Triathlon (Rad, Laufen); sonst `null`.
+  final FuelSport? segment;
+
+  /// Zeitangabe: „3–4 h vorher“ bzw. „Minute 20“ bzw. „+1 h“ (Abschnitt beim Triathlon: [segment]).
   String get timeLabel => switch (phase) {
     FuelPhase.pre => FuelPlanner.preLabel(minute),
     FuelPhase.intra => 'Minute $minute',
     FuelPhase.post => minute == 0 ? 'Direkt danach' : '+${GermanFormat.decimal(minute / 60)} h',
   };
 
-  /// „Minute 20: 1 × Gel klassisch (25 g KH) + 200 ml Wasser“.
-  String get line {
+  /// Was eingenommen wird: „1 × Gel klassisch (25 g KH) + 200 ml Wasser“.
+  String get content {
     final parts = [
       for (final portion in portions) portion.line,
       if (water > 0) '${water.round()} ml Wasser',
       if (phase == FuelPhase.intra && amounts.caffeine > 0 && portions.every((p) => p.product.caffeine <= 0))
         '${amounts.caffeine.round()} mg Koffein',
     ];
-    return '$timeLabel: ${parts.isEmpty ? title : parts.join(' + ')}';
+    return parts.isEmpty ? title : parts.join(' + ');
   }
+
+  /// „Minute 20: 1 × Gel klassisch (25 g KH) + 200 ml Wasser“ (Triathlon: „Rad, Minute 60: …“).
+  String get line => '${segment == null ? '' : '${segment!.label}, '}$timeLabel: $content';
 }
 
 enum FuelNoteKind { info, warning }
@@ -176,7 +183,10 @@ final class FuelPackItem {
   int get count => (servings - 1e-6).ceil();
 
   /// Pulver für eigene Mischungen (g), für [count] Flaschen.
-  double? get powderGrams => product.mix == null ? null : product.mix!.powderGrams * count;
+  double? get powderGrams {
+    final grams = product.mix?.powderGrams;
+    return grams == null ? null : grams * count;
+  }
 
   String get line {
     if (product.isDrink) {
@@ -197,8 +207,11 @@ final class FuelTargets {
     required this.sodiumPerHour,
     required this.sweatRate,
     required this.ratio,
+    this.sweatEstimated = true,
+    this.segments = const [],
   });
 
+  /// Bei Triathlon zeitgewichtet über Rad und Laufen.
   final int carbsPerHour;
 
   /// ml/h
@@ -211,8 +224,17 @@ final class FuelTargets {
   final double sweatRate;
   final FuelRatio ratio;
 
+  /// Schweißrate geschätzt (nicht gemessen).
+  final bool sweatEstimated;
+
+  /// Abschnitte mit eigenen Zielen (Triathlon: Schwimmen, Rad, Laufen).
+  final List<FuelSegment> segments;
+
   /// Natrium je Liter Getränk (mg/l); `null` ohne Trinken.
   int? get sodiumPerLiterDrink => fluidPerHour <= 0 ? null : (sodiumPerHour / fluidPerHour * 1000).round();
+
+  /// Mehr als geschwitzt sollte man nie trinken (ml/h).
+  int get maxFluidPerHour => (sweatRate * 1000).round();
 }
 
 final class FuelPlan {
@@ -242,6 +264,16 @@ final class FuelPlan {
   final FuelCarbLoading? carbLoading;
   final FuelCaffeine? caffeine;
 
+  List<FuelNote> get warnings => [
+    for (final note in notes)
+      if (note.isWarning) note,
+  ];
+
+  List<FuelNote> get infos => [
+    for (final note in notes)
+      if (!note.isWarning) note,
+  ];
+
   List<FuelStep> steps(FuelPhase phase) => switch (phase) {
     FuelPhase.pre => pre,
     FuelPhase.intra => intra,
@@ -266,11 +298,18 @@ final class FuelPlan {
 }
 
 abstract final class FuelPlanner {
-  /// Keine Einnahme in den letzten Minuten.
+  /// Keine Einnahme in den letzten Minuten bzw. kurz vor einem Wechsel (Triathlon).
   static const lastIntakeBeforeEnd = 10;
+  static const lastIntakeBeforeTransition = 5;
 
   /// Mehr Portionen fester Produkte je Einnahme sind unrealistisch.
   static const maxServingsPerIntake = 3;
+
+  /// Sind Gels oder Riegel gewählt, deckt ein Getränk höchstens diesen Anteil der offenen Kohlenhydrate je Einnahme.
+  static const drinkCarbShareWithSolids = 0.5;
+
+  /// Ein Koffein-Produkt darf das Rest-Budget um bis zu 20 % überschreiten (feste Dosis je Gel).
+  static const caffeineProductTolerance = 0.8;
 
   /// Abweichung der Kohlenhydrate, ab der gewarnt wird: 15 % oder diese Grammzahl (eine halbe Portion Rundung).
   static const carbToleranceGrams = 15.0;
@@ -283,43 +322,53 @@ abstract final class FuelPlanner {
     _ => '15–30 min vorher',
   };
 
-  static FuelPlan plan(FuelScenario s, {List<FuelProduct> setup = const []}) {
+  /// [missingProducts]: gewählte Produkte, die es nicht mehr gibt (gelöscht).
+  static FuelPlan plan(FuelScenario s, {List<FuelProduct> setup = const [], int missingProducts = 0}) {
     final sweat = FuelRules.sweatRate(s);
+    final segments = FuelRules.segments(s, sweat: sweat);
     final carbs = FuelRules.carbsPerHour(s);
+    final eating = segments.where((segment) => segment.canEat && segment.minutes > 0).toList();
+    int weighted(int Function(FuelSegment) value) {
+      final minutes = eating.fold(0, (sum, segment) => sum + segment.minutes);
+      if (minutes <= 0) return 0;
+      return FuelRules.roundTo(eating.fold(0.0, (sum, x) => sum + value(x) * x.minutes) / minutes, 50).round();
+    }
+
     final targets = FuelTargets(
       carbsPerHour: carbs,
-      fluidPerHour: FuelRules.fluidPerHour(s, sweat: sweat),
-      sodiumPerHour: FuelRules.sodiumPerHour(s, sweat: sweat),
+      fluidPerHour: segments.length == 1 ? segments.single.fluidPerHour : weighted((x) => x.fluidPerHour),
+      sodiumPerHour: segments.length == 1 ? segments.single.sodiumPerHour : weighted((x) => x.sodiumPerHour),
       sweatRate: sweat,
       ratio: FuelRules.ratio(carbs),
+      sweatEstimated: FuelRules.sweatIsEstimated(s),
+      segments: segments,
     );
     final caffeine = FuelRules.caffeine(s);
-    final intra = _intra(s, targets, setup, caffeine);
-    final intraTarget = intra.target;
+    final intra = _intra(s, segments, setup, caffeine);
     final delivered = FuelAmounts.sum(intra.steps.map((step) => step.amounts));
-    final plan = FuelPlan(
+    final draft = FuelPlan(
       scenario: s,
       targets: targets,
       pre: _pre(s, caffeine),
       intra: intra.steps,
       post: _post(s, sweat: sweat, drank: delivered.fluid),
-      intraTarget: intraTarget,
+      intraTarget: intra.target,
       packing: _packing(intra.steps),
       notes: const [],
       carbLoading: FuelRules.carbLoading(s),
       caffeine: caffeine,
     );
     return FuelPlan(
-      scenario: plan.scenario,
-      targets: plan.targets,
-      pre: plan.pre,
-      intra: plan.intra,
-      post: plan.post,
-      intraTarget: plan.intraTarget,
-      packing: plan.packing,
-      notes: _notes(plan, setup),
-      carbLoading: plan.carbLoading,
-      caffeine: plan.caffeine,
+      scenario: draft.scenario,
+      targets: draft.targets,
+      pre: draft.pre,
+      intra: draft.intra,
+      post: draft.post,
+      intraTarget: draft.intraTarget,
+      packing: draft.packing,
+      notes: _notes(draft, setup, substitutedCaffeine: intra.substitutedCaffeine, missingProducts: missingProducts),
+      carbLoading: draft.carbLoading,
+      caffeine: draft.caffeine,
     );
   }
 
@@ -397,12 +446,14 @@ abstract final class FuelPlanner {
     }
     if (!s.fasted && FuelRules.hasPreBooster(s)) {
       steps.add(
-        const FuelStep(
+        FuelStep(
           phase: FuelPhase.pre,
           minute: -20,
           title: 'Schnelle Kohlenhydrate',
-          detail: 'Gel oder halbe Banane mit einem Schluck Wasser.',
-          amounts: FuelAmounts(carbs: 20, fluid: 200),
+          detail: s.sport == FuelSport.triathlon
+              ? 'Gel vor dem Schwimmen – im Wasser gibt es nichts.'
+              : 'Gel oder halbe Banane mit einem Schluck Wasser.',
+          amounts: const FuelAmounts(carbs: 20, fluid: 200),
         ),
       );
     }
@@ -410,95 +461,178 @@ abstract final class FuelPlanner {
   }
 
   // 6 Zeitstrahl.
-  static ({List<FuelStep> steps, FuelAmounts target}) _intra(
+  static ({List<FuelStep> steps, FuelAmounts target, bool substitutedCaffeine}) _intra(
     FuelScenario s,
-    FuelTargets targets,
+    List<FuelSegment> segments,
     List<FuelProduct> setup,
     FuelCaffeine? caffeine,
   ) {
-    final hasNeed = targets.carbsPerHour > 0 || targets.fluidPerHour > 0 || targets.sodiumPerHour > 0;
-    if (!hasNeed && (caffeine?.late ?? 0) <= 0) return (steps: const [], target: FuelAmounts.zero);
+    const none = (steps: <FuelStep>[], target: FuelAmounts.zero, substitutedCaffeine: false);
     final interval = s.sport == FuelSport.swim ? math.max(20, s.intervalMinutes) : s.intervalMinutes;
-    final times = [for (var t = interval; t <= s.minutes - lastIntakeBeforeEnd; t += interval) t];
-    if (times.isEmpty) return (steps: const [], target: FuelAmounts.zero);
-    final fraction = interval / 60;
-    final drink = setup.firstWhereOrNull((p) => p.isDrink);
-    var solids = [
+    final triathlon = s.sport == FuelSport.triathlon;
+    // Einnahmen je Abschnitt: ab Abschnittsbeginn im Takt, nicht kurz vor Wechsel bzw. Ende.
+    final intakes = <(int, FuelSegment)>[];
+    for (final (index, segment) in segments.indexed) {
+      if (!segment.canEat) continue;
+      final gap = index == segments.length - 1 ? lastIntakeBeforeEnd : lastIntakeBeforeTransition;
+      for (var t = segment.start + interval; t <= segment.end - gap; t += interval) {
+        intakes.add((t, segment));
+      }
+    }
+    final lateMinute = caffeine?.lateMinute;
+    final hasNeed = segments.any((x) => x.carbsPerHour > 0 || x.fluidPerHour > 0 || x.sodiumPerHour > 0);
+    if (intakes.isEmpty || (!hasNeed && (caffeine?.late ?? 0) <= 0)) return none;
+
+    final drinks = [
+      for (final p in setup)
+        if (p.isDrink) p,
+    ];
+    final solids = [
       for (final p in setup)
         if (p.kind.isSolid && p.carbs > 0) p,
     ];
-    if (drink == null && solids.isEmpty && targets.carbsPerHour > 0) solids = [FuelProducts.classicGel];
     final salt = setup.firstWhereOrNull((p) => p.kind == FuelProductKind.electrolyte && p.sodium > 0);
+    final needsCarbs = segments.any((x) => x.carbsPerHour > 0);
+    if (drinks.isEmpty && solids.isEmpty && needsCarbs) solids.add(FuelProducts.classicGel);
+    final caffeineFree = solids.where((p) => p.caffeine <= 0).toList();
 
-    final carbsPerIntake = targets.carbsPerHour * fraction;
-    final fluidPerIntake = targets.fluidPerHour * fraction;
-    final sodiumPerIntake = targets.sodiumPerHour * fraction;
-    var wantCarbs = 0.0;
-    var wantSodium = 0.0;
-    var gotCarbs = 0.0;
-    var gotSodium = 0.0;
+    var wantCarbs = 0.0, gotCarbs = 0.0;
+    var wantFluid = 0.0, gotFluid = 0.0;
+    var wantSodium = 0.0, gotSodium = 0.0;
     var rotation = 0;
-    final lateCaffeineMinute = caffeine?.lateMinute == null
-        ? null
-        : times.firstWhereOrNull((t) => t >= caffeine!.lateMinute!) ?? times.last;
+    var bottle = 0;
+    var bottleUsed = 0.0;
+    // Koffein unterwegs: nur das Budget des letzten Drittels, nie darüber (Spezifikation 4.4).
+    var caffeineLeft = caffeine?.late ?? 0.0;
+    var caffeineSpent = caffeine?.before ?? 0.0;
+    final ceiling = FuelRules.caffeineCeiling(s);
+    final caffeineProducts = setup.any((p) => p.caffeine > 0);
+    var substitutedCaffeine = false;
+    var lateDone = false;
     final steps = <FuelStep>[];
-    for (final t in times) {
-      wantCarbs += carbsPerIntake;
-      wantSodium += sodiumPerIntake;
+    for (final (t, segment) in intakes) {
+      final fraction = interval / 60;
+      wantCarbs += segment.carbsPerHour * fraction;
+      wantFluid += segment.fluidPerHour * fraction;
+      wantSodium += segment.sodiumPerHour * fraction;
       final portions = <FuelProduct, double>{};
+      final lateWindow = lateMinute != null && t >= lateMinute;
+
+      // Höchstens 20 % über dem Rest-Budget (ein Gel hat feste Dosis), nie über die Grenze des ganzen Plans.
+      bool caffeineAllowed(FuelProduct product) =>
+          product.caffeine <= 0 ||
+          (lateWindow &&
+              caffeineLeft + 1e-6 >= caffeineProductTolerance * product.caffeine &&
+              caffeineSpent + product.caffeine <= ceiling + 1e-6);
+      void take(FuelProduct product, double servings) {
+        portions[product] = (portions[product] ?? 0) + servings;
+        gotCarbs += product.carbs * servings;
+        gotSodium += product.sodium * servings;
+        caffeineLeft -= product.caffeine * servings;
+        caffeineSpent += product.caffeine * servings;
+      }
+
+      // 0. Im letzten Drittel zuerst das Koffein-Produkt, damit das Budget nicht hinter einem Getränk verschwindet.
+      if (lateWindow) {
+        final caffeineSolid = solids.firstWhereOrNull((p) => p.caffeine > 0 && caffeineAllowed(p));
+        if (caffeineSolid != null && wantCarbs - gotCarbs >= caffeineSolid.carbs / 2) take(caffeineSolid, 1);
+      }
+
+      // 1. Getränk: offene Flüssigkeit, so weit die Kohlenhydrate es zulassen (mit gewählten Gels/Riegeln höchstens
+      // die Hälfte der offenen Kohlenhydrate – Abwechslung statt nur Getränk); Flaschen im Wechsel.
       var drinkMl = 0.0;
-      if (drink != null && fluidPerIntake > 0) {
-        final open = math.max(0.0, wantCarbs - gotCarbs);
-        final byCarbs = drink.carbsPerMilliliter > 0 ? open / drink.carbsPerMilliliter : double.infinity;
-        drinkMl = _ml(math.min(fluidPerIntake, byCarbs));
-        if (drinkMl > 0) {
-          portions[drink] = drinkMl / drink.volumeMilliliters;
-          gotCarbs += drink.carbsPerMilliliter * drinkMl;
-          gotSodium += drink.sodiumPerMilliliter * drinkMl;
+      if (drinks.isNotEmpty && wantFluid - gotFluid > 0) {
+        var drink = drinks[bottle % drinks.length];
+        if (!caffeineAllowed(drink)) {
+          drink = drinks.firstWhereOrNull((d) => d.caffeine <= 0) ?? drink;
+        }
+        final openCarbs = math.max(0.0, wantCarbs - gotCarbs) * (solids.isEmpty ? 1 : drinkCarbShareWithSolids);
+        final byCarbs = drink.carbsPerMilliliter > 0 ? openCarbs / drink.carbsPerMilliliter : double.infinity;
+        drinkMl = _ml(math.min(wantFluid - gotFluid, byCarbs));
+        if (drinkMl > 0 && caffeineAllowed(drink)) {
+          take(drink, drinkMl / drink.volumeMilliliters);
+          gotFluid += drinkMl;
+          bottleUsed += drinkMl;
+          while (bottleUsed >= drink.volumeMilliliters - 1e-6) {
+            bottleUsed -= drink.volumeMilliliters;
+            bottle++;
+          }
+        } else {
+          drinkMl = 0;
         }
       }
-      var count = 0;
+
+      // 2. Gels, Riegel …: ganze Portionen über den Saldo, im Wechsel; Koffein nur im Budget.
+      var count = portions.keys.where((p) => p.kind.isSolid).length;
       while (solids.isNotEmpty && count < maxServingsPerIntake) {
-        final product = solids[rotation % solids.length];
+        // Im letzten Drittel zuerst das Koffein-Produkt (solange es ins Budget passt).
+        FuelProduct? product = lateWindow ? solids.firstWhereOrNull((p) => p.caffeine > 0 && caffeineAllowed(p)) : null;
+        for (var attempt = 0; product == null && attempt < solids.length; attempt++) {
+          final candidate = solids[(rotation + attempt) % solids.length];
+          if (caffeineAllowed(candidate)) {
+            product = candidate;
+            rotation += attempt;
+            break;
+          }
+        }
+        if (product == null) {
+          // Nur Koffein-Produkte gewählt, Budget erschöpft: ein Gel ohne Koffein statt dessen.
+          product = caffeineFree.firstOrNull ?? FuelProducts.classicGel;
+          substitutedCaffeine = true;
+        }
         if (wantCarbs - gotCarbs < product.carbs / 2) break;
-        portions[product] = (portions[product] ?? 0) + 1;
-        gotCarbs += product.carbs;
-        gotSodium += product.sodium;
+        take(product, 1);
         rotation++;
         count++;
       }
+      if (solids.any((p) => p.caffeine > 0 && !caffeineAllowed(p)) && count > 0) substitutedCaffeine = true;
+
+      // 3. Salztabletten über den Natrium-Saldo.
       if (salt != null) {
         var tablets = 0;
         while (tablets < maxServingsPerIntake && wantSodium - gotSodium >= salt.sodium / 2) {
-          portions[salt] = (portions[salt] ?? 0) + 1;
-          gotSodium += salt.sodium;
+          take(salt, 1);
           tablets++;
         }
       }
-      final waterMl = _ml(math.max(0.0, fluidPerIntake - drinkMl));
+
+      // 4. Wasser: was an Flüssigkeit offen ist (laufender Saldo, auf 50 ml).
+      final waterMl = _ml(math.max(0.0, wantFluid - gotFluid));
+      gotFluid += waterMl;
+
+      // Kein passendes Koffein-Produkt: einmal zu Beginn des letzten Drittels als eigener Schritt.
+      var separateCaffeine = 0.0;
+      final productFits = setup.any((p) => p.caffeine > 0 && caffeineAllowed(p));
+      if (lateWindow && !lateDone && !productFits && caffeineLeft > 0 && portions.keys.every((p) => p.caffeine <= 0)) {
+        separateCaffeine = caffeineLeft;
+        caffeineSpent += caffeineLeft;
+        caffeineLeft = 0;
+      }
+      if (lateWindow) lateDone = true;
+
       final list = [for (final MapEntry(:key, :value) in portions.entries) FuelPortion(product: key, servings: value)];
-      final lateCaffeine = t == lateCaffeineMinute ? caffeine!.late : 0.0;
-      final amounts = FuelAmounts.sum(list.map((p) => p.amounts)) + FuelAmounts(fluid: waterMl, caffeine: lateCaffeine);
+      // Nichts zu tun (z. B. Flüssigkeit noch unter 50 ml offen): keine Zeile im Zeitstrahl.
+      if (list.isEmpty && waterMl == 0 && separateCaffeine == 0) continue;
+      final amounts =
+          FuelAmounts.sum(list.map((p) => p.amounts)) + FuelAmounts(fluid: waterMl, caffeine: separateCaffeine);
       steps.add(
         FuelStep(
           phase: FuelPhase.intra,
           minute: t,
-          title: list.isEmpty && waterMl == 0 ? (lateCaffeine > 0 ? 'Koffein' : 'Nichts nötig') : 'Einnahme',
-          detail: lateCaffeine > 0 ? 'Koffein fürs letzte Drittel (z. B. Koffein-Gel oder Cola).' : '',
+          title: list.isEmpty && waterMl == 0 ? 'Koffein' : 'Einnahme',
+          detail: [
+            if (s.sport == FuelSport.swim) 'Am Beckenrand.',
+            if (separateCaffeine > 0) 'Koffein fürs letzte Drittel (z. B. Koffein-Gel oder Cola).',
+          ].join(' '),
           amounts: amounts,
           portions: list,
           water: waterMl,
+          segment: triathlon ? segment.sport : null,
         ),
       );
     }
-    final n = times.length;
-    final target = FuelAmounts(
-      carbs: carbsPerIntake * n,
-      fluid: fluidPerIntake * n,
-      sodium: sodiumPerIntake * n,
-      caffeine: caffeine?.late ?? 0,
-    );
-    return (steps: steps, target: target);
+    final target = FuelAmounts(carbs: wantCarbs, fluid: wantFluid, sodium: wantSodium, caffeine: caffeine?.late ?? 0);
+    return (steps: steps, target: target, substitutedCaffeine: substitutedCaffeine && caffeineProducts);
   }
 
   // 5
@@ -556,30 +690,43 @@ abstract final class FuelPlanner {
     return [for (final MapEntry(:key, :value) in servings.entries) FuelPackItem(product: key, servings: value)];
   }
 
-  static List<FuelNote> _notes(FuelPlan plan, List<FuelProduct> setup) {
+  /// Nur, was du wissen musst: Warnungen und wenige, situative Hinweise. Was zu den Zielwerten gehört (nicht mehr
+  /// trinken als geschwitzt, Natrium je Liter), zeigt die App direkt bei den Ringen.
+  static List<FuelNote> _notes(
+    FuelPlan plan,
+    List<FuelProduct> setup, {
+    required bool substitutedCaffeine,
+    required int missingProducts,
+  }) {
     final s = plan.scenario;
     final t = plan.targets;
     final notes = <FuelNote>[];
-    if (s.minutes < 45) notes.add(const FuelNote('Unter 45 Minuten: Wasser nach Durst genügt.'));
-    if (FuelRules.mouthRinse(s)) {
-      notes.add(const FuelNote('Unter einer Stunde reicht auch eine Mundspülung mit Sportgetränk.'));
-    }
-    if (FuelRules.carbsOptional(s)) {
-      notes.add(const FuelNote('Locker unter 90 Minuten: Kohlenhydrate optional (bis 30 g/h).'));
-    }
-    if (s.sport == FuelSport.strength && t.carbsPerHour == 0) {
-      notes.add(const FuelNote('Krafttraining: Mahlzeit davor und danach genügen.'));
-    }
-    if (s.sport == FuelSport.run && t.carbsPerHour >= 60) {
-      notes.add(const FuelNote('Laufen: lieber kleine Portionen öfter, Gels mit Wasser nachspülen.'));
-    }
-    if (s.sport == FuelSport.swim && plan.intra.isNotEmpty) {
-      notes.add(const FuelNote('Schwimmen: Flasche und Gels am Beckenrand bereitlegen.'));
-    }
-    if (FuelRules.needsGutTraining(s, t.carbsPerHour)) {
+    if (missingProducts > 0) {
       notes.add(
-        const FuelNote(
-          'Gut-Training: 4–6 Wochen im Training üben, je Woche etwa 10 g/h mehr, mit den Produkten vom Wettkampf.',
+        FuelNote(
+          missingProducts == 1
+              ? 'Ein gewähltes Produkt gibt es nicht mehr – im Szenario neu wählen.'
+              : '$missingProducts gewählte Produkte gibt es nicht mehr – im Szenario neu wählen.',
+          FuelNoteKind.warning,
+        ),
+      );
+    }
+    final caffeine = plan.all.caffeine;
+    if (caffeine > FuelRules.caffeineCeiling(s) + 1) {
+      notes.add(
+        FuelNote(
+          'Koffein insgesamt ${caffeine.round()} mg – mehr als 6 mg/kg bzw. 400 mg. Koffeinhaltiges Getränk '
+          'tauschen.',
+          FuelNoteKind.warning,
+        ),
+      );
+    }
+    if (substitutedCaffeine) {
+      notes.add(
+        FuelNote(
+          s.caffeine
+              ? 'Koffein-Gels nur im letzten Drittel und bis zur Koffein-Grenze eingeplant, sonst Gels ohne Koffein.'
+              : 'Koffein ist aus: statt Koffein-Gels Gels ohne Koffein eingeplant.',
         ),
       );
     }
@@ -595,17 +742,6 @@ abstract final class FuelPlanner {
           FuelNoteKind.warning,
         ),
       );
-    }
-    if (t.fluidPerHour > 0) {
-      notes.add(
-        FuelNote(
-          'Nicht mehr trinken als du schwitzt (≈ ${(t.sweatRate * 1000).round()} ml/h) – sonst droht eine '
-          'Hyponatriämie.',
-        ),
-      );
-    }
-    if (t.sodiumPerLiterDrink case final perLiter? when t.sodiumPerHour > 0) {
-      notes.add(FuelNote('Natrium: ≈ $perLiter mg je Liter Getränk.'));
     }
     final sodium = plan.sodiumCoverage;
     if (sodium != null && sodium < 0.7) {
@@ -631,27 +767,38 @@ abstract final class FuelPlanner {
       if (mix != null && mix.concentration > FuelMix.highConcentration) {
         notes.add(
           FuelNote(
-            '${product.name}: ${GermanFormat.decimal(mix.concentration)} % Kohlenhydrate – der Magen leert sich '
-            'langsamer. Mit Wasser nachspülen und im Training testen.',
+            '${product.name}: ${GermanFormat.decimal(mix.concentration)} % Kohlenhydrate – über den 5–10 % der ACSM '
+            'leert sich der Magen langsamer. Mit Wasser nachspülen und im Training testen.',
             FuelNoteKind.warning,
           ),
         );
       }
-    }
-    final caffeine = plan.all.caffeine;
-    if (caffeine > FuelRules.caffeineMaxPerKg * s.weightKilograms + 1) {
-      notes.add(
-        FuelNote(
-          'Koffein insgesamt ${caffeine.round()} mg – mehr als 6 mg/kg. Weniger Koffein-Gels einplanen.',
-          FuelNoteKind.warning,
-        ),
-      );
     }
     if (FuelRules.caffeineHurtsSleep(s)) {
       notes.add(
         const FuelNote(
           'Start am Nachmittag: Koffein wirkt ~5 h nach und kann den Schlaf stören.',
           FuelNoteKind.warning,
+        ),
+      );
+    }
+    if (s.minutes < 45) notes.add(const FuelNote('Unter 45 Minuten: Wasser nach Durst genügt.'));
+    if (FuelRules.mouthRinse(s)) {
+      notes.add(const FuelNote('Unter einer Stunde reicht auch eine Mundspülung mit Sportgetränk.'));
+    }
+    if (FuelRules.carbsOptional(s)) {
+      notes.add(const FuelNote('Locker unter 90 Minuten: Kohlenhydrate sind optional.'));
+    }
+    if (s.sport == FuelSport.strength && t.carbsPerHour == 0) {
+      notes.add(const FuelNote('Krafttraining: Mahlzeit davor und danach genügen.'));
+    }
+    if (s.sport == FuelSport.triathlon) {
+      notes.add(const FuelNote('Im Wasser gibt es nichts – davor ein Gel, ab dem Rad essen und trinken.'));
+    }
+    if (FuelRules.needsGutTraining(s)) {
+      notes.add(
+        const FuelNote(
+          'Gut-Training: 4–6 Wochen im Training üben, je Woche etwa 10 g/h mehr, mit den Produkten vom Wettkampf.',
         ),
       );
     }

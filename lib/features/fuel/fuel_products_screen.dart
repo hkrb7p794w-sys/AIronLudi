@@ -27,7 +27,7 @@ class FuelProductsScreen extends ConsumerWidget {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.only(bottom: 40),
+        padding: const EdgeInsets.only(bottom: 120),
         children: [
           FormSection(
             header: 'Eigene',
@@ -190,7 +190,26 @@ class _FuelProductEditorState extends ConsumerState<FuelProductEditor> {
   Future<void> _delete() async {
     final id = widget.product?.id;
     if (id == null) return;
-    await ref.read(fuelStoreProvider).deleteProduct(id);
+    final store = ref.read(fuelStoreProvider);
+    final used = store.plansUsing(id);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Produkt löschen?'),
+        content: Text(
+          used == 0
+              ? 'Es wird in keinem gespeicherten Plan genutzt.'
+              : 'Es steckt in $used gespeicherten ${used == 1 ? 'Plan' : 'Plänen'} – dort meldet der Plan es dann als '
+                    'fehlend, bis du ein anderes wählst.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Abbrechen')),
+          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Löschen')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await store.deleteProduct(id);
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -210,7 +229,7 @@ class _FuelProductEditorState extends ConsumerState<FuelProductEditor> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.only(bottom: 40),
+        padding: const EdgeInsets.only(bottom: 120),
         children: [
           FormSection(
             children: [

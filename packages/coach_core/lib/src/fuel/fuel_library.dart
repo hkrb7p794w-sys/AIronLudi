@@ -15,6 +15,7 @@ final class SavedFuelPlan {
     required this.productIDs,
     required this.savedAt,
     this.loggedAt,
+    this.loggedMealIDs = const [],
   });
 
   final String id;
@@ -25,14 +26,26 @@ final class SavedFuelPlan {
   /// Zuletzt ins Ernährungstagebuch übernommen.
   final DateTime? loggedAt;
 
-  SavedFuelPlan copyWith({FuelScenario? scenario, List<String>? productIDs, DateTime? savedAt, DateTime? loggedAt}) =>
-      SavedFuelPlan(
-        id: id,
-        scenario: scenario ?? this.scenario,
-        productIDs: productIDs ?? this.productIDs,
-        savedAt: savedAt ?? this.savedAt,
-        loggedAt: loggedAt ?? this.loggedAt,
-      );
+  /// Die dabei angelegten Mahlzeiten (erneut übernehmen ersetzt sie, „Rückgängig“ entfernt sie).
+  final List<String> loggedMealIDs;
+
+  /// Nicht mehr im Tagebuch.
+  SavedFuelPlan unlogged() => SavedFuelPlan(id: id, scenario: scenario, productIDs: productIDs, savedAt: savedAt);
+
+  SavedFuelPlan copyWith({
+    FuelScenario? scenario,
+    List<String>? productIDs,
+    DateTime? savedAt,
+    DateTime? loggedAt,
+    List<String>? loggedMealIDs,
+  }) => SavedFuelPlan(
+    id: id,
+    scenario: scenario ?? this.scenario,
+    productIDs: productIDs ?? this.productIDs,
+    savedAt: savedAt ?? this.savedAt,
+    loggedAt: loggedAt ?? this.loggedAt,
+    loggedMealIDs: loggedMealIDs ?? this.loggedMealIDs,
+  );
 
   Map<String, Object?> toJson() => {
     'id': id,
@@ -40,6 +53,7 @@ final class SavedFuelPlan {
     'products': productIDs,
     'savedAt': swiftDateToJson(savedAt),
     if (loggedAt case final logged?) 'loggedAt': swiftDateToJson(logged),
+    if (loggedMealIDs.isNotEmpty) 'loggedMeals': loggedMealIDs,
   };
 
   static SavedFuelPlan? fromJson(Object? json) {
@@ -59,6 +73,11 @@ final class SavedFuelPlan {
       ],
       savedAt: saved,
       loggedAt: swiftDateFromJson(json['loggedAt']),
+      loggedMealIDs: [
+        if (json['loggedMeals'] case final List<Object?> ids)
+          for (final item in ids)
+            if (item is String) item,
+      ],
     );
   }
 }

@@ -73,7 +73,9 @@ final class NutritionController extends ChangeNotifier {
   CalendarDay get day => selectedDay ?? today;
 
   /// Zuletzt per Schnell-Leiste eingetragen – für „Rückgängig“.
-  ({StoredMeal record, String label})? lastLogged;
+  ///
+  /// [replaced]: Platzhalter des Fuel Planners, die diese Mahlzeit ersetzt hat (kommen bei „Rückgängig“ zurück).
+  ({StoredMeal record, String label, List<StoredMeal> replaced})? lastLogged;
   NutritionTargets? targets;
   NutrientValues totals = NutrientValues();
 
@@ -379,14 +381,21 @@ final class NutritionController extends ChangeNotifier {
     );
     await _meals.save(record);
     await _meals.rememberFoods(fresh, at: at);
-    lastLogged = (record: record, label: label ?? '$title eingetragen');
+    final replaced = await _meals.replaceFuelPlaceholders(record);
+    lastLogged = (record: record, label: _replacedLabel(label ?? '$title eingetragen', replaced), replaced: replaced);
     _changed();
   }
 
+  static String _replacedLabel(String label, List<StoredMeal> replaced) =>
+      replaced.isEmpty ? label : '$label · Plan-Platzhalter ersetzt';
+
   Future<void> undoLastLog() async {
-    final record = lastLogged?.record;
-    if (record == null) return;
-    await _meals.delete(record.id);
+    final last = lastLogged;
+    if (last == null) return;
+    await _meals.delete(last.record.id);
+    for (final placeholder in last.replaced) {
+      await _meals.save(placeholder);
+    }
     lastLogged = null;
     _changed();
   }
@@ -531,25 +540,32 @@ final class NutritionController extends ChangeNotifier {
         ..title = title
         ..category = draft.category
         ..items = items;
+      // Eintrag aus dem Fuel Planner bearbeitet: gehört jetzt dir – erneutes Übernehmen des Plans lässt ihn stehen.
+      if (FuelDiary.marker(record.hint) != null) record.hint = FuelDiary.editedHint;
       if (draft.date case final date?) {
         record
           ..createdAt = date
           ..day = CalendarDay.fromDate(date);
       }
       await _meals.save(record);
+      // Platzhalter im Editor durch echte Lebensmittel ersetzt oder verschoben: andere Platzhalter dürfen weichen.
+      await _meals.replaceFuelPlaceholders(record);
     } else {
       // Ohne eigenen Zeitpunkt: gewählter Tag zur aktuellen Uhrzeit.
       final day = draft.date == null ? this.day : CalendarDay.fromDate(draft.date!);
-      await _meals.save(
-        StoredMeal(
-          day: day,
-          createdAt: draft.date ?? timestamp(),
-          category: draft.category,
-          title: title,
-          hint: draft.hint,
-          items: items,
-        ),
+      final record = StoredMeal(
+        day: day,
+        createdAt: draft.date ?? timestamp(),
+        category: draft.category,
+        title: title,
+        hint: draft.hint,
+        items: items,
       );
+      await _meals.save(record);
+      final replaced = await _meals.replaceFuelPlaceholders(record);
+      if (replaced.isNotEmpty) {
+        lastLogged = (record: record, label: _replacedLabel('$title eingetragen', replaced), replaced: replaced);
+      }
     }
     await _meals.rememberFoods(items, at: _clock());
     this.draft = null;

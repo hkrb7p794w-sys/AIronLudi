@@ -111,6 +111,37 @@ final class MealRepository {
 
   Future<void> delete(String id) => (_db.delete(_db.mealRecords)..where((t) => t.id.equals(id))).go();
 
+  Future<List<StoredMeal>> byIDs(Iterable<String> ids) async {
+    final list = ids.toList();
+    if (list.isEmpty) return const [];
+    final query = _db.select(_db.mealRecords)..where((t) => t.id.isIn(list));
+    return [for (final row in await query.get()) ?_meal(row)];
+  }
+
+  /// Echte Mahlzeit eingetragen: Platzhalter des Fuel Planners am selben Tag, die sie ersetzt (Zeitfenster und
+  /// Energie nach `FuelDiary.replaces`), werden gelöscht und zurückgegeben (für „Rückgängig“). Einträge des Plans
+  /// selbst und Wasser ersetzen nichts.
+  Future<List<StoredMeal>> replaceFuelPlaceholders(StoredMeal meal) async {
+    if (meal.isWater || FuelDiary.marker(meal.hint) != null) return const [];
+    final kilocalories = NutritionSummary.totals(meal.items)[Nutrient.kcal] ?? 0;
+    final replaced = <StoredMeal>[];
+    for (final other in await day(meal.day)) {
+      if (other.id == meal.id || !FuelDiary.isPlaceholder(hint: other.hint, items: other.items)) continue;
+      final placeholder = NutritionSummary.totals(other.items)[Nutrient.kcal] ?? 0;
+      if (!FuelDiary.replaces(
+        placeholderAt: other.createdAt,
+        placeholderKilocalories: placeholder,
+        mealAt: meal.createdAt,
+        mealKilocalories: kilocalories,
+      )) {
+        continue;
+      }
+      await delete(other.id);
+      replaced.add(other);
+    }
+    return replaced;
+  }
+
   // Eigene Lebensmittel
 
   /// Schlüssel wie in Swift: Barcode, sonst der Name in Kleinbuchstaben.
