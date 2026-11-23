@@ -194,6 +194,58 @@ Dosis = mg/kg (1–6, Standard 3) × Gewicht, höchstens 6 mg/kg und 400 mg. Bis
 - **Veraltet:** Ein Plan zu einer Einheit merkt, wenn sich Sportart, Dauer, Strecke, Intensität, Wettkampf oder Tag
   geändert haben, und bietet „anpassen“ an (eigene Einstellungen bleiben). Gelöschte Produkte werden gemeldet.
 
+## 10. Wie man es zu sich nimmt – Sportnahrung oder Alltag
+
+### 10.1 Lebensmittel (BLS 4.0)
+
+Herkömmliche Lebensmittel mit Nährwerten je 100 g aus dem **Bundeslebensmittelschlüssel 4.0** (Max Rubner-Institut,
+in der App enthalten): Toastbrot, Brötchen, Honig, Konfitüre, Haferflocken, Reis, Nudeln, Salzkartoffeln, Reiswaffeln,
+Zwieback, Milchreis, Banane, Apfel- und Orangensaft, Datteln, Rosinen, Fruchtgummi, Salzbrezeln, Cola, Apfelschorle,
+Salz, Milch, Joghurt, Skyr, Magerquark, Ei, Hähnchenbrust, Thunfisch. Jede Zahl ist per Test gegen `assets/bls.tsv`
+geprüft (Code je Lebensmittel). Der **Fruktose-Anteil** fehlt im BLS-Auszug und ist geschätzt (Honig 50 %, Apfelsaft
+und -schorle 55 %, Datteln 45 %, Konfitüre 45 %, Banane 30 %, Fruchtgummi 20 %, Cola 50 %, Stärkeprodukte 0 %).
+Cola: 10 mg Koffein je 100 ml (übliche Angabe), zählt zum Koffein-Budget.
+
+### 10.2 Vorschläge für vorher und danach
+
+Zu jedem Zeitpunkt (Mahlzeit 3–4 h, Snack 1–2 h, schnelle Kohlenhydrate 15–30 min, Regeneration, schnelles Auffüllen)
+gibt es Vorlagen (z. B. „Toast mit Honig, Banane und Saft“, „Haferbrei mit Banane und Honig“, „Nudeln mit Hähnchen“).
+Eine Vorlage wird so skaliert:
+
+1. Mindestportionen; zuerst die Protein-Teile bis zum Protein-Ziel (halbe Portion Toleranz).
+2. Dann schrittweise ein Kohlenhydrat-Teil, solange die Abweichung sinkt – jeweils der bisher am wenigsten
+   ausgeschöpfte (gleichmäßig statt „4 EL Honig“). Höchstmengen je Teil halten es realistisch.
+3. Drei Vorschläge, beste zuerst (Abweichung Kohlenhydrate + ½ × fehlendes Protein); „Andere Idee“ wechselt.
+
+**Mit „nur was ich zu Hause habe“** fallen fehlende Zutaten weg; zusätzlich gibt es „Aus dem, was du da hast“ (alle
+vorhandenen passenden Lebensmittel kombiniert). Reicht es nicht, steht „deckt 80 %“ da – annähernd, aber ehrlich.
+Vorschläge unter 50 % erscheinen nur, wenn es nichts Besseres gibt.
+
+### 10.3 Unterwegs: Alltag statt Sportnahrung, Reihenfolge, Tipps
+
+- **Umschalter Sportnahrung | Alltag.** Alltag nutzt Snacks aus Lebensmitteln, je Sportart vorausgewählt:
+  Laufen Apfelschorle mit Salz, Fruchtgummi, Datteln, Honig; Rad zusätzlich Banane, Toast mit Konfitüre,
+  Salzbrezeln; Schwimmen Schorle und Banane. Mit „nur zu Hause“ nur Vorhandenes (Salz hat jeder).
+  Apfelschorle mit einer Prise Salz (1 g ≈ 380 mg Natrium) liegt mit ≈ 6 % Kohlenhydraten im ACSM-Bereich 5–10 %.
+- **Reihenfolge:** Vorrat zuerst (Abschnitt 11). Danach feste Kost (Riegel, Brot, Banane, Brezeln) in der ersten
+  Hälfte eines Abschnitts, Gels und Kleines danach; beim Laufen immer zuerst Leichtes (Erschütterung, Pfeiffer 2012).
+- **So nimmst du es:** Tipp je Sportart und je Produkt (Gel mit 150–250 ml Wasser, nicht mit Kohlenhydrat-Getränk;
+  Getränk alle 10–15 min schluckweise; Riegel in ruhigen Phasen …) und je Phase (vorher ballaststoff- und fettarm,
+  nichts Neues; danach in der ersten Stunde beginnen, Trinken über 2–4 h mit etwas Salz).
+- Im Tagebuch erscheinen Alltags-Snacks als einzelne BLS-Lebensmittel (z. B. Toastbrot und Konfitüre).
+
+## 11. Vorrat
+
+- Je Produkt Anzahl (Portionen bzw. Flaschen) und Mindesthaltbarkeit, je Benutzer unter `coach.fuelPlanner`.
+- **Vorrat zuerst aufbrauchen** (Standard an): Vorrätige, nicht abgelaufene Produkte kommen automatisch in den Plan,
+  vor anderen gewählten; bald ablaufende zuerst. Ist der Vorrat leer, geht es mit den übrigen gewählten Produkten
+  weiter, sonst mit demselben Produkt („kaufen“).
+- **Packliste:** „4 aus dem Vorrat, 2 kaufen“ bzw. „alles aus dem Vorrat“; Hinweis, was fehlt, und was innerhalb von
+  30 Tagen abläuft.
+- **Abbuchen beim Übernehmen** ins Tagebuch (nur unterwegs mit Sportnahrung); erneutes Übernehmen bucht erst das
+  Frühere zurück, „Rückgängig“ stellt den Vorrat wieder her (Mindesthaltbarkeit bleibt erhalten).
+- Abgelaufenes wird nicht eingeplant und im Vorrat rot markiert.
+
 ## 9. Was belegt ist und was geschätzt
 
 | Wert | Status |
@@ -219,3 +271,9 @@ Dosis = mg/kg (1–6, Standard 3) × Gewicht, höchstens 6 mg/kg und 400 mg. Bis
 | Platzhalter-Regel (±90 min, ≥ 100 kcal bzw. 30 %) | **eigene Festlegung** (App-Verhalten, keine Physiologie) |
 | Getränk höchstens 50 % der Kohlenhydrate, wenn Gels/Riegel gewählt sind | **eigene Festlegung** (Abwechslung; Studien nutzen beide Formen) |
 | Luftfeuchte-Stufen (70 % bei ≥ 20 °C, 40 %) | **eigene Festlegung** |
+| Nährwerte der Lebensmittel | **belegt** (BLS 4.0, per Test geprüft) |
+| Fruktose-Anteile der Lebensmittel, Koffein in Cola | **eigene Schätzung** aus üblicher Zuckerzusammensetzung bzw. Etikett |
+| Portionsgrößen und Höchstmengen der Vorlagen | **eigene Festlegung** (übliche Portionen) |
+| Feste Kost zuerst, Gels später; beim Laufen Leichtes | **Praxisregel** (Verträglichkeit), keine Studiengrenze |
+| Gel mit Wasser statt mit Kohlenhydrat-Getränk | **abgeleitet** aus der ACSM-Konzentration 5–10 % |
+| Natrium-Ring bis 150 % grün | **eigene Festlegung** (Überdeckung bis 1500 mg/h unkritisch, Unterdeckung nicht) |

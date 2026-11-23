@@ -81,7 +81,13 @@ final class FuelStore extends ChangeNotifier {
   }
 
   /// Speichert das Szenario mit den Produkten (neu oder unter [id]) und gibt die ID zurück.
-  Future<String> savePlan(FuelScenario scenario, List<String> productIDs, {String? id}) async {
+  Future<String> savePlan(
+    FuelScenario scenario,
+    List<String> productIDs, {
+    String? id,
+    bool everyday = false,
+    Map<String, String> mealChoices = const {},
+  }) async {
     final existing = id == null ? null : plan(id);
     final saved = SavedFuelPlan(
       id: id ?? newUuid(),
@@ -90,6 +96,9 @@ final class FuelStore extends ChangeNotifier {
       savedAt: _now(),
       loggedAt: existing?.loggedAt,
       loggedMealIDs: existing?.loggedMealIDs ?? const [],
+      everyday: everyday,
+      mealChoices: mealChoices,
+      consumedStock: existing?.consumedStock ?? const {},
     );
     _library.savePlan(saved);
     await _persist();
@@ -101,19 +110,56 @@ final class FuelStore extends ChangeNotifier {
     return _persist();
   }
 
-  /// Ins Tagebuch übernommen, mit den angelegten Mahlzeiten.
-  Future<void> markLogged(String id, List<String> mealIDs) async {
+  /// Ins Tagebuch übernommen, mit den angelegten Mahlzeiten und dem aus dem Vorrat Genommenen. Was beim letzten
+  /// Übernehmen abgebucht wurde, wird vorher zurückgebucht (sonst zählte es doppelt).
+  Future<void> markLogged(String id, List<String> mealIDs, {Map<String, double> consumed = const {}}) async {
     final existing = plan(id);
     if (existing == null) return;
-    _library.savePlan(existing.copyWith(loggedAt: _now(), loggedMealIDs: mealIDs));
+    _library
+      ..consume({for (final MapEntry(:key, :value) in existing.consumedStock.entries) key: -value})
+      ..consume(consumed)
+      ..savePlan(existing.copyWith(loggedAt: _now(), loggedMealIDs: mealIDs, consumedStock: consumed));
     await _persist();
   }
 
-  /// „Rückgängig“: früheren Stand wiederherstellen (vorher nicht im Tagebuch bzw. mit den alten Einträgen).
+  /// „Rückgängig“: früheren Stand wiederherstellen (vorher nicht im Tagebuch bzw. mit den alten Einträgen); der Vorrat
+  /// bekommt das zuletzt Abgebuchte zurück und verliert wieder, was der frühere Stand abgebucht hatte.
   Future<void> restoreLogged(SavedFuelPlan previous) async {
-    if (plan(previous.id) == null) return;
-    _library.savePlan(previous);
+    final current = plan(previous.id);
+    if (current == null) return;
+    _library
+      ..consume({for (final MapEntry(:key, :value) in current.consumedStock.entries) key: -value})
+      ..consume(previous.consumedStock)
+      ..savePlan(previous);
     await _persist();
+  }
+
+  // Vorrat
+
+  Map<String, FuelStock> get stock => Map.unmodifiable(_library.stock);
+
+  Map<String, double> usableStock(CalendarDay day) => _library.usableStock(day);
+  Map<String, CalendarDay> bestBefore(CalendarDay day) => _library.bestBefore(day);
+  List<FuelProduct> expired(CalendarDay day) => _library.expired(day);
+
+  Future<void> setStock(String productID, FuelStock? value) {
+    _library.setStock(productID, value);
+    return _persist();
+  }
+
+  /// Produkte für einen Plan: die gewählten und – mit „Vorrat zuerst“ – alles Vorrätige, das unterwegs passt.
+  List<FuelProduct> setupWithStock(List<String> ids, CalendarDay day) {
+    final chosen = resolve(ids);
+    if (!profile.useStockFirst) return chosen;
+    final known = {for (final product in chosen) product.id};
+    return [
+      ...chosen,
+      for (final id in usableStock(day).keys)
+        if (!known.contains(id))
+          if (product(id) case final product?
+              when product.isDrink || product.kind.isSolid || product.kind == FuelProductKind.electrolyte)
+            product,
+    ];
   }
 
   /// Wie viele gespeicherte Pläne ein Produkt nutzen (Hinweis beim Löschen).

@@ -28,10 +28,12 @@ abstract final class FuelChartColors {
   static bool _dark(BuildContext context) => Theme.of(context).brightness == Brightness.dark;
 }
 
-/// Ampel einer Deckung: 85–115 % grün, 60–130 % orange, sonst rot; ohne Soll grau.
-KpiStatus fuelCoverageStatus(double? coverage) => switch (coverage) {
+/// Ampel einer Deckung: 85–115 % grün, 60–130 % orange, sonst rot; ohne Soll grau. [generousAbove]: mehr ist bis
+/// 150 % unbedenklich (Natrium), darüber orange.
+KpiStatus fuelCoverageStatus(double? coverage, {bool generousAbove = false}) => switch (coverage) {
   null => KpiStatus.unknown,
   >= 0.85 && <= 1.15 => KpiStatus.good,
+  final value when generousAbove && value > 1.15 => value <= 1.5 ? KpiStatus.good : KpiStatus.moderate,
   >= 0.6 && <= 1.3 => KpiStatus.moderate,
   _ => KpiStatus.critical,
 };
@@ -44,6 +46,7 @@ class FuelTargetRing extends StatelessWidget {
     required this.unit,
     required this.label,
     required this.coverage,
+    this.generousAbove = false,
   });
 
   final String value;
@@ -51,9 +54,12 @@ class FuelTargetRing extends StatelessWidget {
   final String label;
   final double? coverage;
 
+  /// Mehr ist unbedenklich (Natrium bis 150 %).
+  final bool generousAbove;
+
   @override
   Widget build(BuildContext context) {
-    final status = fuelCoverageStatus(coverage);
+    final status = fuelCoverageStatus(coverage, generousAbove: generousAbove);
     final percent = coverage == null ? '–' : '${(coverage! * 100).round()} %';
     return Semantics(
       label: '$label: $value $unit, gedeckt $percent',

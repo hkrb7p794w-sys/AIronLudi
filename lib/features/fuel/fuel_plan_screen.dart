@@ -28,10 +28,34 @@ final class FuelPlanLink {
 /// Ein Verpflegungsplan: Zielwerte als Ringe, Kreisdiagramme, Zeitstrahl je Phase, Packliste, Hinweise und
 /// „Ins Tagebuch“. Der Plan wird bei jeder Änderung neu gerechnet (Regeln aus `FuelPlanner`).
 class FuelPlanScreen extends ConsumerStatefulWidget {
-  const FuelPlanScreen({super.key, required this.scenario, required this.productIDs, this.planID, this.link});
+  const FuelPlanScreen({
+    super.key,
+    required this.scenario,
+    required this.productIDs,
+    this.planID,
+    this.link,
+    this.everyday = false,
+    this.mealChoices = const {},
+  });
+
+  /// Aus einem gespeicherten Plan (mit Alltag-Modus und gewählten Vorschlägen).
+  factory FuelPlanScreen.saved(SavedFuelPlan saved, {FuelPlanLink? link}) => FuelPlanScreen(
+    scenario: saved.scenario,
+    productIDs: saved.productIDs,
+    planID: saved.id,
+    link: link,
+    everyday: saved.everyday,
+    mealChoices: saved.mealChoices,
+  );
 
   final FuelScenario scenario;
   final List<String> productIDs;
+
+  /// Unterwegs mit Alltagslebensmitteln statt Sportnahrung.
+  final bool everyday;
+
+  /// Gewählter Vorschlag je Zeitpunkt (`phase:minute` → Vorlage).
+  final Map<String, String> mealChoices;
 
   /// Gespeicherter Plan (sonst noch nicht gespeichert).
   final String? planID;
@@ -47,6 +71,8 @@ class _FuelPlanScreenState extends ConsumerState<FuelPlanScreen> {
   late String? _planID = widget.planID;
   FuelPhase _phase = FuelPhase.intra;
   late bool _dirty = widget.planID == null;
+  late bool _everyday = widget.everyday;
+  late final Map<String, String> _mealChoices = {...widget.mealChoices};
 
   Future<void> _edit() async {
     final result = await Navigator.of(context).push<(FuelScenario, List<String>)>(
@@ -77,7 +103,9 @@ class _FuelPlanScreenState extends ConsumerState<FuelPlanScreen> {
       _dirty = false;
     });
     if (announce) _show('Plan gespeichert');
-    if (needsSave) await store.savePlan(_scenario, _productIDs, id: id);
+    if (needsSave) {
+      await store.savePlan(_scenario, _productIDs, id: id, everyday: _everyday, mealChoices: _mealChoices);
+    }
     return id;
   }
 
@@ -117,7 +145,13 @@ class _FuelPlanScreenState extends ConsumerState<FuelPlanScreen> {
       phases: phases,
       previousMealIDs: before?.loggedMealIDs ?? const [],
     );
-    await store.markLogged(id, [for (final meal in result.saved) meal.id]);
+    // Unterwegs mit Sportnahrung: was aus dem Vorrat kommt, wird abgebucht.
+    final consumed = <String, double>{
+      if (phases.contains(FuelPhase.intra) && !_everyday)
+        for (final item in plan.packing)
+          if (item.fromStock > 0) item.product.id: item.fromStock.toDouble(),
+    };
+    await store.markLogged(id, [for (final meal in result.saved) meal.id], consumed: consumed);
     if (!mounted) return;
     unawaited(HapticFeedback.mediumImpact());
     final where = day == CalendarDay.today() ? 'heute' : 'am ${GermanFormat.date(day)}';
@@ -128,7 +162,8 @@ class _FuelPlanScreenState extends ConsumerState<FuelPlanScreen> {
         SnackBar(
           content: Text(
             '$count ${count == 1 ? 'Eintrag' : 'Einträge'} $where im Tagebuch'
-            '${result.removed.isNotEmpty ? ' (bisherige ersetzt)' : ''}',
+            '${result.removed.isNotEmpty ? ' (bisherige ersetzt)' : ''}'
+            '${consumed.isEmpty ? '' : ' · ${consumed.values.fold(0.0, (a, b) => a + b).round()} aus dem Vorrat abgebucht'}',
           ),
           action: SnackBarAction(label: 'Rückgängig', onPressed: () => unawaited(_undo(meals, result, before))),
         ),
@@ -143,6 +178,26 @@ class _FuelPlanScreenState extends ConsumerState<FuelPlanScreen> {
     await store.restoreLogged(before ?? current.unlogged());
   }
 
+  /// Plan mit Sportnahrung (gewählt plus Vorrat) oder mit Alltagslebensmitteln.
+  FuelPlan _plan(FuelStore store) {
+    final day = _scenario.day ?? CalendarDay.today();
+    if (_everyday) {
+      final snacks = FuelSnacks.choose(_scenario.sport, home: store.profile.homeFilter);
+      return FuelPlanner.plan(_scenario, setup: [for (final snack in snacks) snack.product]);
+    }
+    final chosen = store.resolve(_productIDs);
+    final useStock = store.profile.useStockFirst;
+    return FuelPlanner.plan(
+      _scenario,
+      setup: store.setupWithStock(_productIDs, day),
+      missingProducts: _productIDs.length - chosen.length,
+      stock: useStock ? store.usableStock(day) : const {},
+      bestBefore: useStock ? store.bestBefore(day) : const {},
+    );
+  }
+
+  static String _choiceKey(FuelStep step) => '${step.phase.name}:${step.minute}';
+
   void _show(String text) => ScaffoldMessenger.of(context)
     ..removeCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(text)));
@@ -150,8 +205,7 @@ class _FuelPlanScreenState extends ConsumerState<FuelPlanScreen> {
   @override
   Widget build(BuildContext context) {
     final store = ref.watch(fuelStoreProvider);
-    final products = store.resolve(_productIDs);
-    final plan = FuelPlanner.plan(_scenario, setup: products, missingProducts: _productIDs.length - products.length);
+    final plan = _plan(store);
     final link = widget.link;
     final stale = link != null && !link.matches(_scenario);
     return Scaffold(
@@ -196,9 +250,23 @@ class _FuelPlanScreenState extends ConsumerState<FuelPlanScreen> {
             showSelectedIcon: false,
             onSelectionChanged: (value) => setState(() => _phase = value.first),
           ),
+          if (_phase == FuelPhase.intra) ...[
+            const SizedBox(height: LiquidSpacing.s),
+            SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment(value: false, label: Text('Sportnahrung'), icon: Icon(Icons.bolt)),
+                ButtonSegment(value: true, label: Text('Alltag'), icon: Icon(Icons.kitchen_outlined)),
+              ],
+              selected: {_everyday},
+              onSelectionChanged: (value) => setState(() {
+                _everyday = value.first;
+                _dirty = true;
+              }),
+            ),
+          ],
           const SizedBox(height: LiquidSpacing.m),
           LiquidSwitcher(
-            child: KeyedSubtree(key: ValueKey(_phase), child: _timeline(context, plan)),
+            child: KeyedSubtree(key: ValueKey((_phase, _everyday)), child: _timeline(context, plan, store)),
           ),
           if (_phase == FuelPhase.pre && plan.carbLoading != null) ...[
             const SizedBox(height: LiquidSpacing.m),
@@ -207,6 +275,8 @@ class _FuelPlanScreenState extends ConsumerState<FuelPlanScreen> {
           if (_phase == FuelPhase.intra && plan.packing.isNotEmpty) ...[
             const SizedBox(height: LiquidSpacing.m),
             _packing(context, plan),
+            const SizedBox(height: LiquidSpacing.m),
+            _howTo(context, plan),
           ],
           const SizedBox(height: LiquidSpacing.m),
           _charts(context, plan),
@@ -266,6 +336,17 @@ class _FuelPlanScreenState extends ConsumerState<FuelPlanScreen> {
     );
   }
 
+  /// Wie viel Natrium je Liter Getränk nötig wäre – verglichen mit üblichen Sportgetränken (ACSM 2007).
+  static String _sodiumLine(int perLiter) {
+    final (low, high) = (FuelRules.acsmDrinkSodium.low, FuelRules.acsmDrinkSodium.high);
+    if (perLiter > high) {
+      return 'Natrium: ≈ $perLiter mg je Liter Getränk nötig – mehr als Sportgetränke haben ($low–$high mg/l); '
+          'den Rest über Salztablette oder salzige Snacks.';
+    }
+    if (perLiter < low) return 'Natrium: ≈ $perLiter mg je Liter Getränk – ein Sportgetränk deckt das.';
+    return 'Natrium: ≈ $perLiter mg je Liter Getränk – wie ein Sportgetränk ($low–$high mg/l).';
+  }
+
   static String _duration(int minutes) =>
       minutes < 60 ? '$minutes min' : '${minutes ~/ 60}:${(minutes % 60).toString().padLeft(2, '0')} h';
 
@@ -283,9 +364,7 @@ class _FuelPlanScreenState extends ConsumerState<FuelPlanScreen> {
       if (t.fluidPerHour > 0)
         'Schweiß ≈ ${GermanFormat.decimal(t.sweatRate)} l/h ${t.sweatEstimated ? '(geschätzt)' : '(gemessen)'} – '
             'nie mehr als ${t.maxFluidPerHour} ml/h trinken',
-      if (sodiumPerLiter != null && t.sodiumPerHour > 0)
-        'Natrium im Getränk ≈ $sodiumPerLiter mg/l (ACSM: ${FuelRules.acsmDrinkSodium.low}–'
-            '${FuelRules.acsmDrinkSodium.high} mg/l)',
+      if (sodiumPerLiter != null && t.sodiumPerHour > 0) _sodiumLine(sodiumPerLiter),
       if (plan.caffeine case final caffeine?)
         'Koffein ${caffeine.total.round()} mg (${GermanFormat.decimal(caffeine.total / s.weightKilograms)} mg/kg)',
     ];
@@ -320,6 +399,7 @@ class _FuelPlanScreenState extends ConsumerState<FuelPlanScreen> {
                   unit: 'mg/h',
                   label: 'Natrium',
                   coverage: plan.sodiumCoverage,
+                  generousAbove: true,
                 ),
               ),
             ],
@@ -421,7 +501,7 @@ class _FuelPlanScreenState extends ConsumerState<FuelPlanScreen> {
     ),
   );
 
-  Widget _timeline(BuildContext context, FuelPlan plan) {
+  Widget _timeline(BuildContext context, FuelPlan plan, FuelStore store) {
     final steps = plan.steps(_phase);
     final total = plan.total(_phase);
     final start = plan.scenario.startMinuteOfDay;
@@ -456,12 +536,66 @@ class _FuelPlanScreenState extends ConsumerState<FuelPlanScreen> {
               style: LiquidText.label(context),
             )
           else
-            for (final (index, step) in steps.indexed)
+            for (final (index, step) in steps.indexed) ...[
               FuelTimelineRow(step: step, isLast: index == steps.length - 1, clock: clock(step)),
+              if (FuelMeals.suggest(step, home: store.profile.homeFilter) case final suggestions
+                  when suggestions.isNotEmpty)
+                _SuggestionCard(
+                  suggestions: suggestions,
+                  chosen: _mealChoices[_choiceKey(step)],
+                  onChoose: (template) => setState(() {
+                    _mealChoices[_choiceKey(step)] = template;
+                    _dirty = true;
+                  }),
+                ),
+            ],
+          if (_phase != FuelPhase.intra)
+            for (final tip in FuelHowTo.phase(_phase, plan.scenario))
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 8,
+                children: [
+                  Icon(Icons.lightbulb_outline, size: 16, color: Theme.of(context).colorScheme.primary),
+                  Expanded(child: Text(tip, style: LiquidText.label(context))),
+                ],
+              ),
         ],
       ),
     );
   }
+
+  /// „So nimmst du es“: Sportart und je Produkt ein Satz.
+  Widget _howTo(BuildContext context, FuelPlan plan) => LiquidCard(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 8,
+      children: [
+        Text('So nimmst du es', style: Theme.of(context).textTheme.titleMedium),
+        Text(FuelHowTo.sport(plan.scenario.sport)),
+        for (final item in plan.packing)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 8,
+            children: [
+              Icon(Icons.check, size: 16, color: Theme.of(context).colorScheme.primary),
+              Expanded(
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '${item.product.name}: ',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      TextSpan(text: FuelHowTo.product(item.product)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+      ],
+    ),
+  );
 
   Widget _packing(BuildContext context, FuelPlan plan) => LiquidCard(
     child: Column(
@@ -471,10 +605,24 @@ class _FuelPlanScreenState extends ConsumerState<FuelPlanScreen> {
         Text('Packliste', style: Theme.of(context).textTheme.titleMedium),
         for (final item in plan.packing)
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             spacing: 10,
             children: [
               const Icon(Icons.check_box_outline_blank, size: 20),
-              Expanded(child: Text(item.line)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(item.line),
+                    if (item.stockLine case final stock?)
+                      Text(
+                        stock,
+                        style: LiquidText.label(context)
+                            .copyWith(color: item.toBuy > 0 ? kpiColor(KpiStatus.moderate) : kpiColor(KpiStatus.good)),
+                      ),
+                  ],
+                ),
+              ),
             ],
           ),
         if (plan.intraWater > 0)
@@ -512,6 +660,62 @@ class _FuelPlanScreenState extends ConsumerState<FuelPlanScreen> {
                     const Text('•'),
                     Expanded(child: Text(note.text)),
                   ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Konkreter Vorschlag mit herkömmlichen Lebensmitteln; „Andere Idee“ wechselt durch die Vorschläge.
+class _SuggestionCard extends StatelessWidget {
+  const _SuggestionCard({required this.suggestions, required this.chosen, required this.onChoose});
+
+  final List<FuelMealSuggestion> suggestions;
+  final String? chosen;
+  final ValueChanged<String> onChoose;
+
+  @override
+  Widget build(BuildContext context) {
+    final index = suggestions.indexWhere((x) => x.template.id == chosen);
+    final current = suggestions[index < 0 ? 0 : index];
+    final coverage = current.carbCoverage;
+    final scheme = Theme.of(context).colorScheme;
+    // Auf schmalen Geräten (iPhone SE) weniger einrücken, damit der Vorschlag lesbar bleibt.
+    final narrow = MediaQuery.sizeOf(context).width < 360;
+    return Padding(
+      padding: EdgeInsets.only(left: narrow ? 28 : 120, bottom: 12),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(12, 10, 4, 6),
+        decoration: BoxDecoration(
+          color: scheme.primary.withValues(alpha: 0.07),
+          borderRadius: BorderRadius.circular(LiquidRadii.inner),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 4,
+          children: [
+            Text(current.template.name, style: LiquidText.label(context).copyWith(fontWeight: FontWeight.w600)),
+            Text(current.text),
+            Text(
+              [
+                '≈ ${current.amounts.carbs.round()} g KH',
+                if (current.amounts.protein >= 5) '${current.amounts.protein.round()} g Protein',
+                if (coverage != null && !current.covers) 'deckt ${(coverage * 100).round()} %',
+                if (current.missing.isNotEmpty) 'fehlt: ${current.missing.map((f) => f.name).join(', ')}',
+              ].join(' · '),
+              style: LiquidText.label(context).copyWith(color: current.covers ? null : kpiColor(KpiStatus.moderate)),
+            ),
+            if (suggestions.length > 1)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () =>
+                      onChoose(suggestions[(suggestions.indexOf(current) + 1) % suggestions.length].template.id),
+                  icon: const Icon(Icons.autorenew, size: 18),
+                  label: const Text('Andere Idee'),
                 ),
               ),
           ],

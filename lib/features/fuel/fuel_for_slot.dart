@@ -52,12 +52,9 @@ class _FuelSection extends ConsumerWidget {
           onTap: () => unawaited(
             Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => FuelPlanScreen(
-                  scenario: scenario,
-                  productIDs: saved?.productIDs ?? store.profile.setup,
-                  planID: saved?.id,
-                  link: link,
-                ),
+                builder: (_) => saved == null
+                    ? FuelPlanScreen(scenario: scenario, productIDs: store.profile.setup, link: link)
+                    : FuelPlanScreen.saved(saved, link: link),
               ),
             ),
           ),

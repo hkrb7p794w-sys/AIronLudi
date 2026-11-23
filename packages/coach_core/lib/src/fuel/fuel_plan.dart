@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
 
+import '../calendar/calendar_day.dart';
 import '../util/german_format.dart';
 import 'fuel_product.dart';
 import 'fuel_rules.dart';
@@ -170,12 +171,19 @@ final class FuelNote {
 
 /// Was mitzunehmen ist.
 final class FuelPackItem {
-  const FuelPackItem({required this.product, required this.servings});
+  const FuelPackItem({required this.product, required this.servings, this.inStock = 0});
 
   final FuelProduct product;
 
   /// Portionen bzw. bei Getränken Flaschen (Anteil).
   final double servings;
+
+  /// Im Vorrat (Portionen bzw. Flaschen).
+  final double inStock;
+
+  /// Aus dem Vorrat bzw. zu kaufen (ganze Portionen).
+  int get fromStock => inStock <= 0 ? 0 : count.clamp(0, inStock.floor());
+  int get toBuy => count - fromStock;
 
   double get milliliters => product.isDrink ? product.volumeMilliliters * servings : 0;
 
@@ -196,6 +204,13 @@ final class FuelPackItem {
           '${powder != null ? ' (${powder.round()} g Pulver)' : ''}';
     }
     return '$count × ${product.name}';
+  }
+
+  /// „alles aus dem Vorrat“ bzw. „4 aus dem Vorrat, 2 kaufen“; `null` ohne Vorrat.
+  String? get stockLine {
+    if (inStock <= 0) return null;
+    if (toBuy == 0) return 'alles aus dem Vorrat';
+    return '$fromStock aus dem Vorrat, $toBuy kaufen';
   }
 }
 
@@ -322,8 +337,15 @@ abstract final class FuelPlanner {
     _ => '15–30 min vorher',
   };
 
-  /// [missingProducts]: gewählte Produkte, die es nicht mehr gibt (gelöscht).
-  static FuelPlan plan(FuelScenario s, {List<FuelProduct> setup = const [], int missingProducts = 0}) {
+  /// [missingProducts]: gewählte Produkte, die es nicht mehr gibt (gelöscht). [stock]: Vorrat je Produkt-ID
+  /// (Portionen); vorrätige Produkte werden zuerst verbraucht, bald ablaufende ([bestBefore]) zuerst.
+  static FuelPlan plan(
+    FuelScenario s, {
+    List<FuelProduct> setup = const [],
+    int missingProducts = 0,
+    Map<String, double> stock = const {},
+    Map<String, CalendarDay> bestBefore = const {},
+  }) {
     final sweat = FuelRules.sweatRate(s);
     final segments = FuelRules.segments(s, sweat: sweat);
     final carbs = FuelRules.carbsPerHour(s);
@@ -344,7 +366,7 @@ abstract final class FuelPlanner {
       segments: segments,
     );
     final caffeine = FuelRules.caffeine(s);
-    final intra = _intra(s, segments, setup, caffeine);
+    final intra = _intra(s, segments, _byStock(setup, stock, bestBefore), caffeine, stock);
     final delivered = FuelAmounts.sum(intra.steps.map((step) => step.amounts));
     final draft = FuelPlan(
       scenario: s,
@@ -353,7 +375,7 @@ abstract final class FuelPlanner {
       intra: intra.steps,
       post: _post(s, sweat: sweat, drank: delivered.fluid),
       intraTarget: intra.target,
-      packing: _packing(intra.steps),
+      packing: _packing(intra.steps, stock),
       notes: const [],
       carbLoading: FuelRules.carbLoading(s),
       caffeine: caffeine,
@@ -366,10 +388,36 @@ abstract final class FuelPlanner {
       post: draft.post,
       intraTarget: draft.intraTarget,
       packing: draft.packing,
-      notes: _notes(draft, setup, substitutedCaffeine: intra.substitutedCaffeine, missingProducts: missingProducts),
+      notes: _notes(
+        draft,
+        setup,
+        substitutedCaffeine: intra.substitutedCaffeine,
+        missingProducts: missingProducts,
+        bestBefore: bestBefore,
+      ),
       carbLoading: draft.carbLoading,
       caffeine: draft.caffeine,
     );
+  }
+
+  /// Vorrätige Produkte zuerst, bald ablaufende vor später ablaufenden; sonst Reihenfolge der Auswahl.
+  static List<FuelProduct> _byStock(
+    List<FuelProduct> setup,
+    Map<String, double> stock,
+    Map<String, CalendarDay> bestBefore,
+  ) {
+    final indexed = setup.indexed.toList();
+    int rank(FuelProduct p) => (stock[p.id] ?? 0) > 0 ? 0 : 1;
+    indexed.sort((a, b) {
+      final byStock = rank(a.$2).compareTo(rank(b.$2));
+      if (byStock != 0) return byStock;
+      final da = bestBefore[a.$2.id];
+      final db = bestBefore[b.$2.id];
+      if (da != null && db != null && da != db) return da.compareTo(db);
+      if ((da == null) != (db == null)) return da == null ? 1 : -1;
+      return a.$1.compareTo(b.$1);
+    });
+    return [for (final (_, product) in indexed) product];
   }
 
   static double _grams(double value) => FuelRules.roundTo(value, 5);
@@ -466,8 +514,10 @@ abstract final class FuelPlanner {
     List<FuelSegment> segments,
     List<FuelProduct> setup,
     FuelCaffeine? caffeine,
+    Map<String, double> stock,
   ) {
     const none = (steps: <FuelStep>[], target: FuelAmounts.zero, substitutedCaffeine: false);
+    final stockLeft = {...stock};
     final interval = s.sport == FuelSport.swim ? math.max(20, s.intervalMinutes) : s.intervalMinutes;
     final triathlon = s.sport == FuelSport.triathlon;
     // Einnahmen je Abschnitt: ab Abschnittsbeginn im Takt, nicht kurz vor Wechsel bzw. Ende.
@@ -530,7 +580,15 @@ abstract final class FuelPlanner {
         gotSodium += product.sodium * servings;
         caffeineLeft -= product.caffeine * servings;
         caffeineSpent += product.caffeine * servings;
+        if (stockLeft.containsKey(product.id)) stockLeft[product.id] = stockLeft[product.id]! - servings;
       }
+
+      // Reihenfolge: Vorrat zuerst; feste Kost (Riegel, Essen) in der ersten Hälfte eines Abschnitts, Gels und
+      // Kleines danach – beim Laufen immer zuerst Leichtes (Spezifikation 10.3).
+      bool heavy(FuelProduct p) => p.kind == FuelProductKind.bar || p.kind == FuelProductKind.food;
+      final firstHalf = t < segment.start + segment.minutes / 2;
+      bool suitsNow(FuelProduct p) => segment.sport == FuelSport.run ? !heavy(p) : (firstHalf == heavy(p));
+      int rank(FuelProduct p) => ((stockLeft[p.id] ?? 0) > 1e-6 ? 0 : 2) + (suitsNow(p) ? 0 : 1);
 
       // 0. Im letzten Drittel zuerst das Koffein-Produkt, damit das Budget nicht hinter einem Getränk verschwindet.
       if (lateWindow) {
@@ -567,12 +625,12 @@ abstract final class FuelPlanner {
       while (solids.isNotEmpty && count < maxServingsPerIntake) {
         // Im letzten Drittel zuerst das Koffein-Produkt (solange es ins Budget passt).
         FuelProduct? product = lateWindow ? solids.firstWhereOrNull((p) => p.caffeine > 0 && caffeineAllowed(p)) : null;
-        for (var attempt = 0; product == null && attempt < solids.length; attempt++) {
-          final candidate = solids[(rotation + attempt) % solids.length];
-          if (caffeineAllowed(candidate)) {
-            product = candidate;
-            rotation += attempt;
-            break;
+        if (product == null) {
+          final allowed = solids.where(caffeineAllowed).toList();
+          if (allowed.isNotEmpty) {
+            final best = allowed.map(rank).reduce(math.min);
+            final group = allowed.where((p) => rank(p) == best).toList();
+            product = group[rotation % group.length];
           }
         }
         if (product == null) {
@@ -680,14 +738,17 @@ abstract final class FuelPlanner {
     ];
   }
 
-  static List<FuelPackItem> _packing(List<FuelStep> steps) {
+  static List<FuelPackItem> _packing(List<FuelStep> steps, Map<String, double> stock) {
     final servings = <FuelProduct, double>{};
     for (final step in steps) {
       for (final portion in step.portions) {
         servings[portion.product] = (servings[portion.product] ?? 0) + portion.servings;
       }
     }
-    return [for (final MapEntry(:key, :value) in servings.entries) FuelPackItem(product: key, servings: value)];
+    return [
+      for (final MapEntry(:key, :value) in servings.entries)
+        FuelPackItem(product: key, servings: value, inStock: stock[key.id] ?? 0),
+    ];
   }
 
   /// Nur, was du wissen musst: Warnungen und wenige, situative Hinweise. Was zu den Zielwerten gehört (nicht mehr
@@ -697,6 +758,7 @@ abstract final class FuelPlanner {
     List<FuelProduct> setup, {
     required bool substitutedCaffeine,
     required int missingProducts,
+    Map<String, CalendarDay> bestBefore = const {},
   }) {
     final s = plan.scenario;
     final t = plan.targets;
@@ -781,6 +843,19 @@ abstract final class FuelPlanner {
           FuelNoteKind.warning,
         ),
       );
+    }
+    final shortfall = [
+      for (final item in plan.packing)
+        if (item.inStock > 0 && item.toBuy > 0) '${item.toBuy} × ${item.product.name}',
+    ];
+    if (shortfall.isNotEmpty) notes.add(FuelNote('Vorrat reicht nicht ganz – noch kaufen: ${shortfall.join(', ')}.'));
+    final day = s.day;
+    for (final item in plan.packing) {
+      final date = bestBefore[item.product.id];
+      if (date == null || item.inStock <= 0 || day == null) continue;
+      if (day.daysUntil(date) <= 30) {
+        notes.add(FuelNote('${item.product.name}: haltbar bis ${GermanFormat.date(date)} – wird zuerst aufgebraucht.'));
+      }
     }
     if (s.minutes < 45) notes.add(const FuelNote('Unter 45 Minuten: Wasser nach Durst genügt.'));
     if (FuelRules.mouthRinse(s)) {

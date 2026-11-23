@@ -156,6 +156,9 @@ final class FuelProfile {
     this.caffeineMgPerKg = 3,
     this.intervalMinutes = 20,
     this.setup = const [],
+    this.useStockFirst = true,
+    this.home = const [],
+    this.onlyHome = false,
   });
 
   final GutTolerance gut;
@@ -174,6 +177,18 @@ final class FuelProfile {
   /// Produkte, die standardmäßig unterwegs genutzt werden (IDs).
   final List<String> setup;
 
+  /// Vorrätige Produkte automatisch einplanen und zuerst aufbrauchen.
+  final bool useStockFirst;
+
+  /// Lebensmittel, die zu Hause meist da sind (IDs aus `FuelFoods`).
+  final List<String> home;
+
+  /// Vorschläge nur aus [home] (im Zweifel deckt der Plan den Bedarf dann nur annähernd).
+  final bool onlyHome;
+
+  /// Einschränkung für Vorschläge; `null` = alle Lebensmittel.
+  Set<String>? get homeFilter => onlyHome ? home.toSet() : null;
+
   FuelProfile copyWith({
     GutTolerance? gut,
     double? Function()? sweatRateLitersPerHour,
@@ -182,6 +197,9 @@ final class FuelProfile {
     double? caffeineMgPerKg,
     int? intervalMinutes,
     List<String>? setup,
+    bool? useStockFirst,
+    List<String>? home,
+    bool? onlyHome,
   }) => FuelProfile(
     gut: gut ?? this.gut,
     sweatRateLitersPerHour: sweatRateLitersPerHour == null ? this.sweatRateLitersPerHour : sweatRateLitersPerHour(),
@@ -190,6 +208,9 @@ final class FuelProfile {
     caffeineMgPerKg: caffeineMgPerKg ?? this.caffeineMgPerKg,
     intervalMinutes: intervalMinutes ?? this.intervalMinutes,
     setup: setup ?? this.setup,
+    useStockFirst: useStockFirst ?? this.useStockFirst,
+    home: home ?? this.home,
+    onlyHome: onlyHome ?? this.onlyHome,
   );
 
   /// Schweißrate aus Wiegen: (vorher − nachher) kg + getrunken l − Urin l, geteilt durch die Stunden.
@@ -214,6 +235,9 @@ final class FuelProfile {
     'caffeineMgPerKg': caffeineMgPerKg,
     'interval': intervalMinutes,
     'setup': setup,
+    if (!useStockFirst) 'stockFirst': false,
+    if (home.isNotEmpty) 'home': home,
+    if (onlyHome) 'onlyHome': true,
   };
 
   static FuelProfile fromJson(Object? json) {
@@ -232,6 +256,13 @@ final class FuelProfile {
           for (final id in setup)
             if (id is String) id,
       ],
+      useStockFirst: json['stockFirst'] != false,
+      home: [
+        if (json['home'] case final List<Object?> home)
+          for (final id in home)
+            if (id is String) id,
+      ],
+      onlyHome: json['onlyHome'] == true,
     );
   }
 }
