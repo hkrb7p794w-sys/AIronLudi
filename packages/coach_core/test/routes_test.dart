@@ -1489,6 +1489,37 @@ void main() {
     });
   });
 
+  test('Kurs für Garmin Connect: Punkte mit Strecke und Höhe, Typ je Disziplin, Antwort', () {
+    final route = PlannedRoute(
+      id: 'g',
+      username: 'anna',
+      name: 'Rundweg 5 km',
+      request: const RouteRequest(
+        discipline: RouteDiscipline.walk,
+        shape: RouteShape.loop,
+        start: berlin,
+        distanceMeters: 5000,
+      ),
+      variant: RouteVariant.balanced,
+      points: [for (var index = 0; index <= 10; index++) Geo.destination(berlin, 0, index * 100.0).withElevation(40)],
+      engine: 'Test',
+      createdAt: DateTime.utc(2026, 11, 22),
+    );
+    final payload = GarminCourse.payload(route);
+    expect(payload['activityTypePk'], 9);
+    expect(payload['courseName'], 'Rundweg 5 km');
+    final points = payload['geoPoints']! as List<Object?>;
+    expect(points.length, 11);
+    expect((points.last! as Map)['distance'], closeTo(1000, 0.5));
+    expect((points.first! as Map)['elevation'], 40);
+    expect(payload['distanceMeter'], closeTo(1000, 0.5));
+    expect(jsonDecode(jsonEncode(payload)), isA<Map<String, Object?>>());
+    expect(GarminCourse.activityType(RouteDiscipline.gravel), 2);
+    expect(GarminCourse.courseID({'courseId': 12345, 'courseName': 'x'}), 12345);
+    expect(GarminCourse.courseID({'error': 'x'}), isNull);
+    expect(GarminCourse.link(12345).toString(), 'https://connect.garmin.com/modern/course/12345');
+  });
+
   test('Anzeige', () {
     expect(RouteFormat.distance(850), '850 m');
     expect(RouteFormat.distance(10249), '10,2 km');

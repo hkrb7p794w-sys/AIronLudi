@@ -7,6 +7,7 @@ import '../../data/users/current_user.dart';
 import '../http/http_transport.dart';
 import '../providers.dart';
 import 'exploration_import.dart';
+import 'garmin_course_service.dart';
 import 'location_source.dart';
 import 'route_stores.dart';
 import 'routing_service.dart';
@@ -60,3 +61,9 @@ final locationSourceProvider = Provider<LocationSource>((ref) => const DeviceLoc
 final explorationImportProvider = Provider<ExplorationImport>(
   (ref) => ExplorationImport(store: ref.watch(routeStoreProvider), sync: ref.watch(garminSyncServiceProvider)),
 );
+
+/// Kurse direkt in Garmin Connect anlegen (Garmin-Konto aus den Einstellungen); in Tests überschreibbar.
+final garminCourseTargetProvider = Provider<GarminCourseTarget>((ref) {
+  final connect = ref.watch(garminConnectProvider);
+  return GarminCourseTarget(isLoggedIn: () => connect.isLoggedIn, sender: connect.sendJson);
+});
