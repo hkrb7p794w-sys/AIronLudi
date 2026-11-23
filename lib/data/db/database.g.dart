@@ -2561,6 +2561,274 @@ class SettingRecordsCompanion extends UpdateCompanion<SettingRow> {
   }
 }
 
+class $RouteRecordsTable extends RouteRecords with TableInfo<$RouteRecordsTable, RouteRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RouteRecordsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _usernameMeta = const VerificationMeta('username');
+  @override
+  late final GeneratedColumn<String> username = GeneratedColumn<String>(
+    'username',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _savedAtMeta = const VerificationMeta('savedAt');
+  @override
+  late final GeneratedColumn<DateTime> savedAt = GeneratedColumn<DateTime>(
+    'saved_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadMeta = const VerificationMeta('payload');
+  @override
+  late final GeneratedColumn<Uint8List> payload = GeneratedColumn<Uint8List>(
+    'payload',
+    aliasedName,
+    false,
+    type: DriftSqlType.blob,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [username, id, savedAt, payload];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'route_records';
+  @override
+  VerificationContext validateIntegrity(Insertable<RouteRow> instance, {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('username')) {
+      context.handle(_usernameMeta, username.isAcceptableOrUnknown(data['username']!, _usernameMeta));
+    } else if (isInserting) {
+      context.missing(_usernameMeta);
+    }
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('saved_at')) {
+      context.handle(_savedAtMeta, savedAt.isAcceptableOrUnknown(data['saved_at']!, _savedAtMeta));
+    } else if (isInserting) {
+      context.missing(_savedAtMeta);
+    }
+    if (data.containsKey('payload')) {
+      context.handle(_payloadMeta, payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta));
+    } else if (isInserting) {
+      context.missing(_payloadMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {username, id};
+  @override
+  RouteRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RouteRow(
+      username: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}username'])!,
+      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      savedAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}saved_at'])!,
+      payload: attachedDatabase.typeMapping.read(DriftSqlType.blob, data['${effectivePrefix}payload'])!,
+    );
+  }
+
+  @override
+  $RouteRecordsTable createAlias(String alias) {
+    return $RouteRecordsTable(attachedDatabase, alias);
+  }
+}
+
+class RouteRow extends DataClass implements Insertable<RouteRow> {
+  final String username;
+  final String id;
+
+  /// Zuletzt gespeichert (Reihenfolge der Ablage, neueste zuerst).
+  final DateTime savedAt;
+  final Uint8List payload;
+  const RouteRow({required this.username, required this.id, required this.savedAt, required this.payload});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['username'] = Variable<String>(username);
+    map['id'] = Variable<String>(id);
+    map['saved_at'] = Variable<DateTime>(savedAt);
+    map['payload'] = Variable<Uint8List>(payload);
+    return map;
+  }
+
+  RouteRecordsCompanion toCompanion(bool nullToAbsent) {
+    return RouteRecordsCompanion(
+      username: Value(username),
+      id: Value(id),
+      savedAt: Value(savedAt),
+      payload: Value(payload),
+    );
+  }
+
+  factory RouteRow.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RouteRow(
+      username: serializer.fromJson<String>(json['username']),
+      id: serializer.fromJson<String>(json['id']),
+      savedAt: serializer.fromJson<DateTime>(json['savedAt']),
+      payload: serializer.fromJson<Uint8List>(json['payload']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'username': serializer.toJson<String>(username),
+      'id': serializer.toJson<String>(id),
+      'savedAt': serializer.toJson<DateTime>(savedAt),
+      'payload': serializer.toJson<Uint8List>(payload),
+    };
+  }
+
+  RouteRow copyWith({String? username, String? id, DateTime? savedAt, Uint8List? payload}) => RouteRow(
+    username: username ?? this.username,
+    id: id ?? this.id,
+    savedAt: savedAt ?? this.savedAt,
+    payload: payload ?? this.payload,
+  );
+  RouteRow copyWithCompanion(RouteRecordsCompanion data) {
+    return RouteRow(
+      username: data.username.present ? data.username.value : this.username,
+      id: data.id.present ? data.id.value : this.id,
+      savedAt: data.savedAt.present ? data.savedAt.value : this.savedAt,
+      payload: data.payload.present ? data.payload.value : this.payload,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RouteRow(')
+          ..write('username: $username, ')
+          ..write('id: $id, ')
+          ..write('savedAt: $savedAt, ')
+          ..write('payload: $payload')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(username, id, savedAt, $driftBlobEquality.hash(payload));
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RouteRow &&
+          other.username == this.username &&
+          other.id == this.id &&
+          other.savedAt == this.savedAt &&
+          $driftBlobEquality.equals(other.payload, this.payload));
+}
+
+class RouteRecordsCompanion extends UpdateCompanion<RouteRow> {
+  final Value<String> username;
+  final Value<String> id;
+  final Value<DateTime> savedAt;
+  final Value<Uint8List> payload;
+  final Value<int> rowid;
+  const RouteRecordsCompanion({
+    this.username = const Value.absent(),
+    this.id = const Value.absent(),
+    this.savedAt = const Value.absent(),
+    this.payload = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RouteRecordsCompanion.insert({
+    required String username,
+    required String id,
+    required DateTime savedAt,
+    required Uint8List payload,
+    this.rowid = const Value.absent(),
+  }) : username = Value(username),
+       id = Value(id),
+       savedAt = Value(savedAt),
+       payload = Value(payload);
+  static Insertable<RouteRow> custom({
+    Expression<String>? username,
+    Expression<String>? id,
+    Expression<DateTime>? savedAt,
+    Expression<Uint8List>? payload,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (username != null) 'username': username,
+      if (id != null) 'id': id,
+      if (savedAt != null) 'saved_at': savedAt,
+      if (payload != null) 'payload': payload,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RouteRecordsCompanion copyWith({
+    Value<String>? username,
+    Value<String>? id,
+    Value<DateTime>? savedAt,
+    Value<Uint8List>? payload,
+    Value<int>? rowid,
+  }) {
+    return RouteRecordsCompanion(
+      username: username ?? this.username,
+      id: id ?? this.id,
+      savedAt: savedAt ?? this.savedAt,
+      payload: payload ?? this.payload,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (username.present) {
+      map['username'] = Variable<String>(username.value);
+    }
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (savedAt.present) {
+      map['saved_at'] = Variable<DateTime>(savedAt.value);
+    }
+    if (payload.present) {
+      map['payload'] = Variable<Uint8List>(payload.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RouteRecordsCompanion(')
+          ..write('username: $username, ')
+          ..write('id: $id, ')
+          ..write('savedAt: $savedAt, ')
+          ..write('payload: $payload, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$CoachDatabase extends GeneratedDatabase {
   _$CoachDatabase(QueryExecutor e) : super(e);
   $CoachDatabaseManager get managers => $CoachDatabaseManager(this);
@@ -2572,6 +2840,7 @@ abstract class _$CoachDatabase extends GeneratedDatabase {
   late final $FoodRecordsTable foodRecords = $FoodRecordsTable(this);
   late final $GymSessionRecordsTable gymSessionRecords = $GymSessionRecordsTable(this);
   late final $SettingRecordsTable settingRecords = $SettingRecordsTable(this);
+  late final $RouteRecordsTable routeRecords = $RouteRecordsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables => allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
@@ -2584,6 +2853,7 @@ abstract class _$CoachDatabase extends GeneratedDatabase {
     foodRecords,
     gymSessionRecords,
     settingRecords,
+    routeRecords,
   ];
 }
 
@@ -3896,6 +4166,149 @@ typedef $$SettingRecordsTableProcessedTableManager =
       SettingRow,
       PrefetchHooks Function()
     >;
+typedef $$RouteRecordsTableCreateCompanionBuilder = RouteRecordsCompanion Function({
+  required String username,
+  required String id,
+  required DateTime savedAt,
+  required Uint8List payload,
+  Value<int> rowid,
+});
+typedef $$RouteRecordsTableUpdateCompanionBuilder = RouteRecordsCompanion Function({
+  Value<String> username,
+  Value<String> id,
+  Value<DateTime> savedAt,
+  Value<Uint8List> payload,
+  Value<int> rowid,
+});
+
+class $$RouteRecordsTableFilterComposer extends Composer<_$CoachDatabase, $RouteRecordsTable> {
+  $$RouteRecordsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get username =>
+      $composableBuilder(column: $table.username, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get savedAt =>
+      $composableBuilder(column: $table.savedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<Uint8List> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => ColumnFilters(column));
+}
+
+class $$RouteRecordsTableOrderingComposer extends Composer<_$CoachDatabase, $RouteRecordsTable> {
+  $$RouteRecordsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get username =>
+      $composableBuilder(column: $table.username, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get savedAt =>
+      $composableBuilder(column: $table.savedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<Uint8List> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => ColumnOrderings(column));
+}
+
+class $$RouteRecordsTableAnnotationComposer extends Composer<_$CoachDatabase, $RouteRecordsTable> {
+  $$RouteRecordsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get username => $composableBuilder(column: $table.username, builder: (column) => column);
+
+  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get savedAt => $composableBuilder(column: $table.savedAt, builder: (column) => column);
+
+  GeneratedColumn<Uint8List> get payload => $composableBuilder(column: $table.payload, builder: (column) => column);
+}
+
+class $$RouteRecordsTableTableManager
+    extends
+        RootTableManager<
+          _$CoachDatabase,
+          $RouteRecordsTable,
+          RouteRow,
+          $$RouteRecordsTableFilterComposer,
+          $$RouteRecordsTableOrderingComposer,
+          $$RouteRecordsTableAnnotationComposer,
+          $$RouteRecordsTableCreateCompanionBuilder,
+          $$RouteRecordsTableUpdateCompanionBuilder,
+          (RouteRow, BaseReferences<_$CoachDatabase, $RouteRecordsTable, RouteRow>),
+          RouteRow,
+          PrefetchHooks Function()
+        > {
+  $$RouteRecordsTableTableManager(_$CoachDatabase db, $RouteRecordsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$RouteRecordsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$RouteRecordsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () => $$RouteRecordsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> username = const Value.absent(),
+            Value<String> id = const Value.absent(),
+            Value<DateTime> savedAt = const Value.absent(),
+            Value<Uint8List> payload = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) => RouteRecordsCompanion(username: username, id: id, savedAt: savedAt, payload: payload, rowid: rowid),
+          createCompanionCallback:
+              ({
+                required String username,
+                required String id,
+                required DateTime savedAt,
+                required Uint8List payload,
+                Value<int> rowid = const Value.absent(),
+              }) => RouteRecordsCompanion.insert(
+                username: username,
+                id: id,
+                savedAt: savedAt,
+                payload: payload,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$RouteRecordsTable, RouteRow>(table),
+                  BaseReferences<_$CoachDatabase, $RouteRecordsTable, RouteRow>(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$RouteRecordsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$CoachDatabase,
+      $RouteRecordsTable,
+      RouteRow,
+      $$RouteRecordsTableFilterComposer,
+      $$RouteRecordsTableOrderingComposer,
+      $$RouteRecordsTableAnnotationComposer,
+      $$RouteRecordsTableCreateCompanionBuilder,
+      $$RouteRecordsTableUpdateCompanionBuilder,
+      (RouteRow, BaseReferences<_$CoachDatabase, $RouteRecordsTable, RouteRow>),
+      RouteRow,
+      PrefetchHooks Function()
+    >;
 
 class $CoachDatabaseManager {
   final _$CoachDatabase _db;
@@ -3912,4 +4325,5 @@ class $CoachDatabaseManager {
   $$GymSessionRecordsTableTableManager get gymSessionRecords =>
       $$GymSessionRecordsTableTableManager(_db, _db.gymSessionRecords);
   $$SettingRecordsTableTableManager get settingRecords => $$SettingRecordsTableTableManager(_db, _db.settingRecords);
+  $$RouteRecordsTableTableManager get routeRecords => $$RouteRecordsTableTableManager(_db, _db.routeRecords);
 }

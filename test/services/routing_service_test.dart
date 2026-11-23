@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:aironludi/data/db/database.dart';
+import 'package:aironludi/data/repositories/route_repository.dart';
 import 'package:aironludi/data/settings/settings_store.dart';
 import 'package:aironludi/services/http/http_transport.dart';
 import 'package:aironludi/services/routing/garmin_course_service.dart';
@@ -423,8 +424,12 @@ void main() {
     ];
 
     test('Routen und Gebiete anderer Benutzer werden weder gezeigt noch überschrieben', () async {
-      final settings = await SettingsStore.open(CoachDatabase(NativeDatabase.memory()));
-      final anna = RouteStore(settings, username: 'anna');
+      final db = CoachDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      final settings = await SettingsStore.open(db);
+      final repository = RouteRepository(db);
+      RouteStore store(String username) => RouteStore(settings, username: username, routes: repository);
+      final anna = store('anna');
       await anna.save(route('anna'));
       expect(() => anna.save(route('ben')), throwsStateError);
       expect(anna.plannedOn(CalendarDay(2026, 11, 21)).single.id, 'r-anna');
@@ -438,23 +443,25 @@ void main() {
       expect(anna.isExplored('a1'), isTrue);
 
       // Gleicher Speicher, anderer Benutzer (z. B. eingespielte Sicherung): nichts sichtbar, nichts überschreibbar.
-      final ben = RouteStore(settings, username: 'ben');
+      final ben = store('ben');
+      await ben.ready;
       expect(ben.routes, isEmpty);
       expect(ben.exploration.tileCount, 0);
-      expect(ben.hasForeignRoutes, isTrue);
       expect(ben.hasForeignExploration, isTrue);
-      await expectLater(ben.save(route('ben')), throwsStateError);
+      // Routen liegen je Benutzer in der Tabelle: Ben speichert seine, Annas bleiben unberührt.
+      await ben.save(route('ben'));
+      expect(ben.routes.single.id, 'r-ben');
       await ben.updateSettings((settings) => settings.explorationEnabled = true);
       expect(await ben.explore([track]), isEmpty);
       await ben.resetExploration();
       await ben.delete('r-anna');
 
       // Favoriten ebenso: nur für den eigenen Benutzer.
-      final anna2 = RouteStore(settings, username: 'anna');
+      final anna2 = store('anna');
       await anna2.saveFavorite(
         FavoritePlace(id: 'f1', name: 'Zuhause', point: start, createdAt: DateTime.utc(2026, 11, 22)),
       );
-      final ben2 = RouteStore(settings, username: 'ben');
+      final ben2 = store('ben');
       expect(ben2.favorites, isEmpty);
       expect(ben2.hasForeignFavorites, isTrue);
       await expectLater(
@@ -464,7 +471,9 @@ void main() {
       await ben2.deleteFavorite('f1');
 
       // Archiv: Aktivität am geplanten Tag schließt die geplante Route ab (einmal).
-      final archiveStore = RouteStore(settings, username: 'anna');
+      final archiveStore = store('anna');
+      await archiveStore.ready;
+      expect(archiveStore.routes.single.id, 'r-anna');
       final run = GarminActivity(42)
         ..typeKey = 'running'
         ..startLocal = '2026-11-21 08:00:00'
@@ -488,9 +497,9 @@ void main() {
         ),
       );
       expect(ben2.templates, isEmpty);
-      expect(RouteStore(settings, username: 'ben').hasForeignTemplates, isTrue);
+      expect(store('ben').hasForeignTemplates, isTrue);
       await expectLater(
-        RouteStore(settings, username: 'ben').saveTemplate(
+        store('ben').saveTemplate(
           const RouteTemplate(
             id: 't2',
             name: 'X',
@@ -503,7 +512,8 @@ void main() {
         throwsStateError,
       );
 
-      final again = RouteStore(settings, username: 'anna');
+      final again = store('anna');
+      await again.ready;
       expect(again.templates.single.name, 'Gassi');
       expect(again.favorites.single.name, 'Zuhause');
       expect(AppBackup.isBackedUp(SettingsKeys.favoritePlaces), isTrue);

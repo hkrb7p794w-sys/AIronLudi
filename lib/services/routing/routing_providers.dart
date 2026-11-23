@@ -2,6 +2,7 @@ import 'package:coach_core/coach_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
+import '../../data/repositories/route_repository.dart';
 import '../../data/storage.dart';
 import '../../data/users/current_user.dart';
 import '../http/http_transport.dart';
@@ -16,7 +17,11 @@ import 'worker_maps.dart';
 
 /// Routen, Gebiete und Planer-Einstellungen des aktiven Benutzers (je Benutzer ein eigener Container).
 final routeStoreProvider = ChangeNotifierProvider<RouteStore>(
-  (ref) => RouteStore(ref.watch(settingsStoreProvider), username: ref.watch(currentUserProvider).username),
+  (ref) => RouteStore(
+    ref.watch(settingsStoreProvider),
+    username: ref.watch(currentUserProvider).username,
+    routes: RouteRepository(ref.watch(databaseProvider)),
+  ),
 );
 
 /// Router mit Ausweichen (Valhalla → BRouter); in Tests überschreibbar.

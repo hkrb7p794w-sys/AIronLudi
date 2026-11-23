@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 import '../db/database.dart';
 import '../repositories/json_bytes.dart';
 import '../repositories/meal_repository.dart';
+import '../repositories/route_repository.dart';
 import '../settings/coach_settings.dart';
 import '../settings/settings_store.dart';
 
@@ -51,9 +52,11 @@ final class BackupService {
     final gym = await _db.select(_db.gymSessionRecords).get();
     final meals = await _db.select(_db.mealRecords).get();
     final foods = await _db.select(_db.foodRecords).get();
+    // Routen liegen in einer eigenen Tabelle, in der Sicherung aber wie bisher unter `coach.routes`.
+    final routes = await RouteRepository(_db).libraryJson();
     return AppBackup(
       createdAt: now ?? DateTime.now(),
-      settings: _settings.backedUp,
+      settings: {..._settings.backedUp, if (routes != null) SettingsKeys.routes: BackupData(encodeJson(routes))},
       gym: [
         for (final row in gym)
           BackupGym(

@@ -1253,3 +1253,21 @@ Punkt 11 der Verbesserungsliste.
 - **Bewusst nicht:** Wetter beim Planen selbst (Wind ändert die Vorschläge nicht – die Regeln für Distanz und Wegarten
   bleiben vorn).
 
+## 2026-11-23 – Routen in eigener Tabelle (Schema 2)
+
+Punkt 12 der Verbesserungsliste.
+
+- **Warum:** Alle Routen lagen als ein JSON-Wert `coach.routes` in den Einstellungen; jedes Speichern schrieb bis zu
+  260 Routen mit je bis zu 2000 Punkten neu. Jetzt `RouteRecords` (Schlüssel Benutzer + ID, `savedAt`, JSON
+  `PlannedRoute`): Speichern schreibt nur die eine Zeile.
+- **Upgrade:** Schema 1 → 2 legt die Tabelle an. Beim ersten Öffnen übernimmt der Routen-Speicher den Stand unter
+  `coach.routes` (nur Routen des eigenen Benutzers, Reihenfolge bleibt) und entfernt den Schlüssel. Ein Stand eines
+  anderen Benutzers bleibt unberührt liegen (wie bisher).
+- **Sicherung unverändert:** `BackupService.make` schreibt die Routen aus der Tabelle als `coach.routes` – gleiches
+  Format wie vorher, ältere Sicherungen bleiben einspielbar. Beim Einspielen landet der Wert in den Einstellungen und
+  wird sofort zusammengeführt: **fehlende Routen kommen dazu, vorhandene bleiben** (wie Krafteinheiten und
+  Mahlzeiten; vorher ersetzte die Sicherung alle Routen).
+- **Isolation je Benutzer:** Zeilen tragen den Benutzer; ein anderer Benutzer sieht und ändert sie nicht, kann aber
+  eigene Routen speichern (vorher sperrte ein fremder Stand das Speichern ganz).
+- Gebiete, Favoriten, Vorlagen und Planer-Einstellungen bleiben in den Einstellungen (klein bzw. als Ganzes genutzt).
+
