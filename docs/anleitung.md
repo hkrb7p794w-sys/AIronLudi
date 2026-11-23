@@ -179,7 +179,9 @@ von Hand: denselben Link wieder öffnen.
 6. **Archiv und Uhr:** Gelaufene bzw. gefahrene Routen wandern ins *Archiv*, sobald am geplanten Tag eine passende
    Aktivität vorliegt (oder per „Als erledigt markieren“). Auf jeder Route stehen Kilometermarken. **An Uhr senden**
    zeigt den Weg je Hersteller: Garmin über Garmin Connect („An Gerät senden“), Apple Watch über eine App mit
-   Routen-Import, Coros, Suunto, Polar und Wahoo über ihre Apps.
+   Routen-Import, Coros, Suunto, Polar und Wahoo über ihre Apps. Mit angemeldetem Garmin-Konto (*Einstellungen ›
+   Training und Fitness › Garmin-Konto*) legt **Direkt an Garmin Connect senden** den Kurs ohne Datei an; er steht
+   dann in Garmin Connect unter *Training › Strecken* – dort „An Gerät senden“, auf der Uhr *Navigation › Kurse*.
 7. **Gassi und unterwegs:** Beim Spazieren gibt es die Wegart *Hundewiese* (die Runde führt über eine). Auf der
    Karte stehen Trinkbrunnen, beim Spazieren auch Hundewiesen und Kotbeutel. Das Lesezeichen oben im Planer speichert
    eine **Vorlage** (z. B. „Gassi 3 km ab Zuhause“), die unter *Routen* mit einem Tipp plant. In einer gespeicherten

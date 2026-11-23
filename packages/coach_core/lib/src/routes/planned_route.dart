@@ -25,6 +25,7 @@ final class PlannedRoute {
     this.preferenceShare,
     this.completedAt,
     this.activityID,
+    this.garminCourseID,
     Duration? duration,
     int? runThresholdPace,
   }) : stats = RouteStats.of(points),
@@ -58,6 +59,9 @@ final class PlannedRoute {
   /// Abgeschlossen (Archiv): wann und – falls erkannt – mit welcher Aktivität.
   DateTime? completedAt;
   int? activityID;
+
+  /// Kurs in Garmin Connect (nach „Direkt an Garmin senden“); erneutes Senden ersetzt ihn.
+  int? garminCourseID;
 
   bool get isCompleted => completedAt != null;
 
@@ -96,6 +100,7 @@ final class PlannedRoute {
     'slotTitle': ?slotTitle,
     if (completedAt case final completed?) 'completedAt': swiftDateToJson(completed),
     'activityID': ?activityID,
+    'garminCourseID': ?garminCourseID,
     if (preferenceShare case final share?) 'preferenceShare': (share * 100).round() / 100,
   };
 
@@ -138,6 +143,7 @@ final class PlannedRoute {
       preferenceShare: json['preferenceShare'] is num ? (json['preferenceShare'] as num).toDouble() : null,
       completedAt: swiftDateFromJson(json['completedAt']),
       activityID: json['activityID'] is num ? (json['activityID'] as num).toInt() : null,
+      garminCourseID: json['garminCourseID'] is num ? (json['garminCourseID'] as num).toInt() : null,
     );
   }
 
@@ -398,4 +404,75 @@ abstract final class FitCourseFile {
     );
     return encoder.data();
   }
+}
+
+/// Kurs für Garmin Connect (inoffizieller Zugang wie bei den Workouts): Anfrage an den Kurs-Dienst
+/// (`/course-service/course`) im Format, das Garmin Connect beim Anlegen eines Kurses selbst schickt. Das Format ist
+/// nicht offiziell dokumentiert – lehnt Garmin ab, teilt die App die FIT-Datei wie bisher.
+abstract final class GarminCourse {
+  static const createPath = '/course-service/course';
+
+  static String coursePath(int courseID) => '/course-service/course/$courseID';
+
+  /// Höchstzahl der Punkte (Garmin Connect verarbeitet große Kurse langsam; Uhren speichern ohnehin vereinfacht).
+  static const maxPoints = 1000;
+
+  /// Aktivitätstyp in Garmin Connect: Laufen 1, Radfahren 2, Gehen 9.
+  static int activityType(RouteDiscipline discipline) => switch (discipline) {
+    RouteDiscipline.run => 1,
+    RouteDiscipline.walk => 9,
+    RouteDiscipline.roadBike || RouteDiscipline.gravel => 2,
+  };
+
+  static Map<String, Object?> payload(PlannedRoute route) {
+    final points = Geo.thin(route.points, maxPoints);
+    final cumulative = Geo.cumulative(points);
+    final bounds = Geo.bounds(points);
+    Map<String, Object?> position(GeoPoint point) => {'latitude': point.latitude, 'longitude': point.longitude};
+    return {
+      'activityTypePk': activityType(route.discipline),
+      'courseName': route.name.length > 60 ? route.name.substring(0, 60) : route.name,
+      'description': 'Geplant mit AIronLudi',
+      'coordinateSystem': 'WGS84',
+      'rulePK': 2,
+      'sourceTypeId': 3,
+      'hasTurnDetectionDisabled': false,
+      'favorite': false,
+      'geoPoints': [
+        for (final (index, point) in points.indexed)
+          {
+            'latitude': point.latitude,
+            'longitude': point.longitude,
+            'elevation': point.elevation,
+            'distance': (cumulative[index] * 10).round() / 10,
+            'timestamp': null,
+          },
+      ],
+      'courseLines': [
+        {'sortOrder': 1, 'numberOfPoints': points.length, 'bearing': 0, 'coordinateSystem': 'WGS84'},
+      ],
+      'coursePoints': const <Object?>[],
+      'boundingBox': {
+        'lowerLeft': position(GeoPoint(bounds.south, bounds.west)),
+        'upperRight': position(GeoPoint(bounds.north, bounds.east)),
+        'lowerLeftLatIsSet': true,
+        'lowerLeftLongIsSet': true,
+        'upperRightLatIsSet': true,
+        'upperRightLongIsSet': true,
+      },
+      'startPoint': position(points.first),
+      'distanceMeter': (cumulative.last * 10).round() / 10,
+      'elevationGainMeter': route.stats.ascentMeters.round(),
+      'elevationLossMeter': route.stats.descentMeters.round(),
+    };
+  }
+
+  /// Kurs-ID aus der Antwort (`courseId`), sonst `null`.
+  static int? courseID(Object? json) => switch (json) {
+    {'courseId': final num id} => id.toInt(),
+    _ => null,
+  };
+
+  /// Link auf den Kurs in Garmin Connect.
+  static Uri link(int courseID) => Uri.https('connect.garmin.com', '/modern/course/$courseID');
 }

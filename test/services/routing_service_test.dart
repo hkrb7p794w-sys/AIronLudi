@@ -1,9 +1,11 @@
 // Routenplaner in der App: Router mit Ausweichen und Rate-Limit, Speicher strikt je Benutzer.
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:aironludi/data/db/database.dart';
 import 'package:aironludi/data/settings/settings_store.dart';
 import 'package:aironludi/services/http/http_transport.dart';
+import 'package:aironludi/services/routing/garmin_course_service.dart';
 import 'package:aironludi/services/routing/route_stores.dart';
 import 'package:aironludi/services/routing/routing_service.dart';
 import 'package:coach_core/coach_core.dart';
@@ -290,6 +292,83 @@ void main() {
       gate.backOff(const Duration(seconds: 5));
       await gate.run(() async {});
       expect(waits.last, const Duration(seconds: 5));
+    });
+  });
+
+  group('Kurs an Garmin', () {
+    PlannedRoute course() => PlannedRoute(
+      id: 'k',
+      username: 'anna',
+      name: 'Kurs',
+      request: const RouteRequest(
+        discipline: RouteDiscipline.run,
+        shape: RouteShape.loop,
+        start: start,
+        distanceMeters: 5000,
+      ),
+      variant: RouteVariant.balanced,
+      points: const [start, end, start],
+      engine: 'Test',
+      createdAt: DateTime.utc(2026, 11, 22),
+    );
+
+    test('ohne Anmeldung: Hinweis, nichts gesendet', () async {
+      var calls = 0;
+      final result = await GarminCourseService.send(
+        course(),
+        isLoggedIn: false,
+        sender: ({required method, required path, required json}) async {
+          calls++;
+          return utf8.encode('{}');
+        },
+      );
+      expect(result, isA<GarminCourseFailed>().having((failed) => failed.needsLogin, 'needsLogin', isTrue));
+      expect(calls, 0);
+    });
+
+    test('anlegen merkt die ID, erneut senden ersetzt den alten Kurs', () async {
+      final requests = <String>[];
+      final bodies = <Map<String, Object?>>[];
+      var nextID = 100;
+      Future<Uint8List> sender({required String method, required String path, required List<int> json}) async {
+        requests.add('$method $path');
+        if (json.isNotEmpty) bodies.add(jsonDecode(utf8.decode(json)) as Map<String, Object?>);
+        return method == 'POST' ? utf8.encode(jsonEncode({'courseId': nextID++})) : Uint8List(0);
+      }
+
+      final route = course();
+      final first = await GarminCourseService.send(route, isLoggedIn: true, sender: sender);
+      expect(first, isA<GarminCourseSent>().having((sent) => sent.courseID, 'courseID', 100));
+      expect(route.garminCourseID, 100);
+      expect(bodies.single['activityTypePk'], 1);
+      expect(PlannedRoute.fromJson(route.toJson(), username: 'anna')?.garminCourseID, 100);
+
+      await GarminCourseService.send(route, isLoggedIn: true, sender: sender);
+      expect(requests, [
+        'POST /course-service/course',
+        'DELETE /course-service/course/100',
+        'POST /course-service/course',
+      ]);
+      expect(route.garminCourseID, 101);
+    });
+
+    test('Ablehnung oder Fehler: verständliche Meldung, ID bleibt', () async {
+      final route = course()..garminCourseID = 7;
+      final rejected = await GarminCourseService.send(
+        route,
+        isLoggedIn: true,
+        sender: ({required method, required path, required json}) async =>
+            method == 'POST' ? utf8.encode('{"message":"nope"}') : Uint8List(0),
+      );
+      expect(rejected, isA<GarminCourseFailed>());
+      expect(rejected.message, contains('FIT'));
+      final failed = await GarminCourseService.send(
+        route,
+        isLoggedIn: true,
+        sender: ({required method, required path, required json}) async => throw StateError('offline'),
+      );
+      expect(failed.message, contains('Senden hat nicht geklappt'));
+      expect(route.garminCourseID, 7);
     });
   });
 

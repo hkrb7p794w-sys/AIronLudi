@@ -1207,3 +1207,15 @@ Punkte 7 und 8 der Verbesserungsliste.
   bräuchte unter iOS `UIBackgroundModes: location` und „Immer“-Freigabe, unter Android einen Vordergrunddienst, und
   kostet Akku.
 
+## 2026-11-23 – Routenplaner: Kurs direkt an Garmin Connect
+
+Punkt 9 der Verbesserungsliste.
+
+- **Weg:** derselbe inoffizielle Garmin-Connect-Zugang wie bei den Workouts (`GarminConnectSession.sendJson`), POST
+  an `/course-service/course` im Format, das Garmin Connect beim Anlegen eines Kurses selbst schickt (`geoPoints` mit
+  Strecke und Höhe, höchstens 1000 Punkte; Typ Laufen 1, Rad 2, Gehen 9). Antwort `courseId`.
+- **Erneut senden** löscht den alten Kurs (`DELETE /course-service/course/<id>`) und legt ihn neu an; die ID steht in
+  der Route (`garminCourseID`, optional im JSON – ältere Stände bleiben lesbar).
+- **Ausweichen:** ohne Anmeldung, bei Ablehnung oder Fehler steht die Meldung im Blatt „An Uhr senden“, darunter der
+  bisherige Weg über die FIT-Datei. Auf die Uhr kommt der Kurs weiterhin über „An Gerät senden“ in Garmin Connect;
+  einen dokumentierten Weg, ihn direkt aufs Gerät zu schieben, gibt es nicht.

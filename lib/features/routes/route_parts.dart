@@ -12,7 +12,9 @@ import 'package:latlong2/latlong.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../services/routing/garmin_course_service.dart';
 import '../../services/routing/routing_providers.dart';
 import '../../ui/liquid.dart';
 import 'my_location.dart';
@@ -833,6 +835,7 @@ Future<void> showSendToWatchSheet(BuildContext context, PlannedRoute route) => s
               style: LiquidText.label(sheet),
             ),
           ),
+          _GarminDirectTile(route: route),
           for (final watch in WatchTarget.values)
             Builder(
               builder: (context) => ListTile(
@@ -851,6 +854,94 @@ Future<void> showSendToWatchSheet(BuildContext context, PlannedRoute route) => s
     ),
   ),
 );
+
+/// „Direkt an Garmin Connect“: legt den Kurs im Garmin-Konto an (inoffizieller Zugang) und speichert die Route. Klappt
+/// das nicht, steht die Meldung mit dem Weg über die FIT-Datei darunter.
+class _GarminDirectTile extends ConsumerStatefulWidget {
+  const _GarminDirectTile({required this.route});
+
+  final PlannedRoute route;
+
+  @override
+  ConsumerState<_GarminDirectTile> createState() => _GarminDirectTileState();
+}
+
+class _GarminDirectTileState extends ConsumerState<_GarminDirectTile> {
+  bool _busy = false;
+  GarminCourseResult? _result;
+
+  Future<void> _send() async {
+    setState(() => _busy = true);
+    final result = await ref.read(garminCourseTargetProvider).send(widget.route);
+    // Kurs-ID merken (ungespeicherte Vorschläge werden dabei gespeichert).
+    if (result is GarminCourseSent) await ref.read(routeStoreProvider).save(widget.route);
+    if (!mounted) return;
+    unawaited(result is GarminCourseSent ? HapticFeedback.mediumImpact() : HapticFeedback.heavyImpact());
+    setState(() {
+      _busy = false;
+      _result = result;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final result = _result;
+    final scheme = Theme.of(context).colorScheme;
+    final sent = widget.route.garminCourseID != null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ListTile(
+          leading: _busy
+              ? const SizedBox.square(dimension: 24, child: CircularProgressIndicator(strokeWidth: 2.5))
+              : Icon(Icons.cloud_upload_outlined, color: scheme.primary),
+          title: Text(sent ? 'Erneut an Garmin Connect senden' : 'Direkt an Garmin Connect senden'),
+          subtitle: const Text(
+            'Legt den Kurs in deinem Garmin-Konto an – ohne Umweg über eine Datei. Nicht offiziell von Garmin '
+            'unterstützt; klappt es nicht, nimm „Garmin“ unten.',
+          ),
+          isThreeLine: true,
+          enabled: !_busy,
+          onTap: () => unawaited(_send()),
+        ),
+        if (result != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: LiquidCard(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 10,
+                children: [
+                  Icon(
+                    result is GarminCourseSent ? Icons.check_circle : Icons.info_outline,
+                    color: result is GarminCourseSent ? Colors.green : scheme.error,
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: 4,
+                      children: [
+                        Text(result.message),
+                        if (result case GarminCourseSent(:final courseID))
+                          TextButton(
+                            style: TextButton.styleFrom(padding: EdgeInsets.zero, visualDensity: VisualDensity.compact),
+                            onPressed: () =>
+                                unawaited(launchUrl(GarminCourse.link(courseID), mode: LaunchMode.externalApplication)),
+                            child: const Text('In Garmin Connect öffnen'),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        const Divider(indent: 16, endIndent: 16),
+      ],
+    );
+  }
+}
 
 /// Uhren und Radcomputer mit dem Weg dorthin.
 enum WatchTarget {

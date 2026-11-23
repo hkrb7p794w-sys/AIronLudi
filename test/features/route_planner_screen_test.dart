@@ -1,5 +1,7 @@
 // Routenplaner im Reiter Training: Einstieg, Standort als Start, Vorschläge, Speichern, Übernahme für heute, Gebiete.
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:aironludi/features/routes/address_field.dart';
 import 'package:aironludi/features/routes/exploration_screen.dart';
@@ -11,6 +13,7 @@ import 'package:aironludi/features/routes/route_parts.dart';
 import 'package:aironludi/features/routes/route_planner_controller.dart';
 import 'package:aironludi/features/routes/route_planner_screen.dart';
 import 'package:aironludi/features/routes/routes_screen.dart';
+import 'package:aironludi/services/routing/garmin_course_service.dart';
 import 'package:aironludi/services/routing/location_source.dart';
 import 'package:aironludi/services/routing/routing_providers.dart';
 import 'package:aironludi/ui/liquid.dart';
@@ -134,6 +137,13 @@ final class FailingFeatures extends FakeFeatures {
   }
 }
 
+/// Garmin-Konto, das jeden Kurs mit der ID 42 annimmt.
+final fakeGarmin = GarminCourseTarget(
+  isLoggedIn: () => true,
+  sender: ({required method, required path, required json}) async =>
+      Uint8List.fromList(utf8.encode('{"courseId": 42}')),
+);
+
 Future<ProviderContainer> openPlanner(
   WidgetTester tester,
   FakeRouting routing, {
@@ -155,6 +165,7 @@ Future<ProviderContainer> openPlanner(
           placeSearchProvider.overrideWithValue(places ?? FakePlaces()),
           routePoiSourceProvider.overrideWithValue(FakePois()),
           locationSourceProvider.overrideWithValue(location ?? FakeLocation()),
+          garminCourseTargetProvider.overrideWithValue(fakeGarmin),
         ],
       ),
     ) as Widget,
@@ -209,6 +220,7 @@ void main() {
             routeFeatureSourceProvider.overrideWithValue(features),
             routePoiSourceProvider.overrideWithValue(FakePois()),
             locationSourceProvider.overrideWithValue(FakeLocation()),
+            garminCourseTargetProvider.overrideWithValue(fakeGarmin),
           ],
         ),
       ) as Widget,
@@ -308,6 +320,15 @@ void main() {
     expect(find.text('Garmin'), findsOneWidget);
     expect(find.text('Apple Watch'), findsOneWidget);
     expect(find.text('FIT'), findsWidgets);
+    // Direkt an Garmin Connect: Kurs-ID landet an der gespeicherten Route.
+    await tester.tap(find.text('Direkt an Garmin Connect senden'));
+    for (var step = 0; step < 20 && find.textContaining('Training › Strecken').evaluate().isEmpty; step++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.pump();
+    }
+    expect(find.textContaining('Training › Strecken'), findsOneWidget);
+    expect(find.text('In Garmin Connect öffnen'), findsOneWidget);
+    expect(store.routes.single.garminCourseID, 42);
     Navigator.of(tester.element(find.text('Garmin'))).pop();
     await tester.pumpAndSettle();
 
