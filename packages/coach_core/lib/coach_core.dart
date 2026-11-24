@@ -24,6 +24,7 @@ export 'src/coach/daily_strain.dart';
 export 'src/coach/fitness_form.dart';
 export 'src/coach/heart_rate_strain.dart';
 export 'src/coach/heart_rate_zones.dart';
+export 'src/coach/hrv_trend.dart';
 export 'src/coach/personal_note.dart';
 export 'src/coach/recommendation.dart';
 export 'src/coach/recovery_level.dart';

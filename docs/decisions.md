@@ -1394,3 +1394,16 @@ Auf Wunsch des Nutzers: nicht nur *was*, sondern *wie* – und mit dem, was da i
   `test/ui/ui_tokens_baseline.json`: mehr ist ein Fehler, weniger verlangt das Neuschreiben des Bestands. So wird der
   Bestand (beim Einführen 473 Farben, 56 Hex-Werte, 279 Schriftgrößen) Bereich für Bereich abgebaut, ohne dass neue
   Rohwerte dazukommen. Sportfarben (`sport_style.dart`) und `kpiColor` liegen in `lib/ui` und zählen nicht.
+
+## 2026-11-24 – HRV-Trend für WHOOP und Health (Roast B-08)
+
+- Bisher wertete die Tagesampel HRV nur über Garmins „HRV-Status“ aus. Wer WHOOP, Apple Health oder Health Connect
+  nutzt, lieferte HRV-Werte, die keine Regel einordnete.
+- Neu `HrvTrend` (coach_core): Mittel von ln(HRV) über die letzten 7 Tage gegen die eigene Basis (Tag −60 bis −8, mind.
+  4 bzw. 14 Werte). Unter „Basis − 1 SD“ → „locker“ mit Zahlen im Grund. Gilt nur ohne Garmin-Status (`NONE` zählt
+  als „ohne“); Garmins Status hat Vorrang.
+- Grundlage: Plews et al. 2013 (Int J Sports Physiol Perform 8:688–691). Die Schwelle 1 SD ist eine Annahme (Plews
+  nennt teils 0,5 SD als kleinste relevante Änderung) – bewusst vorsichtig, um bei Messrauschen nicht ständig
+  herabzustufen.
+- Bekannte Grenze: Apple Health liefert SDNN, WHOOP und Garmin RMSSD; je Tag zählt die bevorzugte Quelle. Wechselt man
+  die Quelle, mischt die Basis bis zu 60 Tage lang beide Maße.
