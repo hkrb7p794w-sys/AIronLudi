@@ -20,6 +20,30 @@ void main() {
       expect(result.reasons, ['keine Erholungswerte auffällig']);
     });
 
+    test('WHOOP-Recovery mit WHOOP-Skala: rot Ruhetag, gelb ohne Herabstufung; Garmin unverändert', () {
+      DailyMetrics whoop(double score, String level) => metrics()
+        ..trainingReadiness = score
+        ..trainingReadinessLevel = level;
+      final red = RecoveryEvaluator.evaluate(whoop(30, WhoopRecoveryLevel.red), restingHeartRate7DayAverage: null);
+      expect(red.level, RecoveryLevel.pause);
+      expect(red.reasons, ['WHOOP-Recovery 30 % (rot)']);
+      // Gelb (34–66) heißt bei WHOOP „normal belasten“; Garmins Stufe „Low“ (< 50) gilt nicht.
+      final yellow = RecoveryEvaluator.evaluate(
+        whoop(45, WhoopRecoveryLevel.yellow),
+        restingHeartRate7DayAverage: null,
+      );
+      expect(yellow.level, RecoveryLevel.normal);
+      // Garmin-Readiness wie bisher: 45 ist „Low“ → locker, 20 ist „Poor“ → Pause.
+      expect(
+        RecoveryEvaluator.evaluate(whoop(45, 'LOW'), restingHeartRate7DayAverage: null).level,
+        RecoveryLevel.locker,
+      );
+      expect(
+        RecoveryEvaluator.evaluate(whoop(20, 'POOR'), restingHeartRate7DayAverage: null).level,
+        RecoveryLevel.pause,
+      );
+    });
+
     test('niedrige HRV heißt Ruhetag', () {
       final result = RecoveryEvaluator.evaluate(metrics(hrv: 'LOW'), restingHeartRate7DayAverage: null);
       expect(result.level, RecoveryLevel.pause);

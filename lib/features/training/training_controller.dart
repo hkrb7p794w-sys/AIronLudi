@@ -130,13 +130,16 @@ final class TrainingController extends ChangeNotifier {
 
   List<ActivityAnalysis> get skippedDecoupling => ActivityAnalysisPlanner.skipped(analyses);
 
-  /// Garmins Readiness-Stufen auf Deutsch.
+  /// Garmins Readiness-Stufen und WHOOPs Recovery-Farben auf Deutsch.
   static const readinessLevelGerman = {
     'PRIME': 'Top',
     'HIGH': 'Hoch',
     'MODERATE': 'Mittel',
     'LOW': 'Niedrig',
     'POOR': 'Schlecht',
+    WhoopRecoveryLevel.green: 'Grün (WHOOP)',
+    WhoopRecoveryLevel.yellow: 'Gelb (WHOOP)',
+    WhoopRecoveryLevel.red: 'Rot (WHOOP)',
   };
 
   static List<TrainingTile> tilesFor({
