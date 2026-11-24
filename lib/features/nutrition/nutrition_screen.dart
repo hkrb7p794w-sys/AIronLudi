@@ -986,7 +986,9 @@ class _DayStripState extends State<_DayStrip> {
                     borderRadius: BorderRadius.circular(10),
                     onTap: future ? null : () => widget.onSelect(day),
                     child: Container(
-                      height: 48,
+                      // Mindesthöhe statt fester Höhe: wächst mit großer Schrift mit.
+                      constraints: const BoxConstraints(minHeight: 48),
+                      padding: const EdgeInsets.symmetric(vertical: 4),
                       decoration: BoxDecoration(
                         color: day == widget.selected ? scheme.primary.withValues(alpha: 0.2) : null,
                         borderRadius: BorderRadius.circular(10),
@@ -1245,10 +1247,12 @@ class _MacroBar extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        // Bei wenig Breite (kleines Gerät, große Schrift) rutscht der Rest in die nächste Zeile statt überzulaufen.
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          spacing: 8,
           children: [
             Text(line.nutrient.label),
-            const Spacer(),
             Text(
               NutritionBudget.remainingText(line),
               style: TextStyle(fontWeight: FontWeight.bold, color: line.isOver ? Colors.red : null),
