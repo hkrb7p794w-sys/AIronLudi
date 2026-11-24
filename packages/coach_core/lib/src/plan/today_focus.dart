@@ -4,6 +4,7 @@ import '../calendar/calendar_day.dart';
 import '../coach/recommendation.dart';
 import '../coach/recovery_level.dart';
 import '../coach/season_plan.dart';
+import '../endurance/endurance_plan.dart';
 import '../evidence/evidence.dart';
 import '../garmin/garmin_activity.dart';
 import '../profile/schedule_advisor.dart';
@@ -251,4 +252,63 @@ final class TodayFocus {
     final because = whyText(reasons);
     return 'Regel: $rule${because == null ? '' : ' ($because)'} · geplant: ${planned.join(', ')}. Es gilt die Regel.';
   }
+
+  /// Einheiten des adaptiven Ausdauerplans von heute dazunehmen (Roast B-01): Der Ausdauerplan ist für seine
+  /// Sportarten genauer als der Wochenplan; gleiche Sportarten aus dem Wochenplan fallen deshalb weg. Ruhetage des
+  /// Ausdauerplans erscheinen nicht. Die Ampel und ihr Hinweis gelten auch für diese Einheiten.
+  TodayFocus withEndurance(List<PlanSlot> slots, {List<String> reasons = const []}) {
+    final endurance = [
+      for (final slot in slots)
+        if (!slot.current.isRest)
+          TodayFocusItem(
+            id: '$enduranceItemPrefix${slot.id}',
+            sport: switch (slot.current.sport) {
+              EnduranceSport.run => TrainingSport.run,
+              EnduranceSport.bike => TrainingSport.bike,
+              EnduranceSport.swim => TrainingSport.swim,
+            },
+            title: slot.current.title,
+            target:
+                'Soll ${slot.current.minutes} min · ${slot.current.type.label}'
+                '${slot.isAdapted ? ' · angepasst' : ''} · Ausdauerplan',
+            demanding: slot.current.type.isHard,
+            status: switch (slot.status) {
+              SlotStatus.completed => SessionStatus.done,
+              SlotStatus.missed => SessionStatus.missed,
+              SlotStatus.planned => SessionStatus.open,
+            },
+            chip: '',
+            detail: slot.current.note,
+          ),
+    ];
+    if (endurance.isEmpty) return this;
+    final sports = {for (final item in endurance) item.sport};
+    final merged = [
+      for (final item in items)
+        if (!sports.contains(item.sport)) item,
+      ...endurance,
+    ];
+    return TodayFocus(
+      level: level,
+      headline: headline,
+      detail: detail,
+      why: why,
+      conflict:
+          conflict ??
+          conflictText(
+            level: level,
+            reasons: reasons,
+            planned: [
+              for (final item in endurance)
+                if (item.demanding && item.status == SessionStatus.open) item.title,
+            ],
+          ),
+      items: merged,
+      progress: progress,
+      evidenceIDs: evidenceIDs,
+    );
+  }
+
+  /// Kennung der Einheiten aus dem Ausdauerplan (`TodayFocusItem.id`).
+  static const enduranceItemPrefix = 'ausdauer:';
 }

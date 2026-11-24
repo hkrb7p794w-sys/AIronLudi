@@ -113,6 +113,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with TrainingDataRelo
       settings: ref.read(coachSettingsProvider),
       gymDays: [for (final record in _gym) record.session.day, ...running],
       gym: _gymItems,
+      enduranceToday: ref.read(enduranceControllerProvider).plan?.slotsOn(CalendarDay.today()) ?? const [],
     );
   }
 
@@ -207,6 +208,8 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with TrainingDataRelo
     // Einstellungen, Abruf und laufende Einheit ändern die Einordnung.
     ref.listen(coachSettingsProvider, (_, _) => _update());
     ref.listen(gymControllerProvider, (_, _) => _update());
+    // Ausdauerplan angepasst oder neu: „Jetzt dran“ zeigt dessen Einheiten.
+    ref.listen(enduranceControllerProvider, (_, _) => _update());
     ref.listen(appModelProvider.select((model) => model.lastSync), (_, _) => unawaited(_reload()));
     final model = ref.watch(appModelProvider);
     final settings = ref.watch(coachSettingsProvider);
