@@ -5,6 +5,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import 'chart_axes.dart';
+
 /// Verlauf mit Zeitraum-Knöpfen, Zoom mit zwei Fingern und seitlichem Verschieben (Port von `ZoomableTrendChart`).
 class ZoomableTrendChart extends StatefulWidget {
   const ZoomableTrendChart({
@@ -110,7 +112,7 @@ class _ZoomableTrendChartState extends State<ZoomableTrendChart> {
         titlesData: FlTitlesData(
           topTitles: const AxisTitles(),
           rightTitles: const AxisTitles(),
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40)),
+          leftTitles: valueAxis(reservedSize: 40),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,

@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../services/providers.dart';
+import '../../ui/chart_axes.dart';
 import '../../ui/components.dart';
 import '../../ui/tokens.dart';
 import 'nutrition_controller.dart';
@@ -495,7 +496,7 @@ class NutritionWeekScreen extends StatelessWidget {
                         titlesData: FlTitlesData(
                           topTitles: const AxisTitles(),
                           rightTitles: const AxisTitles(),
-                          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40)),
+                          leftTitles: valueAxis(reservedSize: 40),
                           bottomTitles: AxisTitles(
                             sideTitles: SideTitles(
                               showTitles: true,

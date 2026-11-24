@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../services/providers.dart';
+import '../../ui/chart_axes.dart';
 import '../../ui/components.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/tokens.dart';
@@ -256,7 +257,7 @@ class KilometersSection extends StatelessWidget {
                 titlesData: FlTitlesData(
                   topTitles: const AxisTitles(),
                   rightTitles: const AxisTitles(),
-                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 32)),
+                  leftTitles: valueAxis(reservedSize: 32),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
@@ -326,11 +327,11 @@ class VO2Section extends StatelessWidget {
                     barWidth: 2,
                   ),
                 ],
-                titlesData: const FlTitlesData(
+                titlesData: FlTitlesData(
                   topTitles: AxisTitles(),
                   rightTitles: AxisTitles(),
                   bottomTitles: AxisTitles(),
-                  leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 32)),
+                  leftTitles: valueAxis(reservedSize: 32),
                 ),
                 borderData: FlBorderData(show: false),
               ),
@@ -430,11 +431,11 @@ class DecouplingSection extends StatelessWidget {
                         ),
                       ],
                     ),
-                    titlesData: const FlTitlesData(
+                    titlesData: FlTitlesData(
                       topTitles: AxisTitles(),
                       rightTitles: AxisTitles(),
                       bottomTitles: AxisTitles(),
-                      leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 32)),
+                      leftTitles: valueAxis(reservedSize: 32),
                     ),
                     borderData: FlBorderData(show: false),
                   ),

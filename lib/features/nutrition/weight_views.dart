@@ -10,6 +10,7 @@ import '../../data/repositories/meal_repository.dart';
 import '../../data/settings/coach_settings.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
+import '../../ui/chart_axes.dart';
 import '../../ui/components.dart';
 import '../../ui/platform_names.dart';
 import '../../ui/tokens.dart';
@@ -452,7 +453,7 @@ class _WeightTrendScreenState extends ConsumerState<WeightTrendScreen> {
                         ),
                       ),
                     ),
-                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 36)),
+                    leftTitles: valueAxis(reservedSize: 36),
                   ),
                   borderData: FlBorderData(show: false),
                 ),

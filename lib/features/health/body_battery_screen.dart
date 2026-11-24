@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/storage.dart';
+import '../../ui/chart_axes.dart';
 import '../../ui/components.dart';
 import '../../ui/platform_names.dart';
 import '../../ui/tokens.dart';
@@ -265,7 +266,7 @@ class _CurveChart extends StatelessWidget {
             titlesData: FlTitlesData(
               topTitles: const AxisTitles(),
               rightTitles: const AxisTitles(),
-              leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 32, interval: 25)),
+              leftTitles: valueAxis(reservedSize: 32, interval: 25),
               bottomTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
@@ -338,11 +339,11 @@ class _HistoryChart extends StatelessWidget {
               ],
             ),
             barTouchData: BarTouchData(enabled: false),
-            titlesData: const FlTitlesData(
+            titlesData: FlTitlesData(
               topTitles: AxisTitles(),
               rightTitles: AxisTitles(),
               bottomTitles: AxisTitles(),
-              leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 32, interval: 25)),
+              leftTitles: valueAxis(reservedSize: 32, interval: 25),
             ),
             borderData: FlBorderData(show: false),
           ),
