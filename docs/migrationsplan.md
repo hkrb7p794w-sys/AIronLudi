@@ -64,7 +64,7 @@ iCloud/CloudKit.
       (Trends, Übungsverlauf). → `fl_chart` plus eigene Zoom-Geste (`ChartZoom` steckt schon als Logik in CoachCore)
 - [x] **Karte** der Aktivitätsstrecke (MapKit). → `flutter_map` (OpenStreetMap, kein API-Schlüssel nötig)
 - [x] Gezeichneter Avatar „Daisy“ (`DaisyGeometry` in CoachCore). → `CustomPainter`
-- [x] Körperkarte für die Muskel-Heatmap. → `CustomPainter`
+- [x] Körperkarte für die Muskel-Heatmap. → `CustomPainter` (anatomische Vektorzeichnung, `tool/body_map_art.py`)
 - [x] Haptik (`sensoryFeedback`) bei Auswahl, erledigtem Satz, Pausenende. → `HapticFeedback` aus Flutter
 - [x] Wischaktionen in Listen, Kontextmenüs, Ziffernblock, Stepper. → Flutter-Bordmittel (`Dismissible`, `MenuAnchor`)
 
@@ -469,4 +469,6 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Roast Stufe 4 / PR 23: Ernährung geordnet – Wochen-Check-in unter dem Tag, Navigationszeilen in „Planen“ und „Verlauf“, „Fuel Planner“ heißt „Verpflegung“ (Glossar) | erledigt |
 | Roast Stufe 3 / PR 17 (F-1): Demo-Modus – Ich › Technik › Demo ansehen legt Benutzer „Demo“ mit Demo-Daten an (`coach.demo`), kein Abruf/Sicherung/Teilen | erledigt |
 | Roast Stufe 4 / PR 21: Verlauf nach Wochen (KW, Zeitraum, Anzahl, Dauer; `FeedWeek`), Hinweis auf Freunde nur im Filter „Freunde“ | erledigt |
+| Anatomische Körperkarte für die Muskel-Heatmap: eigene Vektorzeichnung mit Schattierung und Fasern, Vorder-/Rückseite zum Blättern, Seite mit mehr Last zuerst (`BodyMap`, `tool/body_map_art.py`) | erledigt |
+| Körperkarte: Umschalter Kraft/Kardio/Dehnen in der Gym-Auswertung (`CardioLoad`, `StretchLoad` in coach_core; Ausdauerminuten und Mobility-Protokoll je Muskel) | erledigt |
 | Routenplaner: Luftlinie-Abschnitte in „Frei planen“ (z. B. Brücke nach Baustelle), lauffreundliche Wege beim Laufen, „Zum Ziel“ ohne Wunschdistanz | erledigt |

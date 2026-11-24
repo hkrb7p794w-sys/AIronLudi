@@ -44,7 +44,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(ExerciseDetailScreen), findsOneWidget);
     expect(find.text('BEANSPRUCHTE MUSKELN'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Noch keine Sätze erfasst.'), 300);
+    await tester.scrollUntilVisible(
+      find.text('Noch keine Sätze erfasst.'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Noch keine Sätze erfasst.'), findsOneWidget);
   });
 

@@ -1,148 +1,17 @@
+import 'dart:async';
+
 import 'package:coach_core/coach_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/storage.dart';
 import '../../services/providers.dart';
+import '../../ui/body_map.dart';
 import '../../ui/components.dart';
 import '../../ui/tokens.dart';
 import '../evidence/evidence_views.dart';
 
-/// Ein Muskel mit seinen Flächen auf der Zeichenfläche 100 × 200.
-final class _Region {
-  const _Region(this.muscle, this.frames);
-
-  final Muscle muscle;
-  final List<Rect> frames;
-}
-
-/// Links und rechts gespiegelt.
-_Region _pair(Muscle muscle, double x, double y, double width, double height) =>
-    _Region(muscle, [Rect.fromLTWH(x, y, width, height), Rect.fromLTWH(100 - x - width, y, width, height)]);
-
-/// Schematische Körperkarte (vorn und hinten) mit Farbe je Muskel: grau = nicht beansprucht, gelb bis rot = mehr.
-/// Eine Übersicht, keine anatomisch genaue Darstellung (Port von `BodyMapView`).
-class BodyMap extends StatelessWidget {
-  const BodyMap({super.key, required this.values, required this.full, this.colors = const {}});
-
-  /// Wert je Muskel; ab [full] volle Farbe.
-  final Map<Muscle, double> values;
-  final double full;
-
-  /// Eigene Farbe je Muskel (z. B. Regeneration); überschreibt die Heatmap-Farbe.
-  final Map<Muscle, Color> colors;
-
-  static const silhouette = [
-    Rect.fromLTWH(30, 28, 40, 66),
-    Rect.fromLTWH(14, 32, 14, 72),
-    Rect.fromLTWH(72, 32, 14, 72),
-    Rect.fromLTWH(31, 90, 18, 104),
-    Rect.fromLTWH(51, 90, 18, 104),
-  ];
-
-  static final front = [
-    _pair(Muscle.frontDelts, 26, 32, 10, 10),
-    _pair(Muscle.sideDelts, 15, 34, 9, 12),
-    _pair(Muscle.chest, 36, 34, 13, 16),
-    _pair(Muscle.biceps, 16, 48, 10, 22),
-    _pair(Muscle.forearms, 15, 73, 10, 28),
-    const _Region(Muscle.abs, [Rect.fromLTWH(42, 53, 16, 34)]),
-    _pair(Muscle.obliques, 33, 55, 8, 28),
-    _pair(Muscle.quads, 32, 96, 13, 46),
-    _pair(Muscle.adductors, 45.5, 98, 4, 30),
-    _pair(Muscle.calves, 34, 150, 10, 30),
-  ];
-
-  static final back = [
-    const _Region(Muscle.traps, [Rect.fromLTWH(38, 29, 24, 15)]),
-    _pair(Muscle.rearDelts, 23, 33, 11, 10),
-    _pair(Muscle.sideDelts, 15, 34, 8, 12),
-    _pair(Muscle.lats, 32, 45, 15, 30),
-    const _Region(Muscle.lowerBack, [Rect.fromLTWH(41, 76, 18, 14)]),
-    _pair(Muscle.triceps, 16, 48, 10, 22),
-    _pair(Muscle.forearms, 15, 73, 10, 28),
-    _pair(Muscle.glutes, 32, 91, 17, 17),
-    _pair(Muscle.hamstrings, 32, 110, 15, 34),
-    _pair(Muscle.calves, 33, 148, 13, 32),
-  ];
-
-  /// Gelb → Orange → Rot je nach Anteil an [full]; ohne Last grau.
-  static Color heat(double value, {required double full, required Color empty}) {
-    final level = MuscleLoad.intensity(value, full: full);
-    if (level <= 0) return empty;
-    return HSVColor.fromAHSV(0.45 + 0.55 * level, 360 * (0.15 - 0.15 * level), 0.85, 0.95).toColor();
-  }
-
-  String get _semantics {
-    final shown = values.entries.where((entry) => entry.value > 0).toList()..sort((a, b) => b.value.compareTo(a.value));
-    if (shown.isEmpty) return 'Keine Muskeln beansprucht';
-    return 'Muskelkarte: ${[for (final entry in shown) '${entry.key.label} ${GermanFormat.decimal(entry.value)} Sätze'].join(', ')}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-    Widget figure(List<_Region> regions, String title) => Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          height: 220,
-          child: AspectRatio(
-            aspectRatio: 0.5,
-            child: CustomPaint(
-              painter: _BodyPainter(
-                regions: regions,
-                base: secondary.withValues(alpha: 0.12),
-                color: (muscle) =>
-                    colors[muscle] ?? heat(values[muscle] ?? 0, full: full, empty: secondary.withValues(alpha: 0.22)),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(title, style: AppText.caption(context).copyWith(color: secondary)),
-      ],
-    );
-    return Semantics(
-      label: _semantics,
-      excludeSemantics: true,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [figure(front, 'Vorn'), const SizedBox(width: 16), figure(back, 'Hinten')],
-      ),
-    );
-  }
-}
-
-class _BodyPainter extends CustomPainter {
-  _BodyPainter({required this.regions, required this.base, required this.color});
-
-  final List<_Region> regions;
-  final Color base;
-  final Color Function(Muscle muscle) color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final scale = size.width / 100 < size.height / 200 ? size.width / 100 : size.height / 200;
-    final offsetX = (size.width - 100 * scale) / 2;
-    Rect place(Rect rect) =>
-        Rect.fromLTWH(offsetX + rect.left * scale, rect.top * scale, rect.width * scale, rect.height * scale);
-    final paint = Paint()..color = base;
-    // Umriss: Kopf, Rumpf, Arme, Beine.
-    canvas.drawOval(place(const Rect.fromLTWH(40, 2, 20, 22)), paint);
-    for (final part in BodyMap.silhouette) {
-      canvas.drawRRect(RRect.fromRectAndRadius(place(part), Radius.circular(6 * scale)), paint);
-    }
-    for (final region in regions) {
-      final fill = Paint()..color = color(region.muscle);
-      for (final frame in region.frames) {
-        canvas.drawRRect(RRect.fromRectAndRadius(place(frame), Radius.circular(3 * scale)), fill);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_BodyPainter old) => true;
-}
+export '../../ui/body_map.dart' show BodyMap, BodySide;
 
 /// Heatmap mit Liste: welche Muskeln wie viele effektive Sätze bekommen haben.
 class MuscleHeatmapSection extends StatelessWidget {
@@ -187,12 +56,16 @@ enum _OverviewMode {
   final String label;
 }
 
-/// Langzeitübersicht: Wochensätze je Muskel, Mittel über 4 Wochen, wenig Trainiertes und Regeneration.
+/// Langzeitübersicht: Wochensätze je Muskel, Mittel über 4 Wochen, wenig Trainiertes und Regeneration – umschaltbar
+/// auf Ausdauerminuten (Kardio) und Minuten Dehnen/Mobility je Muskel.
 class MuscleOverviewSection extends ConsumerStatefulWidget {
-  const MuscleOverviewSection({super.key, required this.sessions, this.now});
+  const MuscleOverviewSection({super.key, required this.sessions, this.now, this.activities});
 
   final List<GymSession> sessions;
   final DateTime? now;
+
+  /// Ausdauereinheiten; null = aus dem Speicher laden.
+  final List<GarminActivity>? activities;
 
   @override
   ConsumerState<MuscleOverviewSection> createState() => _MuscleOverviewSectionState();
@@ -200,6 +73,21 @@ class MuscleOverviewSection extends ConsumerStatefulWidget {
 
 class _MuscleOverviewSectionState extends ConsumerState<MuscleOverviewSection> {
   _OverviewMode _mode = _OverviewMode.week;
+  BodyLoadKind _kind = BodyLoadKind.strength;
+  List<GarminActivity> _loaded = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.activities == null) unawaited(_load());
+  }
+
+  Future<void> _load() async {
+    final activities = await ref.read(activityRepositoryProvider).all();
+    if (mounted) setState(() => _loaded = activities);
+  }
+
+  List<GarminActivity> get _activities => widget.activities ?? _loaded;
 
   double _value(MuscleStatus status) => _mode == _OverviewMode.month ? status.averageWeeklySets : status.weeklySets;
 
@@ -222,11 +110,137 @@ class _MuscleOverviewSectionState extends ConsumerState<MuscleOverviewSection> {
     };
   }
 
+  /// Zeitraum der Minuten: 7 Tage bis heute oder 28 Tage (dann geteilt durch 4).
+  (CalendarDay, CalendarDay, double) _range(DateTime now) {
+    final today = CalendarDay.fromDate(now);
+    return _mode == _OverviewMode.month ? (today.adding(-27), today, 4.0) : (today.adding(-6), today, 1.0);
+  }
+
+  Map<Muscle, double> _divided(Map<Muscle, double> values, double weeks) => {
+    for (final entry in values.entries) entry.key: entry.value / weeks,
+  };
+
+  void _select(BodyLoadKind kind) => setState(() {
+    _kind = kind;
+    // Erholung gibt es nur für das Krafttraining.
+    if (kind != BodyLoadKind.strength && _mode == _OverviewMode.recovery) _mode = _OverviewMode.week;
+  });
+
   @override
   Widget build(BuildContext context) {
     final now = widget.now ?? DateTime.now();
     final custom = ref.watch(coachSettingsProvider).gym.customExercises;
+    final mobilityLog = ref.watch(coachSettingsProvider).mobility.log;
     final statuses = MuscleLoad.status(sessions: widget.sessions, now: now, custom: custom);
+    final (from, to, weeks) = _range(now);
+    final period = _mode == _OverviewMode.month ? 'pro Woche (Ø 4 Wochen)' : 'in den letzten 7 Tagen';
+
+    final (values, full, rows, footer, rules) = switch (_kind) {
+      BodyLoadKind.strength => (
+        {for (final status in statuses) status.muscle: _value(status)},
+        MuscleLoad.weeklyFull,
+        _strengthRows(context, statuses, now),
+        'Effektive Sätze je Muskel (Hauptmuskel 1, mitarbeitend 0,5). Volle Farbe ab ${MuscleLoad.weeklyFull.toInt()} '
+            'Sätzen pro Woche, orange unter ${MuscleLoad.weeklyEnough.toInt()}. „Vermutlich noch in der Erholung“ heißt: '
+            'in den letzten ${MuscleLoad.recoveryHours.toInt()} Stunden nennenswert belastet – eine Schätzung, keine '
+            'Messung von Ermüdung.',
+        const ['gym.muscle-load', 'gym.volume'],
+      ),
+      BodyLoadKind.cardio => (
+        _divided(CardioLoad.minutes(_activities, from: from, to: to), weeks),
+        CardioLoad.weeklyFull,
+        [
+          for (final (sport, minutes) in CardioLoad.bySport(_activities, from: from, to: to))
+            LabeledRow(label: MobilityPlanner.sportLabel(sport), value: '${(minutes / weeks).round()} min'),
+        ],
+        'Minuten Laufen, Radfahren und Schwimmen je Muskel: Hauptmuskeln voll, mitarbeitende halb (Laufen: Beine und '
+            'Gesäß; Rad: vor allem Oberschenkel vorn und Gesäß; Schwimmen: Latissimus und Schultern). Volle Farbe ab '
+            '${CardioLoad.weeklyFull.toInt()} Minuten pro Woche. Eine Zuordnung zur Orientierung, keine Messung.',
+        const ['activity.who'],
+      ),
+      BodyLoadKind.stretch => (
+        _divided(StretchLoad.minutes(mobilityLog, from: from, to: to), weeks),
+        StretchLoad.weeklyFull,
+        [
+          for (final entry in StretchLoad.areaMinutes(
+            mobilityLog,
+            from: from,
+            to: to,
+          ).entries.toList()..sort((a, b) => b.value.compareTo(a.value)))
+            LabeledRow(label: entry.key.label, value: '${GermanFormat.decimal(entry.value / weeks)} min'),
+        ],
+        'Minuten aus abgeschlossenen Mobility-Einheiten, verteilt auf ihre Schwerpunkte. Volle Farbe ab '
+            '${StretchLoad.weeklyFull.toInt()} Minuten pro Woche und Muskel.',
+        const ['mobility.stretching', 'mobility.focus'],
+      ),
+    };
+    final empty = switch (_kind) {
+      BodyLoadKind.strength => null,
+      BodyLoadKind.cardio => 'Keine Lauf-, Rad- oder Schwimmeinheiten $period.',
+      BodyLoadKind.stretch => 'Keine Mobility-Einheiten $period. Starten kannst du sie unter Gesundheit › Mobility.',
+    };
+    final modes = [
+      for (final mode in _OverviewMode.values)
+        if (_kind == BodyLoadKind.strength || mode != _OverviewMode.recovery) mode,
+    ];
+    return FormSection(
+      header: 'Muskeln',
+      footer: footer,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: SegmentedButton<_OverviewMode>(
+            showSelectedIcon: false,
+            segments: [
+              for (final mode in modes)
+                ButtonSegment(
+                  value: mode,
+                  label: FittedBox(child: Text(mode.label)),
+                ),
+            ],
+            selected: {_mode},
+            onSelectionChanged: (selection) => setState(() => _mode = selection.first),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+          child: Column(
+            children: [
+              BodyMap(
+                values: values,
+                full: full,
+                unit: _kind.unit,
+                colors: _kind == BodyLoadKind.strength && _mode == _OverviewMode.recovery
+                    ? {for (final status in statuses) status.muscle: recoveryColor(status.recovery, context)}
+                    : const {},
+              ),
+              const SizedBox(height: 8),
+              SegmentedButton<BodyLoadKind>(
+                showSelectedIcon: false,
+                segments: [
+                  for (final kind in BodyLoadKind.values)
+                    ButtonSegment(
+                      value: kind,
+                      label: FittedBox(child: Text(kind.label)),
+                    ),
+                ],
+                selected: {_kind},
+                onSelectionChanged: (selection) => _select(selection.first),
+              ),
+            ],
+          ),
+        ),
+        if (rows.isEmpty && empty != null)
+          ListTile(
+            title: Text(empty, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          ),
+        ...rows,
+        EvidenceDisclosure(ruleIDs: rules),
+      ],
+    );
+  }
+
+  List<Widget> _strengthRows(BuildContext context, List<MuscleStatus> statuses, DateTime now) {
     (int, double) order(MuscleStatus status) => (
       switch (status.recovery) {
         MuscleRecovery.recovering => 0,
@@ -241,61 +255,27 @@ class _MuscleOverviewSectionState extends ConsumerState<MuscleOverviewSection> {
         return left.$1 != right.$1 ? left.$1.compareTo(right.$1) : left.$2.compareTo(right.$2);
       });
     final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-    return FormSection(
-      header: 'Muskeln',
-      footer:
-          'Effektive Sätze je Muskel (Hauptmuskel 1, mitarbeitend 0,5). Volle Farbe ab ${MuscleLoad.weeklyFull.toInt()} '
-          'Sätzen pro Woche, orange unter ${MuscleLoad.weeklyEnough.toInt()}. „Vermutlich noch in der Erholung“ heißt: in '
-          'den letzten ${MuscleLoad.recoveryHours.toInt()} Stunden nennenswert belastet – eine Schätzung, keine Messung '
-          'von Ermüdung.',
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-          child: SegmentedButton<_OverviewMode>(
-            showSelectedIcon: false,
-            segments: [
-              for (final mode in _OverviewMode.values)
-                ButtonSegment(
-                  value: mode,
-                  label: FittedBox(child: Text(mode.label)),
-                ),
-            ],
-            selected: {_mode},
-            onSelectionChanged: (selection) => setState(() => _mode = selection.first),
+    return [
+      for (final status in sorted)
+        ListTile(
+          dense: true,
+          leading: ExcludeSemantics(
+            child: CircleAvatar(radius: 4, backgroundColor: recoveryColor(status.recovery, context)),
+          ),
+          minLeadingWidth: 8,
+          title: Text(status.muscle.label),
+          subtitle: Text(
+            '${status.recovery.label} · '
+            '${status.lastLoaded == null ? 'noch nie' : 'zuletzt ${relative(status.lastLoaded!, now)}'}',
+          ),
+          trailing: Text(
+            '${GermanFormat.decimal(_value(status))} Sätze',
+            style: TextStyle(
+              color: status.isLow && _mode != _OverviewMode.recovery ? AppColors.of(context).caution : secondary,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: BodyMap(
-            values: {for (final status in statuses) status.muscle: _value(status)},
-            full: MuscleLoad.weeklyFull,
-            colors: _mode == _OverviewMode.recovery
-                ? {for (final status in statuses) status.muscle: recoveryColor(status.recovery, context)}
-                : const {},
-          ),
-        ),
-        for (final status in sorted)
-          ListTile(
-            dense: true,
-            leading: ExcludeSemantics(
-              child: CircleAvatar(radius: 4, backgroundColor: recoveryColor(status.recovery, context)),
-            ),
-            minLeadingWidth: 8,
-            title: Text(status.muscle.label),
-            subtitle: Text(
-              '${status.recovery.label} · '
-              '${status.lastLoaded == null ? 'noch nie' : 'zuletzt ${relative(status.lastLoaded!, now)}'}',
-            ),
-            trailing: Text(
-              '${GermanFormat.decimal(_value(status))} Sätze',
-              style: TextStyle(
-                color: status.isLow && _mode != _OverviewMode.recovery ? AppColors.of(context).caution : secondary,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
-          ),
-        const EvidenceDisclosure(ruleIDs: ['gym.muscle-load', 'gym.volume']),
-      ],
-    );
+    ];
   }
 }
