@@ -333,9 +333,11 @@ class _RootShellState extends ConsumerState<RootShell> {
         onTap: (index) => shell.goBranch(index, initialLocation: index == shell.currentIndex),
         items: [
           const LiquidTabItem(icon: Icons.wb_sunny_outlined, label: 'Heute'),
-          LiquidTabItem(icon: Icons.directions_run, label: 'Aktivitäten', badge: incoming),
-          const LiquidTabItem(icon: Icons.monitor_heart_outlined, label: 'Training'),
+          const LiquidTabItem(icon: Icons.event_note_outlined, label: 'Plan'),
+          const LiquidTabItem(icon: Icons.directions_run, label: 'Verlauf'),
           const LiquidTabItem(icon: Icons.restaurant, label: 'Ernährung'),
+          // Freundschaftsanfragen: Freunde & Liga liegen unter „Ich“.
+          LiquidTabItem(icon: Icons.person_outline, label: 'Ich', badge: incoming),
         ],
       ),
     );

@@ -3,6 +3,7 @@ import 'package:aironludi/app/day_change.dart';
 import 'package:aironludi/data/secure/secret_store.dart';
 import 'package:aironludi/data/settings/preferences.dart';
 import 'package:aironludi/data/storage.dart';
+import 'package:aironludi/features/me/me_screen.dart';
 import 'package:aironludi/services/providers.dart';
 import 'package:aironludi/ui/liquid.dart';
 import 'package:coach_core/coach_core.dart';
@@ -45,7 +46,7 @@ void main() {
     await tester.pumpAndSettle();
 
     Finder tabLabel(String label) => find.descendant(of: find.byType(LiquidTabBar), matching: find.text(label));
-    for (final label in ['Heute', 'Aktivitäten', 'Training', 'Ernährung']) {
+    for (final label in ['Heute', 'Plan', 'Verlauf', 'Ernährung', 'Ich']) {
       expect(tabLabel(label), findsOneWidget);
     }
     await tester.tap(tabLabel('Ernährung'));
@@ -75,9 +76,11 @@ void main() {
   testWidgets('Einstellungen über das Zahnrad, Bereich Allgemein', (tester) async {
     await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Einstellungen'));
+    // Einstellungen liegen im Reiter „Ich“ (vorher Zahnrad auf „Heute“).
+    await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Ich')));
     await tester.pumpAndSettle();
-    expect(find.text('Einstellungen'), findsOneWidget);
+    expect(find.byType(MeScreen), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Ziele & Prioritäten'), 200, scrollable: find.byType(Scrollable).last);
     expect(find.text('Ziele & Prioritäten'), findsOneWidget);
     // Über den Bereichen steht der Kontoabschnitt.
     await tester.scrollUntilVisible(find.text('Allgemein'), 200, scrollable: find.byType(Scrollable).first);
@@ -86,18 +89,29 @@ void main() {
     await tester.tap(find.text('Allgemein'));
     await tester.pumpAndSettle();
     expect(find.text('Erinnerungen'.toUpperCase()), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Nur Einordnungen (empfohlen)'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
     expect(find.text('Nur Einordnungen (empfohlen)'), findsOneWidget);
   });
 
   testWidgets('Einstellungen › Ernährung: Erinnerung ans Frühstück einschalten', (tester) async {
     await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Einstellungen'));
+    // Einstellungen liegen im Reiter „Ich“ (vorher Zahnrad auf „Heute“).
+    await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Ich')));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('Ernährung'), 200, scrollable: find.byType(Scrollable).first);
-    await tester.ensureVisible(find.text('Ernährung').last);
+    final nutritionRow = find.widgetWithText(ListTile, 'Ernährung');
+    await tester.scrollUntilVisible(
+      nutritionRow,
+      200,
+      scrollable: find.descendant(of: find.byType(MeScreen), matching: find.byType(Scrollable)).first,
+    );
+    await tester.ensureVisible(nutritionRow);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Ernährung').last);
+    await tester.tap(nutritionRow);
     await tester.pumpAndSettle();
     final breakfast = find.widgetWithText(SwitchListTile, 'Frühstück');
     await tester.dragUntilVisible(breakfast, find.byType(ListView).last, const Offset(0, -200));

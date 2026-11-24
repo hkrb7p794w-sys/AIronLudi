@@ -12,7 +12,7 @@ der nativen iPhone-App aus `hkrb7p794w-sys/Coach-App` (Swift, Stand `793d408`). 
 | Pfad | Inhalt |
 |---|---|
 | `packages/coach_core/` | Reine Logik **ohne Flutter** (Port von `CoachCore`), testbar mit `dart test`; Fixtures in `test/fixtures` |
-| `lib/app/` | App-Widget, Router (`go_router`, vier Reiter), Theme, Deep Links, Benutzerwechsel (`user_scope.dart`) |
+| `lib/app/` | App-Widget, Router (`go_router`, fünf Reiter), Theme, Deep Links, Benutzerwechsel (`user_scope.dart`) |
 | `lib/ui/` | Gemeinsame Bausteine; Designsystem „Clean Liquid Design“ in `liquid.dart`, Tokens in `tokens.dart` |
 | `lib/data/` | Datenbank (drift), Einstellungen, sicherer Speicher, Repositories, Sicherung, Benutzer |
 | `lib/services/`, `lib/platform/` | Dienste (Garmin, WHOOP, Health, KI, Mitteilungen …) und Plattformbrücken; Provider in `services/providers.dart` |
@@ -27,19 +27,21 @@ der nativen iPhone-App aus `hkrb7p794w-sys/Coach-App` (Swift, Stand `793d408`). 
 
 ## Funktionsübersicht
 
-Vier Reiter (`lib/app/router.dart`, Pfade `/heute`, `/aktivitaeten`, `/training`, `/ernaehrung`), jeder mit eigenem
-Navigationsstapel; beim ersten Start der Einrichtungsassistent (`/einrichtung`, `features/onboarding`).
+Fünf Reiter (`lib/app/router.dart`, `AppTab`; Pfade `/heute`, `/plan`, `/verlauf`, `/ernaehrung`, `/ich`), jeder
+mit eigenem Navigationsstapel; alte Pfade `/aktivitaeten` und `/training` leiten weiter. Beim ersten Start der
+Einrichtungsassistent (`/einrichtung`, `features/onboarding`). Hintergrund: `docs/decisions.md`, „Fünf Reiter“.
 
-| Reiter / Bereich | Ordner unter `lib/features/` | Inhalt |
+| Reiter | Einstieg / Ordner unter `lib/features/` | Inhalt |
 |---|---|---|
 | Heute | `today` | Ringe Schlaf/Erholung/Belastung, Tagesampel, „Jetzt dran“, Ernährung heute, Wochenüberblick, anpassbares Dashboard |
-| Aktivitäten | `activities` | Verlauf aus Garmin, Health, WHOOP, Nachgetragenem und Gym; Details wie Garmin Connect, Analyse nach dem Training |
-| Training | `training`, `plan`, `endurance`, `gym`, `routes`, `fuel`, `health` | Wochenplan, Saisonplan, adaptiver Ausdauerplan, Gym-Logging (Live-Einheit), Routenplaner, Fuel Planner (Verpflegung), Morgenbericht, Body Battery, Schlaf, Mobilität, Wecker |
+| Plan | `TrainingScreen` (`TrainingSection.plan`); `plan`, `endurance`, `gym`, `routes`, `fuel` | Belastung heute, Wochenplan, Saison, adaptiver Ausdauerplan, Gym-Logging (Live-Einheit), Routenplaner, Verpflegung (Fuel Planner) |
+| Verlauf | `activities`; Auswertungen über `TrainingSection.history` (`training`, `health`) | Aktivitäten aus Garmin, Health, WHOOP, Nachgetragenem und Gym; Gesundheit, Erholung, Herzfrequenz, Trends, Schlaf, Fitness & Form, Wochenbericht, Disziplinen |
 | Ernährung | `nutrition`, `recipes` | Tagebuch, Erfassen (Suche, Foto, Barcode, Text/Diktat), BLS und Open Food Facts, Tagesziele, Gewicht, Rezepte, Vorrat, Kochplan, Teilen |
-| Übergreifend | `ai`, `settings`, `account`, `social`, `game`, `motivation`, `evidence` | KI-Coach und Chat, Einstellungen und Datenquellen, Konto, Freunde und Feed, Rangliste/Challenges, Begleiter, Quellen zu Empfehlungen |
+| Ich | `me` (Einstellungen als Reiter); `settings`, `account`, `social`, `game`, `ai` | Profil und Ziele, Datenquellen, Konto, Freunde & Liga (Feed, Rangliste, Challenges), KI (Empfehlungen, Chat, Export/Import), alle Einstellungen |
 
-Logik dazu liegt in `packages/coach_core/lib/src/<bereich>/` mit gleichem Namen. Wo eine Funktion herkommt, zeigt
-der Swift-Code in Coach-App; was schon portiert ist, Abschnitt 8 des Migrationsplans.
+Querschnitt: `motivation` (Begleiter), `evidence` (Quellen zu Empfehlungen). Logik dazu liegt in
+`packages/coach_core/lib/src/<bereich>/` mit gleichem Namen. Wo eine Funktion herkommt, zeigt der Swift-Code in
+Coach-App; was schon portiert ist, Abschnitt 8 des Migrationsplans.
 
 ## Grundregeln
 

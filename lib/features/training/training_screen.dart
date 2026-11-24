@@ -19,6 +19,7 @@ import '../../ui/tokens.dart';
 import '../../ui/week_minutes_chart.dart';
 import '../endurance/endurance_controller.dart';
 import '../endurance/endurance_screens.dart';
+import '../fuel/fuel_planner_screen.dart';
 import '../gym/gym_providers.dart';
 import '../gym/gym_screen.dart';
 import '../health/health_screen.dart';
@@ -32,17 +33,33 @@ import 'training_pages.dart';
 
 /// Übersicht der Leistungsbereiche: Gym, Erholung, Herzfrequenz, Trends, Schlaf-Coach, Fitness & Form und
 /// Wochenbericht – jeweils eine eigene Seite (Port von `TrainingView.swift`).
+///
+/// Seit Stufe 4 des Roasts (docs/roast/design-konzept.md) in zwei Teilen: [TrainingSection.plan] ist der Reiter
+/// „Plan“ (was kommt), [TrainingSection.history] die „Auswertungen“ im Reiter „Verlauf“ (was war).
 class TrainingScreen extends ConsumerStatefulWidget {
-  const TrainingScreen({super.key});
+  const TrainingScreen({super.key, this.section = TrainingSection.plan});
+
+  final TrainingSection section;
 
   @override
   ConsumerState<TrainingScreen> createState() => _TrainingScreenState();
 }
 
+enum TrainingSection {
+  plan('Plan'),
+  history('Auswertungen');
+
+  const TrainingSection(this.title);
+
+  final String title;
+}
+
 class _TrainingScreenState extends ConsumerState<TrainingScreen>
     with TrainingDataReload<TrainingScreen>, PendingRouteHandler<TrainingScreen> {
+  bool get _isPlan => widget.section == TrainingSection.plan;
+
   @override
-  Set<AppRoute> get handledRoutes => const {AppRoute.health, AppRoute.gym, AppRoute.startWorkout};
+  Set<AppRoute> get handledRoutes => _isPlan ? const {AppRoute.gym, AppRoute.startWorkout} : const {AppRoute.health};
 
   @override
   void handlePendingRoute(PendingRoute pending) => switch (pending.route) {
@@ -187,7 +204,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen>
     final season = settings.season;
     final estimate = RaceEstimate(config: season, tests: settings.tests, today: today);
     return Scaffold(
-      appBar: AppBar(title: const CollapsingTitle(child: Text('Training'))),
+      appBar: AppBar(title: CollapsingTitle(child: Text(widget.section.title))),
       body: RefreshIndicator(
         onRefresh: () async {
           await ref.read(appModelProvider).syncNow();
@@ -196,35 +213,38 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen>
         child: ListView(
           padding: const EdgeInsets.only(bottom: 32),
           children: [
-            const LargeTitleHeader('Training'),
-            DailyStrainCard(strain: _strain(today, formPoints: form)),
-            WeekMinutesChart(
-              minutes: TrainingTrends.weeklyMinutes(activities: _activities, gym: gym, today: today, weeks: 8),
-              today: today,
-              onTap: () => _open((_) => TrendsScreen(activities: _activities, gym: gym)),
-            ),
+            LargeTitleHeader(widget.section.title),
+            if (_isPlan) DailyStrainCard(strain: _strain(today, formPoints: form)),
+            if (!_isPlan)
+              WeekMinutesChart(
+                minutes: TrainingTrends.weeklyMinutes(activities: _activities, gym: gym, today: today, weeks: 8),
+                today: today,
+                onTap: () => _open((_) => TrendsScreen(activities: _activities, gym: gym)),
+              ),
             _HubGrid(
               children: [
-                _HubRow(
-                  title: 'Plan',
-                  symbol: 'calendar',
-                  color: AppColors.of(context).caution,
-                  value: '',
-                  caption: settings.profile.mode == ProfileMode.season ? 'Saisonplan und Woche' : 'Deine Woche',
-                  onTap: () => _open(
-                    (_) => settings.profile.mode == ProfileMode.season ? const PlanScreen() : const MyWeekScreen(),
+                if (_isPlan)
+                  _HubRow(
+                    title: 'Woche',
+                    symbol: 'calendar',
+                    color: AppColors.of(context).caution,
+                    value: '',
+                    caption: settings.profile.mode == ProfileMode.season ? 'Saisonplan und Woche' : 'Deine Woche',
+                    onTap: () => _open(
+                      (_) => settings.profile.mode == ProfileMode.season ? const PlanScreen() : const MyWeekScreen(),
+                    ),
                   ),
-                ),
-                _HubRow(
-                  title: 'Ausdauerplan',
-                  symbol: 'figure.run',
-                  color: Colors.deepOrange,
-                  value: enduranceSummary ?? 'Erstellen',
-                  caption: 'Laufen, Rad/Zwift, Schwimmen – passt sich an',
-                  onTap: () => _open((_) => const EnduranceScreen()),
-                ),
+                if (_isPlan)
+                  _HubRow(
+                    title: 'Ausdauerplan',
+                    symbol: 'figure.run',
+                    color: Colors.deepOrange,
+                    value: enduranceSummary ?? 'Erstellen',
+                    caption: 'Laufen, Rad/Zwift, Schwimmen – passt sich an',
+                    onTap: () => _open((_) => const EnduranceScreen()),
+                  ),
                 // Früher eigener Reiter; „Training starten“ (App-Icon, Kurzbefehl, Widget) öffnet diesen Bereich direkt.
-                if (settings.profile.trains(TrainingSport.strength))
+                if (_isPlan && settings.profile.trains(TrainingSport.strength))
                   _HubRow(
                     title: 'Gym',
                     symbol: 'dumbbell.fill',
@@ -234,135 +254,155 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen>
                     caption: running ?? 'Pläne, Übungen, Auswertung',
                     onTap: () => _open((_) => const GymScreen()),
                   ),
-                _HubRow(
-                  title: 'Gesundheit',
-                  symbol: 'heart.text.square.fill',
-                  color: Colors.pink,
-                  value: switch (BodyBatteryAnalysis.summary(days: _days, today: today).current) {
-                    final current? => 'BB ${current.toInt()}',
-                    null => '',
-                  },
-                  caption: 'Morning Report, Widgets, Body Battery',
-                  onTap: () => _open((_) => const HealthScreen()),
-                ),
-                _HubRow(
-                  title: 'Erholung',
-                  symbol: 'bed.double.fill',
-                  color: Colors.indigo,
-                  value: recovery == null
-                      ? '–'
-                      : formatNumber(recovery.trend.latest?.value, unit: recovery.unit, digits: recovery.digits),
-                  caption: 'HRV, Ruhepuls, Schlaf',
-                  onTap: () => _open((_) => RecoveryScreen(controller: controller)),
-                ),
-                _HubRow(
-                  title: 'Herzfrequenz',
-                  symbol: 'heart.fill',
-                  color: AppColors.of(context).alert,
-                  value: controller.zones?.run.lactateThreshold == null
-                      ? '–'
-                      : '${controller.zones!.run.lactateThreshold} bpm',
-                  caption: 'Schwelle Laufen',
-                  onTap: () => _open((_) => HeartRateScreen(report: controller.zones)),
-                ),
-                _HubRow(
-                  title: 'Trends',
-                  symbol: 'chart.bar.xaxis',
-                  color: Colors.purple,
-                  value: '$weekMinutes min',
-                  caption: 'diese Woche',
-                  onTap: () => _open((_) => TrendsScreen(activities: _activities, gym: gym)),
-                ),
-                _HubRow(
-                  title: 'Schlaf-Coach',
-                  symbol: 'moon.stars.fill',
-                  color: Colors.indigo,
-                  value: sleep == null ? '–' : '${SleepCoach.clock(sleep.bedtimeMinutes)} Uhr',
-                  caption: 'Schlafenszeit heute',
-                  onTap: () => _open((_) => const SleepCoachScreen()),
-                ),
-                _HubRow(
-                  title: 'Fitness & Form',
-                  symbol: 'chart.line.uptrend.xyaxis',
-                  color: AppColors.of(context).info,
-                  value: formPercent == null ? '–' : FormZone.of(formPercent).label,
-                  caption: 'Belastung der Uhr',
-                  onTap: () => _open((_) => FitnessFormScreen(points: form)),
-                ),
-                _HubRow(
-                  title: 'Wochenbericht',
-                  symbol: 'doc.text.magnifyingglass',
-                  color: Colors.teal,
-                  value: '${report.week.sessions} Einheiten',
-                  caption: 'letzte Woche',
-                  onTap: () => _open((_) => WeeklyReportScreen(report: report)),
-                ),
-                _HubRow(
-                  title: 'Routen',
-                  symbol: 'point.topleft.down.to.point.bottomright.curvepath',
-                  color: Colors.teal,
-                  value: routeToday == null ? '' : RouteFormat.distance(routeToday.stats.distanceMeters),
-                  caption: routeToday == null
-                      ? (routeStore.settings.explorationEnabled
-                            ? '${routeStore.exploration.territories.length} Gebiete · Routen planen'
-                            : 'Laufen & Rad auf OpenStreetMap')
-                      : 'Route heute',
-                  onTap: () => _open((_) => const RoutesScreen()),
-                ),
+                if (!_isPlan)
+                  _HubRow(
+                    title: 'Gesundheit',
+                    symbol: 'heart.text.square.fill',
+                    color: Colors.pink,
+                    value: switch (BodyBatteryAnalysis.summary(days: _days, today: today).current) {
+                      final current? => 'BB ${current.toInt()}',
+                      null => '',
+                    },
+                    caption: 'Morning Report, Widgets, Body Battery',
+                    onTap: () => _open((_) => const HealthScreen()),
+                  ),
+                if (!_isPlan)
+                  _HubRow(
+                    title: 'Erholung',
+                    symbol: 'bed.double.fill',
+                    color: Colors.indigo,
+                    value: recovery == null
+                        ? '–'
+                        : formatNumber(recovery.trend.latest?.value, unit: recovery.unit, digits: recovery.digits),
+                    caption: 'HRV, Ruhepuls, Schlaf',
+                    onTap: () => _open((_) => RecoveryScreen(controller: controller)),
+                  ),
+                if (!_isPlan)
+                  _HubRow(
+                    title: 'Herzfrequenz',
+                    symbol: 'heart.fill',
+                    color: AppColors.of(context).alert,
+                    value: controller.zones?.run.lactateThreshold == null
+                        ? '–'
+                        : '${controller.zones!.run.lactateThreshold} bpm',
+                    caption: 'Schwelle Laufen',
+                    onTap: () => _open((_) => HeartRateScreen(report: controller.zones)),
+                  ),
+                if (!_isPlan)
+                  _HubRow(
+                    title: 'Trends',
+                    symbol: 'chart.bar.xaxis',
+                    color: Colors.purple,
+                    value: '$weekMinutes min',
+                    caption: 'diese Woche',
+                    onTap: () => _open((_) => TrendsScreen(activities: _activities, gym: gym)),
+                  ),
+                if (!_isPlan)
+                  _HubRow(
+                    title: 'Schlaf-Coach',
+                    symbol: 'moon.stars.fill',
+                    color: Colors.indigo,
+                    value: sleep == null ? '–' : '${SleepCoach.clock(sleep.bedtimeMinutes)} Uhr',
+                    caption: 'Schlafenszeit heute',
+                    onTap: () => _open((_) => const SleepCoachScreen()),
+                  ),
+                if (!_isPlan)
+                  _HubRow(
+                    title: 'Fitness & Form',
+                    symbol: 'chart.line.uptrend.xyaxis',
+                    color: AppColors.of(context).info,
+                    value: formPercent == null ? '–' : FormZone.of(formPercent).label,
+                    caption: 'Belastung der Uhr',
+                    onTap: () => _open((_) => FitnessFormScreen(points: form)),
+                  ),
+                if (!_isPlan)
+                  _HubRow(
+                    title: 'Wochenbericht',
+                    symbol: 'doc.text.magnifyingglass',
+                    color: Colors.teal,
+                    value: '${report.week.sessions} Einheiten',
+                    caption: 'letzte Woche',
+                    onTap: () => _open((_) => WeeklyReportScreen(report: report)),
+                  ),
+                if (_isPlan)
+                  _HubRow(
+                    title: 'Routen',
+                    symbol: 'point.topleft.down.to.point.bottomright.curvepath',
+                    color: Colors.teal,
+                    value: routeToday == null ? '' : RouteFormat.distance(routeToday.stats.distanceMeters),
+                    caption: routeToday == null
+                        ? (routeStore.settings.explorationEnabled
+                              ? '${routeStore.exploration.territories.length} Gebiete · Routen planen'
+                              : 'Laufen & Rad auf OpenStreetMap')
+                        : 'Route heute',
+                    onTap: () => _open((_) => const RoutesScreen()),
+                  ),
+                if (_isPlan)
+                  _HubRow(
+                    title: 'Verpflegung',
+                    symbol: 'fork.knife',
+                    color: AppColors.of(context).caution,
+                    value: '',
+                    caption: 'Fuel Planner: vor, während, nach dem Training',
+                    onTap: () => _open((_) => const FuelPlannerScreen()),
+                  ),
               ],
             ),
             if (settings.profile.mode == ProfileMode.season) ...[
-              _HubGrid(
-                header: 'Disziplinen',
-                children: [
-                  _HubRow(
-                    title: 'Schwimmen',
-                    symbol: 'figure.pool.swim',
-                    color: AppColors.of(context).info,
-                    value: '${PlanTokens.mmss(season.cssSecondsPer100m)} /100 m',
-                    caption: 'CSS',
-                    onTap: () => _open((_) => SwimScreen(controller: controller)),
-                  ),
-                  _HubRow(
-                    title: 'Rad',
-                    symbol: 'figure.outdoor.cycle',
-                    color: AppColors.of(context).caution,
-                    value: '${season.ftpWatts} W',
-                    caption: 'FTP',
-                    onTap: () => _open((_) => BikeScreen(controller: controller)),
-                  ),
-                  _HubRow(
-                    title: 'Laufen',
-                    symbol: 'figure.run',
-                    color: AppColors.of(context).good,
-                    value: '${PlanTokens.mmss(season.thresholdPaceSecondsPerKm)} /km',
-                    caption: 'Schwelle',
-                    onTap: () => _open((_) => RunScreen(controller: controller)),
-                  ),
-                ],
-              ),
-              _HubGrid(
-                header: 'Ziele',
-                children: [
-                  _HubRow(
-                    title: 'Almere',
-                    symbol: 'flag.checkered',
-                    color: Colors.teal,
-                    value: '${RaceEstimate.hoursMinutes(estimate.totalMinutes)} h',
-                    caption: 'geschätzte Zielzeit',
-                    onTap: () => _open((_) => const AlmereScreen()),
-                  ),
-                  _HubRow(
-                    title: 'Marathon',
-                    symbol: 'medal.fill',
-                    color: Colors.pink,
-                    value: '${math.max(today.daysUntil(season.marathonDate), 0)} Tage',
-                    caption: GermanFormat.date(season.marathonDate),
-                    onTap: () => _open((_) => const MarathonScreen()),
-                  ),
-                ],
-              ),
-            ] else
+              if (!_isPlan)
+                _HubGrid(
+                  header: 'Disziplinen',
+                  children: [
+                    _HubRow(
+                      title: 'Schwimmen',
+                      symbol: 'figure.pool.swim',
+                      color: AppColors.of(context).info,
+                      value: '${PlanTokens.mmss(season.cssSecondsPer100m)} /100 m',
+                      caption: 'CSS',
+                      onTap: () => _open((_) => SwimScreen(controller: controller)),
+                    ),
+                    _HubRow(
+                      title: 'Rad',
+                      symbol: 'figure.outdoor.cycle',
+                      color: AppColors.of(context).caution,
+                      value: '${season.ftpWatts} W',
+                      caption: 'FTP',
+                      onTap: () => _open((_) => BikeScreen(controller: controller)),
+                    ),
+                    _HubRow(
+                      title: 'Laufen',
+                      symbol: 'figure.run',
+                      color: AppColors.of(context).good,
+                      value: '${PlanTokens.mmss(season.thresholdPaceSecondsPerKm)} /km',
+                      caption: 'Schwelle',
+                      onTap: () => _open((_) => RunScreen(controller: controller)),
+                    ),
+                  ],
+                ),
+              // Saisonziele gehören zum Plan (Roast F-4: unter „Saison“ zusammengefasst).
+              if (_isPlan)
+                _HubGrid(
+                  header: 'Saison',
+                  children: [
+                    _HubRow(
+                      title: 'Almere',
+                      symbol: 'flag.checkered',
+                      color: Colors.teal,
+                      value: '${RaceEstimate.hoursMinutes(estimate.totalMinutes)} h',
+                      caption: 'geschätzte Zielzeit',
+                      onTap: () => _open((_) => const AlmereScreen()),
+                    ),
+                    _HubRow(
+                      title: 'Marathon',
+                      symbol: 'medal.fill',
+                      color: Colors.pink,
+                      value: '${math.max(today.daysUntil(season.marathonDate), 0)} Tage',
+                      caption: GermanFormat.date(season.marathonDate),
+                      onTap: () => _open((_) => const MarathonScreen()),
+                    ),
+                  ],
+                ),
+            ] else if (!_isPlan)
               _HubGrid(
                 header: 'Meine Sportarten',
                 children: [
