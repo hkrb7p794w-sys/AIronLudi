@@ -101,7 +101,7 @@ final class WakeAlarmService extends ChangeNotifier {
     : _store = store,
       stored = store.read(storedKey, StoredWakeAlarm.fromJson, null);
 
-  static const storedKey = 'coach.wakeAlarm';
+  static const storedKey = SettingsKeys.wakeAlarm;
 
   final SettingsStore _store;
   final WakeAlarmBridge _bridge;

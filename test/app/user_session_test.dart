@@ -68,7 +68,14 @@ void main() {
     activities = FakeLiveActivityHost();
   });
 
-  tearDown(() => root.deleteSync(recursive: true));
+  tearDown(() {
+    try {
+      root.deleteSync(recursive: true);
+    } on FileSystemException {
+      // Windows: Die Datenbank des zuletzt aktiven Benutzers ist am Testende noch offen und lässt sich nicht löschen
+      // (unter Linux und auf den Geräten schon). Der Ordner liegt im Temp-Verzeichnis.
+    }
+  });
 
   /// Wie `createAppContainer`, aber mit Datenbankdatei im Testordner und Ersatz für Schlüsselbund und Widgets.
   Future<ProviderContainer> open(LocalUser user, UserSession session) async {
@@ -228,7 +235,7 @@ void main() {
     );
     expect(other.databaseName, 'coach-ABCDEFGH-1234');
     expect(other.secretPrefix, 'u.ABCDEFGH-1234.');
-    expect(other.support('/s'), '/s/users/ABCDEFGH-1234');
+    expect(other.support('/s'), p.join('/s', 'users', 'ABCDEFGH-1234'));
     expect(BackupService.folderFileName(null), AppBackup.fileName);
     expect(BackupService.folderFileName('eva'), 'IronLudi-Sicherung-eva.json');
     expect(BackupService.folderFileName('eva', previous: true), 'IronLudi-Sicherung-eva-vorher.json');

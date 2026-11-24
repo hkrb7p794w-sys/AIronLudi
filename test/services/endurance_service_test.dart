@@ -10,6 +10,7 @@ import 'package:aironludi/services/endurance/workout_exporter_service.dart';
 import 'package:coach_core/coach_core.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 
 final monday = CalendarDay(2026, 11, 16);
 
@@ -102,7 +103,7 @@ void main() {
     test('FIT- und Zwift-Datei im Ordner des Benutzers', () async {
       final service = exporter(FakeGarmin());
       final fit = await service.fitFile(workout, monday);
-      expect(fit.path, endsWith('workouts/2026-11-16-rad-schwelle-2x10-min.fit'));
+      expect(fit.path, endsWith(p.join('workouts', '2026-11-16-rad-schwelle-2x10-min.fit')));
       expect(fit.path, startsWith(folder.path));
       final bytes = fit.readAsBytesSync();
       expect(ascii.decode(bytes.sublist(8, 12)), '.FIT');
