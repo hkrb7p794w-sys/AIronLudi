@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/nutrition/open_food_facts_client.dart';
 import '../../services/providers.dart';
 import '../../ui/kpi_ring.dart';
+import '../../ui/tokens.dart';
 import 'capture_views.dart';
 
 /// Ergebnis der Erfassung: Positionen zum Eintragen oder ein anderer Weg (Scannen, KI, Nur kcal, Manuell).
@@ -268,8 +269,8 @@ class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen> {
                         )
                       else if (_error case final error?)
                         ListTile(
-                          leading: const Icon(Icons.wifi_off, color: Colors.orange),
-                          title: Text(error, style: const TextStyle(fontSize: 13)),
+                          leading: Icon(Icons.wifi_off, color: AppColors.of(context).caution),
+                          title: Text(error, style: AppText.footnote(context)),
                           trailing: TextButton(onPressed: () => unawaited(_search(key)), child: const Text('Erneut')),
                         )
                       else if (_online.containsKey(key) && online.isEmpty)
@@ -335,7 +336,7 @@ class _CategoryChip extends StatelessWidget {
               category.label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              style: AppText.callout(context).copyWith(fontWeight: FontWeight.w600),
             ),
           ),
           const Icon(Icons.expand_more, size: 18),
@@ -356,9 +357,9 @@ class _KilocaloriePill extends StatelessWidget {
   Widget build(BuildContext context) {
     final fraction = eaten / goal;
     final color = fraction > 1.1
-        ? Colors.red
+        ? AppColors.of(context).alert
         : fraction > 1
-        ? Colors.orange
+        ? AppColors.of(context).caution
         : Theme.of(context).colorScheme.primary;
     return Semantics(
       label: '${_number(eaten)} von ${_number(goal)} kcal',
@@ -449,7 +450,7 @@ class _Group extends StatelessWidget {
         if (footer case final footer?)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
-            child: Text(footer, style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
+            child: Text(footer, style: AppText.caption(context).copyWith(color: theme.colorScheme.onSurfaceVariant)),
           ),
       ],
     );
@@ -494,7 +495,7 @@ class _FoodRow extends StatelessWidget {
                         (serving != null && product.servingGrams == grams ? ' ($serving)' : ''),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant),
+                    style: AppText.footnote(context).copyWith(color: theme.colorScheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -571,7 +572,7 @@ class _BottomBar extends StatelessWidget {
                   '${basket.length} ${basket.length == 1 ? 'Position' : 'Positionen'} · '
                   '${_number(totals[Nutrient.kcal] ?? 0)} kcal · ${_number(totals[Nutrient.protein] ?? 0)} g Protein · '
                   '${_number(totals[Nutrient.carbs] ?? 0)} g KH · ${_number(totals[Nutrient.fat] ?? 0)} g Fett',
-                  style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+                  style: AppText.caption(context).copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
               ],
               Row(

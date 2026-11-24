@@ -7,6 +7,7 @@ import '../../ui/components.dart';
 import '../../ui/liquid.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
+import '../../ui/tokens.dart';
 import '../evidence/evidence_views.dart';
 import '../health/mobility_screen.dart';
 import '../plan/my_week_screen.dart';
@@ -29,7 +30,7 @@ class CoachChip extends StatelessWidget {
       text,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color),
+      style: AppText.caption(context).copyWith(fontWeight: FontWeight.w600, color: color),
     ),
   );
 }
@@ -85,7 +86,7 @@ class NowSection extends ConsumerWidget {
     final plan = snapshot.plan;
     final today = plan.today;
     final theme = Theme.of(context);
-    final secondary = TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant);
+    final secondary = AppText.footnote(context).copyWith(color: theme.colorScheme.onSurfaceVariant);
     final season = settings.profile.mode == ProfileMode.season;
     final loggedIn = ref.watch(garminConnectProvider).isLoggedIn;
     final pause = settings.activeBreak(today);
@@ -133,13 +134,13 @@ class NowSection extends ConsumerWidget {
                 _IconLine(
                   Icons.sync_problem,
                   conflict,
-                  const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.orange),
+                  AppText.footnote(context).copyWith(fontWeight: FontWeight.w500, color: AppColors.of(context).caution),
                 ),
               if (snapshot.isFromYesterday)
                 _IconLine(
                   Icons.schedule,
                   'Noch keine Garmin-Werte für heute – Einordnung mit den Werten von gestern.',
-                  const TextStyle(fontSize: 13, color: Colors.orange),
+                  AppText.footnote(context).copyWith(color: AppColors.of(context).caution),
                 ),
               if (season)
                 Wrap(
@@ -282,12 +283,14 @@ class _FocusItemRowState extends State<FocusItemRow> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     spacing: 2,
                     children: [
-                      Text(item.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                      Text(item.title, style: AppText.headline(context)),
                       if (item.target.isNotEmpty) Text(item.target, style: secondary),
                       if (item.chip.isNotEmpty)
                         CoachChip(
                           text: item.chip,
-                          color: item.chip == 'nur locker bewegen' ? Colors.red : Colors.orange,
+                          color: item.chip == 'nur locker bewegen'
+                              ? AppColors.of(context).alert
+                              : AppColors.of(context).caution,
                         ),
                     ],
                   ),
@@ -297,7 +300,8 @@ class _FocusItemRowState extends State<FocusItemRow> {
                 if (widget.onOpen != null) const DisclosureChevron(),
               ],
             ),
-            if (_expanded && item.detail.isNotEmpty) Text(item.detail, style: secondary.copyWith(fontSize: 13)),
+            if (_expanded && item.detail.isNotEmpty)
+              Text(item.detail, style: AppText.footnote(context).copyWith(color: secondary.color)),
           ],
         ),
       ),
@@ -314,9 +318,9 @@ class SessionStatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = switch (status) {
-      SessionStatus.done => Colors.green,
-      SessionStatus.partial || SessionStatus.substituted => Colors.orange,
-      SessionStatus.missed => Colors.red,
+      SessionStatus.done => AppColors.of(context).good,
+      SessionStatus.partial || SessionStatus.substituted => AppColors.of(context).caution,
+      SessionStatus.missed => AppColors.of(context).alert,
       _ => Theme.of(context).colorScheme.onSurfaceVariant,
     };
     return CoachChip(text: status.label, color: color);
@@ -406,7 +410,7 @@ class SuggestionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final secondary = TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant);
+    final secondary = AppText.caption(context).copyWith(color: theme.colorScheme.onSurfaceVariant);
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -415,10 +419,11 @@ class SuggestionCard extends StatelessWidget {
         children: [
           Text(
             suggestion.source.label.toUpperCase(),
-            style: secondary.copyWith(fontSize: 11, fontWeight: FontWeight.w600),
+            style: AppText.caption(context).copyWith(color: secondary.color, fontWeight: FontWeight.w600),
           ),
           Text(suggestion.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-          if (suggestion.reason.isNotEmpty) Text(suggestion.reason, style: secondary.copyWith(fontSize: 13)),
+          if (suggestion.reason.isNotEmpty)
+            Text(suggestion.reason, style: AppText.footnote(context).copyWith(color: secondary.color)),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(8),
@@ -451,7 +456,7 @@ class SuggestionCard extends StatelessWidget {
                           TextSpan(text: PlanSuggestion.text(change.after)),
                         ],
                       ),
-                      style: const TextStyle(fontSize: 12),
+                      style: AppText.caption(context),
                     ),
                   ),
               ],
@@ -459,13 +464,17 @@ class SuggestionCard extends StatelessWidget {
           ),
           if (suggestion.unchanged.isNotEmpty) Text(suggestion.unchanged.join(' · '), style: secondary),
           if (suggestion.conflicts.isEmpty)
-            const _IconLine(
+            _IconLine(
               Icons.verified_user_outlined,
               'Planregeln geprüft: kein neuer Konflikt',
-              TextStyle(fontSize: 12, color: Colors.green),
+              AppText.caption(context).copyWith(color: AppColors.of(context).good),
             ),
           for (final hint in suggestion.conflicts)
-            _IconLine(Icons.warning, hint.message, const TextStyle(fontSize: 12, color: Colors.orange)),
+            _IconLine(
+              Icons.warning,
+              hint.message,
+              AppText.caption(context).copyWith(color: AppColors.of(context).caution),
+            ),
           Wrap(
             spacing: 8,
             children: [
@@ -473,7 +482,7 @@ class SuggestionCard extends StatelessWidget {
               if (adjust case final adjust?) OutlinedButton(onPressed: adjust, child: const Text('Anpassen')),
               TextButton(
                 onPressed: dismiss,
-                child: const Text('Verwerfen', style: TextStyle(color: Colors.red)),
+                child: Text('Verwerfen', style: TextStyle(color: AppColors.of(context).alert)),
               ),
             ],
           ),
@@ -514,10 +523,10 @@ class WeeklyReviewSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: 6,
             children: [
-              Text(progress.text, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+              Text(progress.text, style: AppText.headline(context)),
               LiquidProgressBar(
                 value: progress.fraction.clamp(0, 1),
-                color: progress.fraction >= 1 ? Colors.green : null,
+                color: progress.fraction >= 1 ? AppColors.of(context).good : null,
               ),
             ],
           ),
@@ -585,14 +594,14 @@ class TodayHintsSection extends ConsumerWidget {
                 _HintChip(
                   text: 'Laufumfang +${((run.increase ?? 0) * 100).round()} %',
                   icon: Icons.warning,
-                  color: Colors.orange,
+                  color: AppColors.of(context).caution,
                   onTap: () => open(HintPage(title: 'Laufumfang', text: warning, ruleIDs: const ['run.progression'])),
                 ),
               if (loadWarning != null && load != null)
                 _HintChip(
                   text: 'Belastung +${((load.increase ?? 0) * 100).round()} %',
                   icon: Icons.speed,
-                  color: Colors.orange,
+                  color: AppColors.of(context).caution,
                   onTap: () => open(
                     HintPage(
                       title: 'Wochenbelastung',

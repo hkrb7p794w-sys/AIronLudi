@@ -16,6 +16,7 @@ import '../../ui/large_title.dart';
 import '../../ui/liquid.dart';
 import '../../ui/platform_names.dart';
 import '../../ui/strain_card.dart';
+import '../../ui/tokens.dart';
 import '../activities/activity_detail_screen.dart';
 import '../activities/activity_parts.dart';
 import '../activities/post_workout_section.dart';
@@ -211,7 +212,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with TrainingDataRelo
     final settings = ref.watch(coachSettingsProvider);
     final snapshot = _controller.snapshot;
     final theme = Theme.of(context);
-    final secondary = TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant);
+    final secondary = AppText.footnote(context).copyWith(color: theme.colorScheme.onSurfaceVariant);
     final today = snapshot?.plan.today ?? CalendarDay.today();
     final lastSync = model.lastSync ?? model.health.lastImport;
     return Scaffold(
@@ -260,8 +261,11 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with TrainingDataRelo
                     ),
                   if (model.lastError case final error?)
                     ListTile(
-                      leading: const Icon(Icons.warning_amber, color: Colors.orange),
-                      title: Text(error, style: const TextStyle(fontSize: 13, color: Colors.orange)),
+                      leading: Icon(Icons.warning_amber, color: AppColors.of(context).caution),
+                      title: Text(
+                        error,
+                        style: AppText.footnote(context).copyWith(color: AppColors.of(context).caution),
+                      ),
                     ),
                   if (model.lastReport case final report? when report.errors.isNotEmpty)
                     ListTile(
@@ -476,9 +480,9 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with TrainingDataRelo
                       ProgressRing(
                         fraction: progress.fraction,
                         color: progress.fraction >= 1
-                            ? Colors.green
+                            ? AppColors.of(context).good
                             : progress.fraction >= 0.5
-                            ? Colors.orange
+                            ? AppColors.of(context).caution
                             : theme.colorScheme.primary,
                         size: 52,
                         stroke: 6,
@@ -539,7 +543,7 @@ class _CoachNoteSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(coachSettingsProvider);
     final ai = ref.watch(aiClientProvider);
-    final secondary = TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant);
+    final secondary = AppText.caption(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
     return FormSection(
       header: settings.profile.mode == ProfileMode.season ? 'Coach-Notiz' : 'Warum?',
       children: [
@@ -548,7 +552,7 @@ class _CoachNoteSection extends ConsumerWidget {
             dense: true,
             minLeadingWidth: 12,
             leading: const Icon(Icons.chevron_right, size: 16),
-            title: Text(point, style: const TextStyle(fontSize: 15)),
+            title: Text(point, style: AppText.callout(context)),
           ),
         ListTile(
           dense: true,
@@ -565,7 +569,7 @@ class _CoachNoteSection extends ConsumerWidget {
         if (controller.noteError case final error?)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(error, style: const TextStyle(fontSize: 12, color: Colors.orange)),
+            child: Text(error, style: AppText.caption(context).copyWith(color: AppColors.of(context).caution)),
           ),
         EvidenceDisclosure(ruleIDs: controller.noteEvidence),
       ],

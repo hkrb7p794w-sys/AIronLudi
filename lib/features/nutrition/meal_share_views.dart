@@ -12,6 +12,7 @@ import '../../services/ai/ai_client.dart';
 import '../../services/nutrition/meal_share_service.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 import '../social/social_views.dart';
 import 'nutrition_controller.dart';
 
@@ -113,8 +114,8 @@ class _ShareMealScreenState extends ConsumerState<ShareMealScreen> {
                   onLongPress: () => Clipboard.setData(ClipboardData(text: created.code)),
                 ),
                 ListTile(
-                  leading: const Icon(Icons.cancel_outlined, color: Colors.red),
-                  title: const Text('Freigabe zurückziehen', style: TextStyle(color: Colors.red)),
+                  leading: Icon(Icons.cancel_outlined, color: AppColors.of(context).alert),
+                  title: Text('Freigabe zurückziehen', style: TextStyle(color: AppColors.of(context).alert)),
                   onTap: () async {
                     try {
                       await _service.revoke(created.code);
@@ -138,8 +139,8 @@ class _ShareMealScreenState extends ConsumerState<ShareMealScreen> {
             FormSection(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.warning_amber, color: Colors.orange),
-                  title: Text(error, style: const TextStyle(color: Colors.orange)),
+                  leading: Icon(Icons.warning_amber, color: AppColors.of(context).caution),
+                  title: Text(error, style: TextStyle(color: AppColors.of(context).caution)),
                 ),
               ],
             )
@@ -267,8 +268,8 @@ class _ReceivedMealScreenState extends ConsumerState<ReceivedMealScreen> {
                 ),
                 if (_error case final error?)
                   ListTile(
-                    leading: const Icon(Icons.warning_amber, color: Colors.orange),
-                    title: Text(error, style: const TextStyle(color: Colors.orange)),
+                    leading: Icon(Icons.warning_amber, color: AppColors.of(context).caution),
+                    title: Text(error, style: TextStyle(color: AppColors.of(context).caution)),
                   ),
               ],
             ),
@@ -314,8 +315,8 @@ class _ReceivedMealScreenState extends ConsumerState<ReceivedMealScreen> {
                 ),
                 if (_done case final done?)
                   ListTile(
-                    leading: const Icon(Icons.check_circle_outline, color: Colors.green),
-                    title: Text(done, style: const TextStyle(color: Colors.green)),
+                    leading: Icon(Icons.check_circle_outline, color: AppColors.of(context).good),
+                    title: Text(done, style: TextStyle(color: AppColors.of(context).good)),
                   ),
               ],
             ),

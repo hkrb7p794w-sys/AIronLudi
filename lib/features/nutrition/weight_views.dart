@@ -12,6 +12,7 @@ import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/platform_names.dart';
+import '../../ui/tokens.dart';
 import '../evidence/evidence_views.dart';
 
 String _signed(double value) => (value > 0 ? '+' : (value < 0 ? '−' : '')) + GermanFormat.number(value.abs());
@@ -192,7 +193,7 @@ class _WeightTrendScreenState extends ConsumerState<WeightTrendScreen> {
                       '${nutrition.energyAdjustmentKilocalories.abs().toInt()} kcal pro Tag',
                 ),
                 ListTile(
-                  title: const Text('Zurücksetzen', style: TextStyle(color: Colors.red)),
+                  title: Text('Zurücksetzen', style: TextStyle(color: AppColors.of(context).alert)),
                   onTap: () => _change(settings, (value) => value.energyAdjustmentKilocalories = 0),
                 ),
               ],
@@ -205,7 +206,7 @@ class _WeightTrendScreenState extends ConsumerState<WeightTrendScreen> {
                 Dismissible(
                   key: ValueKey(entry.id),
                   direction: entry.source == WeightSource.manual ? DismissDirection.endToStart : DismissDirection.none,
-                  background: Container(color: Colors.red),
+                  background: Container(color: AppColors.of(context).alert),
                   onDismissed: (_) => settings.weights = [
                     for (final other in settings.weights)
                       if (other.day != entry.day) other,
@@ -335,7 +336,7 @@ class _WeightTrendScreenState extends ConsumerState<WeightTrendScreen> {
         ),
         if (result.capped)
           ListTile(
-            leading: const Icon(Icons.info_outline, color: Colors.orange),
+            leading: Icon(Icons.info_outline, color: AppColors.of(context).caution),
             title: Text(
               'Rechnerisch wären es ${GermanFormat.decimal(result.rawWeeklyKilograms.abs())} kg pro Woche. So schnell '
               'geht es als Körpergewebe nicht – ein großer Teil wäre Wasser, und bei starkem Defizit leidet die '
@@ -379,9 +380,9 @@ class _WeightTrendScreenState extends ConsumerState<WeightTrendScreen> {
           leading: Icon(
             value.kind == WeightAdviceKind.onTrack ? Icons.check_circle : Icons.sync,
             color: switch (value.kind) {
-              WeightAdviceKind.tooFast => Colors.orange,
-              WeightAdviceKind.onTrack => Colors.green,
-              _ => Colors.blue,
+              WeightAdviceKind.tooFast => AppColors.of(context).caution,
+              WeightAdviceKind.onTrack => AppColors.of(context).good,
+              _ => AppColors.of(context).info,
             },
           ),
           title: Text(value.message),
@@ -447,7 +448,7 @@ class _WeightTrendScreenState extends ConsumerState<WeightTrendScreen> {
                         interval: 7,
                         getTitlesWidget: (value, meta) => SideTitleWidget(
                           meta: meta,
-                          child: Text(_shortDate(start.adding(value.round())), style: const TextStyle(fontSize: 10)),
+                          child: Text(_shortDate(start.adding(value.round())), style: AppText.caption(context)),
                         ),
                       ),
                     ),
@@ -508,12 +509,12 @@ class _WeightTrendScreenState extends ConsumerState<WeightTrendScreen> {
         LabeledRow(label: 'Laut Formel', value: '${GermanFormat.number((formula / 10).roundToDouble() * 10)} kcal'),
         LabeledRow(label: 'Im Schnitt gegessen', value: '${GermanFormat.number(result.averageIntake)} kcal'),
         if (!result.plausible)
-          const ListTile(
-            leading: Icon(Icons.warning, color: Colors.orange),
+          ListTile(
+            leading: Icon(Icons.warning, color: AppColors.of(context).caution),
             title: Text(
               'Das Ergebnis ist unplausibel – vermutlich fehlen Mahlzeiten. Erfasse alles, was du isst, auch Getränke '
               'und Snacks.',
-              style: TextStyle(color: Colors.orange),
+              style: TextStyle(color: AppColors.of(context).caution),
             ),
           )
         else if (proposal != null)
@@ -527,9 +528,12 @@ class _WeightTrendScreenState extends ConsumerState<WeightTrendScreen> {
             onTap: () => _change(settings, (nutrition) => nutrition.energyAdjustmentKilocalories = proposal),
           )
         else
-          const ListTile(
-            leading: Icon(Icons.check_circle, color: Colors.green),
-            title: Text('Deine Tagesziele passen zu deinem Verbrauch.', style: TextStyle(color: Colors.green)),
+          ListTile(
+            leading: Icon(Icons.check_circle, color: AppColors.of(context).good),
+            title: Text(
+              'Deine Tagesziele passen zu deinem Verbrauch.',
+              style: TextStyle(color: AppColors.of(context).good),
+            ),
           ),
         const EvidenceDisclosure(ruleIDs: ['energy.measured']),
       ],
