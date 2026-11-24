@@ -142,7 +142,7 @@ void main() {
     expect(day.restingHeartRate, 64);
     expect(day.hrvLastNightAverage, closeTo(31.81, 0.01));
     expect(day.trainingReadiness, 44);
-    expect(day.trainingReadinessLevel, 'MODERATE');
+    expect(day.trainingReadinessLevel, WhoopRecoveryLevel.yellow);
     expect(day.spo2Average, closeTo(95.69, 0.01));
     expect(day.totalKilocalories, 1981);
     expect(day.steps, 8432);
@@ -174,7 +174,10 @@ void main() {
     expect(days[const CalendarDay(2026, 11, 14)]!.trainingReadiness, 44);
     WhoopRecovery recovery(double score) =>
         WhoopRecovery(cycleID: 1, sleepID: null, score: score, restingHeartRate: 50, hrvMilliseconds: 60);
-    expect([recovery(80).level, recovery(50).level, recovery(20).level], ['HIGH', 'MODERATE', 'LOW']);
+    expect(
+      [recovery(80).level, recovery(50).level, recovery(20).level],
+      [WhoopRecoveryLevel.green, WhoopRecoveryLevel.yellow, WhoopRecoveryLevel.red],
+    );
   });
 
   test('Training wird zur Aktivität mit Herkunft WHOOP, Zonen 1–5 und Strain', () {

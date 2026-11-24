@@ -4,6 +4,7 @@ import '../calendar/calendar_day.dart';
 import '../garmin/daily_metrics.dart';
 import '../garmin/garmin_activity.dart';
 import '../util/german_format.dart';
+import '../whoop/whoop.dart';
 import 'fitness_form.dart';
 import 'recovery_level.dart';
 
@@ -103,7 +104,14 @@ abstract final class RecoveryEvaluator {
     }
 
     final score = readinessScore ?? metrics.trainingReadiness;
-    if (score != null) {
+    if (readinessScore == null && score != null && WhoopRecoveryLevel.isWhoop(metrics.trainingReadinessLevel)) {
+      // WHOOP-Recovery hat eine eigene Skala (rot < 34, gelb 34–66, grün ab 67). Rot heißt bei WHOOP „Erholung
+      // priorisieren“ → Pause; gelb ist „normal belasten“ und stuft nicht herab. Garmins Stufen gelten hier nicht.
+      if (score < 34) {
+        worsen(RecoveryLevel.pause);
+        reasons.add('WHOOP-Recovery ${score.round()} % (rot)');
+      }
+    } else if (score != null) {
       if (score < 25) {
         worsen(RecoveryLevel.pause);
         reasons.add('Readiness ${score.round()} (Stufe „Poor“)');

@@ -1376,3 +1376,13 @@ Auf Wunsch des Nutzers: nicht nur *was*, sondern *wie* – und mit dem, was da i
 - **Natrium-Ring** bis 150 % grün (Überdeckung unkritisch, anders als bei Flüssigkeit).
 - **Gefunden beim Testen:** Schnelles Doppeltippen auf „+“ im Vorrat zählte nur einmal (alter Stand im Knopf) –
   jetzt wird beim Tippen der aktuelle Stand gelesen.
+
+## 2026-11-24 – WHOOP-Recovery mit WHOOP-Skala in der Tagesampel (Roast B-09)
+
+- Bisher stand WHOOPs Recovery als `trainingReadiness` mit den Stufen `HIGH/MODERATE/LOW` in den Tageswerten, und
+  die Ampel wandte Garmins Readiness-Stufen an (< 25 Pause, < 50 locker). Eine WHOOP-Recovery von 30 („rot“) ergab so
+  nur „locker“, eine von 45 („gelb“, bei WHOOP „normal belasten“) dagegen schon „locker“.
+- Jetzt trägt WHOOP eigene Stufenwerte (`WhoopRecoveryLevel`: `WHOOP_GREEN/YELLOW/RED`), und `RecoveryEvaluator`
+  nutzt dafür WHOOPs Skala: rot (< 34) → Pause, gelb und grün stufen nicht herab. Garmin bleibt unverändert.
+- Die Schwellen 34/67 sind Herstellerangaben von WHOOP, kein Studienwert. Schon gespeicherte WHOOP-Tage behalten die
+  alten Werte bis zum nächsten Abruf. Die Kennzahl oben auf „Heute“ (67/34 für beide Quellen) bleibt vorerst gleich.

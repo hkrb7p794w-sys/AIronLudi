@@ -449,3 +449,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Roast 24.11.2026 (`docs/roast/`), Stufe 1 / PR 1: WHOOP-Anmeldefehler verständlich (`WhoopAuthErrors`, Rücksprung-Seite nennt fehlende Scopes), Anleitung mit Scope `offline` | erledigt |
 | Roast Stufe 1 / PR 2: Überläufe bei großer Schrift und auf kleinem Android behoben (Makro-Zeilen, Wochenstreifen in Ernährung, „Sicherung einspielen“ der Einrichtung), Regressionstest `layout_overflow_test.dart` | erledigt |
 | Roast Stufe 1 / PR 3: „Heute“ – Hinweis „Datenquelle verbinden“ mit Knopf und nur ohne Werte der letzten Woche (`showsConnectSourceHint`), Strain-Wert neutral, solange nichts trainiert ist (`Kpi.valueStatus`) | erledigt |
+| Roast Stufe 1 / PR 4: WHOOP-Recovery mit eigener Skala in der Tagesampel (`WhoopRecoveryLevel`, rot < 34 → Pause), Garmin unverändert | erledigt |

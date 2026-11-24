@@ -85,12 +85,22 @@ final class WhoopRecovery {
     );
   }
 
-  /// Stufe wie bei Garmins Trainingsbereitschaft: grün ab 67 %, gelb ab 34 % (WHOOP-Farben).
+  /// Stufe in WHOOP-Farben (grün ab 67 %, gelb ab 34 %, sonst rot). Eigene Werte statt Garmins „HIGH/LOW“, damit die
+  /// Tagesampel WHOOPs Skala erkennt und nicht Garmins Readiness-Stufen darauf anwendet (`RecoveryEvaluator`).
   String get level => score >= 67
-      ? 'HIGH'
+      ? WhoopRecoveryLevel.green
       : score >= 34
-      ? 'MODERATE'
-      : 'LOW';
+      ? WhoopRecoveryLevel.yellow
+      : WhoopRecoveryLevel.red;
+}
+
+/// Werte von `DailyMetrics.trainingReadinessLevel`, wenn der Erholungswert von WHOOP stammt.
+abstract final class WhoopRecoveryLevel {
+  static const green = 'WHOOP_GREEN';
+  static const yellow = 'WHOOP_YELLOW';
+  static const red = 'WHOOP_RED';
+
+  static bool isWhoop(String? level) => level != null && level.toUpperCase().startsWith('WHOOP_');
 }
 
 /// Physiologischer Zyklus, etwa ein Tag (`GET /v2/cycle`).
