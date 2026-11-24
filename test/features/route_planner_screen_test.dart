@@ -42,6 +42,12 @@ final class FakeLocation implements LocationSource {
 /// Router ohne Netz: läuft die Wegpunkte ab (Umwegfaktor 1,3) und liefert Höhen.
 final class FakeRouting implements RoutingBackend {
   int calls = 0;
+
+  /// Kein Weg bekannt (z. B. Brücke nach Baustelle in OSM gesperrt).
+  bool noRoute = false;
+
+  /// Wegpunkte je Anfrage.
+  final List<List<GeoPoint>> waypointLists = [];
   final List<Set<RoutePreference>> preferences = [];
   final List<RouteDiscipline> disciplines = [];
 
@@ -55,8 +61,10 @@ final class FakeRouting implements RoutingBackend {
     Set<RoutePreference> preferences = const {},
   }) async {
     calls++;
+    waypointLists.add(waypoints);
     this.preferences.add(preferences);
     disciplines.add(discipline);
+    if (noRoute) throw const NoRouteFound('Kein Weg');
     final points = <GeoPoint>[];
     for (var index = 1; index < waypoints.length; index++) {
       final a = waypoints[index - 1];
@@ -437,6 +445,95 @@ void main() {
     expect(saved.username, store.username);
   });
 
+  testWidgets('Frei planen: Luftlinie, wo die Karte keinen Weg kennt', (tester) async {
+    final routing = FakeRouting();
+    final container = await openPlanner(tester, routing);
+    await tester.tap(find.text('Frei planen'));
+    await tester.pumpAndSettle();
+    await tapMap(tester);
+    await tapMap(tester, offset: const Offset(100, 0));
+    expect(routing.calls, 1);
+
+    // Kein Weg bekannt: die Meldung bietet die Luftlinie an.
+    routing.noRoute = true;
+    await tapMap(tester, offset: const Offset(100, -100));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('kennt die Karte keinen Weg'), findsOneWidget);
+    await tester.tap(find.widgetWithText(SnackBarAction, 'Luftlinie'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Luftlinie', findRichText: true), findsWidgets);
+    expect(find.textContaining(RegExp(r'· [\d,]+ k?m Luftlinie')), findsOneWidget);
+
+    // Umschalter: nächste Punkte direkt, ohne Router.
+    await tester.tap(find.byTooltip('Nächste Punkte als Luftlinie verbinden'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Luftlinie: Neue Punkte werden direkt verbunden'), findsOneWidget);
+    final calls = routing.calls;
+    await tapMap(tester, offset: const Offset(0, -100));
+    expect(routing.calls, calls);
+
+    // Abschnitt per Wegpunkt zurück auf Wege: wird geroutet.
+    routing.noRoute = false;
+    await tester.tap(find.byTooltip('Nächste Punkte wieder auf Wegen'));
+    await tester.pumpAndSettle();
+    await tapMap(tester, offset: const Offset(100, -100));
+    expect(find.text('Punkt 2'), findsOneWidget);
+    await tester.tap(find.byTooltip('Abschnitt bis hier wieder auf Wege legen'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.pumpAndSettle();
+    expect(routing.calls, calls + 1);
+
+    await tester.tap(find.byTooltip('Fertig'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Speichern'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.pumpAndSettle();
+    final saved = container.read(routeStoreProvider).routes.single;
+    expect(saved.request.shape, RouteShape.drawn);
+    expect(saved.stats.distanceMeters, greaterThan(0));
+  });
+
+  testWidgets('Zum Ziel ohne Wunschdistanz: direkt zum Ziel, z. B. Lauf zur Arbeit', (tester) async {
+    final routing = FakeRouting();
+    final places = FakePlaces();
+    final container = await openPlanner(tester, routing, places: places);
+    await tester.enterText(find.widgetWithText(TextField, 'Startadresse oder Ort'), 'Hauptstr');
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Hauptstraße 5'));
+    await tester.pumpAndSettle();
+
+    await tapCentered(tester, find.text('Zum Ziel'));
+    expect(find.text('Mit Wunschdistanz'), findsOneWidget);
+    await tapCentered(tester, find.text('Mit Wunschdistanz'));
+    expect(find.text('Aus: direkt zum Ziel, z. B. Lauf zur Arbeit'), findsOneWidget);
+    final destination = find.widgetWithText(TextField, 'Zieladresse oder Ort');
+    await tapCentered(tester, destination);
+    await tester.enterText(destination, 'Hafen');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+    await tester.pumpAndSettle();
+    // Keine Distanzwahl, nur die Schätzung.
+    expect(find.byType(Slider), findsNothing);
+    expect(find.textContaining('ca. '), findsWidgets);
+
+    await tapCentered(tester, find.text('Routen vorschlagen'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pumpAndSettle();
+    expect(routing.calls, greaterThan(0));
+    // Je Variante genau eine Anfrage direkt von Start zum Ziel.
+    for (final waypoints in routing.waypointLists) {
+      expect(waypoints.length, 2);
+    }
+    final planner = container.read(routePlannerControllerProvider);
+    expect(planner.routes, isNotEmpty);
+    expect(planner.routes.first.request.isDirect, isTrue);
+    // Die Wahl bleibt für das nächste Mal.
+    expect(container.read(routeStoreProvider).settings.directToDestination, isTrue);
+  });
+
   testWidgets('Start und Ziel per Adresszeile', (tester) async {
     final routing = FakeRouting();
     final places = FakePlaces();
@@ -605,7 +702,7 @@ void main() {
     // Mittleren Punkt antippen: gewählt, Werkzeuge erscheinen.
     await tapMap(tester, offset: const Offset(120, 0));
     expect(find.text('Punkt 1'), findsOneWidget);
-    expect(find.text('Punkt gewählt: verschieben oder löschen.'), findsOneWidget);
+    expect(find.textContaining('Punkt gewählt: verschieben, löschen'), findsOneWidget);
 
     // Verschieben: nächster Tipp setzt die neue Lage, beide Nachbarabschnitte werden neu geroutet.
     await tester.tap(find.byTooltip('Punkt verschieben'));

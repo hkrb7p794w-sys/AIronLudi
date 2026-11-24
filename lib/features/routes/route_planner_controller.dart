@@ -28,6 +28,7 @@ final class RoutePlannerController extends ChangeNotifier {
     shape = settings.shape;
     kilometers = settings.distanceKilometers.clamp(minKm, maxKm).toDouble();
     preferences = {...settings.preferences};
+    direct = settings.directToDestination;
     if (settings.elevationGain case final gain?) {
       wantsElevation = true;
       elevation = gain;
@@ -48,6 +49,12 @@ final class RoutePlannerController extends ChangeNotifier {
   int elevation = 150;
   CompassDirection direction = CompassDirection.north;
   Set<RoutePreference> preferences = {};
+
+  /// „Zum Ziel“ ohne Wunschdistanz: der beste (lauffreundliche) Weg von Start zum Ziel.
+  bool direct = false;
+
+  /// Strecke zum Ziel ohne Wunschdistanz gewählt.
+  bool get isDirect => shape == RouteShape.toDestination && direct;
 
   // Punkte
   PinTarget pin = PinTarget.start;
@@ -106,9 +113,13 @@ final class RoutePlannerController extends ChangeNotifier {
       start: start,
       destination: shape == RouteShape.toDestination ? destination : null,
       bearingDegrees: shape == RouteShape.direction ? direction.degrees : null,
-      distanceMeters: kilometers * 1000,
+      distanceMeters: switch (destination) {
+        final destination? when isDirect => RouteRequest.directEstimate(start, destination),
+        _ => kilometers * 1000,
+      },
       elevationGainMeters: wantsElevation ? elevation.toDouble() : null,
       preferences: preferences,
+      direct: isDirect,
     );
   }
 
@@ -269,7 +280,8 @@ final class RoutePlannerController extends ChangeNotifier {
           ..shape = shape
           ..distanceKilometers = kilometers
           ..elevationGain = wantsElevation ? elevation : null
-          ..preferences = {...preferences},
+          ..preferences = {...preferences}
+          ..directToDestination = direct,
       ),
     );
     try {

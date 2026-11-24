@@ -103,14 +103,19 @@ abstract final class ValhallaFormat {
     };
     switch (discipline) {
       case RouteDiscipline.run:
+        // Lauffreundlich: Fuß- und Parkwege, Wald- und Uferwege, ruhige Straßen vor Hauptstraßen mit Gehweg
+        // (`sidewalk_factor` > 1), Einfahrten und Hinterhöfe meiden. „Im Grünen“ noch deutlicher.
+        final green = variant == RouteVariant.green;
         return (
           costing: 'pedestrian',
           options: {
             'use_hills': hills,
-            'use_tracks': variant == RouteVariant.green ? 1.0 : 0.6,
-            'use_living_streets': variant == RouteVariant.green ? 0.9 : 0.6,
-            'walkway_factor': variant == RouteVariant.green ? 0.7 : 0.9,
-            'sidewalk_factor': variant == RouteVariant.green ? 1.2 : 1.0,
+            'use_tracks': green ? 1.0 : 0.75,
+            'use_living_streets': green ? 0.9 : 0.75,
+            'walkway_factor': green ? 0.6 : 0.75,
+            'sidewalk_factor': green ? 1.4 : 1.2,
+            'alley_factor': 2.0,
+            'driveway_factor': 5.0,
             'use_ferry': 0.0,
           },
         );

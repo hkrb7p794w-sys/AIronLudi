@@ -395,6 +395,9 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
             header: 'Strecke',
             footer: switch (c.shape) {
               RouteShape.loop => 'Start und Ziel sind gleich – die Route schließt sich als Runde.',
+              RouteShape.toDestination when c.direct =>
+                'Ziel als Adresse eingeben oder mit einem Pin setzen. Der Planer sucht den besten Weg dorthin – beim '
+                    'Laufen bevorzugt auf Fuß-, Park- und Uferwegen statt an Hauptstraßen.',
               RouteShape.toDestination =>
                 'Ziel als Adresse eingeben oder mit einem Pin setzen. Ist es näher als die Wunschdistanz, baut der Planer '
                     'einen Umweg ein.',
@@ -413,6 +416,22 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                   onSelectionChanged: (selection) => c.setShape(selection.single),
                 ),
               ),
+              if (c.shape == RouteShape.toDestination)
+                SwitchListTile(
+                  title: const Text('Mit Wunschdistanz'),
+                  subtitle: Text(
+                    c.direct
+                        ? 'Aus: direkt zum Ziel, z. B. Lauf zur Arbeit'
+                        : 'Ein: bei Bedarf mit Umweg auf die gewählte Distanz',
+                  ),
+                  value: !c.direct,
+                  onChanged: c.planning
+                      ? null
+                      : (value) => c.update((planner) {
+                          planner.direct = !value;
+                          planner.clearResults();
+                        }),
+                ),
               if (c.shape == RouteShape.toDestination)
                 AddressField(
                   hint: 'Zieladresse oder Ort',
@@ -463,46 +482,59 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
           ),
           FormSection(
             header: 'Ziel',
-            footer:
-                'Der Planer passt die Wegpunkte an, bis die Distanz auf ±${GermanFormat.decimal(RouteRequest.tolerance * 100)} % '
-                'stimmt (bei Strecken zum festen Ziel, soweit das Wegenetz es zulässt).',
+            footer: c.isDirect
+                ? 'Ohne Wunschdistanz ergibt sich die Länge aus dem Weg zum Ziel.'
+                : 'Der Planer passt die Wegpunkte an, bis die Distanz auf ±${GermanFormat.decimal(RouteRequest.tolerance * 100)} % '
+                      'stimmt (bei Strecken zum festen Ziel, soweit das Wegenetz es zulässt).',
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 12, 0),
-                child: Row(
-                  children: [
-                    const Expanded(child: Text('Distanz')),
-                    SizedBox(
-                      width: 72,
-                      child: TextField(
-                        controller: _distanceField,
-                        textAlign: TextAlign.end,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        decoration: const InputDecoration(isDense: true, border: InputBorder.none, suffixText: 'km'),
-                        onSubmitted: _setDistanceText,
-                        onTapOutside: (_) => _setDistanceText(_distanceField.text),
-                      ),
-                    ),
-                  ],
+              if (c.isDirect)
+                ListTile(
+                  leading: const Icon(Icons.straighten),
+                  title: const Text('Distanz'),
+                  subtitle: Text(switch ((c.start, c.destination)) {
+                    (final start?, final destination?) =>
+                      'ca. ${RouteFormat.distance(RouteRequest.directEstimate(start, destination))}',
+                    _ => 'ergibt sich aus dem Ziel',
+                  }),
                 ),
-              ),
-              Slider(
-                value: c.kilometers.clamp(c.minKm, c.maxKm),
-                min: c.minKm,
-                max: c.maxKm,
-                divisions: ((c.maxKm - c.minKm) * (c.discipline.isBike ? 1 : 2)).round(),
-                label: '${_kmText(c.kilometers)} km',
-                onChanged: (value) {
-                  c.update((planner) {
-                    planner.kilometers = planner.discipline.isBike ? value.roundToDouble() : (value * 2).round() / 2;
-                    planner.clearResults();
-                  });
-                  _distanceField.text = _kmText(c.kilometers);
-                },
-              ),
+              if (!c.isDirect) ...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 12, 0),
+                  child: Row(
+                    children: [
+                      const Expanded(child: Text('Distanz')),
+                      SizedBox(
+                        width: 72,
+                        child: TextField(
+                          controller: _distanceField,
+                          textAlign: TextAlign.end,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: const InputDecoration(isDense: true, border: InputBorder.none, suffixText: 'km'),
+                          onSubmitted: _setDistanceText,
+                          onTapOutside: (_) => _setDistanceText(_distanceField.text),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Slider(
+                  value: c.kilometers.clamp(c.minKm, c.maxKm),
+                  min: c.minKm,
+                  max: c.maxKm,
+                  divisions: ((c.maxKm - c.minKm) * (c.discipline.isBike ? 1 : 2)).round(),
+                  label: '${_kmText(c.kilometers)} km',
+                  onChanged: (value) {
+                    c.update((planner) {
+                      planner.kilometers = planner.discipline.isBike ? value.roundToDouble() : (value * 2).round() / 2;
+                      planner.clearResults();
+                    });
+                    _distanceField.text = _kmText(c.kilometers);
+                  },
+                ),
+              ],
               SwitchListTile(
                 title: const Text('Höhenmeter vorgeben'),
-                subtitle: Text(c.wantsElevation ? 'ca. $c.elevation hm Anstieg' : 'flach oder hügelig – egal'),
+                subtitle: Text(c.wantsElevation ? 'ca. ${c.elevation} hm Anstieg' : 'flach oder hügelig – egal'),
                 value: c.wantsElevation,
                 onChanged: (value) => c.update((planner) {
                   planner.wantsElevation = value;
@@ -514,7 +546,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                   value: c.elevation.toDouble().clamp(0, c.maxElevation.toDouble()),
                   max: c.maxElevation.toDouble(),
                   divisions: c.maxElevation ~/ (c.discipline.isBike ? 50 : 10),
-                  label: '$c.elevation hm',
+                  label: '${c.elevation} hm',
                   onChanged: (value) => c.update((planner) {
                     planner.elevation = value.round();
                     planner.clearResults();
