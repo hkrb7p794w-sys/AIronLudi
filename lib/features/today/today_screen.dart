@@ -37,6 +37,7 @@ import '../settings/settings_screen.dart';
 import 'now_views.dart';
 import 'today_controller.dart';
 import 'today_dashboard_editor.dart';
+import 'today_nutrition.dart';
 import 'week_overview.dart';
 
 /// Tagesempfehlung, Wochen-Soll/Ist und Rennvorbereitung (Port von `TodayView.swift`).
@@ -451,6 +452,12 @@ class _TodayScreenState extends ConsumerState<TodayScreen>
           thresholds: ref.read(enduranceControllerProvider).plan?.request.thresholds ?? const AthleteThresholds(),
         ),
       ],
+      if (shows(TodayModule.nutrition))
+        TodayNutritionSection(
+          activities: _activities,
+          hasGarminData: _days.isNotEmpty,
+          recovery: snapshot.metrics == null ? null : snapshot.recommendation.level,
+        ),
       if (shows(TodayModule.ai)) _aiSection(context, settings),
       if (shows(TodayModule.suggestions)) SuggestionsSection(suggestions: _suggestions(snapshot)),
       // Morning Report bis 12 Uhr; danach über „Gesundheit“ im Reiter Training.
