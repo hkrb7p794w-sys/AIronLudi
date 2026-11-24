@@ -225,7 +225,7 @@ final class CoachSettings extends ChangeNotifier {
 
   late List<Insight> _insights;
 
-  /// Empfehlungen im Reiter „AI“ mit Bearbeitungsstand.
+  /// Empfehlungen im Reiter „KI“ mit Bearbeitungsstand.
   List<Insight> get insights => _insights;
   set insights(List<Insight> v) {
     _insights = v;
@@ -350,7 +350,7 @@ final class CoachSettings extends ChangeNotifier {
 
   late TodayDashboard _todayDashboard;
 
-  /// Bereiche auf „Heute“ (ein- und ausblendbar, z. B. die AI-Empfehlungen).
+  /// Bereiche auf „Heute“ (ein- und ausblendbar, z. B. die KI-Empfehlungen).
   TodayDashboard get todayDashboard => _todayDashboard;
   set todayDashboard(TodayDashboard v) {
     _todayDashboard = v;

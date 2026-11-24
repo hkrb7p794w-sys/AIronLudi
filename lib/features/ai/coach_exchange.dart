@@ -269,7 +269,7 @@ class _CoachExportScreenState extends ConsumerState<CoachExportScreen> {
                   subtitle: switch (input?.openInsights.length ?? 0) {
                     0 => null,
                     final count => Text(
-                      'Mit Prüfauftrag für $count offene Empfehlung${count == 1 ? '' : 'en'} aus „AI“ – die externe '
+                      'Mit Prüfauftrag für $count offene Empfehlung${count == 1 ? '' : 'en'} aus „KI“ – die externe '
                       'KI bestätigt, verbessert oder verwirft sie.',
                     ),
                   },
@@ -601,7 +601,7 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
             const ListTile(
               leading: Icon(Icons.auto_awesome),
               title: Text('Empfehlungen'),
-              subtitle: Text('Heute › AI-Empfehlungen'),
+              subtitle: Text('Heute › KI-Empfehlungen'),
             ),
         ],
       ),
@@ -771,7 +771,7 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
     return FormSection(
       header: 'Empfehlungen von ${preview.model}',
       footer:
-          'Angehakte Empfehlungen erscheinen im Bereich „AI“; eine bestehende mit gleichem Thema wird überschrieben. '
+          'Angehakte Empfehlungen erscheinen im Bereich „KI“; eine bestehende mit gleichem Thema wird überschrieben. '
           'Empfehlungen der Regeln sind nicht vorausgewählt – sie beruhen auf festen, geprüften Regeln.',
       children: [
         for (final insight in preview.insights)

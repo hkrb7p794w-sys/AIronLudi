@@ -61,7 +61,7 @@ final class CoachExportInput {
   /// Vollständige Berichte aus den Aufzeichnungen der Uhr (Runden, Auswertung), soweit übertragen.
   List<ActivityReport> reports;
 
-  /// Empfehlungen aus dem Bereich „AI“ (Regeln und KI), die die externe KI prüfen und verbessern soll.
+  /// Empfehlungen aus dem Bereich „KI“ (Regeln und KI), die die externe KI prüfen und verbessern soll.
   final List<Insight> insights;
 
   /// Zeitpunkt des Exports (welche Empfehlungen noch gelten); ohne Angabe gibt es keinen Abschnitt dazu.
@@ -191,7 +191,7 @@ abstract final class CoachExport {
       else
         '- Mein Ausdauerplan ist ein fester Saisonplan; schlage dafür keine Wochenplan-Änderungen vor.',
       '- Ernährungsziele berechnet die App selbst (mit Schutzgrenzen); Vorschläge dazu bitte nur als Text.',
-      '- `empfehlungen`: deine Empfehlungen für den Bereich „AI“ der App. Mit der `id` einer Empfehlung aus '
+      '- `empfehlungen`: deine Empfehlungen für den Bereich „KI“ der App. Mit der `id` einer Empfehlung aus '
           '„Empfehlungen der App“ ersetzt du diese (bestätigen, korrigieren oder schärfen); ohne `id` ist sie neu. '
           '`thema`: ${InsightTopic.values.map((topic) => topic.rawValue).join(', ')}. `richtung`: '
           '${InsightDirection.values.map((direction) => direction.rawValue).join(', ')}. `prioritaet` 1 (wichtig) '

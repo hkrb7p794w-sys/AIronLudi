@@ -20,7 +20,7 @@ enum AppRoute {
 
   /// Laufende Einheit öffnen, sonst die nächste geplante starten (zählt erst mit dem ersten Satz).
   startWorkout('Training starten', 'Nächste Einheit oder laufende fortsetzen'),
-  ai('AI', null),
+  ai('KI', null),
 
   /// KI-Analyse über alle Themen anstoßen (nur wenn die KI eingerichtet und erlaubt ist).
   aiAnalysis('KI-Analyse starten', 'Alle Themen auswerten');
