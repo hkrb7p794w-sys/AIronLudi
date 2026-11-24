@@ -191,7 +191,7 @@ class _PlanTile extends ConsumerWidget {
         color: AppColors.of(context).alert,
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        child: const Icon(Icons.delete, color: Colors.white),
+        child: const Icon(Icons.delete, color: AppPalette.onColor),
       ),
       onDismissed: (_) => unawaited(ref.read(fuelStoreProvider).deletePlan(saved.id)),
       child: ListTile(

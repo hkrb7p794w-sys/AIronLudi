@@ -33,11 +33,10 @@ class _HoldControlsState extends State<_HoldControls> {
         children: [
           Text(
             elapsedText(hold.start, DateTime.now()),
-            style: const TextStyle(
-              fontSize: 48,
-              fontWeight: FontWeight.bold,
-              fontFeatures: [FontFeature.tabularFigures()],
-            ),
+            style: LiquidText.kpi(
+              context,
+              size: 48,
+            ).copyWith(fontWeight: FontWeight.bold, fontFeatures: [FontFeature.tabularFigures()]),
           ),
           if (target > 0)
             Text(
@@ -58,7 +57,10 @@ class _HoldControlsState extends State<_HoldControls> {
               gym.stopHold();
             },
             icon: const Icon(Icons.stop),
-            label: const Text('Stopp – Zeit übernehmen', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            label: Text(
+              'Stopp – Zeit übernehmen',
+              style: AppText.headline(context).copyWith(fontWeight: FontWeight.bold),
+            ),
           ),
           TextButton(
             onPressed: () {
@@ -84,7 +86,7 @@ class _HoldControlsState extends State<_HoldControls> {
             icon: const Icon(Icons.timer),
             label: Text(
               target > 0 ? 'Start · Ziel $target s' : 'Stoppuhr starten',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: AppText.headline(context).copyWith(fontWeight: FontWeight.bold),
             ),
           ),
         ),
@@ -194,7 +196,7 @@ class _RestPanel extends ConsumerWidget {
             spacing: 10,
             children: [
               const ExcludeSemantics(child: Icon(Icons.timer_outlined)),
-              Text(countdown, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              Text(countdown, style: AppText.title(context).copyWith(fontWeight: FontWeight.bold)),
               const Spacer(),
               OutlinedButton(onPressed: gym.skipRest, child: const Text('Weiter')),
               IconButton(
@@ -234,11 +236,10 @@ class _RestPanel extends ConsumerWidget {
                 const Spacer(),
                 Text(
                   countdown,
-                  style: const TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                    fontFeatures: [FontFeature.tabularFigures()],
-                  ),
+                  style: LiquidText.kpi(
+                    context,
+                    size: 36,
+                  ).copyWith(fontWeight: FontWeight.bold, fontFeatures: [FontFeature.tabularFigures()]),
                 ),
               ],
             ),
@@ -387,11 +388,8 @@ class WorkoutList extends ConsumerWidget {
         ListTile(
           title: Text(
             elapsedText(session.start, DateTime.now()),
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              fontFeatures: [FontFeature.tabularFigures()],
-            ),
+            style: AppText.title(context)
+                .copyWith(fontWeight: FontWeight.bold, fontFeatures: [FontFeature.tabularFigures()]),
           ),
           trailing: Text('${session.doneSetCount} Sätze', style: TextStyle(color: secondary)),
         ),
@@ -416,11 +414,8 @@ class WorkoutList extends ConsumerWidget {
                         Expanded(
                           child: Text(
                             exercise.name + (exercise.skipped ? ' · übersprungen' : ''),
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: exercise.skipped ? secondary : null,
-                            ),
+                            style: AppText.headline(context)
+                                .copyWith(fontWeight: FontWeight.bold, color: exercise.skipped ? secondary : null),
                           ),
                         ),
                         ExerciseMenu(exercise: exercise, gym: gym, showsFocus: true),
@@ -547,7 +542,7 @@ class _SetRow extends StatelessWidget {
     final isTime = info?.tracking == ExerciseTracking.time;
     final weight = ExerciseUnits.weightText(set.weightKg, info: info);
     final theme = Theme.of(context);
-    const big = TextStyle(fontSize: 20, fontWeight: FontWeight.bold, fontFeatures: [FontFeature.tabularFigures()]);
+    final big = LiquidText.kpi(context, size: 20);
     return InkWell(
       onLongPress: () => _menu(context, isTime),
       child: Padding(

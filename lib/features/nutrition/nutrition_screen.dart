@@ -679,7 +679,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> with PendingR
                     color: AppColors.of(context).alert,
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.only(right: 16),
-                    child: const Icon(Icons.delete, color: Colors.white),
+                    child: const Icon(Icons.delete, color: AppPalette.onColor),
                   ),
                   onDismissed: (_) => _after(_controller.delete(meal)),
                   child: _MealRow(

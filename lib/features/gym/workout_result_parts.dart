@@ -19,7 +19,7 @@ class SummaryGrid extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(value, style: AppText.headline(context).copyWith(fontWeight: FontWeight.bold)),
             Text(label, style: AppText.caption(context).copyWith(color: theme.colorScheme.onSurfaceVariant)),
           ],
         ),
@@ -194,7 +194,7 @@ class WorkoutResultView extends StatelessWidget {
           for (final record in finished.records)
             ListTile(
               dense: true,
-              leading: const Icon(Icons.emoji_events, color: Colors.amber),
+              leading: const Icon(Icons.emoji_events, color: AppPalette.amber),
               title: Text(record),
             ),
         ],
@@ -295,7 +295,10 @@ class RecentPerformances extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: 3,
           children: [
-            Text('Zuletzt', style: style.copyWith(fontSize: 11, fontWeight: FontWeight.bold)),
+            Text(
+              'Zuletzt',
+              style: AppText.caption(context).copyWith(color: style.color, fontWeight: FontWeight.bold),
+            ),
             for (final item in items)
               Row(
                 children: [

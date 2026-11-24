@@ -215,7 +215,7 @@ class FitnessFormScreen extends StatelessWidget {
                 ListTile(
                   title: Text(
                     FormZone.of(percent).label,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: AppText.title(context).copyWith(fontWeight: FontWeight.bold),
                   ),
                   subtitle: Text(FormZone.of(percent).explanation),
                 ),
@@ -266,7 +266,7 @@ class FitnessFormScreen extends StatelessWidget {
                             ),
                             LineChartBarData(
                               spots: [for (final point in recent) FlSpot(_x(point.day), point.fatigue)],
-                              color: Colors.pink,
+                              color: AppPalette.pink,
                               barWidth: 2,
                               dotData: const FlDotData(show: false),
                             ),
@@ -284,7 +284,7 @@ class FitnessFormScreen extends StatelessWidget {
                     spacing: 12,
                     children: [
                       _Legend(color: AppColors.of(context).info, label: 'Fitness'),
-                      _Legend(color: Colors.pink, label: 'Ermüdung'),
+                      _Legend(color: AppPalette.pink, label: 'Ermüdung'),
                       _Legend(color: AppColors.of(context).good, label: 'Form'),
                     ],
                   ),
@@ -298,7 +298,7 @@ class FitnessFormScreen extends StatelessWidget {
                   'Fitness ist der Schnitt deiner Belastung über 42 Tage, Ermüdung über 7 Tage. Form ist die Differenz: '
                   'positiv, wenn du erholter bist, als dein Training gewohnt ist. Nur Aktivitäten mit Belastungswert der '
                   'Uhr zählen.',
-                  style: secondary.copyWith(fontSize: 13),
+                  style: AppText.footnote(context).copyWith(color: secondary.color),
                 ),
               ),
               const EvidenceDisclosure(ruleIDs: ['load.fitness-form']),

@@ -83,10 +83,11 @@ Coach-App; was schon portiert ist, Abschnitt 8 des Migrationsplans.
 Grundlage: `docs/roast/design-konzept.md` (Abschnitt 3 und Glossar).
 
 - In `lib/features` **keine rohen Farben** (`Colors.*` außer `transparent`, `Color(0x…)`) und **keine festen
-  Schriftgrößen** (`fontSize:`). Stattdessen `AppColors` (`good`/`caution`/`alert`/`info`, `muted`) und `AppText`
-  (`lib/ui/tokens.dart`), Abstände `LiquidSpacing`, Radien `LiquidRadii`, Bewegung `LiquidMotion` (`lib/ui/liquid.dart`).
-  `test/ui/ui_tokens_test.dart` ist eine Sperrklinke: der Bestand darf nur schrumpfen. Nach dem Umstellen einer Datei:
-  `flutter test test/ui/ui_tokens_test.dart --dart-define=UPDATE_TOKEN_BASELINE=true`.
+  Schriftgrößen** (`fontSize:`). Stattdessen `AppColors` (`good`/`caution`/`alert`/`info`, `muted`), `AppPalette`
+  (benannte Kategorie-, Karten- und Diagrammfarben) und `AppText` (`lib/ui/tokens.dart`), Kennzahlen `LiquidText.kpi`,
+  Abstände `LiquidSpacing`, Radien `LiquidRadii`, Bewegung `LiquidMotion` (`lib/ui/liquid.dart`).
+  `test/ui/ui_tokens_test.dart` prüft das ohne Ausnahme (nur die Daisy-Illustration und die Sperrbildschirm-Vorschau
+  sind begründet ausgenommen).
 - Vorhandene Bausteine verwenden (`LiquidCard`, `LiquidSurface`, `LiquidMetric`, `LiquidPressable`, `KpiRing`,
   `lib/ui/components.dart`, Diagramm-Achsen `chart_axes.dart`), statt eigene zu bauen. Symbole über `AppSymbols`
   (SF-Symbol-Namen wie in Swift).

@@ -30,9 +30,9 @@ GeoPoint geoPoint(LatLng point) => GeoPoint(point.latitude, point.longitude);
 
 /// Farbe je Variante (Vorschläge unterscheidbar auf der Karte).
 Color variantColor(RouteVariant variant) => switch (variant) {
-  RouteVariant.balanced => const Color(0xFF0A84FF),
-  RouteVariant.hilly => const Color(0xFFFF6B35),
-  RouteVariant.green => const Color(0xFF30C26B),
+  RouteVariant.balanced => AppPalette.mapBlue,
+  RouteVariant.hilly => AppPalette.mapOrange,
+  RouteVariant.green => AppPalette.mapGreen,
 };
 
 /// Kachel-Zwischenspeicher der Karten; in Widget-Tests aus (dort gibt es keinen Cache-Ordner).
@@ -187,7 +187,7 @@ class PlannerMap extends StatelessWidget {
                       points: [for (final point in route.points) latLng(point)],
                       color: variantColor(route.variant),
                       strokeWidth: 5,
-                      borderColor: Colors.white.withValues(alpha: 0.85),
+                      borderColor: AppPalette.onColor.withValues(alpha: 0.85),
                       borderStrokeWidth: 1.5,
                     ),
                 ],

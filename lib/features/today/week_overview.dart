@@ -38,7 +38,7 @@ class _TodayItemRowState extends State<TodayItemRow> {
       TodayPlanSport.bike => TrainingSport.bike.color,
       TodayPlanSport.run => TrainingSport.run.color,
       TodayPlanSport.strength => TrainingSport.strength.color,
-      TodayPlanSport.rest => Colors.teal.shade300,
+      TodayPlanSport.rest => AppPalette.tealLight,
     };
     return Semantics(
       hint: item.detail.isEmpty ? null : 'Doppeltippen zeigt den Ablauf',
@@ -58,7 +58,7 @@ class _TodayItemRowState extends State<TodayItemRow> {
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(8)),
-                    child: Icon(todayPlanIcon(item.sport), color: Colors.white, size: 18),
+                    child: Icon(todayPlanIcon(item.sport), color: AppPalette.onColor, size: 18),
                   ),
                   Expanded(
                     child: Column(
@@ -317,8 +317,8 @@ class _PersonalWeekStrip extends StatelessWidget {
                       _DayState.rest => Colors.transparent,
                     };
                     final Widget icon = switch (state) {
-                      _DayState.done => const Icon(Icons.check, size: 16, color: Colors.white),
-                      _DayState.partial => const Icon(Icons.contrast, size: 16, color: Colors.white),
+                      _DayState.done => const Icon(Icons.check, size: 16, color: AppPalette.onColor),
+                      _DayState.partial => const Icon(Icons.contrast, size: 16, color: AppPalette.onColor),
                       _DayState.extra => Icon(Icons.add, size: 16, color: AppColors.of(context).good),
                       _DayState.missed => Icon(Icons.close, size: 16, color: AppColors.of(context).alert),
                       _DayState.rest => Text('–', style: TextStyle(color: secondary)),

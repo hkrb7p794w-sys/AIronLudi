@@ -81,7 +81,7 @@ class _GarminDiagnosticsScreenState extends ConsumerState<GarminDiagnosticsScree
               if (_responses.isEmpty) ListTile(title: Text('Noch kein Abruf.', style: secondary)),
               for (final response in _responses)
                 ListTile(
-                  title: Text(response.endpoint, style: const TextStyle(fontFamily: 'monospace', fontSize: 13)),
+                  title: Text(response.endpoint, style: AppText.footnote(context).copyWith(fontFamily: 'monospace')),
                   subtitle: Text('${response.body.length} Bytes · ${time.format(response.fetchedAt)}'),
                   trailing: const DisclosureChevron(),
                   onTap: () =>
@@ -134,7 +134,7 @@ class RawResponseScreen extends StatelessWidget {
               for (final path in paths)
                 ListTile(
                   dense: true,
-                  title: Text(path, style: const TextStyle(fontFamily: 'monospace', fontSize: 13)),
+                  title: Text(path, style: AppText.footnote(context).copyWith(fontFamily: 'monospace')),
                 ),
             ],
           ),

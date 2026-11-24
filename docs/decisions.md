@@ -1495,3 +1495,12 @@ planen; dazu Joggen von Start zu Ziel.
   (vorher Unschärfe auf jeder der über 500 `FormSection`s). Lichtkante, Radien, Bewegung und Hintergrund bleiben.
 - Entscheidung „Standard-Ernährungsweise“ (F-5) bewusst **nicht** umgesetzt: Fehlt der Wert, liest die App
   „pescetarisch“; ein anderer Standard würde Bestandsnutzer ohne gespeicherte Einstellung still umstellen.
+
+## 2026-11-25 – Designsystem-Regel ohne Bestand (Roast PR 10b)
+
+- Der Bestand der Sperrklinke ist abgebaut: keine rohen Farben und festen Schriftgrößen mehr in `lib/features`.
+  Neu `AppPalette` (benannte Kategorie-, Karten-, Schatten- und Diagrammfarben, gleiche Werte wie vorher) neben
+  `AppColors` (Bewertungen). Große Zahlen der Live-Einheit über `LiquidText.kpi`, Titel 20–26 pt als `AppText.title`,
+  Knopftexte 18 pt als `headline` (17 pt).
+- `test/ui/ui_tokens_test.dart` prüft jetzt ohne Bestandsliste (`ui_tokens_baseline.json` entfällt). Ausnahmen:
+  Daisy-Illustration und Sperrbildschirm-Vorschau (bilden etwas mit festen Farben/Größen nach).

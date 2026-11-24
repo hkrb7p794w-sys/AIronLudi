@@ -10,6 +10,7 @@ import 'package:latlong2/latlong.dart';
 import '../../services/routing/location_source.dart';
 import '../../services/routing/routing_providers.dart';
 import '../../ui/liquid.dart';
+import '../../ui/tokens.dart';
 
 /// Knopf „Mein Standort“ wie bei Google Maps: bestimmt den Standort, zentriert die Karte darauf und meldet ihn
 /// ([onLocated]) für den blauen Punkt. Setzt keinen Start – das bleibt „Aktueller Standort“ bzw. langes Drücken.
@@ -93,19 +94,18 @@ class MyLocationLayer extends StatelessWidget {
               label: 'Dein Standort',
               child: Center(
                 child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: const Color(0xFF0A84FF).withValues(alpha: 0.18),
-                  ),
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: AppPalette.mapBlue.withValues(alpha: 0.18)),
                   child: SizedBox.square(
                     dimension: 40,
                     child: Center(
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: const Color(0xFF0A84FF),
-                          border: Border.all(color: Colors.white, width: 3),
-                          boxShadow: const [BoxShadow(color: Color(0x40000000), blurRadius: 4, offset: Offset(0, 1))],
+                          color: AppPalette.mapBlue,
+                          border: Border.all(color: AppPalette.onColor, width: 3),
+                          boxShadow: const [
+                            BoxShadow(color: AppPalette.mapShadowStrong, blurRadius: 4, offset: Offset(0, 1)),
+                          ],
                         ),
                         child: const SizedBox.square(dimension: 18),
                       ),

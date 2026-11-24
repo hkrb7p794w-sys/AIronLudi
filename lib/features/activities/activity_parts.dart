@@ -58,7 +58,7 @@ class ZoneShareBar extends StatelessWidget {
   const ZoneShareBar({super.key, required this.shares});
 
   final List<double> shares;
-  static const _colors = [Colors.grey, Colors.blue, Colors.green, Colors.orange, Colors.red];
+  static const _colors = [AppPalette.grey, AppPalette.blue, AppPalette.green, AppPalette.orange, AppPalette.red];
 
   @override
   Widget build(BuildContext context) {
@@ -222,11 +222,11 @@ class ActivitySummaryRow extends StatelessWidget {
   };
 
   static Color color(ActivitySport sport) => switch (sport) {
-    ActivitySport.run => Colors.green,
-    ActivitySport.bike => Colors.orange,
-    ActivitySport.swim => Colors.blue,
-    ActivitySport.strength => Colors.purple,
-    ActivitySport.other => Colors.teal,
+    ActivitySport.run => AppPalette.green,
+    ActivitySport.bike => AppPalette.orange,
+    ActivitySport.swim => AppPalette.blue,
+    ActivitySport.strength => AppPalette.purple,
+    ActivitySport.other => AppPalette.teal,
   };
 
   @override

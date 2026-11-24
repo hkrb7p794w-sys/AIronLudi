@@ -75,11 +75,11 @@ extension HealthWidgetStyleExt on HealthWidget {
   };
 
   Color get color => switch (category) {
-    HealthCategory.health => Colors.red,
-    HealthCategory.sleep => Colors.indigo,
-    HealthCategory.recovery => Colors.teal,
-    HealthCategory.load => Colors.orange,
-    HealthCategory.performance => Colors.purple,
+    HealthCategory.health => AppPalette.red,
+    HealthCategory.sleep => AppPalette.indigo,
+    HealthCategory.recovery => AppPalette.teal,
+    HealthCategory.load => AppPalette.orange,
+    HealthCategory.performance => AppPalette.purple,
   };
 }
 
@@ -265,7 +265,7 @@ String _value(HealthWidget kind, double value) => formatNumber(value, unit: kind
 HorizontalRangeAnnotation _band(PersonalNorm norm, {double alpha = 0.12}) => HorizontalRangeAnnotation(
   y1: norm.low,
   y2: norm.high,
-  color: Colors.grey.withValues(alpha: alpha),
+  color: AppPalette.grey.withValues(alpha: alpha),
 );
 
 /// Ein Widget: aktueller Wert, Einordnung gegen den eigenen Bereich und je nach Darstellung ein kleiner Verlauf.
@@ -338,7 +338,7 @@ class HealthWidgetCard extends StatelessWidget {
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
-              child: Text(_valueText(latest), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
+              child: Text(_valueText(latest), style: AppText.title(context).copyWith(fontWeight: FontWeight.w600)),
             ),
             if (latest != null)
               Text(

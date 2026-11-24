@@ -399,7 +399,7 @@ class ReactionBar extends ConsumerWidget {
                   color: post.myReaction == reaction.rawValue ? primary.withValues(alpha: 0.2) : null,
                   borderRadius: BorderRadius.circular(18),
                 ),
-                child: Text(reaction.rawValue, style: const TextStyle(fontSize: 18)),
+                child: Text(reaction.rawValue, style: AppText.headline(context)),
               ),
             ),
           ),
@@ -426,14 +426,14 @@ class Avatar extends StatelessWidget {
   final double size;
 
   static const _palette = [
-    Colors.blue,
-    Colors.green,
-    Colors.orange,
-    Colors.pink,
-    Colors.purple,
-    Colors.teal,
-    Colors.indigo,
-    Colors.cyan,
+    AppPalette.blue,
+    AppPalette.green,
+    AppPalette.orange,
+    AppPalette.pink,
+    AppPalette.purple,
+    AppPalette.teal,
+    AppPalette.indigo,
+    AppPalette.cyan,
   ];
 
   @override
@@ -445,7 +445,7 @@ class Avatar extends StatelessWidget {
         backgroundColor: _palette[sum % _palette.length],
         child: Text(
           person.initial,
-          style: TextStyle(fontSize: size * 0.45, fontWeight: FontWeight.w600, color: Colors.white),
+          style: TextStyle(fontSize: size * 0.45, fontWeight: FontWeight.w600, color: AppPalette.onColor),
         ),
       ),
     );

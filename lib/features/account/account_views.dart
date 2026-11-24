@@ -358,7 +358,7 @@ class _RecoveryCodeScreenState extends State<RecoveryCodeScreen> {
                     label: 'Wiederherstellungscode ${widget.code.split('').join(' ')}',
                     child: SelectableText(
                       widget.code,
-                      style: const TextStyle(fontFamily: 'monospace', fontSize: 22, fontWeight: FontWeight.w600),
+                      style: AppText.title(context).copyWith(fontFamily: 'monospace', fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),

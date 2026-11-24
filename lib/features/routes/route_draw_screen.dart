@@ -524,7 +524,7 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
                                   points: [for (final point in line) latLng(point)],
                                   color: color,
                                   strokeWidth: 5,
-                                  borderColor: Colors.white.withValues(alpha: 0.85),
+                                  borderColor: AppPalette.onColor.withValues(alpha: 0.85),
                                   borderStrokeWidth: 1.5,
                                   pattern: _route.parts[index].direct
                                       ? StrokePattern.dashed(segments: const [12, 8])
@@ -861,12 +861,12 @@ class _Dot extends StatelessWidget {
     decoration: BoxDecoration(
       color: color,
       shape: BoxShape.circle,
-      border: Border.all(color: selected ? Colors.amber : Colors.white, width: selected ? 3 : 2),
-      boxShadow: const [BoxShadow(color: Color(0x40000000), blurRadius: 6, offset: Offset(0, 2))],
+      border: Border.all(color: selected ? AppPalette.amber : AppPalette.onColor, width: selected ? 3 : 2),
+      boxShadow: const [BoxShadow(color: AppPalette.mapShadowStrong, blurRadius: 6, offset: Offset(0, 2))],
     ),
     child: Padding(
       padding: const EdgeInsets.all(4),
-      child: Icon(icon, size: 16, color: Colors.white),
+      child: Icon(icon, size: 16, color: AppPalette.onColor),
     ),
   );
 }
@@ -881,10 +881,10 @@ class _Handle extends StatelessWidget {
   @override
   Widget build(BuildContext context) => DecoratedBox(
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: AppPalette.onColor,
       shape: BoxShape.circle,
-      border: Border.all(color: selected ? Colors.amber : color, width: selected ? 4 : 3),
-      boxShadow: const [BoxShadow(color: Color(0x40000000), blurRadius: 4, offset: Offset(0, 1))],
+      border: Border.all(color: selected ? AppPalette.amber : color, width: selected ? 4 : 3),
+      boxShadow: const [BoxShadow(color: AppPalette.mapShadowStrong, blurRadius: 4, offset: Offset(0, 1))],
     ),
   );
 }

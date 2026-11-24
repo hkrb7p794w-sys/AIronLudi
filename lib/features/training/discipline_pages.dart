@@ -85,7 +85,7 @@ class TestTrendSection extends ConsumerWidget {
             title: Text('Zuletzt ${_day(values.last.day)}'),
             trailing: Text(
               format(values.last.value),
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              style: AppText.headline(context).copyWith(fontWeight: FontWeight.w600),
             ),
           ),
           if (values.length > 1)
@@ -233,7 +233,7 @@ class KilometersSection extends StatelessWidget {
           title: const Text('Diese Woche'),
           trailing: Text(
             formatNumber(thisWeek, unit: 'km', digits: sport == ActivitySport.bike ? 0 : 1),
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            style: AppText.headline(context).copyWith(fontWeight: FontWeight.w600),
           ),
         ),
         Padding(
@@ -345,8 +345,9 @@ class VO2Section extends StatelessWidget {
   }
 }
 
-Color _decouplingColor(double percent) =>
-    percent < AerobicDecoupling.goodBelowPercent ? Colors.green : (percent < 10 ? Colors.orange : Colors.red);
+Color _decouplingColor(double percent) => percent < AerobicDecoupling.goodBelowPercent
+    ? AppPalette.green
+    : (percent < 10 ? AppPalette.orange : AppPalette.red);
 
 String _decouplingLabel(double percent) =>
     percent < AerobicDecoupling.goodBelowPercent ? 'stabil' : (percent < 10 ? 'erhöhte Drift' : 'starke Drift');
@@ -387,7 +388,7 @@ class DecouplingSection extends StatelessWidget {
                         'Zeit in Zone 4–5.'
                   : 'Noch keine gewertete Fahrt. Gewertet werden Fahrten ab 45 min mit Leistungsmessung und höchstens '
                         '10 % der Zeit in Zone 4–5.',
-              style: secondary.copyWith(fontSize: 13),
+              style: AppText.footnote(context).copyWith(color: secondary.color),
             ),
           )
         else ...[
@@ -396,7 +397,7 @@ class DecouplingSection extends StatelessWidget {
               title: Text('Ø letzte ${math.min(sessions.length, 5)} Einheiten', style: secondary),
               subtitle: Text(
                 '${GermanFormat.decimal(average)} %',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: _decouplingColor(average)),
+                style: AppText.title(context).copyWith(fontWeight: FontWeight.w600, color: _decouplingColor(average)),
               ),
               trailing: Text(_decouplingLabel(average)),
             ),

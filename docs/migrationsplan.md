@@ -475,3 +475,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Roast Stufe 4 (F-3): Karten nahezu deckend, Unschärfe nur für deckendes Glas (Tab-Leiste, Leisten, Sheets); Prüfstand auf fünf Reiter; Anleitung mit neuen Wegen und Übersicht der Reiter | erledigt |
 | Roast Stufe 4 / PR 22 (Teil 1): zehn große Dateien in `part`-Dateien geteilt (Klassen nur verschoben); keine Datei mehr über 1000 Zeilen | erledigt |
 | Roast Stufe 4 / PR 24: Prüfstand nach Stufe 1–4 neu gerendert (239 Bilder, fünf Reiter, keine Layoutfehler) | erledigt |
+| Roast Stufe 2 / PR 10b: letzte Rohwerte abgebaut (`AppPalette` für Kategorie-, Karten- und Diagrammfarben; Kennzahlen über `LiquidText.kpi`); Designsystem-Test ohne Bestandsliste | erledigt |

@@ -247,7 +247,7 @@ class InputIssuesSection extends StatelessWidget {
               },
               color: switch (issue.severity) {
                 InputSeverity.warning => AppColors.of(context).caution,
-                InputSeverity.tip => Colors.amber,
+                InputSeverity.tip => AppPalette.amber,
                 InputSeverity.info => AppColors.of(context).good,
               },
             ),

@@ -152,8 +152,7 @@ class _SetValuePadState extends ConsumerState<SetValuePad> {
                         children: [
                           TextSpan(
                             text: text.isEmpty ? '0' : text,
-                            style: TextStyle(
-                              fontSize: 40,
+                            style: LiquidText.kpi(context, size: 40).copyWith(
                               fontWeight: FontWeight.bold,
                               fontFeatures: const [FontFeature.tabularFigures()],
                               // Wird beim ersten Tippen ersetzt: leicht markiert wie ausgewählter Text.
@@ -199,7 +198,7 @@ class _SetValuePadState extends ConsumerState<SetValuePad> {
               child: SizedBox(
                 height: 56,
                 child: Center(
-                  child: Text(title, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+                  child: Text(title, style: AppText.title(context).copyWith(fontWeight: FontWeight.bold)),
                 ),
               ),
             ),
@@ -292,7 +291,7 @@ class _SetValuePadState extends ConsumerState<SetValuePad> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
               onPressed: _save,
-              child: const Text('Übernehmen', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              child: Text('Übernehmen', style: AppText.headline(context).copyWith(fontWeight: FontWeight.bold)),
             ),
           ],
         ),

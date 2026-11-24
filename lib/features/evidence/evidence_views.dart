@@ -102,7 +102,7 @@ class UserSourceRow extends StatelessWidget {
               Expanded(child: Text(source.citation, style: text.titleSmall)),
               Text(
                 'Eigene Quelle',
-                style: text.labelSmall?.copyWith(color: Colors.purple, fontWeight: FontWeight.w600),
+                style: text.labelSmall?.copyWith(color: AppPalette.purple, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -225,7 +225,7 @@ class UserSourcesScreen extends ConsumerWidget {
                     color: AppColors.of(context).alert,
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.only(right: 16),
-                    child: const Icon(Icons.delete, color: Colors.white),
+                    child: const Icon(Icons.delete, color: AppPalette.onColor),
                   ),
                   onDismissed: (_) => settings.userSources = sources.where((item) => item.id != source.id).toList(),
                   child: InkWell(

@@ -1,78 +1,48 @@
-// Designsystem als Sperrklinke (Roast B-05): In `lib/features` dürfen rohe Farben (`Colors.*` außer `transparent`,
-// `Color(0x…)`) und feste Schriftgrößen (`fontSize: <Zahl>`) nicht mehr werden – nur weniger. Stattdessen
-// `AppColors`, `AppText`, `LiquidSpacing` (lib/ui/tokens.dart, lib/ui/liquid.dart).
-//
-// Nach dem Umstellen einer Datei den Bestand neu schreiben:
-//   flutter test test/ui/ui_tokens_test.dart --dart-define=UPDATE_TOKEN_BASELINE=true
-import 'dart:convert';
+// Designsystem (Roast B-05): In `lib/features` keine rohen Farben (`Colors.*` außer `transparent`, `Color(0x…)`) und
+// keine festen Schriftgrößen (`fontSize: <Zahl>`). Stattdessen `AppColors`, `AppPalette`, `AppText` und
+// `LiquidText`/`LiquidSpacing` (lib/ui/tokens.dart, lib/ui/liquid.dart). Bis 25.11.2026 war das eine Sperrklinke mit
+// Bestandsliste; seit dem Abbau des Bestands gilt die Regel ohne Ausnahme außer den unten begründeten Dateien.
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
-const _update = bool.fromEnvironment('UPDATE_TOKEN_BASELINE');
-const _baselinePath = 'test/ui/ui_tokens_baseline.json';
-
 final _patterns = {
-  'colors': RegExp(r'\bColors\.(?!transparent\b)[a-zA-Z]+'),
-  'hex': RegExp(r'\bColor\(0x'),
-  'fontSize': RegExp(r'fontSize:\s*[0-9]'),
+  'Farbe': RegExp(r'\bColors\.(?!transparent\b)[a-zA-Z]+'),
+  'Hex-Farbe': RegExp(r'\bColor\(0x'),
+  'Schriftgröße': RegExp(r'fontSize:\s*[0-9]'),
 };
 
-Map<String, Map<String, int>> _count() {
-  final result = <String, Map<String, int>>{};
-  final files = Directory('lib/features')
-      .listSync(recursive: true)
-      .whereType<File>()
-      .where((f) => f.path.endsWith('.dart'));
-  for (final file in files) {
-    final text = file.readAsStringSync();
-    final counts = {for (final entry in _patterns.entries) entry.key: entry.value.allMatches(text).length};
-    if (counts.values.any((n) => n > 0)) result[p.posix.joinAll(p.split(p.normalize(file.path)))] = counts;
-  }
-  return Map.fromEntries(result.entries.toList()..sort((a, b) => a.key.compareTo(b.key)));
-}
+/// Dateien, in denen feste Werte gewollt sind.
+const _allowed = {
+  // Illustration des Begleiters: eigene Farben und mit der Animation wachsende Schrift.
+  'lib/features/motivation/daisy_avatar.dart',
+  // Vorschau des Sperrbildschirms: bildet die immer dunklen iOS-Karten in festen Größen nach.
+  'lib/features/settings/lock_screen_settings.dart',
+};
 
 void main() {
-  test('Rohwerte in lib/features werden nicht mehr (Bestand: $_baselinePath)', () {
-    final current = _count();
-    if (_update) {
-      File(_baselinePath).writeAsStringSync('${const JsonEncoder.withIndent('  ').convert(current)}\n');
-      return;
-    }
-    final baseline = (jsonDecode(File(_baselinePath).readAsStringSync()) as Map<String, Object?>).map(
-      (file, counts) => MapEntry(file, (counts! as Map<String, Object?>).map((k, v) => MapEntry(k, v! as int))),
-    );
-    final more = <String>[];
-    final fewer = <String>[];
-    for (final file in {...current.keys, ...baseline.keys}) {
-      for (final kind in _patterns.keys) {
-        final now = current[file]?[kind] ?? 0;
-        final before = baseline[file]?[kind] ?? 0;
-        if (now > before) more.add('$file: $kind $before → $now');
-        if (now < before) fewer.add('$file: $kind $before → $now');
+  test('keine rohen Farben und festen Schriftgrößen in lib/features', () {
+    final found = <String>[];
+    final files = Directory('lib/features')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.dart'));
+    for (final file in files) {
+      final path = p.posix.joinAll(p.split(p.normalize(file.path)));
+      if (_allowed.contains(path)) continue;
+      for (final (index, line) in file.readAsLinesSync().indexed) {
+        for (final MapEntry(key: kind, value: pattern) in _patterns.entries) {
+          if (pattern.hasMatch(line)) found.add('$path:${index + 1}: $kind – ${line.trim()}');
+        }
       }
     }
-    expect(
-      more,
-      isEmpty,
-      reason: 'Neue Rohwerte – bitte AppColors/AppText/LiquidSpacing aus lib/ui/tokens.dart nutzen.',
-    );
-    expect(
-      fewer,
-      isEmpty,
-      reason:
-          'Weniger Rohwerte als im Bestand – gut! Bitte den Bestand neu schreiben: '
-          'flutter test test/ui/ui_tokens_test.dart --dart-define=UPDATE_TOKEN_BASELINE=true',
-    );
+    expect(found, isEmpty, reason: 'Bitte AppColors, AppPalette, AppText oder LiquidText aus lib/ui nutzen.');
   });
 
-  test('Summe der Rohwerte (nur zur Übersicht)', () {
-    final totals = <String, int>{};
-    for (final counts in _count().values) {
-      counts.forEach((kind, n) => totals[kind] = (totals[kind] ?? 0) + n);
+  test('Ausnahmen gibt es noch', () {
+    for (final path in _allowed) {
+      expect(File(path).existsSync(), isTrue, reason: '$path aus der Ausnahmeliste entfernen');
     }
-    // Stand beim Einführen (24.11.2026): 473 Farben, 56 Hex-Werte, 279 Schriftgrößen in 70 Dateien.
-    expect(totals.keys, containsAll(_patterns.keys));
   });
 }

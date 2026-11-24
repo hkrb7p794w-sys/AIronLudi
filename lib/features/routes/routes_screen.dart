@@ -74,7 +74,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> {
                 children: [
                   const SportIcon(
                     symbol: 'point.topleft.down.to.point.bottomright.curvepath',
-                    color: Colors.teal,
+                    color: AppPalette.teal,
                     size: 44,
                   ),
                   Expanded(
@@ -147,7 +147,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> {
             children: [
               for (final template in store.templates)
                 ListTile(
-                  leading: SportIcon(symbol: template.discipline.symbol, color: Colors.teal, size: 32),
+                  leading: SportIcon(symbol: template.discipline.symbol, color: AppPalette.teal, size: 32),
                   title: Text(template.name, maxLines: 1, overflow: TextOverflow.ellipsis),
                   subtitle: Text(
                     [template.summary, ?template.startLabel].join(' · '),
@@ -176,7 +176,7 @@ class _RoutesScreenState extends ConsumerState<RoutesScreen> {
             children: [
               for (final favorite in store.favorites)
                 ListTile(
-                  leading: const Icon(Icons.star_rounded, color: Colors.amber),
+                  leading: const Icon(Icons.star_rounded, color: AppPalette.amber),
                   title: Text(favorite.name, maxLines: 1, overflow: TextOverflow.ellipsis),
                   subtitle: Text(
                     favorite.address ??

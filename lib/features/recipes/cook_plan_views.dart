@@ -279,7 +279,7 @@ class _CookPlanScreenState extends ConsumerState<CookPlanScreen> {
                       color: AppColors.of(context).alert,
                       alignment: Alignment.centerRight,
                       padding: const EdgeInsets.only(right: 20),
-                      child: const Icon(Icons.delete, color: Colors.white),
+                      child: const Icon(Icons.delete, color: AppPalette.onColor),
                     ),
                     onDismissed: (_) => controller.delete(plan),
                     child: ListTile(
@@ -475,7 +475,7 @@ class _CookPlanDetailScreenState extends ConsumerState<CookPlanDetailScreen> {
                     color: AppColors.of(context).alert,
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.only(right: 20),
-                    child: const Icon(Icons.delete, color: Colors.white),
+                    child: const Icon(Icons.delete, color: AppPalette.onColor),
                   ),
                   onDismissed: (_) => _change(plan, (plan) => plan.remove(itemID: item.id)),
                   child: ListTile(

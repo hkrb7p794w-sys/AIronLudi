@@ -42,10 +42,7 @@ FlTitlesData _titles({double? interval}) => FlTitlesData(
     sideTitles: SideTitles(
       showTitles: true,
       interval: interval,
-      getTitlesWidget: (value, meta) => SideTitleWidget(
-        meta: meta,
-        child: Text(_dayLabel(value), style: const TextStyle(fontSize: 10)),
-      ),
+      getTitlesWidget: (value, meta) => SideTitleWidget(meta: meta, child: AxisLabel(_dayLabel(value))),
     ),
   ),
 );
@@ -112,7 +109,7 @@ class RecoveryScreen extends StatelessWidget {
                                     alignment: Alignment.centerLeft,
                                     child: Text(
                                       tile.value,
-                                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                                      style: AppText.headline(context).copyWith(fontWeight: FontWeight.w600),
                                     ),
                                   ),
                                   Text(
@@ -178,7 +175,7 @@ class TrendCardView extends StatelessWidget {
               ),
               Text(
                 formatNumber(trend.latest?.value, unit: card.unit, digits: card.digits),
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                style: AppText.headline(context).copyWith(fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -248,9 +245,9 @@ class SleepStages extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stages = [
-      ('Tief', metrics.deepSleepSeconds ?? 0, Colors.indigo),
+      ('Tief', metrics.deepSleepSeconds ?? 0, AppPalette.indigo),
       ('Leicht', metrics.lightSleepSeconds ?? 0, AppColors.of(context).info),
-      ('REM', metrics.remSleepSeconds ?? 0, Colors.cyan),
+      ('REM', metrics.remSleepSeconds ?? 0, AppPalette.cyan),
       ('Wach', metrics.awakeSleepSeconds ?? 0, AppColors.of(context).caution),
     ];
     final total = math.max(stages.fold<double>(0, (sum, stage) => sum + stage.$2), 1.0);
@@ -295,7 +292,7 @@ class SleepStages extends StatelessWidget {
 
 // Herzfrequenz
 
-const _zoneColors = [Colors.grey, Colors.blue, Colors.green, Colors.orange, Colors.red];
+const _zoneColors = [AppPalette.grey, AppPalette.blue, AppPalette.green, AppPalette.orange, AppPalette.red];
 
 /// Pulszonen: HFmax, Coach-Zonen je Sportart, Intensität, Uhr-Zonen und Hinweise (Port von `HeartRateSections`).
 class HeartRateScreen extends StatelessWidget {

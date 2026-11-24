@@ -19,9 +19,9 @@ void changeMobility(CoachSettings settings, void Function(MobilitySettings mobil
 }
 
 Color mobilityColor(MobilityRating rating) => switch (rating) {
-  MobilityRating.limited => Colors.orange,
-  MobilityRating.moderate => Colors.amber,
-  MobilityRating.good => Colors.green,
+  MobilityRating.limited => AppPalette.orange,
+  MobilityRating.moderate => AppPalette.amber,
+  MobilityRating.good => AppPalette.green,
 };
 
 /// Mobility: Einheit nach Belastung der letzten Tage und eigenen Selbsttests, dazu die Tests mit Verlauf. Die Auswahl
@@ -186,11 +186,8 @@ class _MobilityScreenState extends ConsumerState<MobilityScreen> {
                   trailing: switch (latest[test.id]) {
                     final result? => Text(
                       test.rating(result.value).label,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: mobilityColor(test.rating(result.value)),
-                      ),
+                      style: AppText.caption(context)
+                          .copyWith(fontWeight: FontWeight.w600, color: mobilityColor(test.rating(result.value))),
                     ),
                     null => Text('noch nicht getestet', style: AppText.caption(context).copyWith(color: secondary)),
                   },
@@ -379,13 +376,13 @@ class MobilitySummary extends ConsumerWidget {
     return Row(
       spacing: 12,
       children: [
-        const Icon(Icons.self_improvement, color: Colors.teal, size: 28),
+        const Icon(Icons.self_improvement, color: AppPalette.teal, size: 28),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: 2,
             children: [
-              const Text('Mobility', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+              Text('Mobility', style: AppText.headline(context)),
               Text(
                 '${count == 0 ? 'Diese Woche noch keine Einheit' : 'Diese Woche $count Einheiten'}'
                 '${tested ? '' : ' · Selbsttests noch offen'}',
