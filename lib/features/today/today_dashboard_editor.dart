@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
 
-/// „Heute anpassen“: Bereiche der Startseite ein- und ausblenden (auch die AI-Empfehlungen ganz).
+/// „Heute anpassen“: Bereiche der Startseite ein- und ausblenden (auch die KI-Empfehlungen ganz).
 class TodayDashboardEditor extends ConsumerWidget {
   const TodayDashboardEditor({super.key});
 

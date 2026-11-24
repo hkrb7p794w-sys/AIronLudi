@@ -36,7 +36,7 @@ IconData _icon(String symbol) => switch (symbol) {
   final other => AppSymbols.of(other),
 };
 
-/// Bereich „AI“ (über „Heute“): alle Empfehlungen aus Regeln und KI an einem Ort, nach Themen, mit
+/// Bereich „KI“ (über „Heute“): alle Empfehlungen aus Regeln und KI an einem Ort, nach Themen, mit
 /// Bearbeitungsstand; dazu die KI-Analyse auf Anfrage und die übrigen KI-Funktionen. Die Grundlage bleibt intern
 /// (lange drücken › „Worauf beruht das?“) (Port von `AIView`).
 class AIScreen extends ConsumerStatefulWidget {
@@ -216,7 +216,7 @@ class _AIScreenState extends ConsumerState<AIScreen> {
     final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
     final controller = _controller;
     return Scaffold(
-      appBar: AppBar(title: const Text('AI')),
+      appBar: AppBar(title: const Text('KI')),
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: ListView(
@@ -554,7 +554,7 @@ class InsightBasisSheet extends StatelessWidget {
                   dense: true,
                   leading: Icon(Icons.fact_check_outlined),
                   title: Text(
-                    'Tipp: Ein stärkeres Modell (Claude, ChatGPT) kann diese Empfehlung prüfen. „AI“ › „Daten für '
+                    'Tipp: Ein stärkeres Modell (Claude, ChatGPT) kann diese Empfehlung prüfen. „KI“ › „Daten für '
                     'eine externe KI exportieren“ legt sie mit Prüfauftrag bei; die Antwort übernimmst du über '
                     '„Antwort einer externen KI übernehmen“.',
                   ),
