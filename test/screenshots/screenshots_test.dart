@@ -208,9 +208,15 @@ Future<void> tapText(WidgetTester tester, String text) async {
 
 final shots = <Shot>[
   Shot('01-heute', (t) async {}, long: true),
-  Shot('02-aktivitaeten', (t) => tab(t, 'Aktivitäten'), long: true),
-  Shot('03-training', (t) => tab(t, 'Training'), long: true),
+  Shot('02-verlauf', (t) => tab(t, 'Verlauf'), long: true),
+  Shot('03-plan', (t) => tab(t, 'Plan'), long: true),
   Shot('04-ernaehrung', (t) => tab(t, 'Ernährung'), long: true),
+  Shot('05-ich', (t) => tab(t, 'Ich'), long: true),
+  Shot('06-auswertungen', (t) async {
+    await tab(t, 'Verlauf');
+    await t.tap(find.byTooltip('Auswertungen'));
+    await settle(t);
+  }, long: true),
   // Heute
   Shot('10-ki-empfehlungen', (t) => push(t, find.byType(TodayScreen), const AIScreen()), long: true),
   Shot('11-heute-anpassen', (t) => push(t, find.byType(TodayScreen), const TodayDashboardEditor())),
@@ -224,16 +230,16 @@ final shots = <Shot>[
   ),
   // Aktivitäten
   Shot('20-freunde', (t) async {
-    await tab(t, 'Aktivitäten');
+    await tab(t, 'Verlauf');
     await push(t, find.byType(ActivitiesScreen), const FriendsScreen());
   }),
   Shot('21-spiel', (t) async {
-    await tab(t, 'Aktivitäten');
+    await tab(t, 'Verlauf');
     await push(t, find.byType(ActivitiesScreen), const GameScreen());
   }),
   // Training
   for (final (name, row) in const [
-    ('30-plan-woche', 'Plan'),
+    ('30-plan-woche', 'Woche'),
     ('31-ausdauerplan', 'Ausdauerplan'),
     ('32-gym', 'Gym'),
     ('33-gesundheit', 'Gesundheit'),
@@ -246,23 +252,30 @@ final shots = <Shot>[
     ('40-routen', 'Routen'),
   ])
     Shot(name, (t) async {
-      await tab(t, 'Training');
+      const planRows = {'Woche', 'Ausdauerplan', 'Gym', 'Routen'};
+      if (planRows.contains(row)) {
+        await tab(t, 'Plan');
+      } else {
+        await tab(t, 'Verlauf');
+        await t.tap(find.byTooltip('Auswertungen'));
+        await settle(t);
+      }
       await tapText(t, row);
     }, long: name == '31-ausdauerplan' || name == '32-gym'),
   Shot('41-body-battery', (t) async {
-    await tab(t, 'Training');
+    await tab(t, 'Plan');
     await push(t, find.byType(TrainingScreen), const BodyBatteryScreen());
   }),
   Shot('42-morning-report', (t) async {
-    await tab(t, 'Training');
+    await tab(t, 'Plan');
     await push(t, find.byType(TrainingScreen), const MorningReportScreen());
   }),
   Shot('43-mobility', (t) async {
-    await tab(t, 'Training');
+    await tab(t, 'Plan');
     await push(t, find.byType(TrainingScreen), const MobilityScreen());
   }),
   Shot('44-routenplaner', (t) async {
-    await tab(t, 'Training');
+    await tab(t, 'Plan');
     await push(t, find.byType(TrainingScreen), const RoutePlannerScreen());
   }),
   // Ernährung

@@ -90,13 +90,13 @@ bleibt in KV.
 
 ## 5. App mit dem Worker verbinden (dein Gerät)
 
-1. AIronLudi › **Einstellungen › Technik › KI-Worker**: Adresse (`https://coach-ai.<subdomain>.workers.dev`, steht in
+1. AIronLudi › **Ich › Technik › KI-Worker**: Adresse (`https://coach-ai.<subdomain>.workers.dev`, steht in
    der Zusammenfassung des Worker-Laufs) und App-Token eintragen.
 2. **Speichern und testen** – darunter erscheint ein Gruß der KI mit Anbieter und Modell. Ab dann gibt es dort auch
    „SideStore-Quelle teilen“ und „Android-Link erstellen“ für andere.
 
 Andere Personen tragen nichts von Hand ein: Sie bekommen einen Einladungslink mit eigenem Gastzugang
-(*Einstellungen › Begleiter & Rangliste › Einladungslink erstellen*) bzw. den Android-Link.
+(*Ich › Begleiter & Rangliste › Einladungslink erstellen*) bzw. den Android-Link.
 
 ## 6. WHOOP (optional, einmal zentral)
 
@@ -114,7 +114,7 @@ Speicher ihres Geräts bzw. ihres Benutzers in der App).
    fehlenden Berechtigungen.
 3. **Client ID** und **Client Secret** als Secrets `WHOOP_CLIENT_ID`, `WHOOP_CLIENT_SECRET` anlegen, Worker
    bereitstellen. Der Health-Check (`/v1/health`) zeigt dann `"whoop": true`.
-4. In der App: *Einstellungen › Training und Fitness › WHOOP › Mit WHOOP verbinden*.
+4. In der App: *Ich › Training und Fitness › WHOOP › Mit WHOOP verbinden*.
 
 Grenzen der WHOOP-API gelten je Developer-App, also für alle zusammen: 100 Anfragen je Minute, 10 000 je Tag – ein
 Abruf braucht wenige Anfragen, für eine Familie oder einen Freundeskreis reicht das. Ob WHOOP neue Apps auf eine
@@ -124,13 +124,13 @@ Zahl von Nutzer:innen begrenzt, bis sie freigegeben sind, zeigt das Developer-Da
 
 Garmin hat keinen zentralen Zugang – jede Person meldet sich selbst an:
 
-- **Garmin-Konto** (empfohlen, mehr Werte): *Einstellungen › Training und Fitness › Garmin-Konto* › E-Mail und
+- **Garmin-Konto** (empfohlen, mehr Werte): *Ich › Training und Fitness › Garmin-Konto* › E-Mail und
   Passwort, ggf. Bestätigungscode. Gespeichert wird nur das Anmelde-Token.
 - **Personal API Key** (offizieller Rückfall): in Safari <https://connect.garmin.com/app/settings/personalApiToken> ›
-  Create › 1 Jahr › Key kopieren (nur einmal sichtbar) › *Einstellungen › Technik › Garmin Personal API (Rückfall)* ›
+  Create › 1 Jahr › Key kopieren (nur einmal sichtbar) › *Ich › Technik › Garmin Personal API (Rückfall)* ›
   einfügen › **Speichern und verbinden**. Garmin und die App warnen vor dem Ablauf.
 
-Probleme: *Einstellungen › Technik › Diagnose › Garmin-Diagnose*.
+Probleme: *Ich › Technik › Diagnose › Garmin-Diagnose*.
 
 ## 8. Kartendienste für den Routenplaner (optional, einmal zentral)
 

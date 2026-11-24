@@ -52,12 +52,12 @@ Niemand sonst braucht ein Konto bei Cloudflare, GitHub oder einem KI-Anbieter. D
 1. AIronLudi öffnen, Einrichtung durchgehen (Sportarten, Ziel, Körperdaten). Apple Health erlauben, wenn die Uhr
    Daten liefern soll – es geht auch ohne.
 2. Den **Einladungslink** antippen (Nachrichten/WhatsApp) › AIronLudi übernimmt KI-Zugang und Rangliste.
-3. *Optional:* *Einstellungen › Konto › Konto erstellen* (für Freunde, Feed, Wettkämpfe; Wiederherstellungscode
+3. *Optional:* *Ich › Konto › Konto erstellen* (für Freunde, Feed, Wettkämpfe; Wiederherstellungscode
    notieren).
-4. *Optional:* Garmin unter *Einstellungen › Training und Fitness › Garmin-Konto*, WHOOP darunter (siehe
+4. *Optional:* Garmin unter *Ich › Training und Fitness › Garmin-Konto*, WHOOP darunter (siehe
    [`einrichtung.md`](einrichtung.md), Abschnitte 6 und 7).
-5. *Empfohlen:* *Einstellungen › KI und Automatisierung › Datensicherung* › Ordner in iCloud Drive wählen.
-6. *Optional:* Widgets (Homescreen lange drücken › **+** › AIronLudi) und *Einstellungen › Sperrbildschirm*
+5. *Empfohlen:* *Ich › KI und Automatisierung › Datensicherung* › Ordner in iCloud Drive wählen.
+6. *Optional:* Widgets (Homescreen lange drücken › **+** › AIronLudi) und *Ich › Sperrbildschirm*
    (Live-Aktivitäten für Gym und Ernährung).
 
 **Laufend:** Mit kostenloser Apple-ID läuft die App **7 Tage**. Mindestens einmal pro Woche SideStore öffnen
@@ -73,22 +73,22 @@ bleiben.
 Die neue App hat dieselbe Kennung und ersetzt die alte in SideStore. Sie liest die alte Datenbank aber **nicht**
 direkt – deine Daten ziehen über eine **Sicherungsdatei** um. Deshalb unbedingt in dieser Reihenfolge:
 
-1. **In der alten App sichern:** *Einstellungen › KI und Automatisierung › Datensicherung* ›
+1. **In der alten App sichern:** *Ich › KI und Automatisierung › Datensicherung* ›
    **„Sicherung teilen oder in ‚Dateien‘ sichern“** › *In Dateien sichern* › z. B. *iCloud Drive* ›
    Datei `IronLudi-Sicherung-<Datum>.json` sichern. (Ist dort schon ein Ordner für die automatische Sicherung
    gewählt, liegt dort zusätzlich `IronLudi-Sicherung.json`.)
 2. **Neue App installieren:** SideStore › *My Apps* › bei AIronLudi **Update**, sobald die neue Version in der Quelle
    ist – bzw. während der Testphase die `AIronLudi.ipa` wie oben im Kasten beschrieben.
 3. **Sicherung einspielen:** Beim ersten Start auf dem ersten Bildschirm oben **„Sicherung einspielen“** › die Datei aus
-   Schritt 1 wählen. (Später geht das auch unter *Einstellungen › KI und Automatisierung › Datensicherung ›
+   Schritt 1 wählen. (Später geht das auch unter *Ich › KI und Automatisierung › Datensicherung ›
    Sicherung einspielen*.) Übernommen werden Gym-Einheiten, Mahlzeiten, Lebensmittel und alle Einstellungen;
    Garmin-Werte holt die App beim nächsten Abruf neu.
 4. **Zugänge prüfen:** Die Sicherung enthält aus Sicherheitsgründen keine Schlüssel. Meist übernimmt die neue App
    KI-Zugang, Garmin und Konto aus dem Schlüsselbund; falls nicht:
-   - KI: Einladungslink erneut antippen (bzw. als Betreiber:in *Einstellungen › Technik › KI-Worker*, siehe unten),
-   - Garmin: *Einstellungen › Training und Fitness › Garmin-Konto* neu anmelden,
-   - Konto: *Einstellungen › Konto › Anmelden*.
-5. Widgets und Live-Aktivitäten neu einrichten (*Einstellungen › Sperrbildschirm*).
+   - KI: Einladungslink erneut antippen (bzw. als Betreiber:in *Ich › Technik › KI-Worker*, siehe unten),
+   - Garmin: *Ich › Training und Fitness › Garmin-Konto* neu anmelden,
+   - Konto: *Ich › Konto › Anmelden*.
+5. Widgets und Live-Aktivitäten neu einrichten (*Ich › Sperrbildschirm*).
 
 ### B2 – Android (bisherige Kotlin-App „IronLudi“)
 
@@ -103,7 +103,7 @@ Tagestypen (die neue App leitet sie aus Wochenplan und Training ab) und die Reze
 2. **Alte App deinstallieren** (erst nach Schritt 1!), dann die neue über den Android-Link installieren. Ein Update
    über die alte App geht nicht: Die neue App ist mit einem anderen Schlüssel signiert (Keystore vom 16.11.2026),
    Android lehnt sie sonst mit „App nicht installiert“ ab.
-3. In der neuen App auf dem ersten Bildschirm oben **„Sicherung einspielen“** (bzw. später *Einstellungen › KI und
+3. In der neuen App auf dem ersten Bildschirm unter dem Einführungstext **„Sicherung einspielen“** (bzw. später *Ich › KI und
    Automatisierung › Datensicherung › Sicherung einspielen*) › Datei aus Schritt 1 wählen › **Einspielen**. Die App
    schließt sich danach einmal; neu öffnen.
 4. **Einrichtung abschließen** (Sportarten, Ziel): Die Android-App kannte kein Profil. Körperwerte und Ernährungsweise
@@ -114,7 +114,7 @@ Tagestypen (die neue App leitet sie aus Wochenplan und Training ab) und die Reze
 
 ## C – Android, neu
 
-**Von der Betreiberin bzw. dem Betreiber:** ein **Android-Link** (in deren App unter *Einstellungen › Technik ›
+**Von der Betreiberin bzw. dem Betreiber:** ein **Android-Link** (in deren App unter *Ich › Technik ›
 KI-Worker › „Android-Link erstellen“ › „Android-Link teilen“* – je Person ein eigener Link mit eigenem Gastzugang).
 Dauer: etwa 5 Minuten, nur das Handy (Android 8 oder neuer).
 
@@ -125,9 +125,9 @@ Dauer: etwa 5 Minuten, nur das Handy (Android 8 oder neuer).
 4. Zurück auf der Seite **„In der App verbinden“** › AIronLudi öffnet sich und übernimmt den KI-Zugang.
 5. Einrichtung durchgehen (Sportarten, Ziel, Körperdaten). Health Connect erlauben, wenn eine Uhr Daten liefern soll –
    es geht auch ohne.
-6. *Optional:* Konto, Garmin, WHOOP wie bei A3; Sicherung unter *Einstellungen › KI und Automatisierung ›
+6. *Optional:* Konto, Garmin, WHOOP wie bei A3; Sicherung unter *Ich › KI und Automatisierung ›
    Datensicherung* (Ordner z. B. in Google Drive); laufende Gym-Einheit und „Mahlzeiten heute“ als Mitteilung:
-   *Einstellungen › Sperrbildschirm*.
+   *Ich › Sperrbildschirm*.
 
 **Aktualisieren:** Gibt es eine neue Version, zeigt AIronLudi oben **„Neue Version … verfügbar“** (geprüft beim Öffnen,
 höchstens alle sechs Stunden; nur mit verbundenem KI-Zugang). **„Jetzt laden“** öffnet die Download-Seite – die neue
@@ -137,24 +137,34 @@ von Hand: denselben Link wieder öffnen.
 
 ---
 
+## So ist die App aufgebaut
+
+| Reiter | Wofür |
+|---|---|
+| **Heute** | Erholung, Belastung, „Jetzt dran“ (Wochen-, Saison- und Ausdauerplan), Ernährung heute, KI-Empfehlungen |
+| **Plan** | Woche, Ausdauerplan, Gym, Routen, Verpflegung (Fuel Planner), Saison |
+| **Verlauf** | Aktivitäten nach Wochen (Alle · Meine · Freunde); oben rechts **Auswertungen**: Gesundheit, Erholung, Herzfrequenz, Trends, Schlaf, Fitness & Form, Wochenbericht |
+| **Ernährung** | Tag, Erfassen, Rezepte, Verpflegung, Woche, Gewicht |
+| **Ich** | Benutzer, Konto, Freunde & Liga, KI, alle Einstellungen; unter *Technik* auch „Demo ansehen“ |
+
 ## Ausdauerplan: Laufen, Rad/Zwift, Schwimmen
 
-1. *Training › Ausdauerplan › Plan erstellen:* **Auf ein Ziel** (Wettkampf, Datum, optional Zielzeit h:mm) oder
+1. *Plan › Ausdauerplan › Plan erstellen:* **Auf ein Ziel** (Wettkampf, Datum, optional Zielzeit h:mm) oder
    **Für einen Zeitraum** (4, 8 oder 12 Wochen). Disziplinen, Trainingstage, Tag der langen Einheit und Zeit je
    Woche wählen. Schwellenwerte (Lauf-Pace, FTP, CSS, Schwellenpuls) eintragen, soweit bekannt – daraus werden die
    Ziele je Schritt.
 2. Der Plan passt sich jeden Tag selbst an (nach dem Abruf): härteres Training als geplant, ausgefallene Einheiten
    und schlechte Erholungswerte. Was sich geändert hat und warum, steht unter **Anpassungen**.
-3. **An die Uhr:** In einer Einheit **Einheit an Uhr senden** (Garmin-Konto unter *Einstellungen › Training und
+3. **An die Uhr:** In einer Einheit **Einheit an Uhr senden** (Garmin-Konto unter *Ich › Training und
    Fitness › Garmin-Konto* nötig) – oder *Automatisch in den Garmin-Kalender* einschalten: Die nächsten 14 Tage
    stehen dann im Garmin-Kalender und werden bei jeder Planänderung ersetzt.
 4. **Zwift:** Bei Rad-Einheiten **Für Zwift exportieren (.zwo)**, Datei am PC nach
    `Dokumente\Zwift\Workouts\<Zwift-ID>\` kopieren. In Zwift unter
-   *Training › Eigene Workouts*. **FIT-Datei teilen** gibt es für alle Einheiten.
+   *Plan › Eigene Workouts*. **FIT-Datei teilen** gibt es für alle Einheiten.
 
 ## Routen planen: Laufen und Rad (OpenStreetMap)
 
-1. *Training › Routen › Neue Route planen:* Start als **Adresse** eingeben (Vorschläge erscheinen beim Tippen,
+1. *Plan › Routen › Neue Route planen:* Start als **Adresse** eingeben (Vorschläge erscheinen beim Tippen,
    Eingabetaste sucht), mit **Aktueller Standort** (fragt einmal nach der Freigabe) oder durch **langes Drücken** auf
    die Karte. Antippen der Karte öffnet sie im Vollbild. Der Knopf ◎ (*Mein Standort*) zeigt dich als blauen Punkt
    und zentriert die Karte – den Start ändert er nicht. Mit dem **Stern** neben der Adresse merkst du einen Ort als
@@ -181,7 +191,7 @@ von Hand: denselben Link wieder öffnen.
 6. **Archiv und Uhr:** Gelaufene bzw. gefahrene Routen wandern ins *Archiv*, sobald am geplanten Tag eine passende
    Aktivität vorliegt (oder per „Als erledigt markieren“). Auf jeder Route stehen Kilometermarken. **An Uhr senden**
    zeigt den Weg je Hersteller: Garmin über Garmin Connect („An Gerät senden“), Apple Watch über eine App mit
-   Routen-Import, Coros, Suunto, Polar und Wahoo über ihre Apps. Mit angemeldetem Garmin-Konto (*Einstellungen ›
+   Routen-Import, Coros, Suunto, Polar und Wahoo über ihre Apps. Mit angemeldetem Garmin-Konto (*Ich ›
    Training und Fitness › Garmin-Konto*) legt **Direkt an Garmin Connect senden** den Kurs ohne Datei an; er steht
    dann in Garmin Connect unter *Training › Strecken* – dort „An Gerät senden“, auf der Uhr *Navigation › Kurse*.
 7. **Gassi und unterwegs:** Beim Spazieren gibt es die Wegart *Hundewiese* (die Runde führt über eine). Auf der
@@ -193,7 +203,7 @@ von Hand: denselben Link wieder öffnen.
    wählen, dann Temperatur, Regen und Wind über die geschätzte Dauer. Hättest du auf einem Rundweg zum Schluss
    Gegenwind, schlägt die App **Richtung umkehren** vor. Mit eingerichtetem Worker (MapTiler) ist die Karte im
    Dunkelmodus dunkel.
-9. **Gebiete (optional):** *Training › Routen › Gebiete anzeigen*. Geschlossene Runden erobern die umschlossene
+9. **Gebiete (optional):** *Plan › Routen › Gebiete anzeigen*. Geschlossene Runden erobern die umschlossene
    Fläche, alle Läufe und Fahrten mit GPS füllen deine Kachel-Karte. Neue Aktivitäten kommen nach jedem Abruf von
    selbst dazu; **Letzte 12 Wochen laden** holt ältere von Garmin (höchstens 15 je Durchgang). Alles bleibt bei
    deinem Benutzer.
@@ -208,10 +218,10 @@ Nur auf deinem eigenen Gerät (alle anderen nutzen den Einladungs- bzw. Android-
 
 1. *Actions › Worker* in GitHub: im letzten Lauf unter **Summary** steht die Adresse, z. B.
    `https://coach-ai.<subdomain>.workers.dev`.
-2. AIronLudi › *Einstellungen › Technik › KI-Worker*: Adresse und **App-Token** (der Wert des Secrets
+2. AIronLudi › *Ich › Technik › KI-Worker*: Adresse und **App-Token** (der Wert des Secrets
    `COACH_APP_TOKEN`) eintragen › **Speichern und testen**. Es erscheint ein Gruß der KI mit Anbieter und Modell.
 3. Ab dann gibt es dort **„SideStore-Quelle teilen“** und **„Android-Link erstellen“**; Einladungslinks unter
-   *Einstellungen › Begleiter & Rangliste*.
+   *Ich › Begleiter & Rangliste*.
 
 ## Wenn etwas hakt
 
@@ -219,7 +229,7 @@ Nur auf deinem eigenen Gerät (alle anderen nutzen den Einladungs- bzw. Android-
 |---|---|
 | iloader sieht das iPhone nicht | anderes Kabel, iPhone entsperren, „Vertrauen“ erneut bestätigen; Windows: iTunes bzw. „Apple-Geräte“ installiert? |
 | AIronLudi öffnet nicht mehr („nicht verfügbar“) | 7 Tage abgelaufen: LocalDevVPN verbinden › SideStore › My Apps › Refresh |
-| „KI-Worker ist nicht eingerichtet“ | Einladungslink erneut antippen bzw. *Einstellungen › Technik › KI-Worker* prüfen |
+| „KI-Worker ist nicht eingerichtet“ | Einladungslink erneut antippen bzw. *Ich › Technik › KI-Worker* prüfen |
 | Android: „App nicht installiert“ | Auf dem Handy ist noch die alte Kotlin-App (anderer Signaturschlüssel): erst sichern, dann deinstallieren (Abschnitt B2). Kommt die Meldung bei einem Update der **neuen** App, fehlten beim Build die Secrets `ANDROID_KEYSTORE_*` – Betreiber:in fragen |
 | Foto-Analyse meldet „KI nicht erreichbar … (Fehlercode 502)“ | Kein Bildmodell hat geantwortet. Betreiber:in: Unter *Settings › Secrets and variables › Actions* alle KI-Keys anlegen (`GROQ_API_KEY`, `MISTRAL_API_KEY`, `CEREBRAS_API_KEY`, `GH_MODELS_TOKEN`, `GEMINI_API_KEY` – dieselben Werte wie bisher), dann *Actions › Worker › Run workflow*. `…/v1/health` zeigt, welche Anbieter aktiv sind |
 | Kühlschrank-Rezepte melden einen Fehler | Der Worker ist noch nicht neu bereitgestellt (*Actions › Worker › Run workflow*) |
