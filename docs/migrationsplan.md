@@ -464,3 +464,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Roast Stufe 2 / PR 11b: gemeinsame Diagramm-Achsen (`lib/ui/chart_axes.dart`: deutsches Zahlenformat, keine krummen Randwerte, kein Umbruch, skalierende Schrift) in allen fl_chart-Diagrammen | erledigt |
 | Roast Stufe 3 / PR 13: Einheiten des adaptiven Ausdauerplans unter „Jetzt dran“ (`TodayFocus.withEndurance`, ersetzt gleiche Sportart des Wochenplans, Ampel warnt), Antippen öffnet den Ausdauerplan | erledigt |
 | Fehler aus Stufe-4-Vorbereitung: Schnellaktionen, Widgets und `coach://open/…` führen ihre Aktion aus (`PendingRouteHandler`: Erfassen mit Mahlzeit, Gesundheit, Gym, Einheit starten, KI, KI-Analyse); vorher nur Reiterwechsel | erledigt |
+| Roast Stufe 3 / PR 14: Modul „Ernährung heute“ auf „Heute“ (übrige kcal und Protein mit denselben Tageszielen, „Mahlzeit erfassen“; standardmäßig sichtbar, alte Einstellungen kompatibel) | erledigt |

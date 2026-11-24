@@ -1,4 +1,5 @@
 // Reiter „Heute“: Jetzt dran, Regel-Notiz, Wochenübersicht mit eigenen Zielen, Auslassen für diese Woche.
+import 'package:aironludi/app/router.dart';
 import 'package:aironludi/data/storage.dart';
 import 'package:aironludi/features/ai/ai_screen.dart';
 import 'package:aironludi/features/today/today_dashboard_editor.dart';
@@ -74,6 +75,8 @@ void main() {
     expect(find.text('Quelle verbinden'), findsOneWidget);
     // „Warum?“ steht in den AI-Empfehlungen; auf „Heute“ nur der erste Punkt als Vorschau.
     expect(find.text('WARUM?'), findsNothing);
+    await tester.ensureVisible(find.text('AI-Empfehlungen'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('AI-Empfehlungen'));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pumpAndSettle();
@@ -126,5 +129,28 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('AI-Empfehlungen'), findsNothing);
     expect(find.byType(TodayScreen), findsOneWidget);
+  });
+
+  testWidgets('Ernährung heute: übrige Kalorien und „Mahlzeit erfassen“ führt zum Erfassen', (tester) async {
+    tester.view.physicalSize = const Size(1170, 4200);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
+    await tester.pumpAndSettle();
+    final container = ProviderScope.containerOf(tester.element(find.byType(LiquidTabBar)));
+    container.read(coachSettingsProvider).nutrition = NutritionSettings()
+      ..weightKilograms = 74
+      ..heightCentimeters = 180
+      ..age = 34
+      ..isFemale = false;
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('ERNÄHRUNG HEUTE'), findsOneWidget);
+    expect(find.textContaining('kcal übrig'), findsOneWidget);
+    expect(find.textContaining('noch nichts erfasst'), findsOneWidget);
+    await tester.tap(find.text('Mahlzeit erfassen'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await tester.pumpAndSettle();
+    expect(container.read(routerProvider).routerDelegate.currentConfiguration.uri.path, '/ernaehrung');
   });
 }

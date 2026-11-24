@@ -188,6 +188,7 @@ abstract final class TodayKpis {
 enum TodayModule implements RawEnum {
   kpis('kpis', 'Schlaf, Erholung, Strain'),
   training('training', 'Training heute'),
+  nutrition('nutrition', 'Ernährung heute'),
   ai('ai', 'AI-Empfehlungen'),
   suggestions('suggestions', 'Vorschläge zum Plan'),
   morningReport('morningReport', 'Morning Report (bis 12 Uhr)'),
