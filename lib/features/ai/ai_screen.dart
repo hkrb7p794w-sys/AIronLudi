@@ -181,13 +181,13 @@ class _AIScreenState extends ConsumerState<AIScreen> {
           color: AppColors.of(context).good,
           alignment: Alignment.centerLeft,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: const Text('Umgesetzt', style: TextStyle(color: Colors.white)),
+          child: const Text('Umgesetzt', style: TextStyle(color: AppPalette.onColor)),
         ),
         secondaryBackground: Container(
-          color: Colors.grey,
+          color: AppPalette.grey,
           alignment: Alignment.centerRight,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: const Text('Verwerfen', style: TextStyle(color: Colors.white)),
+          child: const Text('Verwerfen', style: TextStyle(color: AppPalette.onColor)),
         ),
         confirmDismiss: (direction) async {
           _mark(direction == DismissDirection.startToEnd ? InsightStatus.done : InsightStatus.dismissed, insight);

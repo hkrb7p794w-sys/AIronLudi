@@ -28,10 +28,10 @@ class DirectionArrows extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: color,
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 1.5),
-                    boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 3, offset: Offset(0, 1))],
+                    border: Border.all(color: AppPalette.onColor, width: 1.5),
+                    boxShadow: const [BoxShadow(color: AppPalette.mapShadow, blurRadius: 3, offset: Offset(0, 1))],
                   ),
-                  child: const Icon(Icons.navigation, size: 10, color: Colors.white),
+                  child: const Icon(Icons.navigation, size: 10, color: AppPalette.onColor),
                 ),
               ),
             ),
@@ -67,16 +67,15 @@ class KilometerMarkers extends StatelessWidget {
                 label: 'Kilometer ${mark.kilometer}',
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppPalette.onColor,
                     borderRadius: BorderRadius.circular(LiquidRadii.pill),
                     border: Border.all(color: color, width: 1.5),
-                    boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 3, offset: Offset(0, 1))],
+                    boxShadow: const [BoxShadow(color: AppPalette.mapShadow, blurRadius: 3, offset: Offset(0, 1))],
                   ),
                   child: Center(
                     child: Text(
                       '${mark.kilometer}',
-                      style: TextStyle(
-                        fontSize: 11,
+                      style: AppText.caption(context).copyWith(
                         fontWeight: FontWeight.w700,
                         color: color,
                         fontFeatures: const [FontFeature.tabularFigures()],
@@ -105,9 +104,9 @@ class RoutePoiLayer extends ConsumerWidget {
   };
 
   static Color color(PoiKind kind) => switch (kind) {
-    PoiKind.water => const Color(0xFF0A84FF),
-    PoiKind.dogPark => const Color(0xFF30C26B),
-    PoiKind.bags => const Color(0xFF8E8E93),
+    PoiKind.water => AppPalette.mapBlue,
+    PoiKind.dogPark => AppPalette.mapGreen,
+    PoiKind.bags => AppPalette.mapGrey,
   };
 
   @override
@@ -125,10 +124,10 @@ class RoutePoiLayer extends ConsumerWidget {
               message: poi.name == null ? poi.kind.label : '${poi.kind.label}: ${poi.name}',
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppPalette.onColor,
                   shape: BoxShape.circle,
                   border: Border.all(color: color(poi.kind), width: 2),
-                  boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 3, offset: Offset(0, 1))],
+                  boxShadow: const [BoxShadow(color: AppPalette.mapShadow, blurRadius: 3, offset: Offset(0, 1))],
                 ),
                 child: Icon(icon(poi.kind), size: 13, color: color(poi.kind)),
               ),
@@ -219,12 +218,12 @@ class _Pin extends StatelessWidget {
     decoration: BoxDecoration(
       color: color,
       shape: BoxShape.circle,
-      border: Border.all(color: Colors.white, width: 2),
-      boxShadow: const [BoxShadow(color: Color(0x40000000), blurRadius: 6, offset: Offset(0, 2))],
+      border: Border.all(color: AppPalette.onColor, width: 2),
+      boxShadow: const [BoxShadow(color: AppPalette.mapShadowStrong, blurRadius: 6, offset: Offset(0, 2))],
     ),
     child: Padding(
       padding: const EdgeInsets.all(4),
-      child: Icon(icon, size: 16, color: Colors.white),
+      child: Icon(icon, size: 16, color: AppPalette.onColor),
     ),
   );
 }
@@ -275,7 +274,7 @@ class ElevationProfileChart extends StatelessWidget {
       return SizedBox(
         height: 48,
         child: Center(
-          child: Text('Kein Höhenprofil verfügbar', style: TextStyle(color: secondary, fontSize: 13)),
+          child: Text('Kein Höhenprofil verfügbar', style: AppText.footnote(context).copyWith(color: secondary)),
         ),
       );
     }
@@ -309,7 +308,7 @@ class ElevationProfileChart extends StatelessWidget {
                   for (final spot in spots)
                     LineTooltipItem(
                       '${spot.x.toStringAsFixed(1).replaceAll('.', ',')} km · ${spot.y.round()} m',
-                      const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                      AppText.caption(context).copyWith(color: AppPalette.onColor, fontWeight: FontWeight.w600),
                     ),
                 ],
               ),

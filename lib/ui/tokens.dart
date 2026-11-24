@@ -68,3 +68,46 @@ abstract final class AppText {
   /// 12 – Achsen, Abzeichen; die Untergrenze.
   static TextStyle caption(BuildContext context) => _t(context).labelSmall!;
 }
+
+/// Benannte Kategorie- und Zierfarben (Sportarten, Lebensmittel-Arten, Abzeichen, Chips, Zonen). Gleiche Werte wie
+/// die Material-Farben, die vorher direkt in `lib/features` standen – an einem Ort, damit sie sich gemeinsam ändern
+/// lassen. Für Bewertungen (gut/eingeschränkt/handeln) gilt `AppColors`, nicht diese Palette.
+abstract final class AppPalette {
+  static const green = Colors.green;
+  static const orange = Colors.orange;
+  static const red = Colors.red;
+  static const blue = Colors.blue;
+  static const teal = Colors.teal;
+  static const tealLight = Color(0xFF4DB6AC); // Colors.teal.shade300
+  static const amber = Colors.amber;
+  static const pink = Colors.pink;
+  static const purple = Colors.purple;
+  static const indigo = Colors.indigo;
+  static const cyan = Colors.cyan;
+  static const deepOrange = Colors.deepOrange;
+  static const lightBlue = Colors.lightBlue;
+  static const brown = Colors.brown;
+  static const grey = Colors.grey;
+
+  /// Schrift und Symbole auf farbigen Flächen (Sport-Symbole, Löschen-Hintergrund, gefüllte Knöpfe).
+  static const onColor = Colors.white;
+
+  // Karten: Routenvarianten, Orte, eigener Standort und Schatten der Marker (bleiben auf jeder Karte gleich).
+  static const mapBlue = Color(0xFF0A84FF);
+  static const mapOrange = Color(0xFFFF6B35);
+  static const mapGreen = Color(0xFF30C26B);
+  static const mapGrey = Color(0xFF8E8E93);
+  static const mapShadow = Color(0x33000000);
+  static const mapShadowStrong = Color(0x40000000);
+
+  /// Abdunkelung hinter einem Foto (Kühlschrank-Foto).
+  static const scrim = Color(0x33000000);
+
+  // Drei Reihen in Diagrammen (Verpflegung: Kohlenhydrate, Flüssigkeit, Natrium), hell und dunkel.
+  static const seriesBlueLight = Color(0xFF2A78D6);
+  static const seriesBlueDark = Color(0xFF3987E5);
+  static const seriesOrangeLight = Color(0xFFEB6834);
+  static const seriesOrangeDark = Color(0xFFD95926);
+  static const seriesGreenLight = Color(0xFF1BAF7A);
+  static const seriesGreenDark = Color(0xFF199E70);
+}

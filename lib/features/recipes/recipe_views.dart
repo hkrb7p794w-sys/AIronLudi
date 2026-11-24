@@ -576,7 +576,7 @@ class _ShoppingListScreenState extends ConsumerState<ShoppingListScreen> {
                             tooltip: settings.pantry.contains(item.name) ? 'Nicht mehr da' : 'Habe ich da',
                             icon: Icon(
                               settings.pantry.contains(item.name) ? Icons.inventory_2 : Icons.inventory_2_outlined,
-                              color: Colors.teal,
+                              color: AppPalette.teal,
                             ),
                             onPressed: () => _togglePantry(item.name),
                           ),

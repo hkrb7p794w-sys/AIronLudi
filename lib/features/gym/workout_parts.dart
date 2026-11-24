@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../data/settings/coach_settings.dart';
 import '../../services/providers.dart';
+import '../../ui/liquid.dart';
 import '../../ui/tokens.dart';
 import '../social/social_views.dart';
 import 'exercise_picker.dart';
@@ -16,8 +17,8 @@ import 'gym_library.dart';
 import 'gym_share_views.dart';
 import 'muscle_views.dart';
 
-part 'workout_set_pad.dart';
 part 'workout_result_parts.dart';
+part 'workout_set_pad.dart';
 
 /// Welcher Wert gerade über den Ziffernblock eingegeben wird.
 enum SetField { weight, reps }
@@ -92,7 +93,7 @@ class ExerciseNotes extends ConsumerWidget {
         if (progress != null)
           Text(
             GymTarget.text(progress, recovered: gym.recovered),
-            style: strong.copyWith(fontSize: 14, fontWeight: FontWeight.w500),
+            style: AppText.callout(context).copyWith(color: strong.color, fontWeight: FontWeight.w500),
             textAlign: align,
           ),
         if (warmUp.isNotEmpty) ...[

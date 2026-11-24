@@ -19,7 +19,7 @@ class SessionRow extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (record.savedToHealth)
-            const Icon(Icons.favorite, size: 14, color: Colors.pink, semanticLabel: 'In Health'),
+            const Icon(Icons.favorite, size: 14, color: AppPalette.pink, semanticLabel: 'In Health'),
           const DisclosureChevron(),
         ],
       ),
@@ -78,8 +78,8 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
               LabeledRow(label: 'Bewegte Last', value: '${GermanFormat.number(session.volumeKg)} kg'),
               if (_record.savedToHealth)
                 ListTile(
-                  leading: const Icon(Icons.favorite, color: Colors.pink),
-                  title: Text('In $healthStoreName gespeichert', style: const TextStyle(color: Colors.pink)),
+                  leading: const Icon(Icons.favorite, color: AppPalette.pink),
+                  title: Text('In $healthStoreName gespeichert', style: const TextStyle(color: AppPalette.pink)),
                 )
               else
                 ListTile(
@@ -267,7 +267,7 @@ class _GymHistoryScreenState extends ConsumerState<GymHistoryScreen> {
               color: AppColors.of(context).alert,
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.only(right: 16),
-              child: const Icon(Icons.delete, color: Colors.white),
+              child: const Icon(Icons.delete, color: AppPalette.onColor),
             ),
             confirmDismiss: (_) => _confirmDelete(),
             onDismissed: (_) async {
@@ -438,7 +438,7 @@ class _ProgressSectionState extends State<_ProgressSection> {
     final progress = widget.gym.progress;
     final active = progress.where((item) => _urgent.contains(item.status)).toList();
     final rest = progress.where((item) => !_urgent.contains(item.status)).toList();
-    final secondary = TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13);
+    final secondary = AppText.footnote(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
     return FormSection(
       header: 'Gewichts-Progression',
       footer:

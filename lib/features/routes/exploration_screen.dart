@@ -99,7 +99,7 @@ class _ExplorationScreenState extends ConsumerState<ExplorationScreen> {
     final drawn = visits.take(maxDrawnTiles).toList();
     final maxCount = drawn.isEmpty ? 1 : drawn.first.value;
     final heat = Theme.of(context).colorScheme.primary;
-    const captured = Color(0xFF30C26B);
+    const captured = AppPalette.mapGreen;
     final points = [
       for (final territory in state.territories) ...territory.polygon,
       if (state.territories.isEmpty)

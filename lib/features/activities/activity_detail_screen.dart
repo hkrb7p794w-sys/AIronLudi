@@ -266,7 +266,10 @@ class _Header extends ConsumerWidget {
                           FittedBox(
                             fit: BoxFit.scaleDown,
                             alignment: Alignment.centerLeft,
-                            child: Text(row.value, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w600)),
+                            child: Text(
+                              row.value,
+                              style: AppText.headline(context).copyWith(fontWeight: FontWeight.w600),
+                            ),
                           ),
                           Text(row.label, style: AppText.caption(context).copyWith(color: secondary)),
                         ],
@@ -349,7 +352,7 @@ class _ChartsSection extends StatelessWidget {
       ('Höhe (m)', AppColors.of(context).good, points((sample) => sample.altitude), false),
       (
         sport == ActivitySport.bike ? 'Trittfrequenz (U/min)' : 'Kadenz (spm)',
-        Colors.purple,
+        AppPalette.purple,
         points((sample) => sample.cadence),
         false,
       ),

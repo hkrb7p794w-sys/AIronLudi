@@ -289,7 +289,10 @@ class AlmereScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: 4,
                   children: [
-                    Text(settings.season.mainRaceDescription, style: secondary.copyWith(fontSize: 13)),
+                    Text(
+                      settings.season.mainRaceDescription,
+                      style: AppText.footnote(context).copyWith(color: secondary.color),
+                    ),
                     Text(
                       '${RaceEstimate.hoursMinutes(estimate.totalMinutes)} h',
                       style: Theme.of(context).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold),
@@ -405,7 +408,7 @@ class MarathonScreen extends ConsumerWidget {
                       Text(
                         'Die Zielpace ist vorläufig. Der Halbmarathon-Test bestätigt oder korrigiert sie (Praxiswert: '
                         'Marathon ≈ HM × 2,15–2,2; die Riegel-Formel mit × 2,09 ist für Debütanten meist zu optimistisch).',
-                        style: secondary.copyWith(fontSize: 13),
+                        style: AppText.footnote(context).copyWith(color: secondary.color),
                       ),
                   ],
                 ),
@@ -452,7 +455,7 @@ class MarathonScreen extends ConsumerWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.end,
-                      style: secondary.copyWith(fontSize: 12),
+                      style: AppText.caption(context).copyWith(color: secondary.color),
                     ),
                   ),
                 ),

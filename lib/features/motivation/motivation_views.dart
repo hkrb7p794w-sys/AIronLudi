@@ -57,7 +57,7 @@ class CompanionAvatar extends StatelessWidget {
             (null, CompanionKind.daisy) => DaisyAvatar(mood: mood, size: size),
             _ => ColoredBox(
               color: AppColors.of(context).caution,
-              child: Icon(companionIcon(companion.kind), color: Colors.white, size: size * 0.45),
+              child: Icon(companionIcon(companion.kind), color: AppPalette.onColor, size: size * 0.45),
             ),
           },
         ),
@@ -116,8 +116,8 @@ class _CompanionSectionState extends ConsumerState<CompanionSection> {
                       child: ExcludeSemantics(
                         child: CircleAvatar(
                           radius: 11,
-                          backgroundColor: Colors.pink,
-                          child: Icon(moodIcon(message.mood), size: 13, color: Colors.white),
+                          backgroundColor: AppPalette.pink,
+                          child: Icon(moodIcon(message.mood), size: 13, color: AppPalette.onColor),
                         ),
                       ),
                     ),

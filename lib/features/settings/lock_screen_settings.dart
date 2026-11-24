@@ -11,6 +11,7 @@ import '../../services/providers.dart';
 import '../../services/widgets/widget_providers.dart';
 import '../../ui/components.dart';
 import '../../ui/liquid.dart';
+import '../../ui/tokens.dart';
 
 /// Live-Aktivitäten auf dem Sperrbildschirm an einem Ort: welche Bereiche (Gym, Ernährung) erscheinen dürfen, was die
 /// Karte der Einheit zeigt und ob die Erinnerung an Mahlzeiten dort statt als Mitteilung steht. Während einer Einheit
@@ -162,7 +163,7 @@ class LiveActivityPreview extends StatelessWidget {
               child: Text(
                 '$value $unit',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15),
+                style: const TextStyle(color: AppPalette.onColor, fontWeight: FontWeight.w600, fontSize: 15),
               ),
             ),
             const Icon(Icons.add, size: 16, color: Colors.white70),
@@ -196,7 +197,7 @@ class LiveActivityPreview extends StatelessWidget {
                 Expanded(
                   child: Text(
                     layout.showsExercise ? 'Bankdrücken · Satz 2 von 4' : 'Satzpause',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15),
+                    style: const TextStyle(color: AppPalette.onColor, fontWeight: FontWeight.w600, fontSize: 15),
                   ),
                 ),
                 const Text('Beispiel', style: label),
@@ -208,7 +209,10 @@ class LiveActivityPreview extends StatelessWidget {
                 children: [
                   Text(
                     '1:30',
-                    style: LiquidText.kpi(context, size: layout.showsExercise ? 34 : 48).copyWith(color: Colors.white),
+                    style: LiquidText.kpi(
+                      context,
+                      size: layout.showsExercise ? 34 : 48,
+                    ).copyWith(color: AppPalette.onColor),
                   ),
                   const SizedBox(width: 10),
                   const Padding(
@@ -240,7 +244,7 @@ class LiveActivityPreview extends StatelessWidget {
               child: const Text(
                 'Satz erledigt',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15),
+                style: TextStyle(color: AppPalette.onColor, fontWeight: FontWeight.w600, fontSize: 15),
               ),
             ),
           ],

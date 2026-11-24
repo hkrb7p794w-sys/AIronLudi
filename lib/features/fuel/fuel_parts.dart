@@ -10,21 +10,22 @@ import '../../ui/tokens.dart';
 /// Farbe je Sportart (wie in Plan und Training).
 extension FuelSportStyle on FuelSport {
   Color get color => switch (this) {
-    FuelSport.run => Colors.green,
-    FuelSport.bike => Colors.orange,
-    FuelSport.swim => Colors.blue,
-    FuelSport.triathlon => Colors.teal,
-    FuelSport.strength => Colors.purple,
-    FuelSport.hybrid => Colors.pink,
+    FuelSport.run => AppPalette.green,
+    FuelSport.bike => AppPalette.orange,
+    FuelSport.swim => AppPalette.blue,
+    FuelSport.triathlon => AppPalette.teal,
+    FuelSport.strength => AppPalette.purple,
+    FuelSport.hybrid => AppPalette.pink,
   };
 }
 
 /// Kategorische Farben der Kreisdiagramme (geprüft auf Farbsehschwäche, hell und dunkel). Werte stehen immer als
 /// Text daneben – Farbe allein trägt nie die Bedeutung.
 abstract final class FuelChartColors {
-  static Color first(BuildContext context) => _dark(context) ? const Color(0xFF3987E5) : const Color(0xFF2A78D6);
-  static Color second(BuildContext context) => _dark(context) ? const Color(0xFFD95926) : const Color(0xFFEB6834);
-  static Color third(BuildContext context) => _dark(context) ? const Color(0xFF199E70) : const Color(0xFF1BAF7A);
+  static Color first(BuildContext context) => _dark(context) ? AppPalette.seriesBlueDark : AppPalette.seriesBlueLight;
+  static Color second(BuildContext context) =>
+      _dark(context) ? AppPalette.seriesOrangeDark : AppPalette.seriesOrangeLight;
+  static Color third(BuildContext context) => _dark(context) ? AppPalette.seriesGreenDark : AppPalette.seriesGreenLight;
 
   static bool _dark(BuildContext context) => Theme.of(context).brightness == Brightness.dark;
 }

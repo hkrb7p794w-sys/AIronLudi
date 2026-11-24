@@ -11,13 +11,13 @@ class _SlotTile extends StatelessWidget {
     final workout = slot.current;
     final status = switch (slot.status) {
       SlotStatus.completed => Icon(Icons.check_circle, color: AppColors.of(context).good),
-      SlotStatus.missed => const Icon(Icons.cancel, color: Colors.grey),
+      SlotStatus.missed => const Icon(Icons.cancel, color: AppPalette.grey),
       SlotStatus.planned => slot.isAdapted ? Icon(Icons.auto_fix_high, color: AppColors.of(context).caution) : null,
     };
     return ListTile(
       leading: SportIcon(
         symbol: workout.sport.symbol,
-        color: workout.isRest ? Colors.grey : _sportColor(workout.sport),
+        color: workout.isRest ? AppPalette.grey : _sportColor(workout.sport),
       ),
       title: Text(workout.isRest ? 'Ruhetag (statt ${slot.baseline.type.label})' : workout.title),
       subtitle: Text(

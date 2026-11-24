@@ -49,14 +49,14 @@ String foodLine(NutrientValues per100g, double grams) {
 
 /// Symbol nach Art des Lebensmittels: Getränk, eiweißreich, fettreich, leicht (Obst/Gemüse) oder kohlenhydratreich.
 (IconData, Color) foodIcon(NutrientValues per100g, {required bool isDrink}) {
-  if (isDrink) return (Icons.local_drink_outlined, Colors.lightBlue);
+  if (isDrink) return (Icons.local_drink_outlined, AppPalette.lightBlue);
   final kcal = per100g[Nutrient.kcal] ?? 0;
   final protein = (per100g[Nutrient.protein] ?? 0) * 4;
   final fat = (per100g[Nutrient.fat] ?? 0) * 9;
-  if (kcal > 0 && protein / kcal >= 0.35) return (Icons.egg_alt_outlined, Colors.deepOrange);
-  if (kcal > 0 && fat / kcal >= 0.55) return (Icons.spa_outlined, Colors.amber);
-  if (kcal < 70) return (Icons.eco_outlined, Colors.green);
-  return (Icons.bakery_dining_outlined, Colors.brown);
+  if (kcal > 0 && protein / kcal >= 0.35) return (Icons.egg_alt_outlined, AppPalette.deepOrange);
+  if (kcal > 0 && fat / kcal >= 0.55) return (Icons.spa_outlined, AppPalette.amber);
+  if (kcal < 70) return (Icons.eco_outlined, AppPalette.green);
+  return (Icons.bakery_dining_outlined, AppPalette.brown);
 }
 
 /// Lebensmittel erfassen, Suche zuerst: Vorschläge passend zur Mahlzeit, „+“ legt mit der üblichen Menge in den Korb,

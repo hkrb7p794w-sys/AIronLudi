@@ -188,13 +188,13 @@ class _MyWeekScreenState extends ConsumerState<MyWeekScreen> {
                             color: AppColors.of(context).info,
                             alignment: Alignment.centerLeft,
                             padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Text('Auf ${target.short}', style: const TextStyle(color: Colors.white)),
+                            child: Text('Auf ${target.short}', style: const TextStyle(color: AppPalette.onColor)),
                           ),
                     secondaryBackground: Container(
                       color: AppColors.of(context).alert,
                       alignment: Alignment.centerRight,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: const Text('Auslassen', style: TextStyle(color: Colors.white)),
+                      child: const Text('Auslassen', style: TextStyle(color: AppPalette.onColor)),
                     ),
                     confirmDismiss: (direction) async {
                       if (direction == DismissDirection.endToStart) {

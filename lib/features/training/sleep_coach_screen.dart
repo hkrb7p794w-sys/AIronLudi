@@ -134,7 +134,7 @@ class _SleepCoachScreenState extends ConsumerState<SleepCoachScreen> {
                 ListTile(
                   title: Text(
                     'Heute um ${SleepCoach.clock(report.bedtimeMinutes)} ins Bett',
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: AppText.title(context).copyWith(fontWeight: FontWeight.bold),
                   ),
                   subtitle: Text(
                     'Für ${GermanFormat.decimal(report.tonightMinutes / 60)} Stunden Schlaf bis '
@@ -200,7 +200,7 @@ class _SleepCoachScreenState extends ConsumerState<SleepCoachScreen> {
                                     toY: (night.sleepSeconds ?? 0) / 3600,
                                     width: 12,
                                     color: (night.sleepSeconds ?? 0) / 3600 >= 7
-                                        ? Colors.indigo
+                                        ? AppPalette.indigo
                                         : AppColors.of(context).caution,
                                     borderRadius: BorderRadius.circular(3),
                                   ),
@@ -304,7 +304,7 @@ class _SleepCoachScreenState extends ConsumerState<SleepCoachScreen> {
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                     child: Text(
                       'Ohne Bundesland zählen nur Wochenenden als frei.',
-                      style: secondary.copyWith(fontSize: 13),
+                      style: AppText.footnote(context).copyWith(color: secondary.color),
                     ),
                   ),
               ],

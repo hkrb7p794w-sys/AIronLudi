@@ -189,7 +189,7 @@ class _AddressFieldState extends ConsumerState<AddressField> {
       for (final favorite in favorites)
         ListTile(
           dense: true,
-          leading: const Icon(Icons.star_rounded, color: Colors.amber),
+          leading: const Icon(Icons.star_rounded, color: AppPalette.amber),
           title: Text(favorite.name, maxLines: 1, overflow: TextOverflow.ellipsis),
           subtitle: favorite.address == null
               ? null
@@ -248,7 +248,7 @@ class _AddressFieldState extends ConsumerState<AddressField> {
                       tooltip: isFavorite ? 'Aus Favoriten entfernen' : 'Als Favorit speichern',
                       icon: Icon(
                         isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
-                        color: isFavorite ? Colors.amber : secondary,
+                        color: isFavorite ? AppPalette.amber : secondary,
                       ),
                       onPressed: widget.enabled ? () => unawaited(_toggleFavorite(point)) : null,
                     ),

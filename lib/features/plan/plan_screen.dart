@@ -19,10 +19,10 @@ import 'plan_controller.dart';
 /// Farbe und Symbol je Einheit (wie `SportStyle.swift`).
 extension PlannedUnitKindStyle on PlannedUnitKind {
   Color get color => switch (this) {
-    PlannedUnitKind.bike || PlannedUnitKind.bikeOptional => Colors.orange,
-    PlannedUnitKind.swim => Colors.blue,
-    PlannedUnitKind.quality || PlannedUnitKind.easyRun || PlannedUnitKind.longRun => Colors.green,
-    PlannedUnitKind.gym => Colors.purple,
+    PlannedUnitKind.bike || PlannedUnitKind.bikeOptional => AppPalette.orange,
+    PlannedUnitKind.swim => AppPalette.blue,
+    PlannedUnitKind.quality || PlannedUnitKind.easyRun || PlannedUnitKind.longRun => AppPalette.green,
+    PlannedUnitKind.gym => AppPalette.purple,
   };
 
   String get symbol => switch (this) {
@@ -417,7 +417,10 @@ class PlanUnitDetailScreen extends ConsumerWidget {
                               spacing: 4,
                               children: [
                                 Icon(Icons.check_circle, color: AppColors.of(context).good, size: 16),
-                                Text('Erledigt', style: TextStyle(color: AppColors.of(context).good, fontSize: 13)),
+                                Text(
+                                  'Erledigt',
+                                  style: AppText.footnote(context).copyWith(color: AppColors.of(context).good),
+                                ),
                               ],
                             ),
                         ],
@@ -540,11 +543,8 @@ class _CompetitionSection extends ConsumerWidget {
           ListTile(
             title: Text(
               'Alternative bei Ablehnen',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+              style: AppText.caption(context)
+                  .copyWith(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             subtitle: Text(alternative),
           ),
@@ -566,7 +566,10 @@ List<Widget> unitGuideSections(UnitGuide guide) => [
       children: [
         for (final (index, step) in guide.steps.indexed)
           ListTile(
-            leading: CircleAvatar(radius: 11, child: Text('${index + 1}', style: const TextStyle(fontSize: 11))),
+            leading: CircleAvatar(
+              radius: 11,
+              child: Builder(builder: (context) => Text('${index + 1}', style: AppText.caption(context))),
+            ),
             title: Text(step),
           ),
       ],

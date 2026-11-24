@@ -206,7 +206,7 @@ class _PantryRecipesScreenState extends ConsumerState<PantryRecipesScreen> {
           ),
           if (controller.isWorking)
             const ColoredBox(
-              color: Color(0x33000000),
+              color: AppPalette.mapShadow,
               child: Center(child: CircularProgressIndicator()),
             ),
         ],

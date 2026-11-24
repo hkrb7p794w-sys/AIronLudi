@@ -238,7 +238,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen>
                   _HubRow(
                     title: 'Ausdauerplan',
                     symbol: 'figure.run',
-                    color: Colors.deepOrange,
+                    color: AppPalette.deepOrange,
                     value: enduranceSummary ?? 'Erstellen',
                     caption: 'Laufen, Rad/Zwift, Schwimmen – passt sich an',
                     onTap: () => _open((_) => const EnduranceScreen()),
@@ -258,7 +258,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen>
                   _HubRow(
                     title: 'Gesundheit',
                     symbol: 'heart.text.square.fill',
-                    color: Colors.pink,
+                    color: AppPalette.pink,
                     value: switch (BodyBatteryAnalysis.summary(days: _days, today: today).current) {
                       final current? => 'BB ${current.toInt()}',
                       null => '',
@@ -270,7 +270,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen>
                   _HubRow(
                     title: 'Erholung',
                     symbol: 'bed.double.fill',
-                    color: Colors.indigo,
+                    color: AppPalette.indigo,
                     value: recovery == null
                         ? '–'
                         : formatNumber(recovery.trend.latest?.value, unit: recovery.unit, digits: recovery.digits),
@@ -292,7 +292,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen>
                   _HubRow(
                     title: 'Trends',
                     symbol: 'chart.bar.xaxis',
-                    color: Colors.purple,
+                    color: AppPalette.purple,
                     value: '$weekMinutes min',
                     caption: 'diese Woche',
                     onTap: () => _open((_) => TrendsScreen(activities: _activities, gym: gym)),
@@ -301,7 +301,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen>
                   _HubRow(
                     title: 'Schlaf-Coach',
                     symbol: 'moon.stars.fill',
-                    color: Colors.indigo,
+                    color: AppPalette.indigo,
                     value: sleep == null ? '–' : '${SleepCoach.clock(sleep.bedtimeMinutes)} Uhr',
                     caption: 'Schlafenszeit heute',
                     onTap: () => _open((_) => const SleepCoachScreen()),
@@ -319,7 +319,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen>
                   _HubRow(
                     title: 'Wochenbericht',
                     symbol: 'doc.text.magnifyingglass',
-                    color: Colors.teal,
+                    color: AppPalette.teal,
                     value: '${report.week.sessions} Einheiten',
                     caption: 'letzte Woche',
                     onTap: () => _open((_) => WeeklyReportScreen(report: report)),
@@ -328,7 +328,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen>
                   _HubRow(
                     title: 'Routen',
                     symbol: 'point.topleft.down.to.point.bottomright.curvepath',
-                    color: Colors.teal,
+                    color: AppPalette.teal,
                     value: routeToday == null ? '' : RouteFormat.distance(routeToday.stats.distanceMeters),
                     caption: routeToday == null
                         ? (routeStore.settings.explorationEnabled
@@ -387,7 +387,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen>
                     _HubRow(
                       title: 'Almere',
                       symbol: 'flag.checkered',
-                      color: Colors.teal,
+                      color: AppPalette.teal,
                       value: '${RaceEstimate.hoursMinutes(estimate.totalMinutes)} h',
                       caption: 'geschätzte Zielzeit',
                       onTap: () => _open((_) => const AlmereScreen()),
@@ -395,7 +395,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen>
                     _HubRow(
                       title: 'Marathon',
                       symbol: 'medal.fill',
-                      color: Colors.pink,
+                      color: AppPalette.pink,
                       value: '${math.max(today.daysUntil(season.marathonDate), 0)} Tage',
                       caption: GermanFormat.date(season.marathonDate),
                       onTap: () => _open((_) => const MarathonScreen()),

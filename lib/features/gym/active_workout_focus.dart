@@ -24,7 +24,7 @@ class FocusCard extends ConsumerWidget {
           if (target.set case final set?)
             _SetEditor(exercise: session.exercises[target.exercise], index: set, gym: gym, edit: edit)
           else
-            _exerciseDone(session.exercises[target.exercise]),
+            _exerciseDone(context, session.exercises[target.exercise]),
           const SizedBox(height: 14),
           ExerciseNotes(exercise: session.exercises[target.exercise], gym: gym, set: target.set, offersWarmUp: true),
           if (target.set case final set?)
@@ -116,17 +116,17 @@ class FocusCard extends ConsumerWidget {
     );
   }
 
-  Widget _exerciseDone(LoggedExercise exercise) => Column(
+  Widget _exerciseDone(BuildContext context, LoggedExercise exercise) => Column(
     spacing: 12,
     children: [
-      const Row(
+      Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.check_circle, color: Colors.green),
-          SizedBox(width: 6),
+          const Icon(Icons.check_circle, color: AppPalette.green),
+          const SizedBox(width: 6),
           Text(
             'Alle Sätze erledigt',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
+            style: AppText.title(context).copyWith(fontWeight: FontWeight.bold, color: AppPalette.green),
           ),
         ],
       ),
@@ -156,7 +156,7 @@ class FocusCard extends ConsumerWidget {
       child: Column(
         spacing: 14,
         children: [
-          const Icon(Icons.emoji_events, size: 48, color: Colors.amber),
+          const Icon(Icons.emoji_events, size: 48, color: AppPalette.amber),
           Text('Plan geschafft', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
           Text(
             '${session.doneSetCount} Sätze · ${GermanFormat.number(session.volumeKg.roundToDouble())} kg bewegt',
@@ -419,10 +419,7 @@ class _SetKindMenu extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             spacing: 6,
             children: [
-              Text(
-                'Satz ${index + 1} von $total',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: secondary),
-              ),
+              Text('Satz ${index + 1} von $total', style: AppText.headline(context).copyWith(color: secondary)),
               if (set.kind != SetKind.working)
                 Text(
                   set.kind.label,
@@ -462,7 +459,10 @@ class _NextExercisePreview extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: 2,
               children: [
-                Text('Danach', style: secondary.copyWith(fontSize: 11, fontWeight: FontWeight.bold)),
+                Text(
+                  'Danach',
+                  style: AppText.caption(context).copyWith(color: secondary.color, fontWeight: FontWeight.bold),
+                ),
                 Text(exercise.name, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.bold)),
                 Text('${open.length} Sätze${open.isEmpty ? '' : ' · ${setValues(open.first)}'}', style: secondary),
               ],
@@ -496,7 +496,7 @@ class _DoneButton extends ConsumerWidget {
         style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(60), shape: shape),
         onPressed: finish,
         icon: const Icon(Icons.sports_score),
-        label: const Text('Einheit beenden', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        label: Text('Einheit beenden', style: AppText.headline(context).copyWith(fontWeight: FontWeight.bold)),
       );
     }
     final set = target.set;
@@ -513,7 +513,7 @@ class _DoneButton extends ConsumerWidget {
       ),
       onPressed: () => gym.complete(set: set, of: exercise.id),
       icon: const Icon(Icons.check),
-      label: const Text('Satz erledigt', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+      label: Text('Satz erledigt', style: AppText.headline(context).copyWith(fontWeight: FontWeight.bold)),
     );
   }
 }

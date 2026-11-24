@@ -518,7 +518,7 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
                   controller: _text,
                   minLines: 6,
                   maxLines: 14,
-                  style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  style: AppText.footnote(context).copyWith(fontFamily: 'monospace'),
                   decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Antwort einfügen'),
                 ),
               ),
@@ -789,10 +789,8 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
                 if (byID[insight.id] case final old?)
                   Text(
                     'Überschreibt: „${old.title}“ (${_origin(old)})',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: old.origin == InsightOrigin.rules ? AppColors.of(context).caution : secondary,
-                    ),
+                    style: AppText.caption(context)
+                        .copyWith(color: old.origin == InsightOrigin.rules ? AppColors.of(context).caution : secondary),
                   )
                 else
                   Text('Neu', style: AppText.caption(context).copyWith(color: secondary)),

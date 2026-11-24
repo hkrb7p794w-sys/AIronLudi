@@ -159,7 +159,7 @@ class _Header extends StatelessWidget {
                 if (wake != null)
                   Text('Beim Aufwachen ${wake.toInt()}${_normText(wake)}')
                 else
-                  Text('Aufwachwert heute fehlt', style: secondary.copyWith(fontSize: 14)),
+                  Text('Aufwachwert heute fehlt', style: AppText.callout(context).copyWith(color: secondary.color)),
                 if (latest != null && (latest.charged != null || latest.drained != null))
                   Text(
                     'Geladen +${latest.charged?.toInt() ?? '–'} · verbraucht −${latest.drained?.toInt() ?? '–'}',
@@ -181,10 +181,10 @@ class BatteryGauge extends StatelessWidget {
   final double? value;
 
   static Color color(double value) => switch (value) {
-    < 26 => Colors.red,
-    < 51 => Colors.orange,
-    < 76 => Colors.green,
-    _ => Colors.blue,
+    < 26 => AppPalette.red,
+    < 51 => AppPalette.orange,
+    < 76 => AppPalette.green,
+    _ => AppPalette.blue,
   };
 
   @override
@@ -335,7 +335,11 @@ class _HistoryChart extends StatelessWidget {
             rangeAnnotations: RangeAnnotations(
               horizontalRangeAnnotations: [
                 if (norm != null)
-                  HorizontalRangeAnnotation(y1: norm.low, y2: norm.high, color: Colors.grey.withValues(alpha: 0.15)),
+                  HorizontalRangeAnnotation(
+                    y1: norm.low,
+                    y2: norm.high,
+                    color: AppPalette.grey.withValues(alpha: 0.15),
+                  ),
               ],
             ),
             barTouchData: BarTouchData(enabled: false),

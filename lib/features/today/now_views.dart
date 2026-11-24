@@ -58,10 +58,10 @@ class NowSection extends ConsumerWidget {
   }
 
   Color get _color => switch (focus.level) {
-    RecoveryLevel.normal => Colors.green,
-    RecoveryLevel.locker => Colors.orange,
-    RecoveryLevel.pause => Colors.red,
-    null => Colors.grey,
+    RecoveryLevel.normal => AppPalette.green,
+    RecoveryLevel.locker => AppPalette.orange,
+    RecoveryLevel.pause => AppPalette.red,
+    null => AppPalette.grey,
   };
 
   IconData get _icon {
@@ -111,7 +111,7 @@ class NowSection extends ConsumerWidget {
                       width: 52,
                       height: 52,
                       decoration: BoxDecoration(color: _color, borderRadius: BorderRadius.circular(14)),
-                      child: Icon(_icon, color: Colors.white, size: 30),
+                      child: Icon(_icon, color: AppPalette.onColor, size: 30),
                     ),
                   ),
                   Expanded(
@@ -150,11 +150,11 @@ class NowSection extends ConsumerWidget {
                   children: [
                     CoachChip(text: plan.phase.rawValue, color: theme.colorScheme.primary),
                     if (plan.daysToMarathon >= 0)
-                      CoachChip(text: 'Marathon ${countdown(plan.daysToMarathon)}', color: Colors.pink),
+                      CoachChip(text: 'Marathon ${countdown(plan.daysToMarathon)}', color: AppPalette.pink),
                     if (plan.daysToRace >= 0)
                       CoachChip(
                         text: '${settings.season.mainRaceName} ${countdown(plan.daysToRace)}',
-                        color: Colors.teal,
+                        color: AppPalette.teal,
                       ),
                   ],
                 ),
@@ -282,7 +282,7 @@ class _FocusItemRowState extends State<FocusItemRow> {
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: 12,
               children: [
-                SportIcon(symbol: item.sport?.symbol ?? 'leaf.fill', color: item.sport?.color ?? Colors.teal.shade300),
+                SportIcon(symbol: item.sport?.symbol ?? 'leaf.fill', color: item.sport?.color ?? AppPalette.tealLight),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -544,7 +544,7 @@ class WeeklyReviewSection extends StatelessWidget {
         ListTile(leading: const Icon(Icons.speed), title: Text(_loadText)),
         for (final line in review.highlights)
           ListTile(
-            leading: const Icon(Icons.star, color: Colors.amber),
+            leading: const Icon(Icons.star, color: AppPalette.amber),
             title: Text(line),
           ),
         ListTile(
@@ -593,7 +593,7 @@ class TodayHintsSection extends ConsumerWidget {
                 _HintChip(
                   text: 'Ins Bett um ${SleepCoach.clock(sleep.bedtimeMinutes)}',
                   icon: Icons.bedtime,
-                  color: Colors.indigo,
+                  color: AppPalette.indigo,
                 ),
               if (run.warning case final warning?)
                 _HintChip(

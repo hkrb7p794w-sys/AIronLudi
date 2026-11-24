@@ -32,18 +32,18 @@ String clockText(int seconds) => '${seconds ~/ 60}:${(seconds % 60).toString().p
 String _weekdayDate(CalendarDay day) => '${Weekday.values[day.weekdayIndex].short} ${GermanFormat.date(day)}';
 
 Color _phaseColor(EndurancePhase phase) => switch (phase) {
-  EndurancePhase.base => Colors.blue,
-  EndurancePhase.build => Colors.orange,
-  EndurancePhase.peak => Colors.red,
-  EndurancePhase.taper => Colors.teal,
-  EndurancePhase.recovery => Colors.green,
-  EndurancePhase.race => Colors.purple,
+  EndurancePhase.base => AppPalette.blue,
+  EndurancePhase.build => AppPalette.orange,
+  EndurancePhase.peak => AppPalette.red,
+  EndurancePhase.taper => AppPalette.teal,
+  EndurancePhase.recovery => AppPalette.green,
+  EndurancePhase.race => AppPalette.purple,
 };
 
 Color _sportColor(EnduranceSport sport) => switch (sport) {
-  EnduranceSport.run => Colors.orange,
-  EnduranceSport.bike => Colors.green,
-  EnduranceSport.swim => Colors.blue,
+  EnduranceSport.run => AppPalette.orange,
+  EnduranceSport.bike => AppPalette.green,
+  EnduranceSport.swim => AppPalette.blue,
 };
 
 void _push(BuildContext context, Widget Function(BuildContext) builder) =>

@@ -159,8 +159,9 @@ class _EffortPicker extends StatelessWidget {
 
   final ValueChanged<int> pick;
 
-  static Color color(int value) =>
-      value <= PostWorkout.easyEffort ? Colors.green : (value < PostWorkout.hardEffort ? Colors.orange : Colors.red);
+  static Color color(int value) => value <= PostWorkout.easyEffort
+      ? AppPalette.green
+      : (value < PostWorkout.hardEffort ? AppPalette.orange : AppPalette.red);
 
   @override
   Widget build(BuildContext context) => Padding(

@@ -146,7 +146,7 @@ class _MealEditorScreenState extends ConsumerState<MealEditorScreen> {
                     color: AppColors.of(context).alert,
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.only(right: 16),
-                    child: const Icon(Icons.delete, color: Colors.white),
+                    child: const Icon(Icons.delete, color: AppPalette.onColor),
                   ),
                   onDismissed: (_) =>
                       setState(() => draft.items = draft.items.where((other) => other != item).toList()),
@@ -299,7 +299,7 @@ class _ItemRow extends StatelessWidget {
       leading: isUncertain(item)
           ? Semantics(
               label: 'Unsichere Schätzung',
-              child: const CircleAvatar(radius: 4, backgroundColor: Colors.amber),
+              child: const CircleAvatar(radius: 4, backgroundColor: AppPalette.amber),
             )
           : null,
       title: Text(item.name.isEmpty ? 'Neue Position' : item.name, maxLines: 1),

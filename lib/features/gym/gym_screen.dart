@@ -257,7 +257,10 @@ class _PersonalGymSection extends ConsumerWidget {
                   '${next.items.length} Übungen · ca. ${RoutineRotation.estimatedMinutes(next)} min',
                   style: secondary,
                 ),
-                Text(next.items.map((item) => item.name).join(' · '), style: secondary.copyWith(fontSize: 13)),
+                Text(
+                  next.items.map((item) => item.name).join(' · '),
+                  style: AppText.footnote(context).copyWith(color: secondary.color),
+                ),
                 if (legs != null && legs >= 7 && !next.setsPerGroup.containsKey(MuscleGroup.legs))
                   _Warning('Beine seit $legs Tagen nicht trainiert'),
                 if (gym.recovered == false)

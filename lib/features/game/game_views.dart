@@ -300,7 +300,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         spacing: 4,
         children: [
           Icon(icon, color: color),
-          Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          Text(value, style: AppText.title(context).copyWith(fontWeight: FontWeight.bold)),
           Text(
             label,
             textAlign: TextAlign.center,
@@ -345,7 +345,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                         '${GameLevel.progress(snapshot.summary.totalPoints).level}',
                         'Stufe',
                         Icons.star,
-                        Colors.amber,
+                        AppPalette.amber,
                       ),
                       _tile(
                         '${snapshot.summary.weekPoints}',
@@ -493,8 +493,7 @@ class _ChallengeRow extends ConsumerWidget {
               if (challenge.finished)
                 Text(
                   challenge.iWon ? '🏆 Gewonnen' : 'Beendet',
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: AppText.caption(context).copyWith(
                     fontWeight: FontWeight.bold,
                     color: challenge.iWon ? AppColors.of(context).caution : secondary,
                   ),

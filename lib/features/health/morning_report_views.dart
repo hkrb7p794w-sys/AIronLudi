@@ -45,10 +45,10 @@ abstract final class MorningReportBuilder {
 
 extension MorningStatusStyle on MorningStatus {
   Color get color => switch (this) {
-    MorningStatus.good => Colors.green,
-    MorningStatus.normal => Colors.blue,
-    MorningStatus.attention => Colors.orange,
-    MorningStatus.missing => Colors.grey,
+    MorningStatus.good => AppPalette.green,
+    MorningStatus.normal => AppPalette.blue,
+    MorningStatus.attention => AppPalette.orange,
+    MorningStatus.missing => AppPalette.grey,
   };
 
   IconData get icon => switch (this) {
@@ -68,10 +68,10 @@ extension MorningStatusStyle on MorningStatus {
 
 extension MorningReportStyle on MorningReport {
   Color get levelColor => switch (level) {
-    RecoveryLevel.normal => Colors.green,
-    RecoveryLevel.locker => Colors.orange,
-    RecoveryLevel.pause => Colors.red,
-    null => Colors.grey,
+    RecoveryLevel.normal => AppPalette.green,
+    RecoveryLevel.locker => AppPalette.orange,
+    RecoveryLevel.pause => AppPalette.red,
+    null => AppPalette.grey,
   };
 
   IconData get levelIcon => switch (level) {
@@ -96,7 +96,7 @@ class MorningReportHeader extends StatelessWidget {
           width: 48,
           height: 48,
           decoration: BoxDecoration(color: report.levelColor, borderRadius: BorderRadius.circular(14)),
-          child: Icon(report.levelIcon, color: Colors.white, size: 28),
+          child: Icon(report.levelIcon, color: AppPalette.onColor, size: 28),
         ),
       ),
       Expanded(

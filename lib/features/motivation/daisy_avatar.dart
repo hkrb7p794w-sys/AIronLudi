@@ -4,6 +4,8 @@ import 'package:coach_core/coach_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
+import '../../ui/tokens.dart';
+
 /// Gezeichnete, animierte Daisy: zotteliger, apricotfarbener Terrier-Mix mit Schlappohren, Bart und wuscheligen Brauen.
 /// Die Stimmung bestimmt Bewegung und Zubehör (lila Geschirr beim Losgehen, Blümchen-Halstuch wenn sie stolz ist,
 /// „Zzz“ am Ruhetag). Bei „Bewegung reduzieren“ steht sie still (Port von `DaisyAvatar`).
@@ -232,8 +234,8 @@ class DaisyPainter extends CustomPainter {
         canvas
           ..drawOval(_oval(x, 98, 9.5, 9.5), _fill(iris))
           ..drawOval(_oval(x, 99, 6, 6), _fill(pupil))
-          ..drawOval(_oval(x + 3, 95, 2.8, 2.8), _fill(Colors.white))
-          ..drawOval(_oval(x - 3, 102, 1.2, 1.2), _fill(Colors.white.withValues(alpha: 0.7)));
+          ..drawOval(_oval(x + 3, 95, 2.8, 2.8), _fill(AppPalette.onColor))
+          ..drawOval(_oval(x - 3, 102, 1.2, 1.2), _fill(AppPalette.onColor.withValues(alpha: 0.7)));
       });
     }
   }

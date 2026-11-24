@@ -161,11 +161,9 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen> {
                                 : 'Auf der Route'),
                         textAlign: TextAlign.center,
                         maxLines: 2,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: offRoute ? AppColors.of(context).alert : null,
-                        ),
+                        style: AppText.callout(
+                          context,
+                        ).copyWith(fontWeight: FontWeight.w600, color: offRoute ? AppColors.of(context).alert : null),
                       ),
                     ),
                   ),
