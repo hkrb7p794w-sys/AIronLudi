@@ -456,3 +456,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Roast Stufe 3 / PR 16: HRV-Trend für WHOOP und Health in der Tagesampel (`HrvTrend`, 7-Tage-Schnitt gegen eigene Basis) | erledigt |
 | Roast Stufe 2 / PR 8: Designsystem-Tokens (`lib/ui/tokens.dart`) und Sperrklinken-Test gegen neue Rohfarben/Schriftgrößen in `lib/features` | erledigt |
 | Roast Stufe 2 / PR 9: Heute und Ernährung auf Tokens (`AppColors`, `AppText`): keine festen Schriftgrößen mehr, Ampelfarben semantisch, nichts unter 12 pt | erledigt |
+| Roast Stufe 2 / PR 8: Designsystem-Tokens (`lib/ui/tokens.dart`) und Sperrklinken-Test gegen neue Rohfarben/Schriftgrößen in `lib/features` | erledigt |
