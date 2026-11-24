@@ -1,0 +1,503 @@
+part of 'coach_exchange.dart';
+
+/// Manueller KI-Coach, Teil 2: die Antwort der KI einfügen, von den Regeln prüfen lassen und übernehmen (Port von
+/// `CoachImportView`).
+class CoachImportScreen extends ConsumerStatefulWidget {
+  const CoachImportScreen({super.key});
+
+  @override
+  ConsumerState<CoachImportScreen> createState() => _CoachImportScreenState();
+}
+
+class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
+  final _text = TextEditingController();
+  ImportPreview? _preview;
+  ImportSelection _selection = ImportSelection();
+  String? _error;
+  bool _applied = false;
+
+  final _scroll = ScrollController();
+
+  /// Was beim letzten Übernehmen dabei war (für die Wege dorthin).
+  ({bool routines, bool schedule, bool notes, bool insights})? _appliedParts;
+
+  @override
+  void initState() {
+    super.initState();
+    _text.addListener(() {
+      if (_preview != null || _error != null || _applied) {
+        setState(() {
+          _preview = null;
+          _error = null;
+          _applied = false;
+        });
+      } else {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    _text.dispose();
+    super.dispose();
+  }
+
+  CalendarDay get _thisMonday => PlanAdjustments.monday(CalendarDay.today());
+  CalendarDay get _nextMonday => _thisMonday.adding(7);
+
+  /// Plan, mit dem der Vorschlag verglichen wird (dauerhaft bzw. nächste Woche).
+  WeekSchedule get _currentSchedule {
+    final settings = ref.read(coachSettingsProvider);
+    return switch (_selection.scheduleScope) {
+      ScheduleScope.permanent => settings.profile.schedule,
+      ScheduleScope.nextWeek => settings.schedule(_nextMonday),
+    };
+  }
+
+  static String _slots(List<SessionSlot> slots) => slots.isEmpty ? 'frei' : slots.map((slot) => slot.title).join(', ');
+
+  static String _itemText(RoutineItem item) {
+    final weight = item.weightKg == null ? '' : ', ${GermanFormat.number(item.weightKg!)} kg';
+    return '${item.name}: ${item.sets} × ${item.lowerReps}–${item.upperReps}, Pause ${item.restSeconds} s$weight';
+  }
+
+  /// Antwort als Datei (z. B. aus Claude heruntergeladen oder über „Teilen“ gesichert): Text übernehmen und prüfen.
+  Future<void> _loadFile() async {
+    final files = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['md', 'txt', 'json', 'markdown'],
+    );
+    final path = files.isEmpty ? null : files.first.path;
+    if (path == null || !mounted) return;
+    final bytes = await File(path).readAsBytes();
+    _text.text = utf8.decode(bytes, allowMalformed: true);
+    _check();
+  }
+
+  void _check() {
+    final settings = ref.read(coachSettingsProvider);
+    try {
+      final checked = CoachImport.preview(
+        _text.text,
+        profile: settings.profile,
+        equipment: settings.gym.equipment,
+        custom: settings.gym.customExercises,
+        now: DateTime.now(),
+      );
+      setState(() {
+        _selection = ImportSelection.defaults(
+          checked,
+          existing: settings.gym.routines,
+          existingInsights: settings.insights,
+          currentSchedule: checked.scheduleScope == ScheduleScope.nextWeek
+              ? settings.schedule(_nextMonday)
+              : settings.profile.schedule,
+        );
+        _preview = checked;
+        _applied = false;
+        _error = null;
+      });
+    } on Object catch (error) {
+      setState(() {
+        _preview = null;
+        _error = '$error';
+      });
+    }
+  }
+
+  void _apply(ImportPreview preview) {
+    final settings = ref.read(coachSettingsProvider);
+    _appliedParts = (
+      routines:
+          _selection.replaceAllRoutines ||
+          preview.routines.any((routine) => _selection.choice(routine) != RoutineChoice.skip),
+      schedule:
+          CoachImport.schedule(preview, selection: _selection, current: _currentSchedule) != null ||
+          (_selection.currentWeek && preview.currentWeek.isNotEmpty),
+      notes: _selection.notes.isNotEmpty,
+      insights:
+          preview.insights.any((insight) => _selection.insights.contains(insight.id)) ||
+          preview.dismiss.any(_selection.dismiss.contains),
+    );
+    if (preview.routines.isNotEmpty) {
+      final gym = settings.gym;
+      gym.routines = CoachImport.routines(preview, selection: _selection, existing: gym.routines);
+      settings.gym = gym;
+    }
+    if (CoachImport.schedule(preview, selection: _selection, current: _currentSchedule) case final schedule?) {
+      switch (_selection.scheduleScope) {
+        case ScheduleScope.permanent:
+          settings.profile = settings.profile..schedule = schedule;
+        case ScheduleScope.nextWeek:
+          settings.planAdjustments = settings.planAdjustments
+            ..setWeekPlan(schedule, base: settings.profile.schedule, inWeekOf: _nextMonday);
+      }
+    }
+    // Diese Woche: auf dem (eben übernommenen) Plan dieser Woche aufsetzen, nur die genannten Tage ändern.
+    if (CoachImport.currentWeekSchedule(preview, selection: _selection, base: settings.schedule(_thisMonday))
+        case final week?) {
+      settings.planAdjustments = settings.planAdjustments
+        ..setWeekPlan(week, base: settings.profile.schedule, inWeekOf: _thisMonday);
+    }
+    final notes = CoachImport.notes(preview, selection: _selection);
+    if (notes.isNotEmpty) settings.importedNotes = ImportedNotes(day: CalendarDay.today(), texts: notes);
+    if (preview.insights.isNotEmpty || preview.dismiss.isNotEmpty) {
+      final updated = CoachImport.applyInsights(
+        preview,
+        selection: _selection,
+        existing: settings.insights,
+        now: DateTime.now(),
+      );
+      if (!listEquals(updated, settings.insights)) settings.insights = updated;
+    }
+    setState(() => _applied = true);
+    // Nach oben zu „Übernommen“ mit den Wegen zum Plan.
+    if (_scroll.hasClients) {
+      unawaited(_scroll.animateTo(0, duration: const Duration(milliseconds: 250), curve: Curves.easeOut));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final preview = _preview;
+    final canApply = preview != null && !_applied && CoachImport.hasChanges(preview, selection: _selection);
+    return Scaffold(
+      appBar: AppBar(title: const Text('KI-Antwort importieren')),
+      // Übernehmen bleibt sichtbar, auch wenn die Vorschau lang ist – sonst bleibt es leicht beim „Prüfen“.
+      bottomNavigationBar: preview == null || _applied
+          ? null
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: FilledButton.icon(
+                  onPressed: canApply ? () => _apply(preview) : null,
+                  icon: const Icon(Icons.download),
+                  label: Text(canApply ? 'Auswahl übernehmen' : 'Nichts ausgewählt'),
+                ),
+              ),
+            ),
+      body: ListView(
+        controller: _scroll,
+        padding: const EdgeInsets.only(bottom: 32),
+        children: [
+          if (_applied) ..._appliedSections(),
+          FormSection(
+            header: 'Antwort der KI',
+            footer:
+                'Die ganze Antwort einfügen oder als Datei laden (z. B. aus Claude heruntergeladen). Die App findet den '
+                'Plan auch, wenn die KI vom Format abweicht – was sie übernimmt, siehst du vor dem Übernehmen.',
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: TextField(
+                  controller: _text,
+                  minLines: 6,
+                  maxLines: 14,
+                  style: AppText.footnote(context).copyWith(fontFamily: 'monospace'),
+                  decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Antwort einfügen'),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.content_paste),
+                title: const Text('Aus Zwischenablage einfügen'),
+                onTap: () async {
+                  final data = await Clipboard.getData(Clipboard.kTextPlain);
+                  _text.text = data?.text ?? '';
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.file_open_outlined),
+                title: const Text('Aus Datei laden'),
+                subtitle: const Text('.md, .txt oder .json'),
+                onTap: () => unawaited(_loadFile()),
+              ),
+              ListTile(
+                enabled: _text.text.trim().isNotEmpty,
+                leading: const Icon(Icons.verified_user_outlined),
+                title: const Text('Prüfen'),
+                onTap: _check,
+              ),
+              if (_error case final error?)
+                ListTile(
+                  title: Text(error, style: AppText.footnote(context).copyWith(color: AppColors.of(context).alert)),
+                ),
+            ],
+          ),
+          if (preview != null) ..._previewSections(preview),
+        ],
+      ),
+    );
+  }
+
+  /// Nach dem Übernehmen: was übernommen wurde und wo es zu finden ist.
+  List<Widget> _appliedSections() {
+    final parts = _appliedParts;
+    void open(Widget screen) => unawaited(Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen)));
+    return [
+      FormSection(
+        header: 'Übernommen',
+        children: [
+          ListTile(
+            leading: Icon(Icons.check_circle, color: AppColors.of(context).good),
+            title: Text(
+              'Übernommen',
+              style: TextStyle(color: AppColors.of(context).good, fontWeight: FontWeight.w600),
+            ),
+          ),
+          if (parts?.routines ?? false)
+            ListTile(
+              leading: const Icon(Icons.fitness_center),
+              title: const Text('Trainingspläne ansehen'),
+              subtitle: const Text('Training › Gym'),
+              trailing: const DisclosureChevron(),
+              onTap: () => open(const GymScreen()),
+            ),
+          if (parts?.schedule ?? false)
+            ListTile(
+              leading: const Icon(Icons.calendar_month),
+              title: Text(
+                _preview?.schedule == null
+                    ? 'Plan dieser Woche ansehen'
+                    : _selection.scheduleScope == ScheduleScope.nextWeek
+                    ? 'Plan der nächsten Woche ansehen'
+                    : 'Wochenplan ansehen',
+              ),
+              subtitle: const Text('Training › Plan'),
+              trailing: const DisclosureChevron(),
+              onTap: () => open(const MyWeekScreen()),
+            ),
+          if (parts?.notes ?? false)
+            const ListTile(
+              leading: Icon(Icons.sticky_note_2_outlined),
+              title: Text('Hinweise'),
+              subtitle: Text('Heute › „Diese Woche, Ziele und Verlauf“'),
+            ),
+          if (parts?.insights ?? false)
+            const ListTile(
+              leading: Icon(Icons.auto_awesome),
+              title: Text('Empfehlungen'),
+              subtitle: Text('Heute › KI-Empfehlungen'),
+            ),
+        ],
+      ),
+    ];
+  }
+
+  List<Widget> _previewSections(ImportPreview preview) {
+    final settings = ref.watch(coachSettingsProvider);
+    final schedule = preview.schedule;
+    final current = _currentSchedule;
+    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
+    return [
+      if (preview.routines.isNotEmpty)
+        FormSection(
+          header: 'Trainingspläne',
+          footer: _selection.replaceAllRoutines
+              ? 'Achtung: Deine bisherigen Trainingspläne werden gelöscht; übrig bleiben nur die übernommenen.'
+              : 'Für jeden Trainingsplan einzeln: bestehende gleichnamige ersetzen, zusätzlich anlegen oder weglassen.',
+          children: [
+            SwitchListTile.adaptive(
+              title: const Text('Alle bisherigen Trainingspläne löschen'),
+              value: _selection.replaceAllRoutines,
+              onChanged: (on) => setState(() => _selection.replaceAllRoutines = on),
+            ),
+            for (final routine in preview.routines)
+              () {
+                final exists = settings.gym.routines.any((item) => item.name == routine.name);
+                final choice = _selection.choice(routine);
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 4,
+                    children: [
+                      Text(routine.name, style: AppText.headline(context)),
+                      for (final item in routine.items)
+                        Text(_itemText(item), style: AppText.caption(context).copyWith(color: secondary)),
+                      DropdownButton<RoutineChoice>(
+                        value: choice,
+                        isExpanded: true,
+                        items: [
+                          for (final option in RoutineChoice.values)
+                            if (option != RoutineChoice.replace || exists || _selection.replaceAllRoutines)
+                              DropdownMenuItem(value: option, child: Text(option.label)),
+                        ],
+                        onChanged: (value) => setState(() => _selection.routines[routine.id] = value ?? choice),
+                      ),
+                      if (exists && !_selection.replaceAllRoutines)
+                        Text(
+                          choice == RoutineChoice.replace
+                              ? 'Ersetzt deinen Trainingsplan „${routine.name}“.'
+                              : 'Dein Trainingsplan „${routine.name}“ bleibt erhalten.',
+                          style: AppText.caption(context).copyWith(color: AppColors.of(context).caution),
+                        ),
+                    ],
+                  ),
+                );
+              }(),
+          ],
+        ),
+      if (schedule != null)
+        FormSection(
+          header: 'Wochenplan',
+          footer: 'Nur die Tage mit Änderungen; abgewählte Tage bleiben wie bisher.',
+          children: [
+            SwitchListTile.adaptive(
+              title: const Text('Wochenplan übernehmen'),
+              value: _selection.schedule,
+              onChanged: (on) => setState(() => _selection.schedule = on),
+            ),
+            if (_selection.schedule) ...[
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: SegmentedButton<ScheduleScope>(
+                    segments: const [
+                      ButtonSegment(value: ScheduleScope.permanent, label: Text('Dauerhaft')),
+                      ButtonSegment(value: ScheduleScope.nextWeek, label: Text('Nur nächste Woche')),
+                    ],
+                    selected: {_selection.scheduleScope},
+                    showSelectedIcon: false,
+                    onSelectionChanged: (selection) => setState(() => _selection.scheduleScope = selection.first),
+                  ),
+                ),
+              ),
+              for (final weekday in Weekday.values)
+                if (schedule.slots(weekday) case final proposed
+                    when !const ListEquality<SessionSlot>().equals(proposed, current.slots(weekday)))
+                  CheckboxListTile(
+                    value: _selection.scheduleDays.contains(weekday),
+                    onChanged: (on) => setState(
+                      () =>
+                          on ?? false ? _selection.scheduleDays.add(weekday) : _selection.scheduleDays.remove(weekday),
+                    ),
+                    title: Text(weekday.long, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: Text('bisher: ${_slots(current.slots(weekday))}\nneu: ${_slots(proposed)}'),
+                  ),
+            ],
+          ],
+        ),
+      if (preview.currentWeek.isNotEmpty)
+        FormSection(
+          header: 'Diese Woche',
+          footer: 'Gilt nur bis Sonntag, danach wieder dein Wochenplan.',
+          children: [
+            SwitchListTile.adaptive(
+              title: const Text('Für diese Woche übernehmen'),
+              value: _selection.currentWeek,
+              onChanged: (on) => setState(() => _selection.currentWeek = on),
+            ),
+            if (_selection.currentWeek)
+              for (final MapEntry(key: weekday, value: proposed) in preview.currentWeek.entries)
+                ListTile(
+                  dense: true,
+                  title: Text(weekday.long, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: Text(
+                    'bisher: ${_slots(settings.schedule(_thisMonday).slots(weekday))}\nneu: ${_slots(proposed)}',
+                  ),
+                ),
+          ],
+        ),
+      if (preview.notes.isNotEmpty)
+        FormSection(
+          header: 'Hinweise der KI',
+          footer: 'Ausgewählte Hinweise ersetzen die Hinweise des letzten Imports.',
+          children: [
+            for (final (index, note) in preview.notes.indexed)
+              CheckboxListTile(
+                value: _selection.notes.contains(index),
+                onChanged: (on) =>
+                    setState(() => on ?? false ? _selection.notes.add(index) : _selection.notes.remove(index)),
+                title: Text(note),
+              ),
+          ],
+        ),
+      if (preview.insights.isNotEmpty) _insightSection(preview, settings.insights),
+      if (preview.dismiss.isNotEmpty) _dismissSection(preview, settings.insights),
+      if (preview.corrections.isNotEmpty || preview.ruleNotes.isNotEmpty)
+        FormSection(
+          header: 'Geprüft von den Regeln',
+          children: [
+            for (final correction in preview.corrections)
+              ListTile(dense: true, leading: const Icon(Icons.cancel_outlined), title: Text(correction)),
+            for (final note in preview.ruleNotes)
+              ListTile(dense: true, leading: const Icon(Icons.info_outline), title: Text(note)),
+          ],
+        ),
+      FormSection(
+        footer: preview.isEmpty
+            ? 'Im Block war nichts, was die App übernehmen kann – die Gründe stehen unter „Geprüft von den Regeln“.'
+            : 'Trainingspläne und Wochenplan lassen sich danach wie gewohnt bearbeiten; die Hinweise stehen unter '
+                  '„Heute“ › „Diese Woche, Ziele und Verlauf“.',
+        children: const [],
+      ),
+    ];
+  }
+
+  static String _origin(Insight insight) => insight.origin == InsightOrigin.rules
+      ? 'Regeln der App'
+      : 'KI${insight.model == null ? '' : ' (${insight.model})'}';
+
+  /// Empfehlungen der externen KI: je Eintrag übernehmen oder nicht; ersetzt sie eine bestehende, steht diese dabei.
+  Widget _insightSection(ImportPreview preview, List<Insight> existing) {
+    final byID = {for (final insight in existing) insight.id: insight};
+    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
+    return FormSection(
+      header: 'Empfehlungen von ${preview.model}',
+      footer:
+          'Angehakte Empfehlungen erscheinen im Bereich „KI“; eine bestehende mit gleichem Thema wird überschrieben. '
+          'Empfehlungen der Regeln sind nicht vorausgewählt – sie beruhen auf festen, geprüften Regeln.',
+      children: [
+        for (final insight in preview.insights)
+          CheckboxListTile(
+            value: _selection.insights.contains(insight.id),
+            onChanged: (on) => setState(
+              () => on ?? false ? _selection.insights.add(insight.id) : _selection.insights.remove(insight.id),
+            ),
+            title: Text(insight.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 2,
+              children: [
+                Text(insight.text),
+                if (byID[insight.id] case final old?)
+                  Text(
+                    'Überschreibt: „${old.title}“ (${_origin(old)})',
+                    style: AppText.caption(context)
+                        .copyWith(color: old.origin == InsightOrigin.rules ? AppColors.of(context).caution : secondary),
+                  )
+                else
+                  Text('Neu', style: AppText.caption(context).copyWith(color: secondary)),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// Bestehende Empfehlungen, die die externe KI für falsch oder überholt hält.
+  Widget _dismissSection(ImportPreview preview, List<Insight> existing) {
+    final byID = {for (final insight in existing) insight.id: insight};
+    final known = [for (final id in preview.dismiss) ?byID[id]];
+    return FormSection(
+      header: 'Als falsch oder überholt markiert',
+      footer: known.isEmpty
+          ? 'Keine dieser Empfehlungen gibt es (noch) in der App.'
+          : 'Angehakte Empfehlungen werden verworfen; du findest sie unter „Umgesetzt und verworfen“.',
+      children: [
+        for (final insight in known)
+          CheckboxListTile(
+            value: _selection.dismiss.contains(insight.id),
+            onChanged: (on) => setState(
+              () => on ?? false ? _selection.dismiss.add(insight.id) : _selection.dismiss.remove(insight.id),
+            ),
+            title: Text(insight.title),
+            subtitle: Text(_origin(insight)),
+          ),
+      ],
+    );
+  }
+}
