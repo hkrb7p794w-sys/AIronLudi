@@ -248,10 +248,7 @@ class FuelTimelineRow extends StatelessWidget {
                     style: AppText.footnote(context).copyWith(fontWeight: FontWeight.w600),
                   ),
                   if (step.segment case final segment?)
-                    Text(
-                      segment.label,
-                      style: AppText.caption(context).copyWith(color: segment.color),
-                    ),
+                    Text(segment.label, style: AppText.caption(context).copyWith(color: segment.color)),
                   if (clock case final clock?)
                     Text(clock, style: AppText.caption(context).copyWith(color: AppColors.muted(context))),
                 ],
