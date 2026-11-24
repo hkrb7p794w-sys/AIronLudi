@@ -188,7 +188,7 @@ void main() {
         sessions: sessions,
       );
       expect(report.level, RecoveryLevel.locker);
-      expect(report.headline, 'Heute eher locker');
+      expect(report.headline, 'Heute lockerer');
       expect(
         report.findings.any((line) => line.startsWith('Schlaf war') && line.contains('kürzer als dein Bedarf')),
         isTrue,
