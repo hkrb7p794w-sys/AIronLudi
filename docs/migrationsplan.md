@@ -452,3 +452,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Roast Stufe 1 / PR 4: WHOOP-Recovery mit eigener Skala in der Tagesampel (`WhoopRecoveryLevel`, rot < 34 → Pause), Garmin unverändert | erledigt |
 | Roast Stufe 1 / PR 5: `.gitattributes` (LF), Tests laufen unter Windows (Pfade, Temp-Ordner, unbeschreibbarer Pfad), Abschnitt 8 ohne veraltetes „in PR“, `CLAUDE.md` mit `ironludi://` und Prüfstand | erledigt |
 | Roast Stufe 1 / PR 7: Export-Ordner (KI, Routen) beim Benutzerwechsel geleert (`ExportFolders`, `clearSharedExports`); PR 6 (Ladefenster „Heute“) nach Prüfung verworfen | erledigt |
+| Roast Stufe 2 / PR 8: Designsystem-Tokens (`lib/ui/tokens.dart`) und Sperrklinken-Test gegen neue Rohfarben/Schriftgrößen in `lib/features` | erledigt |
