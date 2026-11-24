@@ -1,128 +1,93 @@
 {
   "lib/features/account/account_views.dart": {
-    "colors": 8,
-    "hex": 0,
-    "fontSize": 1
-  },
-  "lib/features/activities/activities_screen.dart": {
-    "colors": 2,
+    "colors": 0,
     "hex": 0,
     "fontSize": 1
   },
   "lib/features/activities/activity_detail_screen.dart": {
-    "colors": 7,
-    "hex": 0,
-    "fontSize": 11
-  },
-  "lib/features/activities/activity_parts.dart": {
-    "colors": 12,
-    "hex": 0,
-    "fontSize": 6
-  },
-  "lib/features/activities/post_workout_section.dart": {
-    "colors": 5,
+    "colors": 1,
     "hex": 0,
     "fontSize": 1
   },
-  "lib/features/ai/ai_screen.dart": {
-    "colors": 7,
+  "lib/features/activities/activity_parts.dart": {
+    "colors": 10,
     "hex": 0,
-    "fontSize": 6
+    "fontSize": 0
+  },
+  "lib/features/activities/post_workout_section.dart": {
+    "colors": 3,
+    "hex": 0,
+    "fontSize": 0
+  },
+  "lib/features/ai/ai_screen.dart": {
+    "colors": 3,
+    "hex": 0,
+    "fontSize": 0
   },
   "lib/features/ai/coach_exchange.dart": {
-    "colors": 5,
+    "colors": 0,
     "hex": 0,
-    "fontSize": 7
+    "fontSize": 2
   },
   "lib/features/endurance/endurance_screens.dart": {
-    "colors": 15,
+    "colors": 11,
     "hex": 0,
     "fontSize": 0
   },
   "lib/features/evidence/evidence_views.dart": {
-    "colors": 6,
+    "colors": 2,
     "hex": 0,
     "fontSize": 0
   },
   "lib/features/fuel/fuel_parts.dart": {
     "colors": 6,
     "hex": 6,
-    "fontSize": 6
-  },
-  "lib/features/fuel/fuel_planner_screen.dart": {
-    "colors": 2,
-    "hex": 0,
     "fontSize": 0
   },
-  "lib/features/fuel/fuel_products_screen.dart": {
+  "lib/features/fuel/fuel_planner_screen.dart": {
     "colors": 1,
     "hex": 0,
     "fontSize": 0
   },
-  "lib/features/fuel/fuel_stock_screen.dart": {
-    "colors": 0,
-    "hex": 0,
-    "fontSize": 1
-  },
   "lib/features/game/game_views.dart": {
-    "colors": 9,
+    "colors": 1,
     "hex": 0,
-    "fontSize": 16
+    "fontSize": 2
   },
   "lib/features/gym/active_workout_screen.dart": {
-    "colors": 14,
+    "colors": 3,
     "hex": 0,
-    "fontSize": 22
+    "fontSize": 13
   },
-  "lib/features/gym/exercise_history_charts.dart": {
-    "colors": 0,
+  "lib/features/gym/gym_screen.dart": {
+    "colors": 4,
     "hex": 0,
-    "fontSize": 1
+    "fontSize": 2
   },
-  "lib/features/gym/gym_library.dart": {
-    "colors": 7,
+  "lib/features/gym/workout_parts.dart": {
+    "colors": 1,
     "hex": 0,
     "fontSize": 6
   },
-  "lib/features/gym/gym_screen.dart": {
-    "colors": 21,
-    "hex": 0,
-    "fontSize": 8
-  },
-  "lib/features/gym/muscle_views.dart": {
-    "colors": 3,
+  "lib/features/health/body_battery_screen.dart": {
+    "colors": 5,
     "hex": 0,
     "fontSize": 1
   },
-  "lib/features/gym/workout_parts.dart": {
-    "colors": 4,
-    "hex": 0,
-    "fontSize": 14
-  },
-  "lib/features/health/body_battery_screen.dart": {
-    "colors": 10,
-    "hex": 0,
-    "fontSize": 3
-  },
   "lib/features/health/health_screen.dart": {
-    "colors": 11,
+    "colors": 6,
     "hex": 0,
-    "fontSize": 10
+    "fontSize": 1
   },
   "lib/features/health/mobility_screen.dart": {
     "colors": 4,
     "hex": 0,
-    "fontSize": 6
+    "fontSize": 2
   },
   "lib/features/health/morning_report_views.dart": {
-    "colors": 10,
+    "colors": 9,
     "hex": 0,
-    "fontSize": 3
-  },
-  "lib/features/health/wake_alarm_section.dart": {
-    "colors": 5,
-    "hex": 0,
-    "fontSize": 1
+    "fontSize": 0
   },
   "lib/features/motivation/daisy_avatar.dart": {
     "colors": 2,
@@ -130,92 +95,72 @@
     "fontSize": 2
   },
   "lib/features/motivation/motivation_views.dart": {
-    "colors": 10,
+    "colors": 3,
     "hex": 0,
-    "fontSize": 4
-  },
-  "lib/features/nutrition/brand_product_results.dart": {
-    "colors": 1,
-    "hex": 0,
-    "fontSize": 2
-  },
-  "lib/features/nutrition/capture_views.dart": {
-    "colors": 4,
-    "hex": 0,
-    "fontSize": 1
+    "fontSize": 0
   },
   "lib/features/nutrition/meal_editor.dart": {
-    "colors": 7,
-    "hex": 0,
-    "fontSize": 1
-  },
-  "lib/features/nutrition/meal_share_views.dart": {
-    "colors": 8,
+    "colors": 2,
     "hex": 0,
     "fontSize": 0
   },
   "lib/features/nutrition/nutrition_plan_views.dart": {
-    "colors": 7,
+    "colors": 1,
     "hex": 0,
-    "fontSize": 1
+    "fontSize": 0
   },
   "lib/features/nutrition/nutrition_screen.dart": {
-    "colors": 13,
+    "colors": 2,
     "hex": 0,
-    "fontSize": 6
+    "fontSize": 0
   },
   "lib/features/nutrition/product_search_screen.dart": {
-    "colors": 8,
+    "colors": 5,
     "hex": 0,
-    "fontSize": 5
-  },
-  "lib/features/nutrition/weight_views.dart": {
-    "colors": 10,
-    "hex": 0,
-    "fontSize": 1
+    "fontSize": 0
   },
   "lib/features/onboarding/schedule_editor.dart": {
-    "colors": 6,
+    "colors": 1,
     "hex": 0,
     "fontSize": 0
   },
   "lib/features/plan/my_week_screen.dart": {
-    "colors": 8,
+    "colors": 2,
     "hex": 0,
-    "fontSize": 5
+    "fontSize": 0
   },
   "lib/features/plan/plan_screen.dart": {
-    "colors": 8,
-    "hex": 0,
-    "fontSize": 7
-  },
-  "lib/features/recipes/cook_plan_views.dart": {
-    "colors": 11,
+    "colors": 4,
     "hex": 0,
     "fontSize": 3
   },
+  "lib/features/recipes/cook_plan_views.dart": {
+    "colors": 2,
+    "hex": 0,
+    "fontSize": 0
+  },
   "lib/features/recipes/pantry_views.dart": {
-    "colors": 3,
+    "colors": 0,
     "hex": 1,
     "fontSize": 0
   },
   "lib/features/recipes/recipe_views.dart": {
-    "colors": 3,
+    "colors": 1,
     "hex": 0,
-    "fontSize": 3
+    "fontSize": 0
   },
   "lib/features/routes/address_field.dart": {
     "colors": 2,
     "hex": 0,
-    "fontSize": 3
+    "fontSize": 0
   },
   "lib/features/routes/exploration_screen.dart": {
-    "colors": 1,
+    "colors": 0,
     "hex": 1,
     "fontSize": 0
   },
   "lib/features/routes/follow_route_screen.dart": {
-    "colors": 3,
+    "colors": 0,
     "hex": 0,
     "fontSize": 1
   },
@@ -224,129 +169,64 @@
     "hex": 3,
     "fontSize": 0
   },
-  "lib/features/routes/route_detail_screen.dart": {
-    "colors": 1,
-    "hex": 0,
-    "fontSize": 0
-  },
   "lib/features/routes/route_draw_screen.dart": {
-    "colors": 10,
+    "colors": 6,
     "hex": 2,
-    "fontSize": 1
+    "fontSize": 0
   },
   "lib/features/routes/route_parts.dart": {
-    "colors": 11,
+    "colors": 8,
     "hex": 10,
-    "fontSize": 7
-  },
-  "lib/features/routes/route_planner_screen.dart": {
-    "colors": 4,
-    "hex": 0,
     "fontSize": 3
   },
-  "lib/features/routes/route_weather_card.dart": {
-    "colors": 0,
-    "hex": 0,
-    "fontSize": 2
-  },
   "lib/features/routes/routes_screen.dart": {
-    "colors": 4,
-    "hex": 0,
-    "fontSize": 0
-  },
-  "lib/features/settings/ai_settings.dart": {
-    "colors": 1,
-    "hex": 0,
-    "fontSize": 0
-  },
-  "lib/features/settings/backup_screen.dart": {
-    "colors": 3,
-    "hex": 0,
-    "fontSize": 0
-  },
-  "lib/features/settings/data_sources_screen.dart": {
     "colors": 3,
     "hex": 0,
     "fontSize": 0
   },
   "lib/features/settings/diagnostics_screens.dart": {
-    "colors": 3,
+    "colors": 0,
     "hex": 0,
-    "fontSize": 3
+    "fontSize": 2
   },
   "lib/features/settings/lock_screen_settings.dart": {
     "colors": 6,
     "hex": 8,
     "fontSize": 4
   },
-  "lib/features/settings/macro_goals_section.dart": {
-    "colors": 1,
+  "lib/features/social/social_views.dart": {
+    "colors": 9,
     "hex": 0,
     "fontSize": 1
   },
-  "lib/features/settings/settings_screen.dart": {
+  "lib/features/today/now_views.dart": {
     "colors": 10,
     "hex": 0,
     "fontSize": 0
   },
-  "lib/features/settings/settings_sections.dart": {
-    "colors": 3,
+  "lib/features/today/week_overview.dart": {
+    "colors": 4,
     "hex": 0,
     "fontSize": 0
   },
-  "lib/features/settings/users_screen.dart": {
+  "lib/features/training/discipline_pages.dart": {
     "colors": 3,
     "hex": 0,
-    "fontSize": 1
+    "fontSize": 7
   },
-  "lib/features/settings/whoop_section.dart": {
-    "colors": 3,
-    "hex": 0,
-    "fontSize": 1
-  },
-  "lib/features/social/social_views.dart": {
-    "colors": 21,
-    "hex": 0,
-    "fontSize": 15
-  },
-  "lib/features/today/now_views.dart": {
-    "colors": 23,
-    "hex": 0,
-    "fontSize": 13
-  },
-  "lib/features/today/plan_day_actions.dart": {
+  "lib/features/training/sleep_coach_screen.dart": {
     "colors": 1,
     "hex": 0,
-    "fontSize": 0
+    "fontSize": 2
   },
-  "lib/features/today/today_screen.dart": {
-    "colors": 5,
+  "lib/features/training/training_pages.dart": {
+    "colors": 9,
     "hex": 0,
     "fontSize": 5
   },
-  "lib/features/today/week_overview.dart": {
-    "colors": 15,
-    "hex": 0,
-    "fontSize": 8
-  },
-  "lib/features/training/discipline_pages.dart": {
-    "colors": 12,
-    "hex": 0,
-    "fontSize": 16
-  },
-  "lib/features/training/sleep_coach_screen.dart": {
-    "colors": 2,
-    "hex": 0,
-    "fontSize": 3
-  },
-  "lib/features/training/training_pages.dart": {
-    "colors": 21,
-    "hex": 0,
-    "fontSize": 19
-  },
   "lib/features/training/training_screen.dart": {
-    "colors": 17,
+    "colors": 9,
     "hex": 0,
-    "fontSize": 1
+    "fontSize": 0
   }
 }
