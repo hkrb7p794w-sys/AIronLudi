@@ -36,7 +36,7 @@ void main() {
       sports: const [TrainingSport.strength],
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Training')));
+    await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Plan')));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Gym'), 200, scrollable: find.byType(Scrollable).first);
     await tester.pumpAndSettle();

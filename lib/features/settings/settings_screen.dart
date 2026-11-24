@@ -9,6 +9,7 @@ import '../../app/user_providers.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/large_title.dart';
 import '../../ui/platform_names.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
@@ -16,6 +17,7 @@ import '../../ui/tokens.dart';
 import '../account/account_views.dart';
 import '../ai/coach_exchange.dart';
 import '../evidence/evidence_views.dart';
+import '../me/me_screen.dart';
 import '../motivation/motivation_views.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../onboarding/schedule_editor.dart';
@@ -34,7 +36,10 @@ import 'whoop_section.dart';
 
 /// Einstellungen: Profil, dann die Bereiche als eigene Seiten (wie `SettingsView.swift`).
 class SettingsScreen extends ConsumerStatefulWidget {
-  const SettingsScreen({super.key});
+  const SettingsScreen({super.key, this.isTab = false});
+
+  /// Als Reiter „Ich“ (Stufe 4 des Roasts): großer Titel, kein „Fertig“, oben Freunde & Liga und KI.
+  final bool isTab;
 
   @override
   ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
@@ -91,12 +96,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final profile = settings.profile;
     final season = profile.mode == ProfileMode.season;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Einstellungen'),
-        actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Fertig'))],
-      ),
+      appBar: widget.isTab
+          ? AppBar(title: const CollapsingTitle(child: Text('Ich')))
+          : AppBar(
+              title: const Text('Einstellungen'),
+              actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Fertig'))],
+            ),
       body: ListView(
+        padding: const EdgeInsets.only(bottom: 32),
         children: [
+          if (widget.isTab) ...[const LargeTitleHeader('Ich'), const MeShortcutsSection()],
           FormSection(
             children: [
               ListTile(

@@ -2,7 +2,8 @@ import '../nutrition/meal_category.dart';
 
 /// Reiter der App. Gym liegt im Reiter Training, die KI-Empfehlungen sind von „Heute“ aus erreichbar
 /// (Entscheidung vom 10.11.2026: Platz für den Reiter „Aktivitäten“).
-enum AppTab { today, activities, training, nutrition }
+/// Reiter der App (seit Stufe 4 des Roasts: Heute · Plan · Verlauf · Ernährung · Ich).
+enum AppTab { today, plan, history, nutrition, me }
 
 /// Ziele, die von außen angesprungen werden: Schnellaktionen am App-Icon, Kurzbefehle/Siri und Widgets. Eine Route
 /// wählt den Reiter und optional eine Aktion darin; als Link `coach://open/<route>`.
@@ -47,10 +48,12 @@ enum AppRoute {
   /// Mahlzeit aus einem Link (`?mahlzeit=mittagessen`), sonst `null`.
   static MealCategory? mealCategoryFrom(Uri uri) => MealCategory.fromRaw(uri.queryParameters['mahlzeit']);
 
-  /// Reiter der Route. Gym-Ziele öffnen den Gym-Bereich im Reiter Training, KI-Ziele die Empfehlungen über „Heute“.
+  /// Reiter der Route. Gym-Ziele öffnen den Gym-Bereich im Reiter Plan, Gesundheit den Reiter Verlauf, KI-Ziele die
+  /// Empfehlungen über „Heute“.
   AppTab get tab => switch (this) {
     today || ai || aiAnalysis => AppTab.today,
-    health || gym || startWorkout => AppTab.training,
+    gym || startWorkout => AppTab.plan,
+    health => AppTab.history,
     nutrition || logMeal => AppTab.nutrition,
   };
 

@@ -19,12 +19,12 @@ void main() {
     });
 
     test('Gym und AI liegen in anderen Reitern', () {
-      expect(AppRoute.startWorkout.tab, AppTab.training);
-      expect(AppRoute.gym.tab, AppTab.training);
+      expect(AppRoute.startWorkout.tab, AppTab.plan);
+      expect(AppRoute.gym.tab, AppTab.plan);
       expect(AppRoute.startWorkout.opensArea, AppRoute.gym);
       expect(AppRoute.aiAnalysis.tab, AppTab.today);
       expect(AppRoute.aiAnalysis.opensArea, AppRoute.ai);
-      expect(AppRoute.health.tab, AppTab.training);
+      expect(AppRoute.health.tab, AppTab.history);
       expect(AppRoute.health.opensArea, isNull);
       expect(AppRoute.logMeal.tab, AppTab.nutrition);
       // Jede Route mit Bereich braucht eine Zielansicht, die sie übernimmt.

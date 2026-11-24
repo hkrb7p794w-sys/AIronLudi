@@ -33,7 +33,6 @@ import '../health/morning_report_views.dart';
 import '../plan/my_week_screen.dart';
 import '../routes/routes_screen.dart';
 import '../settings/data_sources_screen.dart';
-import '../settings/settings_screen.dart';
 import 'now_views.dart';
 import 'today_controller.dart';
 import 'today_dashboard_editor.dart';
@@ -255,14 +254,6 @@ class _TodayScreenState extends ConsumerState<TodayScreen>
             icon: const Icon(Icons.tune),
             onPressed: () =>
                 Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const TodayDashboardEditor())),
-          ),
-          IconButton(
-            tooltip: 'Einstellungen',
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => Navigator.of(
-              context,
-              rootNavigator: true,
-            ).push(MaterialPageRoute<void>(fullscreenDialog: true, builder: (_) => const SettingsScreen())),
           ),
         ],
       ),

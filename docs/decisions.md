@@ -1417,3 +1417,20 @@ Auf Wunsch des Nutzers: nicht nur *was*, sondern *wie* – und mit dem, was da i
   Text auf getönten Flächen (`onPrimaryContainer`) #00509E. Tab-Leiste: Beschriftung 12 statt 10,5 pt, nicht gewählte
   Reiter 72 % statt 60 %, gewählter in `onPrimaryContainer`; ein Symbolsatz (Material) statt Cupertino und Material
   gemischt. Segmentauswahl mindestens 44 pt hoch (vorher 40).
+
+## 2026-11-24 – Fünf Reiter (Roast Stufe 4, F-2 nach Empfehlung)
+
+- Auftrag des Nutzers: Stufe 4 ohne weitere Rückfrage umsetzen; offene Fragen nach den Empfehlungen des Konzepts.
+- Reiter **Heute · Plan · Verlauf · Ernährung · Ich** (`AppTab.today, plan, history, nutrition, me`; Pfade `/heute`,
+  `/plan`, `/verlauf`, `/ernaehrung`, `/ich`; alte Pfade `/aktivitaeten` und `/training` leiten weiter).
+- **Plan** = bisheriger Reiter Training im Teil `TrainingSection.plan`: Belastung heute, Woche, Ausdauerplan, Gym,
+  Routen, Verpflegung (neu als Kachel), Saison (im Saisonplan, F-4).
+- **Verlauf** = bisherige Aktivitäten (Titel „Verlauf“) mit „Auswertungen“ oben rechts: `TrainingSection.history`
+  mit Wochenminuten, Gesundheit, Erholung, Herzfrequenz, Trends, Schlaf, Fitness & Form, Wochenbericht, Disziplinen
+  bzw. Sportarten.
+- **Ich** = bisherige Einstellungen als Reiter, oben „Freunde & Liga“ und „KI“; das Abzeichen für Freundschaftsanfragen
+  sitzt jetzt am Reiter Ich. Das Zahnrad auf „Heute“ entfällt.
+- Links und Schnellaktionen: `gym`/`startWorkout` → Plan, `health` → Verlauf, Rest unverändert (`coach://open/…` bleibt
+  kompatibel).
+- Keine Funktion entfällt; alle Unterseiten sind dieselben wie vorher (Nachweis: docs/roast/design-konzept.md,
+  Abschnitt 7).

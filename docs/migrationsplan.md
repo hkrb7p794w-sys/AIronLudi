@@ -467,3 +467,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Roast Stufe 3 / PR 14: Modul „Ernährung heute“ auf „Heute“ (übrige kcal und Protein mit denselben Tageszielen, „Mahlzeit erfassen“; standardmäßig sichtbar, alte Einstellungen kompatibel) | erledigt |
 | Roast Stufe 3 / PR 15: „Route dazu planen“ auch für Lauf- und Radeinheiten des Wochenplans (`RouteForSessionSection`, gemeinsamer Baustein `RouteForUnitSection`) | erledigt |
 | Roast Stufe 3 / PR 16b: ein Titel je Tagesbewertung (`RecoveryLevel.headline`) auf „Heute“ und im Morning Report; Einheitennamen im Satz in Anführungszeichen | erledigt |
+| Roast Stufe 4 / PR 18–21 (Grundumbau): fünf Reiter Heute · Plan · Verlauf · Ernährung · Ich; Training aufgeteilt in Plan und Auswertungen, Einstellungen als Reiter Ich mit Freunde & Liga und KI | erledigt |
