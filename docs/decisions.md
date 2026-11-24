@@ -1443,3 +1443,27 @@ Auf Wunsch des Nutzers: nicht nur *was*, sondern *wie* – und mit dem, was da i
   dieselben wie im Screenshot-Prüfstand). `appModelProvider` liest den Schlüssel; im Demo-Modus gilt das bisherige
   Verhalten von `isDemo`: kein Abruf, keine Sicherung, kein automatisches Teilen, keine Widgets, kein Update-Hinweis.
 - Trennung wie bei jedem Benutzer; zurück und löschen über *Ich › Benutzer*. Ein zweites „Demo ansehen“ wechselt nur.
+## 2026-11-24 – Anatomische Körperkarte statt schematischer Figur
+
+- Wunsch des Nutzers: Die Muskel-Heatmap soll wie eine anatomische Zeichnung aussehen (einzelne Muskeln mit
+  Schattierung und Faserstruktur, vorn und hinten zum Blättern) statt der Rechteck-Figur aus `BodyMapView`.
+- Eigene Vektorzeichnung (`tool/body_map_art.py` → `lib/ui/body_map_art.dart`), keine fremden Bilder: Die
+  Vorlage aus einer anderen App ist urheberrechtlich geschützt, das Repo ist öffentlich. Rund 30 Muskeln je Seite,
+  davon einige nur zur Darstellung (z. B. Sartorius, Sägemuskel, Schienbeinmuskel) und immer grau.
+- Logik unverändert: dieselben 17 `Muscle`-Werte, dieselbe Farbskala gelb → rot (`MuscleLoad.intensity`), dieselben
+  eigenen Farben für „Erholung“. Neu: Vorder- und Rückseite blättern (Wischen oder Pfeil); zuerst die Seite mit mehr
+  Last auf Muskeln, die nur dort zu sehen sind (Zugübungen zeigen den Rücken).
+
+## 2026-11-24 – Körperkarte: Kraft, Kardio, Dehnen
+
+- Wunsch des Nutzers: unter der Körperkarte zwischen Kraft, Kardio und Dehnen umschalten (wie in der Vorlage).
+- Ort: Gym › Auswertung › Muskeln, weil es nur dort Daten für alle drei gibt. Trainingspläne enthalten nur
+  Kraftübungen; ein Umschalter dort wäre bei Kardio und Dehnen immer leer.
+- Kardio (`CardioLoad`): Minuten Laufen, Rad und Schwimmen aus den gespeicherten Aktivitäten, je Muskel gewichtet
+  wie beim Krafttraining (Hauptmuskel 1, mitarbeitend 0,5). Laufen: Oberschenkel vorn und hinten, Gesäß, Waden
+  (Adduktoren halb); Rad: Oberschenkel vorn, Gesäß (hinten und Waden halb); Schwimmen: Latissimus (Schultern, Brust,
+  Trizeps halb). Volle Farbe ab 150 min pro Woche (WHO, Regel `activity.who`). Praxis-Zuordnung, keine Messung.
+- Dehnen (`StretchLoad`): Minuten aus dem Mobility-Protokoll, gleichmäßig auf die Schwerpunkte der Einheit verteilt;
+  Schwerpunkt → Muskeln als Gegenstück zu `MobilityArea.forMuscle`. Volle Farbe ab 5 min pro Woche und Muskel
+  (Praxiswert: zwei bis drei Einheiten mit je etwa einer Minute je Muskel, Regel `mobility.stretching`).
+- „Erholung“ gibt es nur für Kraft; „7 Tage“ und „Ø 4 Wochen“ gelten für alle drei.
