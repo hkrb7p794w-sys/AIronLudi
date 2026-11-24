@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../ui/kpi_ring.dart';
 import '../../ui/liquid.dart';
+import '../../ui/tokens.dart';
 
 /// Farbe je Sportart (wie in Plan und Training).
 extension FuelSportStyle on FuelSport {
@@ -77,14 +78,14 @@ class FuelTargetRing extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(value, style: LiquidText.kpi(context, size: 20)),
-                  Text(unit, style: LiquidText.label(context).copyWith(fontSize: 11)),
+                  Text(unit, style: AppText.caption(context).copyWith(color: AppColors.muted(context))),
                 ],
               ),
             ),
             Text(label, style: LiquidText.label(context), textAlign: TextAlign.center),
             Text(
               coverage == null ? 'kein Soll' : 'gedeckt $percent',
-              style: LiquidText.label(context).copyWith(fontSize: 11),
+              style: AppText.caption(context).copyWith(color: AppColors.muted(context)),
             ),
           ],
         ),
@@ -244,11 +245,15 @@ class FuelTimelineRow extends StatelessWidget {
                   Text(
                     step.timeLabel,
                     textAlign: TextAlign.right,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                    style: AppText.footnote(context).copyWith(fontWeight: FontWeight.w600),
                   ),
                   if (step.segment case final segment?)
-                    Text(segment.label, style: LiquidText.label(context).copyWith(fontSize: 11, color: segment.color)),
-                  if (clock case final clock?) Text(clock, style: LiquidText.label(context).copyWith(fontSize: 11)),
+                    Text(
+                      segment.label,
+                      style: AppText.caption(context).copyWith(color: segment.color),
+                    ),
+                  if (clock case final clock?)
+                    Text(clock, style: AppText.caption(context).copyWith(color: AppColors.muted(context))),
                 ],
               ),
             ),
@@ -274,7 +279,7 @@ class FuelTimelineRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 spacing: 2,
                 children: [
-                  Text(step.content, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                  Text(step.content, style: AppText.callout(context).copyWith(fontWeight: FontWeight.w500)),
                   if (values.isNotEmpty) Text(values.join(' · '), style: LiquidText.label(context)),
                   if (step.detail.isNotEmpty) Text(step.detail, style: LiquidText.label(context)),
                 ],

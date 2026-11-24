@@ -14,6 +14,7 @@ import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/liquid.dart';
 import '../../ui/platform_names.dart';
+import '../../ui/tokens.dart';
 import '../evidence/evidence_views.dart';
 import 'active_workout_screen.dart';
 import 'gym_controller.dart';
@@ -298,10 +299,10 @@ class _Warning extends StatelessWidget {
   Widget build(BuildContext context) => Row(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      const Icon(Icons.warning_amber, size: 16, color: Colors.orange),
+      Icon(Icons.warning_amber, size: 16, color: AppColors.of(context).caution),
       const SizedBox(width: 6),
       Expanded(
-        child: Text(text, style: const TextStyle(fontSize: 13, color: Colors.orange)),
+        child: Text(text, style: AppText.footnote(context).copyWith(color: AppColors.of(context).caution)),
       ),
     ],
   );
@@ -333,7 +334,7 @@ class _TodaySection extends StatelessWidget {
                 Text(workout.name, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                 Text(
                   workout.exercises.map((exercise) => exercise.name).join(' · '),
-                  style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant),
+                  style: AppText.footnote(context).copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
                 if (gym.recovered == false)
                   const _Warning('Erholung heute eingeschränkt: Gewichte halten, ggf. ⅓ weniger Sätze.'),
@@ -488,7 +489,7 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
                     ),
                   ),
                 ),
-              if (_message case final message?) ListTile(title: Text(message, style: const TextStyle(fontSize: 13))),
+              if (_message case final message?) ListTile(title: Text(message, style: AppText.footnote(context))),
             ],
           ),
           if (connect.isLoggedIn) _garminSection(connect),
@@ -518,12 +519,12 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     final strength = ref.read(garminStrengthServiceProvider);
     final gym = ref.read(coachSettingsProvider).gym;
     final Widget status = switch (link?.status) {
-      GarminLinkStatus.enriched => const ListTile(
-        leading: Icon(Icons.check_circle, color: Colors.blue),
+      GarminLinkStatus.enriched => ListTile(
+        leading: Icon(Icons.check_circle, color: AppColors.of(context).info),
         title: Text('Sätze in der Aufzeichnung der Uhr'),
       ),
-      GarminLinkStatus.uploaded => const ListTile(
-        leading: Icon(Icons.check_circle, color: Colors.blue),
+      GarminLinkStatus.uploaded => ListTile(
+        leading: Icon(Icons.check_circle, color: AppColors.of(context).info),
         title: Text('Als eigene Aktivität hochgeladen'),
       ),
       GarminLinkStatus.pending => const ListTile(
@@ -531,11 +532,11 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
         title: Text('Wartet auf die Aufzeichnung der Uhr'),
       ),
       GarminLinkStatus.failed => ListTile(
-        leading: const Icon(Icons.warning_amber, color: Colors.orange),
-        title: Text(link?.note ?? 'Abgleich fehlgeschlagen', style: const TextStyle(color: Colors.orange)),
+        leading: Icon(Icons.warning_amber, color: AppColors.of(context).caution),
+        title: Text(link?.note ?? 'Abgleich fehlgeschlagen', style: TextStyle(color: AppColors.of(context).caution)),
       ),
-      null when _record.uploadedToGarmin => const ListTile(
-        leading: Icon(Icons.check_circle, color: Colors.blue),
+      null when _record.uploadedToGarmin => ListTile(
+        leading: Icon(Icons.check_circle, color: AppColors.of(context).info),
         title: Text('Als eigene Aktivität hochgeladen'),
       ),
       null => const ListTile(leading: Icon(Icons.circle_outlined), title: Text('Noch nicht in Garmin Connect')),
@@ -563,9 +564,9 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
               ),
               if (strength.hasBackup(id))
                 ListTile(
-                  title: const Text(
+                  title: Text(
                     'Ursprüngliche Sätze der Uhr wiederherstellen',
-                    style: TextStyle(color: Colors.red),
+                    style: TextStyle(color: AppColors.of(context).alert),
                   ),
                   enabled: !_working,
                   onTap: () => _run(() => strength.restore(session, activityID: id, garmin: connect)),
@@ -642,7 +643,7 @@ class _GymHistoryScreenState extends ConsumerState<GymHistoryScreen> {
             TextButton(onPressed: () => Navigator.of(dialog).pop(false), child: const Text('Abbrechen')),
             TextButton(
               onPressed: () => Navigator.of(dialog).pop(true),
-              child: const Text('Löschen', style: TextStyle(color: Colors.red)),
+              child: Text('Löschen', style: TextStyle(color: AppColors.of(context).alert)),
             ),
           ],
         ),
@@ -659,7 +660,7 @@ class _GymHistoryScreenState extends ConsumerState<GymHistoryScreen> {
             key: ValueKey(record.session.id),
             direction: DismissDirection.endToStart,
             background: Container(
-              color: Colors.red,
+              color: AppColors.of(context).alert,
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.only(right: 16),
               child: const Icon(Icons.delete, color: Colors.white),
@@ -758,7 +759,7 @@ class _CalendarSection extends StatelessWidget {
                           meta: meta,
                           child: Text(
                             DateFormat('d.M.', 'de_DE').format(weeks[value.toInt()].monday.referenceDate),
-                            style: const TextStyle(fontSize: 10),
+                            style: AppText.caption(context),
                           ),
                         ),
                       ),
@@ -774,7 +775,7 @@ class _CalendarSection extends StatelessWidget {
         ListTile(
           leading: Icon(
             streak > 0 ? Icons.local_fire_department : Icons.local_fire_department_outlined,
-            color: streak > 0 ? Colors.orange : null,
+            color: streak > 0 ? AppColors.of(context).caution : null,
           ),
           title: Text(streak == 1 ? '1 Woche in Folge trainiert' : '$streak Wochen in Folge trainiert'),
         ),
@@ -873,10 +874,10 @@ class _ProgressRow extends StatelessWidget {
     final tag = switch (item.status) {
       ProgressStatus.increase => (
         item.nextWeightKg == null ? '↑' : '↑ ${GermanFormat.number(item.nextWeightKg!)} kg',
-        Colors.green,
+        AppColors.of(context).good,
       ),
-      ProgressStatus.check => ('prüfen', Colors.red),
-      ProgressStatus.restart => ('Wiedereinstieg', Colors.orange),
+      ProgressStatus.check => ('prüfen', AppColors.of(context).alert),
+      ProgressStatus.restart => ('Wiedereinstieg', AppColors.of(context).caution),
       _ => null,
     };
     return ListTile(
@@ -885,7 +886,7 @@ class _ProgressRow extends StatelessWidget {
           builder: (_) => ExerciseDetailScreen(exerciseID: item.exerciseID, gym: gym),
         ),
       ),
-      title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+      title: Text(item.name, style: AppText.callout(context).copyWith(fontWeight: FontWeight.bold)),
       subtitle: Text(
         '${item.weightKg > 0 ? '${GermanFormat.number(item.weightKg)} kg' : 'Körpergewicht'} × '
         '${item.reps.join('/')} · Ziel ${item.target.lower}–${item.target.upper}',
@@ -895,7 +896,7 @@ class _ProgressRow extends StatelessWidget {
           : Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(color: tag.$2.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
-              child: Text(tag.$1, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              child: Text(tag.$1, style: AppText.caption(context).copyWith(fontWeight: FontWeight.bold)),
             ),
     );
   }
@@ -931,7 +932,11 @@ class _VolumeSection extends StatelessWidget {
                 Expanded(
                   child: LiquidProgressBar(
                     value: (count > 14 ? 14 : count) / 14,
-                    color: count == 0 ? Colors.red : (count >= MuscleVolume.goodLower ? Colors.green : Colors.orange),
+                    color: count == 0
+                        ? AppColors.of(context).alert
+                        : (count >= MuscleVolume.goodLower
+                              ? AppColors.of(context).good
+                              : AppColors.of(context).caution),
                   ),
                 ),
                 SizedBox(

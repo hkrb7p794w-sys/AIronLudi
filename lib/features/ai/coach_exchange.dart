@@ -17,6 +17,7 @@ import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../services/share/export_folders.dart';
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 import '../gym/gym_screen.dart';
 import '../plan/my_week_screen.dart';
 
@@ -543,7 +544,7 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
               ),
               if (_error case final error?)
                 ListTile(
-                  title: Text(error, style: const TextStyle(fontSize: 13, color: Colors.red)),
+                  title: Text(error, style: AppText.footnote(context).copyWith(color: AppColors.of(context).alert)),
                 ),
             ],
           ),
@@ -561,11 +562,11 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
       FormSection(
         header: 'Übernommen',
         children: [
-          const ListTile(
-            leading: Icon(Icons.check_circle, color: Colors.green),
+          ListTile(
+            leading: Icon(Icons.check_circle, color: AppColors.of(context).good),
             title: Text(
               'Übernommen',
-              style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
+              style: TextStyle(color: AppColors.of(context).good, fontWeight: FontWeight.w600),
             ),
           ),
           if (parts?.routines ?? false)
@@ -635,9 +636,9 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     spacing: 4,
                     children: [
-                      Text(routine.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                      Text(routine.name, style: AppText.headline(context)),
                       for (final item in routine.items)
-                        Text(_itemText(item), style: TextStyle(fontSize: 12, color: secondary)),
+                        Text(_itemText(item), style: AppText.caption(context).copyWith(color: secondary)),
                       DropdownButton<RoutineChoice>(
                         value: choice,
                         isExpanded: true,
@@ -653,7 +654,7 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
                           choice == RoutineChoice.replace
                               ? 'Ersetzt deinen Trainingsplan „${routine.name}“.'
                               : 'Dein Trainingsplan „${routine.name}“ bleibt erhalten.',
-                          style: const TextStyle(fontSize: 11, color: Colors.orange),
+                          style: AppText.caption(context).copyWith(color: AppColors.of(context).caution),
                         ),
                     ],
                   ),
@@ -790,11 +791,11 @@ class _CoachImportScreenState extends ConsumerState<CoachImportScreen> {
                     'Überschreibt: „${old.title}“ (${_origin(old)})',
                     style: TextStyle(
                       fontSize: 12,
-                      color: old.origin == InsightOrigin.rules ? Colors.orange : secondary,
+                      color: old.origin == InsightOrigin.rules ? AppColors.of(context).caution : secondary,
                     ),
                   )
                 else
-                  Text('Neu', style: TextStyle(fontSize: 12, color: secondary)),
+                  Text('Neu', style: AppText.caption(context).copyWith(color: secondary)),
               ],
             ),
           ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 
 /// Eigene Makroziele: automatisch, in Gramm oder in Prozent der Energie; auf Wunsch eigene Werte für Ruhetage.
 class MacroGoalsSection extends StatelessWidget {
@@ -163,7 +164,7 @@ class _MacroGoalEditorState extends State<_MacroGoalEditor> {
     final unit = percent ? '%' : 'g';
     final goal = widget.goal;
     final sum = goal.protein + goal.carbs + goal.fat;
-    final secondary = TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant);
+    final secondary = AppText.caption(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       child: Column(
@@ -185,7 +186,7 @@ class _MacroGoalEditorState extends State<_MacroGoalEditor> {
               (sum - 100).abs() < 0.5
                   ? 'Zusammen 100 %.'
                   : 'Zusammen ${GermanFormat.number(sum)} % – die App rechnet die Anteile auf 100 % um.',
-              style: (sum - 100).abs() < 0.5 ? secondary : secondary.copyWith(color: Colors.orange),
+              style: (sum - 100).abs() < 0.5 ? secondary : secondary.copyWith(color: AppColors.of(context).caution),
             ),
           ] else
             Text(

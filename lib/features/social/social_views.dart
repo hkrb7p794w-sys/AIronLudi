@@ -10,6 +10,7 @@ import '../../services/providers.dart';
 import '../../services/social/social_service.dart';
 import '../../ui/components.dart';
 import '../../ui/symbols.dart';
+import '../../ui/tokens.dart';
 import '../account/account_views.dart';
 import '../game/game_views.dart';
 import '../nutrition/meal_share_views.dart';
@@ -158,8 +159,8 @@ class FeedList extends ConsumerWidget {
           children: [
             if (social.lastError case final error?)
               ListTile(
-                leading: const Icon(Icons.warning_amber_rounded, color: Colors.orange),
-                title: Text(error, style: const TextStyle(fontSize: 13, color: Colors.orange)),
+                leading: Icon(Icons.warning_amber_rounded, color: AppColors.of(context).caution),
+                title: Text(error, style: AppText.footnote(context).copyWith(color: AppColors.of(context).caution)),
               ),
             if (social.feed.isEmpty && !social.isLoading)
               Padding(
@@ -209,7 +210,7 @@ class PostCard extends ConsumerWidget {
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Abbrechen')),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Löschen', style: TextStyle(color: Colors.red)),
+            child: Text('Löschen', style: TextStyle(color: AppColors.of(context).alert)),
           ),
         ],
       ),
@@ -249,7 +250,7 @@ class PostCard extends ConsumerWidget {
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     if (date != null)
-                      Text(SocialFormat.relative(date), style: TextStyle(fontSize: 12, color: secondary)),
+                      Text(SocialFormat.relative(date), style: AppText.caption(context).copyWith(color: secondary)),
                   ],
                 ),
               ),
@@ -260,7 +261,7 @@ class PostCard extends ConsumerWidget {
                   itemBuilder: (_) => [
                     PopupMenuItem(
                       onTap: () => _confirmDelete(context, ref),
-                      child: const Text('Beitrag löschen', style: TextStyle(color: Colors.red)),
+                      child: Text('Beitrag löschen', style: TextStyle(color: AppColors.of(context).alert)),
                     ),
                   ],
                 ),
@@ -270,9 +271,7 @@ class PostCard extends ConsumerWidget {
             spacing: 8,
             children: [
               Icon(postIcon(post), size: 20),
-              Expanded(
-                child: Text(post.headline, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-              ),
+              Expanded(child: Text(post.headline, style: AppText.headline(context))),
             ],
           ),
           if (post.facts.isNotEmpty) Text(post.facts, style: TextStyle(color: secondary)),
@@ -281,15 +280,15 @@ class PostCard extends ConsumerWidget {
               exercises.join(' · '),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 13, color: secondary),
+              style: AppText.footnote(context).copyWith(color: secondary),
             ),
           for (final record in payload.records ?? const <String>[])
             Row(
               spacing: 6,
               children: [
-                const Icon(Icons.emoji_events, size: 16, color: Colors.orange),
+                Icon(Icons.emoji_events, size: 16, color: AppColors.of(context).caution),
                 Expanded(
-                  child: Text(record, style: const TextStyle(fontSize: 13, color: Colors.orange)),
+                  child: Text(record, style: AppText.footnote(context).copyWith(color: AppColors.of(context).caution)),
                 ),
               ],
             ),
@@ -327,7 +326,10 @@ class ReactionSummary extends StatelessWidget {
           spacing: 10,
           children: [
             if (post.reactions > 0)
-              Text('${post.topReactions} ${post.reactions}', style: TextStyle(fontSize: 12, color: secondary)),
+              Text(
+                '${post.topReactions} ${post.reactions}',
+                style: AppText.caption(context).copyWith(color: secondary),
+              ),
             if (post.comments > 0)
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -337,7 +339,7 @@ class ReactionSummary extends StatelessWidget {
                   Text(
                     '${post.comments}',
                     semanticsLabel: '${post.comments} Kommentare',
-                    style: TextStyle(fontSize: 12, color: secondary),
+                    style: AppText.caption(context).copyWith(color: secondary),
                   ),
                 ],
               ),
@@ -401,7 +403,7 @@ class ReactionBar extends ConsumerWidget {
           ),
         const Spacer(),
         if (post.reactions > 0)
-          Text('${post.topReactions} ${post.reactions}', style: TextStyle(fontSize: 12, color: secondary)),
+          Text('${post.topReactions} ${post.reactions}', style: AppText.caption(context).copyWith(color: secondary)),
         TextButton.icon(
           onPressed: () =>
               Navigator.of(context)
@@ -520,7 +522,7 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
                           child: Text(comment.author.displayName, style: const TextStyle(fontWeight: FontWeight.bold)),
                         ),
                         if (SocialFormat.date(comment.createdAt) case final date?)
-                          Text(SocialFormat.relative(date), style: TextStyle(fontSize: 12, color: secondary)),
+                          Text(SocialFormat.relative(date), style: AppText.caption(context).copyWith(color: secondary)),
                       ],
                     ),
                     subtitle: Text(comment.text),
@@ -545,7 +547,7 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
                   ),
                 if (_error case final error?)
                   ListTile(
-                    title: Text(error, style: const TextStyle(fontSize: 13, color: Colors.red)),
+                    title: Text(error, style: AppText.footnote(context).copyWith(color: AppColors.of(context).alert)),
                   ),
               ],
             ),
@@ -600,7 +602,7 @@ class _PersonLabel extends StatelessWidget {
             Text(person.displayName, overflow: TextOverflow.ellipsis),
             Text(
               '@${person.username}',
-              style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              style: AppText.caption(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -665,7 +667,7 @@ class _FriendListState extends ConsumerState<FriendList> {
 
   Widget _searchAction(SocialPerson person) {
     final social = ref.read(socialServiceProvider);
-    final secondary = TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant);
+    final secondary = AppText.caption(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
     return switch (person.relation ?? SocialRelation.none) {
       SocialRelation.friends => Text('Befreundet', style: secondary),
       SocialRelation.outgoing => Text('Angefragt', style: secondary),
@@ -801,7 +803,7 @@ class _FriendListState extends ConsumerState<FriendList> {
           ),
           if (_error case final error?)
             ListTile(
-              title: Text(error, style: const TextStyle(fontSize: 13, color: Colors.red)),
+              title: Text(error, style: AppText.footnote(context).copyWith(color: AppColors.of(context).alert)),
             ),
         ],
       ),
@@ -849,7 +851,7 @@ class _PersonScreenState extends ConsumerState<PersonScreen> {
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Abbrechen')),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Sperren', style: TextStyle(color: Colors.red)),
+            child: Text('Sperren', style: TextStyle(color: AppColors.of(context).alert)),
           ),
         ],
       ),
@@ -914,7 +916,7 @@ class _PersonScreenState extends ConsumerState<PersonScreen> {
                 'Mitteilung.',
             children: [
               ListTile(
-                title: const Text('Freundschaft beenden', style: TextStyle(color: Colors.red)),
+                title: Text('Freundschaft beenden', style: TextStyle(color: AppColors.of(context).alert)),
                 onTap: () async {
                   try {
                     await ref.read(socialServiceProvider).removeFriend(widget.username);
@@ -925,14 +927,14 @@ class _PersonScreenState extends ConsumerState<PersonScreen> {
                 },
               ),
               ListTile(
-                title: const Text('Sperren', style: TextStyle(color: Colors.red)),
+                title: Text('Sperren', style: TextStyle(color: AppColors.of(context).alert)),
                 onTap: _block,
               ),
             ],
           ),
           if (_error case final error?)
             ListTile(
-              title: Text(error, style: const TextStyle(fontSize: 13, color: Colors.red)),
+              title: Text(error, style: AppText.footnote(context).copyWith(color: AppColors.of(context).alert)),
             ),
         ],
       ),

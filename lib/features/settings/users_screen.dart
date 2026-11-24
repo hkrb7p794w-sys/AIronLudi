@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/user_providers.dart';
 import '../../app/user_session.dart';
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 
 /// Benutzer dieses Geräts: wechseln, anlegen, umbenennen, löschen. Jeder Benutzer hat einen vollständig getrennten
 /// Speicher (Trainings, Mahlzeiten, Rezepte, KI-Empfehlungen, Einstellungen, Zugänge zu Garmin, WHOOP und Konto).
@@ -112,7 +113,7 @@ class _UserList extends StatelessWidget {
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Abbrechen')),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.of(context).alert),
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text('Löschen'),
           ),
@@ -150,7 +151,7 @@ class _UserList extends StatelessWidget {
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (user.id == active.id) const Icon(Icons.check, color: Colors.green),
+                    if (user.id == active.id) Icon(Icons.check, color: AppColors.of(context).good),
                     PopupMenuButton<String>(
                       tooltip: 'Mehr',
                       onSelected: (action) => unawaited(switch (action) {
@@ -162,9 +163,9 @@ class _UserList extends StatelessWidget {
                         if (user.id != active.id) const PopupMenuItem(value: 'switch', child: Text('Wechseln')),
                         const PopupMenuItem(value: 'rename', child: Text('Anzeigename ändern')),
                         if (user.id != active.id && !user.isLegacy)
-                          const PopupMenuItem(
+                          PopupMenuItem(
                             value: 'remove',
-                            child: Text('Löschen', style: TextStyle(color: Colors.red)),
+                            child: Text('Löschen', style: TextStyle(color: AppColors.of(context).alert)),
                           ),
                       ],
                     ),
@@ -236,10 +237,7 @@ class _AddUserDialogState extends State<_AddUserDialog> {
             maxLength: 40,
             decoration: const InputDecoration(labelText: 'Anzeigename (optional)'),
           ),
-          const Text(
-            'Der neue Benutzer startet mit leerem Speicher und der Einrichtung.',
-            style: TextStyle(fontSize: 12),
-          ),
+          Text('Der neue Benutzer startet mit leerem Speicher und der Einrichtung.', style: AppText.caption(context)),
         ],
       ),
       actions: [

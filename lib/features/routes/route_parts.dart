@@ -19,6 +19,7 @@ import '../../services/routing/routing_providers.dart';
 import '../../services/routing/worker_maps.dart';
 import '../../services/share/export_folders.dart';
 import '../../ui/liquid.dart';
+import '../../ui/tokens.dart';
 import 'my_location.dart';
 
 LatLng latLng(GeoPoint point) => LatLng(point.latitude, point.longitude);
@@ -90,7 +91,7 @@ class _Attribution extends ConsumerWidget {
               routingSource == null ? tiles : '$tiles · $routingSource',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 10),
+              style: AppText.caption(context),
             ),
           ),
         ),
@@ -199,12 +200,12 @@ class PlannerMap extends StatelessWidget {
                   if (destination case final destination?)
                     Marker(
                       point: latLng(destination),
-                      child: const _Pin(color: Colors.red, icon: Icons.sports_score),
+                      child: _Pin(color: AppColors.of(context).alert, icon: Icons.sports_score),
                     ),
                   if (start case final start?)
                     Marker(
                       point: latLng(start),
-                      child: const _Pin(color: Colors.green, icon: Icons.flag),
+                      child: _Pin(color: AppColors.of(context).good, icon: Icons.flag),
                     ),
                 ],
               ),
@@ -369,7 +370,7 @@ class _FullscreenRouteMapState extends State<FullscreenRouteMap> {
                               : 'Lange drücken verschiebt den Start und plant neu.',
                           textAlign: TextAlign.center,
                           maxLines: 2,
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                          style: AppText.footnote(context).copyWith(fontWeight: FontWeight.w500),
                         ),
                       ),
                     ),
@@ -769,7 +770,7 @@ class ElevationProfileChart extends StatelessWidget {
                   reservedSize: 38,
                   getTitlesWidget: (value, meta) => SideTitleWidget(
                     meta: meta,
-                    child: Text('${value.round()}', style: TextStyle(fontSize: 10, color: secondary)),
+                    child: Text('${value.round()}', style: AppText.caption(context).copyWith(color: secondary)),
                   ),
                 ),
               ),
@@ -780,7 +781,7 @@ class ElevationProfileChart extends StatelessWidget {
                   interval: math.max(0.5, (maxX / 4).ceilToDouble()),
                   getTitlesWidget: (value, meta) => SideTitleWidget(
                     meta: meta,
-                    child: Text('${value.round()} km', style: TextStyle(fontSize: 10, color: secondary)),
+                    child: Text('${value.round()} km', style: AppText.caption(context).copyWith(color: secondary)),
                   ),
                 ),
               ),
@@ -935,7 +936,7 @@ class _GarminDirectTileState extends ConsumerState<_GarminDirectTile> {
                 children: [
                   Icon(
                     result is GarminCourseSent ? Icons.check_circle : Icons.info_outline,
-                    color: result is GarminCourseSent ? Colors.green : scheme.error,
+                    color: result is GarminCourseSent ? AppColors.of(context).good : scheme.error,
                   ),
                   Expanded(
                     child: Column(

@@ -10,6 +10,7 @@ import '../../data/repositories/meal_repository.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 import '../activities/activity_parts.dart';
 import '../evidence/evidence_views.dart';
 import '../nutrition/meal_editor.dart';
@@ -207,7 +208,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                   ),
                   if (controller.errorMessage case final error?)
                     ListTile(
-                      title: Text(error, style: const TextStyle(fontSize: 13, color: Colors.red)),
+                      title: Text(error, style: AppText.footnote(context).copyWith(color: AppColors.of(context).alert)),
                     ),
                 ],
               ),
@@ -292,7 +293,7 @@ class _RecipeDaySection extends StatelessWidget {
           ListTile(
             title: Text(
               'Für diesen Tag gibt es noch keine Rezepte – oben „Fehlende Tage erstellen“.',
-              style: TextStyle(fontSize: 13, color: secondary),
+              style: AppText.footnote(context).copyWith(color: secondary),
             ),
           )
         else ...[
@@ -408,10 +409,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
               children: [
                 for (final (index, step) in recipe.steps.indexed)
                   ListTile(
-                    leading: CircleAvatar(
-                      radius: 10,
-                      child: Text('${index + 1}', style: const TextStyle(fontSize: 11)),
-                    ),
+                    leading: CircleAvatar(radius: 10, child: Text('${index + 1}', style: AppText.caption(context))),
                     title: Text(step),
                   ),
               ],
@@ -562,7 +560,7 @@ class _ShoppingListScreenState extends ConsumerState<ShoppingListScreen> {
                       minTileHeight: 44,
                       leading: Icon(
                         controller.checked.contains(item.id) ? Icons.check_circle : Icons.circle_outlined,
-                        color: controller.checked.contains(item.id) ? Colors.green : secondary,
+                        color: controller.checked.contains(item.id) ? AppColors.of(context).good : secondary,
                       ),
                       title: Text(
                         item.name,

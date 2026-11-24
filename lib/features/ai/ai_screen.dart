@@ -9,6 +9,7 @@ import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/symbols.dart';
+import '../../ui/tokens.dart';
 import '../gym/gym_library.dart';
 import '../gym/gym_providers.dart';
 import '../recipes/recipe_views.dart';
@@ -177,7 +178,7 @@ class _AIScreenState extends ConsumerState<AIScreen> {
           _ => DismissDirection.horizontal,
         },
         background: Container(
-          color: Colors.green,
+          color: AppColors.of(context).good,
           alignment: Alignment.centerLeft,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: const Text('Umgesetzt', style: TextStyle(color: Colors.white)),
@@ -272,12 +273,12 @@ class _AIScreenState extends ConsumerState<AIScreen> {
                   ),
                 if (controller.error case final error?)
                   ListTile(
-                    leading: const Icon(Icons.warning_amber_rounded, color: Colors.orange),
-                    title: Text(error, style: const TextStyle(fontSize: 13, color: Colors.orange)),
+                    leading: Icon(Icons.warning_amber_rounded, color: AppColors.of(context).caution),
+                    title: Text(error, style: AppText.footnote(context).copyWith(color: AppColors.of(context).caution)),
                   ),
                 if (controller.note case final note?)
                   ListTile(
-                    title: Text(note, style: TextStyle(fontSize: 13, color: secondary)),
+                    title: Text(note, style: AppText.footnote(context).copyWith(color: secondary)),
                   ),
                 if ([...groups.newItems, ...groups.open].any((insight) => insight.origin == InsightOrigin.ai))
                   ListTile(
@@ -300,10 +301,10 @@ class _AIScreenState extends ConsumerState<AIScreen> {
                       children: [
                         Text(
                           'Es fehlen Daten – dazu gibt es keine Aussage:',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: secondary),
+                          style: AppText.footnote(context).copyWith(fontWeight: FontWeight.bold, color: secondary),
                         ),
                         for (final line in controller.missing)
-                          Text('· $line', style: TextStyle(fontSize: 13, color: secondary)),
+                          Text('· $line', style: AppText.footnote(context).copyWith(color: secondary)),
                       ],
                     ),
                   ),
@@ -422,7 +423,7 @@ class _CategoryChips extends StatelessWidget {
         spacing: 4,
         children: [
           Text(label),
-          if (count > 0) Badge(label: Text('$count'), backgroundColor: Colors.red),
+          if (count > 0) Badge(label: Text('$count'), backgroundColor: AppColors.of(context).alert),
         ],
       ),
       onSelected: (_) => onSelect(category),
@@ -482,9 +483,7 @@ class InsightRow extends StatelessWidget {
                   Row(
                     spacing: 6,
                     children: [
-                      Flexible(
-                        child: Text(insight.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-                      ),
+                      Flexible(child: Text(insight.title, style: AppText.headline(context))),
                       if (isNew)
                         Semantics(
                           label: 'neu',
@@ -497,7 +496,7 @@ class InsightRow extends StatelessWidget {
                     ],
                   ),
                   Text(insight.text),
-                  Text(meta, style: TextStyle(fontSize: 12, color: secondary)),
+                  Text(meta, style: AppText.caption(context).copyWith(color: secondary)),
                 ],
               ),
             ),

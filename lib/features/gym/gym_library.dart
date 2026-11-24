@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 import '../evidence/evidence_views.dart';
 import 'exercise_history_charts.dart';
 import 'exercise_picker.dart';
@@ -153,7 +154,7 @@ class ExerciseDetailScreen extends ConsumerWidget {
     final records = GymStats.records(history);
     final progress = gym.progress.where((item) => item.exerciseID == exerciseID).firstOrNull;
     final theme = Theme.of(context);
-    final secondary = TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant);
+    final secondary = AppText.footnote(context).copyWith(color: theme.colorScheme.onSurfaceVariant);
     final involvement = exercise == null
         ? const <Muscle, double>{}
         : MuscleMap.involvement(exercise.id, group: exercise.group, custom: gymSettings.customExercises);
@@ -198,8 +199,8 @@ class ExerciseDetailScreen extends ConsumerWidget {
                 header: 'Deine Beschwerden',
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.feedback_outlined, color: Colors.orange),
-                    title: Text(hint, style: const TextStyle(color: Colors.orange)),
+                    leading: Icon(Icons.feedback_outlined, color: AppColors.of(context).caution),
+                    title: Text(hint, style: TextStyle(color: AppColors.of(context).caution)),
                   ),
                 ],
               ),
@@ -244,7 +245,10 @@ class ExerciseDetailScreen extends ConsumerWidget {
                       leading: CircleAvatar(
                         radius: 11,
                         backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.15),
-                        child: Text('${index + 1}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        child: Text(
+                          '${index + 1}',
+                          style: AppText.caption(context).copyWith(fontWeight: FontWeight.bold),
+                        ),
                       ),
                       title: Text(step),
                     ),
@@ -272,7 +276,7 @@ class ExerciseDetailScreen extends ConsumerWidget {
                   ListTile(
                     title: Text(
                       DateFormat('EEE, d.M.', 'de_DE').format(point.day.referenceDate),
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style: AppText.callout(context).copyWith(fontWeight: FontWeight.bold),
                     ),
                     subtitle: Text(
                       [
@@ -450,7 +454,7 @@ class RoutinesScreen extends ConsumerWidget {
                     Dismissible(
                       key: ValueKey(routine.id),
                       direction: DismissDirection.endToStart,
-                      background: Container(color: Colors.red),
+                      background: Container(color: AppColors.of(context).alert),
                       onDismissed: (_) =>
                           changeGym(settings, (gym) => gym.routines.removeWhere((other) => other.id == routine.id)),
                       child: ListTile(
@@ -631,7 +635,7 @@ class _RoutineEditorState extends ConsumerState<RoutineEditor> {
                       Dismissible(
                         key: ValueKey(item.id),
                         direction: DismissDirection.endToStart,
-                        background: Container(color: Colors.red),
+                        background: Container(color: AppColors.of(context).alert),
                         onDismissed: (_) => setState(() => items.removeWhere((other) => other.id == item.id)),
                         child: ListTile(title: Text(item.name), trailing: Text('${item.sets} Sätze')),
                       ),
@@ -739,7 +743,7 @@ class _RoutineEditorState extends ConsumerState<RoutineEditor> {
             const Spacer(),
             TextButton(
               onPressed: () => setState(() => items.removeWhere((other) => other.id == item.id)),
-              child: const Text('Entfernen', style: TextStyle(color: Colors.red)),
+              child: Text('Entfernen', style: TextStyle(color: AppColors.of(context).alert)),
             ),
           ],
         ),
@@ -1019,11 +1023,11 @@ class _GymPlanScreenState extends ConsumerState<GymPlanScreen> {
       FormSection(
         header: 'Zusammenfassung',
         children: [
-          ListTile(title: Text(_summary, style: const TextStyle(fontSize: 13))),
+          ListTile(title: Text(_summary, style: AppText.footnote(context))),
           for (final text in issues.blocking)
             ListTile(
-              leading: const Icon(Icons.warning_amber, color: Colors.red),
-              title: Text(text, style: const TextStyle(color: Colors.red)),
+              leading: Icon(Icons.warning_amber, color: AppColors.of(context).alert),
+              title: Text(text, style: TextStyle(color: AppColors.of(context).alert)),
             ),
           for (final text in issues.hints)
             ListTile(dense: true, leading: const Icon(Icons.info_outline), title: Text(text)),
@@ -1060,7 +1064,7 @@ class _GymPlanScreenState extends ConsumerState<GymPlanScreen> {
           children: [
             for (final item in routine.items)
               ListTile(
-                title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                title: Text(item.name, style: AppText.callout(context).copyWith(fontWeight: FontWeight.bold)),
                 subtitle: Text(itemText(item)),
               ),
           ],
@@ -1075,7 +1079,7 @@ class _GymPlanScreenState extends ConsumerState<GymPlanScreen> {
           header: 'Von den Regeln korrigiert',
           children: [
             for (final correction in result.corrections)
-              ListTile(dense: true, title: Text(correction, style: const TextStyle(fontSize: 12))),
+              ListTile(dense: true, title: Text(correction, style: AppText.caption(context))),
           ],
         ),
       FormSection(

@@ -8,6 +8,7 @@ import '../../services/fuel/fuel_store.dart';
 import '../../ui/components.dart';
 import '../../ui/kpi_ring.dart';
 import '../../ui/liquid.dart';
+import '../../ui/tokens.dart';
 import 'fuel_parts.dart';
 
 /// Kurzfassung des Vorrats für die Übersicht: „12 Portionen · 1 läuft bald ab“.
@@ -155,7 +156,11 @@ class _StockRow extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(GermanFormat.decimal(stock.count), style: LiquidText.kpi(context, size: 18)),
-                Text(unit, style: LiquidText.label(context).copyWith(fontSize: 10), overflow: TextOverflow.ellipsis),
+                Text(
+                  unit,
+                  style: AppText.caption(context).copyWith(color: AppColors.muted(context)),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),

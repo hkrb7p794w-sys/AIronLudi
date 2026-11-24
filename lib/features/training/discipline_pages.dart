@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/sport_style.dart';
+import '../../ui/tokens.dart';
 import '../evidence/evidence_views.dart';
 import 'training_controller.dart';
 import 'training_pages.dart';
@@ -38,7 +39,10 @@ class PaceTableSection extends StatelessWidget {
           dense: true,
           title: Text(row.label, style: TextStyle(fontWeight: row.isKey ? FontWeight.w600 : null)),
           subtitle: Text(row.use),
-          trailing: Text(row.value, style: TextStyle(fontSize: 15, fontWeight: row.isKey ? FontWeight.bold : null)),
+          trailing: Text(
+            row.value,
+            style: AppText.callout(context).copyWith(fontWeight: row.isKey ? FontWeight.bold : null),
+          ),
         ),
     ],
   );
@@ -111,7 +115,7 @@ class TestTrendSection extends ConsumerWidget {
                           reservedSize: 56,
                           getTitlesWidget: (value, meta) => SideTitleWidget(
                             meta: meta,
-                            child: Text(format(lowerIsBetter ? -value : value), style: const TextStyle(fontSize: 10)),
+                            child: Text(format(lowerIsBetter ? -value : value), style: AppText.caption(context)),
                           ),
                         ),
                       ),
@@ -218,7 +222,7 @@ class KilometersSection extends StatelessWidget {
         week.volume.kilometers[sport] ?? 0,
     ];
     final average = previous.isEmpty ? 0.0 : previous.reduce((a, b) => a + b) / previous.length;
-    final secondary = TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant);
+    final secondary = AppText.caption(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
     return FormSection(
       header: 'Kilometer pro Woche',
       children: [
@@ -259,7 +263,7 @@ class KilometersSection extends StatelessWidget {
                       interval: 3,
                       getTitlesWidget: (value, meta) => SideTitleWidget(
                         meta: meta,
-                        child: Text(_short(weeks[value.toInt()].monday), style: const TextStyle(fontSize: 10)),
+                        child: Text(_short(weeks[value.toInt()].monday), style: AppText.caption(context)),
                       ),
                     ),
                   ),
@@ -363,7 +367,7 @@ class DecouplingSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final sessions = controller.decoupled(sport);
     final average = ActivityAnalysisPlanner.recentAverage(sessions);
-    final secondary = TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant);
+    final secondary = AppText.caption(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
     final recent = sessions.length > 12 ? sessions.sublist(sessions.length - 12) : sessions;
     final skipped = showsSkipped ? controller.skippedDecoupling : const <ActivityAnalysis>[];
     return FormSection(
@@ -501,9 +505,9 @@ class PaceCheckSection extends ConsumerWidget {
     final settings = ref.watch(coachSettingsProvider);
     final result = controller.paceCheck(thresholdPace: settings.season.thresholdPaceSecondsPerKm);
     final (headline, icon, color) = switch (result.status) {
-      PaceStatus.fits => ('Schwellenpace passt', Icons.verified, Colors.green),
-      PaceStatus.faster => ('Schwelle eher schneller', Icons.fast_forward, Colors.blue),
-      PaceStatus.slower => ('Schwelle eher langsamer', Icons.slow_motion_video, Colors.orange),
+      PaceStatus.fits => ('Schwellenpace passt', Icons.verified, AppColors.of(context).good),
+      PaceStatus.faster => ('Schwelle eher schneller', Icons.fast_forward, AppColors.of(context).info),
+      PaceStatus.slower => ('Schwelle eher langsamer', Icons.slow_motion_video, AppColors.of(context).caution),
       PaceStatus.tooFewData => (
         'Noch zu wenig harte Läufe',
         Icons.hourglass_empty,
@@ -533,7 +537,7 @@ class PaceCheckSection extends ConsumerWidget {
                 Text(suggestion.title, style: const TextStyle(fontWeight: FontWeight.w500)),
                 Text(
                   suggestion.text,
-                  style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  style: AppText.footnote(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
                 FilledButton.icon(
                   onPressed: () {
@@ -576,7 +580,7 @@ class _PaceCheckRowView extends StatelessWidget {
       dense: true,
       title: Text(row.name ?? (row.kind == PaceKind.vo2 ? '4×4' : 'Schwellenlauf')),
       subtitle: Text(details.isEmpty ? row.verdict : '${row.verdict}\n$details'),
-      trailing: Text(GermanFormat.date(row.day), style: const TextStyle(fontSize: 12)),
+      trailing: Text(GermanFormat.date(row.day), style: AppText.caption(context)),
     );
   }
 }
@@ -610,7 +614,7 @@ class SwimScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.only(bottom: 32),
         children: [
-          KilometersSection(controller: controller, sport: ActivitySport.swim, color: Colors.blue),
+          KilometersSection(controller: controller, sport: ActivitySport.swim, color: AppColors.of(context).info),
           TestTrendSection(
             title: 'CSS · Schwellentempo /100 m',
             kind: TestKind.css,
@@ -683,7 +687,7 @@ class BikeScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.only(bottom: 32),
         children: [
-          KilometersSection(controller: controller, sport: ActivitySport.bike, color: Colors.orange),
+          KilometersSection(controller: controller, sport: ActivitySport.bike, color: AppColors.of(context).caution),
           TestTrendSection(title: 'FTP · Zwift-Test', kind: TestKind.ftp, format: (value) => '${value.toInt()} W'),
           VO2Section(title: 'VO2max Rad (Uhr)', trend: controller.vo2Bike),
           PaceTableSection(
@@ -758,7 +762,7 @@ class RunScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.only(bottom: 32),
         children: [
-          KilometersSection(controller: controller, sport: ActivitySport.run, color: Colors.green),
+          KilometersSection(controller: controller, sport: ActivitySport.run, color: AppColors.of(context).good),
           TestTrendSection(
             title: 'Schwellenpace',
             kind: TestKind.threshold,
@@ -851,7 +855,7 @@ class _RacePredictionSection extends StatelessWidget {
                   ),
                   TextSpan(
                     text: '   ${PlanTokens.mmss(pace)} /km',
-                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    style: AppText.caption(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -893,9 +897,9 @@ class AlmereScreen extends ConsumerWidget {
                     if (estimate.allFresh)
                       Text(estimate.corridorText)
                     else
-                      const Text(
+                      Text(
                         'Keine Aussage zum Zielkorridor – mindestens ein Wert ist ungetestet oder älter als 8 Wochen.',
-                        style: TextStyle(color: Colors.orange),
+                        style: TextStyle(color: AppColors.of(context).caution),
                       ),
                   ],
                 ),
@@ -923,7 +927,7 @@ class AlmereScreen extends ConsumerWidget {
                     item.age == null
                         ? 'kein Test'
                         : (item.isFresh ? 'vor ${item.age} Tagen ✓' : '${item.age} Tage alt – fällig'),
-                    style: TextStyle(color: item.isFresh ? secondary.color : Colors.orange),
+                    style: TextStyle(color: item.isFresh ? secondary.color : AppColors.of(context).caution),
                   ),
                 ),
             ],
@@ -984,7 +988,7 @@ class MarathonScreen extends ConsumerWidget {
                     Text(
                       'Zielpace ${PlanTokens.mmss(season.marathonPaceSecondsPerKm)} /km → ca. '
                       '${MarathonOutlook.hoursMinutesFromSeconds(outlook.targetSeconds)} h',
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                      style: AppText.headline(context),
                     ),
                     if (predicted != null) ...[
                       Text(
@@ -993,9 +997,9 @@ class MarathonScreen extends ConsumerWidget {
                         '${pace(predicted.high)} /km).',
                       ),
                       if (outlook.targetTooFast)
-                        const Text(
+                        Text(
                           'Die Zielpace ist schneller als der Test hergibt.',
-                          style: TextStyle(color: Colors.orange),
+                          style: TextStyle(color: AppColors.of(context).caution),
                         ),
                     ] else
                       Text(

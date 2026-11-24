@@ -458,3 +458,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Roast Stufe 2 / PR 9: Heute und Ernährung auf Tokens (`AppColors`, `AppText`): keine festen Schriftgrößen mehr, Ampelfarben semantisch, nichts unter 12 pt | erledigt |
 | Roast Stufe 2 / PR 8: Designsystem-Tokens (`lib/ui/tokens.dart`) und Sperrklinken-Test gegen neue Rohfarben/Schriftgrößen in `lib/features` | erledigt |
 | Roast Stufe 2 / PR 9: Heute und Ernährung auf Tokens (`AppColors`, `AppText`): keine festen Schriftgrößen mehr, Ampelfarben semantisch, nichts unter 12 pt | erledigt |
+| Roast Stufe 2 / PR 10a: übrige Bereiche auf Tokens – Ampelfarben semantisch, häufige Schriftgrößen als Textrollen; Bestand 166 Farben, 61 Schriftgrößen (Rest in PR 10b) | erledigt |

@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../data/settings/coach_settings.dart';
 import '../../services/providers.dart';
+import '../../ui/tokens.dart';
 import '../social/social_views.dart';
 import 'exercise_picker.dart';
 import 'gym_controller.dart';
@@ -62,7 +63,7 @@ class ExerciseNotes extends ConsumerWidget {
     final gymSettings = settings.gym;
     final info = gymSettings.exercise(exercise.exerciseID);
     final theme = Theme.of(context);
-    final style = TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant);
+    final style = AppText.footnote(context).copyWith(color: theme.colorScheme.onSurfaceVariant);
     final strong = style.copyWith(color: theme.colorScheme.onSurface);
     final align = centered ? TextAlign.center : TextAlign.start;
     final note = gymSettings.notes[exercise.exerciseID];
@@ -166,8 +167,8 @@ class ExerciseMenu extends ConsumerWidget {
           child: ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            leading: Icon(icon, color: destructive ? Colors.red : null),
-            title: Text(title, style: destructive ? const TextStyle(color: Colors.red) : null),
+            leading: Icon(icon, color: destructive ? AppColors.of(context).alert : null),
+            title: Text(title, style: destructive ? TextStyle(color: AppColors.of(context).alert) : null),
           ),
         );
     return PopupMenuButton<VoidCallback>(
@@ -328,7 +329,7 @@ class ReplaceExerciseScreen extends ConsumerWidget {
               exercise.sets.any((set) => set.done)
                   ? 'Erledigte Sätze bleiben bei ${exercise.name}; die offenen übernimmt die neue Übung.'
                   : 'Satzzahl und Wiederholungen bleiben, das Gewicht kommt aus deinem Verlauf.',
-              style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              style: AppText.footnote(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ),
           ListTile(
@@ -527,7 +528,7 @@ class _SetValuePadState extends ConsumerState<SetValuePad> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(label, style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
+                  Text(label, style: AppText.caption(context).copyWith(color: theme.colorScheme.onSurfaceVariant)),
                   FittedBox(
                     child: Text.rich(
                       TextSpan(
@@ -546,7 +547,7 @@ class _SetValuePadState extends ConsumerState<SetValuePad> {
                           ),
                           TextSpan(
                             text: ' $unit',
-                            style: TextStyle(fontSize: 16, color: theme.colorScheme.onSurfaceVariant),
+                            style: AppText.body(context).copyWith(color: theme.colorScheme.onSurfaceVariant),
                           ),
                         ],
                       ),
@@ -703,7 +704,7 @@ class SummaryGrid extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            Text(label, style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
+            Text(label, style: AppText.caption(context).copyWith(color: theme.colorScheme.onSurfaceVariant)),
           ],
         ),
       ),
@@ -818,7 +819,7 @@ class PlanCompleteSheet extends StatelessWidget {
               Text(
                 '$skipped Übung(en) übersprungen – beim Fortsetzen nachholbar.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant),
+                style: AppText.footnote(context).copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
             FilledButton.icon(
               style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52), shape: shape),
@@ -851,7 +852,7 @@ class WorkoutResultView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final secondary = TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant);
+    final secondary = AppText.caption(context).copyWith(color: theme.colorScheme.onSurfaceVariant);
     final heading = theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold);
     final muscles = finished.muscles.entries.where((entry) => entry.value > 0).toList()
       ..sort((a, b) => b.value.compareTo(a.value));
@@ -861,7 +862,7 @@ class WorkoutResultView extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        const Icon(Icons.verified, size: 48, color: Colors.green),
+        Icon(Icons.verified, size: 48, color: AppColors.of(context).good),
         const SizedBox(height: 8),
         Text(finished.title, style: theme.textTheme.headlineSmall, textAlign: TextAlign.center),
         const SizedBox(height: 16),
@@ -969,7 +970,7 @@ class RecentPerformances extends ConsumerWidget {
     final info = ref.watch(coachSettingsProvider).gym.exercise(exercise.exerciseID);
     final items = gym.recentPerformances(exercise.exerciseID);
     if (items.isEmpty) return const SizedBox.shrink();
-    final style = TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant);
+    final style = AppText.caption(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
     return Semantics(
       label: 'Letzte Leistungen',
       child: Padding(

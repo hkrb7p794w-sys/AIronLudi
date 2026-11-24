@@ -14,6 +14,7 @@ import '../../data/settings/settings_store.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 
 /// Datensicherung: automatisch in einen Ordner, als Datei teilen, Sicherung einspielen.
 class BackupScreen extends ConsumerStatefulWidget {
@@ -194,7 +195,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                     LabeledRow(label: 'Letzte Sicherung', value: last == null ? 'noch keine' : format(last)),
                     if (error != null)
                       ListTile(
-                        leading: const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                        leading: Icon(Icons.warning_amber_rounded, color: AppColors.of(context).caution),
                         title: Text(error, style: Theme.of(context).textTheme.bodySmall),
                       ),
                     ListTile(
@@ -208,8 +209,11 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                       onTap: _chooseFolder,
                     ),
                     ListTile(
-                      leading: const Icon(Icons.stop_circle_outlined, color: Colors.red),
-                      title: const Text('Automatische Sicherung beenden', style: TextStyle(color: Colors.red)),
+                      leading: Icon(Icons.stop_circle_outlined, color: AppColors.of(context).alert),
+                      title: Text(
+                        'Automatische Sicherung beenden',
+                        style: TextStyle(color: AppColors.of(context).alert),
+                      ),
                       onTap: () async {
                         await settings.remove(SettingsKeys.backupFolder);
                         setState(() {});

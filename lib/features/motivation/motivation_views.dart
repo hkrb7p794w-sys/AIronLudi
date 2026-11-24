@@ -11,6 +11,7 @@ import '../../services/ai/ai_client.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/symbols.dart';
+import '../../ui/tokens.dart';
 import '../evidence/evidence_views.dart';
 import 'daisy_avatar.dart';
 
@@ -55,7 +56,7 @@ class CompanionAvatar extends StatelessWidget {
             (final bytes?, _) => Image.memory(bytes, fit: BoxFit.cover),
             (null, CompanionKind.daisy) => DaisyAvatar(mood: mood, size: size),
             _ => ColoredBox(
-              color: Colors.orange,
+              color: AppColors.of(context).caution,
               child: Icon(companionIcon(companion.kind), color: Colors.white, size: size * 0.45),
             ),
           },
@@ -127,7 +128,7 @@ class _CompanionSectionState extends ConsumerState<CompanionSection> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     spacing: 4,
                     children: [
-                      Text(companion.displayName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                      Text(companion.displayName, style: AppText.headline(context)),
                       Text(message.text),
                     ],
                   ),
@@ -207,12 +208,15 @@ class _LeagueSectionState extends ConsumerState<LeagueSection> {
                 style: TextStyle(fontWeight: member.id == me ? FontWeight.bold : null),
               ),
               subtitle: Text('${member.done} von ${member.planned} Einheiten · Serie ${member.streak} Wo.'),
-              trailing: Text('${member.weekPoints}', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+              trailing: Text(
+                '${member.weekPoints}',
+                style: AppText.body(context).copyWith(fontWeight: FontWeight.w600),
+              ),
             ),
           ),
         if (league.lastError case final error?)
           ListTile(
-            title: Text(error, style: const TextStyle(fontSize: 13, color: Colors.orange)),
+            title: Text(error, style: AppText.footnote(context).copyWith(color: AppColors.of(context).caution)),
           ),
         if (league.members.isEmpty && !league.isLoading && league.lastError == null)
           ListTile(
@@ -308,7 +312,7 @@ class _MotivationSettingsScreenState extends ConsumerState<MotivationSettingsScr
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Abbrechen')),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Verlassen', style: TextStyle(color: Colors.red)),
+            child: Text('Verlassen', style: TextStyle(color: AppColors.of(context).alert)),
           ),
         ],
       ),
@@ -403,7 +407,7 @@ class _MotivationSettingsScreenState extends ConsumerState<MotivationSettingsScr
                   ),
                   if (_photo != null)
                     ListTile(
-                      title: const Text('Foto entfernen', style: TextStyle(color: Colors.red)),
+                      title: Text('Foto entfernen', style: TextStyle(color: AppColors.of(context).alert)),
                       onTap: () async {
                         await ref.read(companionPhotoProvider).remove();
                         setState(() => _photo = null);
@@ -455,10 +459,10 @@ class _MotivationSettingsScreenState extends ConsumerState<MotivationSettingsScr
                   ),
                 if (_inviteError case final error?)
                   ListTile(
-                    title: Text(error, style: const TextStyle(fontSize: 13, color: Colors.red)),
+                    title: Text(error, style: AppText.footnote(context).copyWith(color: AppColors.of(context).alert)),
                   ),
                 ListTile(
-                  title: const Text('Rangliste verlassen', style: TextStyle(color: Colors.red)),
+                  title: Text('Rangliste verlassen', style: TextStyle(color: AppColors.of(context).alert)),
                   onTap: _confirmLeave,
                 ),
               ] else ...[
@@ -553,7 +557,7 @@ class _JoinLeagueScreenState extends ConsumerState<JoinLeagueScreen> {
           FormSection(
             children: [
               ListTile(
-                title: Text(error, style: const TextStyle(color: Colors.red)),
+                title: Text(error, style: TextStyle(color: AppColors.of(context).alert)),
               ),
             ],
           ),

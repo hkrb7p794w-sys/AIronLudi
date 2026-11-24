@@ -10,6 +10,7 @@ import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/liquid.dart';
 import '../../ui/sport_style.dart';
+import '../../ui/tokens.dart';
 import '../evidence/evidence_views.dart';
 import '../fuel/fuel_for_slot.dart';
 import 'plan_controller.dart';
@@ -178,7 +179,7 @@ class _WeekHeader extends StatelessWidget {
                       color: theme.colorScheme.primary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(week.ph, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                    child: Text(week.ph, style: AppText.caption(context).copyWith(fontWeight: FontWeight.w600)),
                   ),
                 ],
               ),
@@ -235,16 +236,16 @@ class _PlanUnitRow extends StatelessWidget {
         children: [
           Text(
             unit.kind.label,
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: unit.kind.color),
+            style: AppText.caption(context).copyWith(fontWeight: FontWeight.w600, color: unit.kind.color),
           ),
           Text(unit.title, style: const TextStyle(fontWeight: FontWeight.w600)),
         ],
       ),
       subtitle: Text(unit.detail, maxLines: 2, overflow: TextOverflow.ellipsis),
       trailing: unit.done
-          ? const Icon(Icons.check_circle, color: Colors.green, semanticLabel: 'erledigt')
+          ? Icon(Icons.check_circle, color: AppColors.of(context).good, semanticLabel: 'erledigt')
           : unit.decision == PlannedUnitDecision.open
-          ? const Icon(Icons.help_outline, color: Colors.orange, semanticLabel: 'Entscheidung offen')
+          ? Icon(Icons.help_outline, color: AppColors.of(context).caution, semanticLabel: 'Entscheidung offen')
           : const DisclosureChevron(),
     ),
   );
@@ -411,11 +412,11 @@ class PlanUnitDetailScreen extends ConsumerWidget {
                           ),
                           Text(unit.title, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                           if (unit.done)
-                            const Row(
+                            Row(
                               spacing: 4,
                               children: [
-                                Icon(Icons.check_circle, color: Colors.green, size: 16),
-                                Text('Erledigt', style: TextStyle(color: Colors.green, fontSize: 13)),
+                                Icon(Icons.check_circle, color: AppColors.of(context).good, size: 16),
+                                Text('Erledigt', style: TextStyle(color: AppColors.of(context).good, fontSize: 13)),
                               ],
                             ),
                         ],
@@ -459,7 +460,7 @@ class PlanUnitDetailScreen extends ConsumerWidget {
               FormSection(
                 children: [
                   ListTile(
-                    title: Text(workout.note, style: TextStyle(fontSize: 13, color: secondary)),
+                    title: Text(workout.note, style: AppText.footnote(context).copyWith(color: secondary)),
                   ),
                 ],
               ),
@@ -564,7 +565,7 @@ List<Widget> unitGuideSections(UnitGuide guide) => [
       children: [
         for (final (index, step) in guide.steps.indexed)
           ListTile(
-            leading: CircleAvatar(radius: 11, child: Text('${index + 1}', style: const TextStyle(fontSize: 12))),
+            leading: CircleAvatar(radius: 11, child: Text('${index + 1}', style: const TextStyle(fontSize: 11))),
             title: Text(step),
           ),
       ],
@@ -631,7 +632,7 @@ class SessionGuideScreen extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                 child: Text(
                   slot.guide,
-                  style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  style: AppText.footnote(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
               ),
             ],

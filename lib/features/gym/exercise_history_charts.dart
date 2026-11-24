@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 
 /// Verlauf einer Übung: 1RM bzw. Höchstgewicht und die bewegte Last je Einheit. Zeitraum per Knopf, mit zwei
 /// Fingern zoomen, seitlich wischen zum Verschieben; die Y-Achse passt sich dem sichtbaren Ausschnitt an. Beide
@@ -65,7 +66,7 @@ class _ExerciseHistoryChartsState extends State<ExerciseHistoryCharts> {
             meta: meta,
             child: Text(
               DateFormat('d.M.', 'de_DE').format(DateTime.fromMillisecondsSinceEpoch((value * _dayMs).round())),
-              style: const TextStyle(fontSize: 10),
+              style: AppText.caption(context),
             ),
           ),
         ),

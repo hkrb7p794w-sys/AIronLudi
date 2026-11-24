@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../services/routing/routing_providers.dart';
 import '../../ui/liquid.dart';
+import '../../ui/tokens.dart';
 
 /// Wetter und Wind für den geplanten Tag (sonst heute) am Start der Route, für eine wählbare Startzeit über die
 /// geschätzte Dauer. Bei Rundwegen mit Rückenwind zuerst und Gegenwind zum Schluss: „Richtung umkehren“.
@@ -98,7 +99,7 @@ class _RouteWeatherCardState extends ConsumerState<RouteWeatherCard> {
           else if (weather == null)
             Text('Für diese Zeit gibt es keine Vorhersage.', style: LiquidText.label(context))
           else ...[
-            Text(weather.headline, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            Text(weather.headline, style: AppText.body(context).copyWith(fontWeight: FontWeight.w600)),
             Row(
               spacing: 8,
               children: [
@@ -121,7 +122,7 @@ class _RouteWeatherCardState extends ConsumerState<RouteWeatherCard> {
                 ),
               ),
           ],
-          Text('Wetter: Open-Meteo', style: LiquidText.label(context).copyWith(fontSize: 11)),
+          Text('Wetter: Open-Meteo', style: AppText.caption(context).copyWith(color: AppColors.muted(context))),
         ],
       ),
     );

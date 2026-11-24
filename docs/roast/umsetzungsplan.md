@@ -29,7 +29,8 @@ test/screenshots`) für die betroffenen Screens, damit Vorher/Nachher im PR sich
 |---|---|---|---|
 | 8 | `feat(ui): Tokens für Farbe, Typo, Abstand` | B-05 | `lib/ui/tokens.dart` (semantische Farben, Typo-Rollen, Abstände) mit Doku; Test `ui_tokens_test.dart`, der **neue** `Colors.*`, `Color(0x…)` und `fontSize:`-Literale in `lib/features` verbietet (Bestand als Liste erlaubt, die nur schrumpfen darf) |
 | 9 | `refactor(ui): Bereich Heute und Ernährung auf Tokens` | B-05, B-12 | Bestandsliste schrumpft um diese Dateien; Prüfstand-Bilder ohne sichtbare Regression; „KI“ statt „AI“ |
-| 10 | `refactor(ui): übrige Bereiche auf Tokens` | B-05 | Bestandsliste leer; alle Schriftgrößen ≥ 12 |
+| 10a | `refactor(ui): übrige Bereiche auf Tokens` | B-05 | Ampelfarben überall semantisch; häufige Schriftgrößen als Textrollen (Bestand 166 Farben, 61 Schriftgrößen) |
+| 10b | `refactor(ui): Rest auf Tokens` | B-05 | Bestandsliste leer; alle Schriftgrößen ≥ 12 (übrig: Kennzahlen der Live-Einheit, dekorative Farben, Sperrbildschirm-Vorschau) |
 | 11 | `feat(ui): Karten deckend, Glas nur für Leisten und Sheets` (nach F-3) | B-17, B-27 | Kontrast Fußtext ≥ 4,5 : 1 in hell/dunkel (Test mit `meetsGuideline(textContrastGuideline)` auf den Kernscreens); ein Symbolsatz in der Tab-Leiste |
 | 11b | `feat(ui): gemeinsame Diagramm-Achsen` | B-30 | Ein Baustein für Achsen (deutsches Zahlenformat, runde Marken, Textskalierung); alle `fl_chart`-Diagramme nutzen ihn; Prüfstand zeigt keine umgebrochenen Achsen |
 | 12 | `test: Barrierefreiheit der Kernscreens` | 3.4 | `androidTapTargetGuideline`, `iOSTapTargetGuideline`, `labeledTapTargetGuideline` für Heute, Ernährung, Live-Einheit grün |

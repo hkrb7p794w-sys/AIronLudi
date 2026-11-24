@@ -13,6 +13,7 @@ import '../../services/providers.dart';
 import '../../services/routing/routing_providers.dart';
 import '../../ui/components.dart';
 import '../../ui/route_map.dart';
+import '../../ui/tokens.dart';
 import '../gym/gym_screen.dart';
 import '../social/social_views.dart';
 import 'activity_parts.dart';
@@ -199,7 +200,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
                 ListTile(
                   title: Text(
                     problem,
-                    style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    style: AppText.footnote(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
                 ),
               ],
@@ -247,7 +248,7 @@ class _Header extends ConsumerWidget {
                   if (effort != null)
                     Text(
                       'Anstrengung $effort/10',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: secondary),
+                      style: AppText.caption(context).copyWith(fontWeight: FontWeight.w600, color: secondary),
                     ),
                 ],
               ),
@@ -267,7 +268,7 @@ class _Header extends ConsumerWidget {
                             alignment: Alignment.centerLeft,
                             child: Text(row.value, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w600)),
                           ),
-                          Text(row.label, style: TextStyle(fontSize: 12, color: secondary)),
+                          Text(row.label, style: AppText.caption(context).copyWith(color: secondary)),
                         ],
                       ),
                     ),
@@ -306,8 +307,8 @@ class _FindingsSection extends StatelessWidget {
         for (final finding in findings)
           ListTile(
             leading: switch (finding.tone) {
-              FindingTone.good => const Icon(Icons.check_circle, color: Colors.green),
-              FindingTone.attention => const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+              FindingTone.good => Icon(Icons.check_circle, color: AppColors.of(context).good),
+              FindingTone.attention => Icon(Icons.warning_amber_rounded, color: AppColors.of(context).caution),
               FindingTone.neutral => Icon(Icons.info_outline, color: secondary),
             },
             title: Text(finding.text),
@@ -343,16 +344,16 @@ class _ChartsSection extends StatelessWidget {
     ];
     final paceReversed = sport == ActivitySport.run || sport == ActivitySport.swim;
     final series = [
-      ('Herzfrequenz (bpm)', Colors.red, points((sample) => sample.heartRate), false),
-      (paceTitle, Colors.blue, points((sample) => sample.pace), paceReversed),
-      ('Höhe (m)', Colors.green, points((sample) => sample.altitude), false),
+      ('Herzfrequenz (bpm)', AppColors.of(context).alert, points((sample) => sample.heartRate), false),
+      (paceTitle, AppColors.of(context).info, points((sample) => sample.pace), paceReversed),
+      ('Höhe (m)', AppColors.of(context).good, points((sample) => sample.altitude), false),
       (
         sport == ActivitySport.bike ? 'Trittfrequenz (U/min)' : 'Kadenz (spm)',
         Colors.purple,
         points((sample) => sample.cadence),
         false,
       ),
-      ('Leistung (W)', Colors.orange, points((sample) => sample.power), false),
+      ('Leistung (W)', AppColors.of(context).caution, points((sample) => sample.power), false),
     ].where((item) => item.$3.length > 1).toList();
     if (series.isEmpty) return const SizedBox.shrink();
     final unit = byDistance ? 'km' : 'min';
@@ -397,13 +398,13 @@ class _ChartsSection extends StatelessWidget {
                               meta: meta,
                               child: Text(
                                 reversed ? _clock(-value) : GermanFormat.decimal(value),
-                                style: const TextStyle(fontSize: 10),
+                                style: AppText.caption(context),
                               ),
                             ),
                           ),
                         ),
                         bottomTitles: AxisTitles(
-                          axisNameWidget: Text(unit, style: const TextStyle(fontSize: 10)),
+                          axisNameWidget: Text(unit, style: AppText.caption(context)),
                           sideTitles: const SideTitles(showTitles: true, reservedSize: 22),
                         ),
                       ),
@@ -451,12 +452,12 @@ class _SplitsSection extends StatelessWidget {
                     child: Text(
                       '${split.index}',
                       textAlign: TextAlign.end,
-                      style: TextStyle(fontSize: 12, color: secondary),
+                      style: AppText.caption(context).copyWith(color: secondary),
                     ),
                   ),
                   SizedBox(
                     width: 84,
-                    child: Text(ActivityDetails.speed(split.speed, sport), style: const TextStyle(fontSize: 12)),
+                    child: Text(ActivityDetails.speed(split.speed, sport), style: AppText.caption(context)),
                   ),
                   Expanded(
                     child: LayoutBuilder(
@@ -478,7 +479,7 @@ class _SplitsSection extends StatelessWidget {
                     child: Text(
                       split.averageHeartRate == null ? '' : '${split.averageHeartRate!.round()} ♥',
                       textAlign: TextAlign.end,
-                      style: const TextStyle(fontSize: 12),
+                      style: AppText.caption(context),
                     ),
                   ),
                 ],
@@ -530,8 +531,8 @@ class _LapsSection extends StatelessWidget {
             headingRowHeight: 28,
             dataRowMinHeight: 24,
             dataRowMaxHeight: 28,
-            headingTextStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: secondary),
-            dataTextStyle: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface),
+            headingTextStyle: AppText.caption(context).copyWith(fontWeight: FontWeight.w600, color: secondary),
+            dataTextStyle: AppText.caption(context).copyWith(color: Theme.of(context).colorScheme.onSurface),
             columns: [for (final header in headers) DataColumn(label: Text(header), numeric: true)],
             rows: [
               for (final (index, lap) in laps.indexed)

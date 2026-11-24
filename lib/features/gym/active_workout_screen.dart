@@ -11,6 +11,7 @@ import '../../data/storage.dart';
 import '../../services/gym/rest_alarm.dart';
 import '../../services/providers.dart';
 import '../../ui/liquid.dart';
+import '../../ui/tokens.dart';
 import 'exercise_picker.dart';
 import 'gym_controller.dart';
 import 'gym_providers.dart';
@@ -198,7 +199,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
           TextButton(onPressed: () => Navigator.of(dialog).pop(false), child: const Text('Abbrechen')),
           TextButton(
             onPressed: () => Navigator.of(dialog).pop(true),
-            child: const Text('Verwerfen', style: TextStyle(color: Colors.red)),
+            child: Text('Verwerfen', style: TextStyle(color: AppColors.of(context).alert)),
           ),
         ],
       ),
@@ -243,11 +244,11 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
             PopupMenuButton<String>(
               tooltip: 'Mehr',
               onSelected: (value) => value == 'add' ? _addExercise() : _confirmCancel(),
-              itemBuilder: (_) => const [
+              itemBuilder: (_) => [
                 PopupMenuItem(value: 'add', child: Text('Übung hinzufügen')),
                 PopupMenuItem(
                   value: 'cancel',
-                  child: Text('Einheit verwerfen', style: TextStyle(color: Colors.red)),
+                  child: Text('Einheit verwerfen', style: TextStyle(color: AppColors.of(context).alert)),
                 ),
               ],
             ),
@@ -345,7 +346,7 @@ class FocusCard extends ConsumerWidget {
                 child: Text(
                   'Als Nächstes: Satz ${next.set + 1} · ${setValues(session.exercises[next.exercise].sets[next.set])}',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant),
+                  style: AppText.footnote(context).copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
               ),
           if (WorkoutFlow.nextExercise(target.exercise, session) case final following?)
@@ -369,7 +370,7 @@ class FocusCard extends ConsumerWidget {
           children: [
             Text(
               elapsedText(session.start, DateTime.now()),
-              style: TextStyle(fontSize: 13, color: secondary, fontFeatures: const [FontFeature.tabularFigures()]),
+              style: AppText.footnote(context).copyWith(color: secondary, fontFeatures: [FontFeature.tabularFigures()]),
             ),
             const Spacer(),
             ExerciseMenu(exercise: exercise, gym: gym),
@@ -378,7 +379,7 @@ class FocusCard extends ConsumerWidget {
         if (label != null)
           Text(
             'Supersatz $label',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+            style: AppText.caption(context).copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
           ),
         Text(
           exercise.name,
@@ -391,7 +392,7 @@ class FocusCard extends ConsumerWidget {
         if (exercise.skipped)
           Text(
             'Übersprungen',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: secondary),
+            style: AppText.caption(context).copyWith(fontWeight: FontWeight.bold, color: secondary),
           ),
         if (set != null)
           Wrap(
@@ -736,7 +737,7 @@ class _SetKindMenu extends StatelessWidget {
               if (set.kind != SetKind.working)
                 Text(
                   set.kind.label,
-                  style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.orange),
+                  style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.of(context).caution),
                 ),
               Icon(Icons.unfold_more, size: 16, color: secondary),
             ],
@@ -758,7 +759,7 @@ class _NextExercisePreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final open = exercise.sets.where((set) => !set.done).toList();
     final theme = Theme.of(context);
-    final secondary = TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant);
+    final secondary = AppText.caption(context).copyWith(color: theme.colorScheme.onSurfaceVariant);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -819,7 +820,7 @@ class _DoneButton extends ConsumerWidget {
       style: FilledButton.styleFrom(
         minimumSize: const Size.fromHeight(60),
         shape: shape,
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.of(context).good,
       ),
       onPressed: () => gym.complete(set: set, of: exercise.id),
       icon: const Icon(Icons.check),
@@ -872,14 +873,14 @@ class _HoldControlsState extends State<_HoldControls> {
               HoldTimer.targetText(elapsed: elapsed, target: target),
               style: TextStyle(
                 fontWeight: FontWeight.w500,
-                color: elapsed >= target ? Colors.green : Theme.of(context).colorScheme.onSurfaceVariant,
+                color: elapsed >= target ? AppColors.of(context).good : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           FilledButton.icon(
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(60),
               shape: shape,
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.of(context).alert,
             ),
             onPressed: () {
               _reached = false;
@@ -906,7 +907,7 @@ class _HoldControlsState extends State<_HoldControls> {
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(60),
               shape: shape,
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.of(context).good,
             ),
             onPressed: () => gym.startHold(set: widget.set, of: widget.exercise.id),
             icon: const Icon(Icons.timer),
@@ -1051,7 +1052,7 @@ class _RestPanel extends ConsumerWidget {
               children: [
                 const Icon(Icons.timer_outlined),
                 const SizedBox(width: 6),
-                const Text('Pause', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+                Text('Pause', style: AppText.body(context).copyWith(fontWeight: FontWeight.w600)),
                 IconButton(
                   tooltip: 'Pause klein machen',
                   icon: const Icon(Icons.keyboard_arrow_down),
@@ -1132,7 +1133,7 @@ class _ReserveQuestion extends ConsumerWidget {
       children: [
         Text(
           '${exercise.name}, Satz ${last.set + 1}: wie viele wären noch gegangen?',
-          style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant),
+          style: AppText.footnote(context).copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
         Semantics(
           label: 'Wiederholungen in Reserve',
@@ -1259,7 +1260,7 @@ class WorkoutList extends ConsumerWidget {
                     Dismissible(
                       key: ValueKey(set.id),
                       direction: DismissDirection.endToStart,
-                      background: Container(color: Colors.red),
+                      background: Container(color: AppColors.of(context).alert),
                       onDismissed: (_) => gym.removeSet(index, from: exercise.id),
                       // Übersprungen: offene Sätze leicht ausgegraut, bleiben aber bedienbar.
                       child: Opacity(
@@ -1297,7 +1298,7 @@ class WorkoutList extends ConsumerWidget {
                               ),
                             )
                             case final hint?)
-                          Text(hint, style: const TextStyle(fontSize: 12, color: Colors.orange)),
+                          Text(hint, style: AppText.caption(context).copyWith(color: AppColors.of(context).caution)),
                         ExerciseNotes(exercise: exercise, gym: gym, centered: false),
                       ],
                     ),
@@ -1392,7 +1393,9 @@ class _SetRow extends StatelessWidget {
                   set.kind.badge ?? '${index + 1}',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: set.kind == SetKind.working ? theme.colorScheme.onSurfaceVariant : Colors.orange,
+                    color: set.kind == SetKind.working
+                        ? theme.colorScheme.onSurfaceVariant
+                        : AppColors.of(context).caution,
                   ),
                 ),
               ),
@@ -1422,14 +1425,14 @@ class _SetRow extends StatelessWidget {
             if (set.done && set.rir != null)
               Text(
                 'RIR ${set.rir == 4 ? '4+' : set.rir}',
-                style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+                style: AppText.caption(context).copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
             IconButton(
               iconSize: 32,
               tooltip: set.done ? 'Satz erledigt, tippen für wieder offen' : 'Satz abhaken',
               icon: Icon(
                 set.done ? Icons.check_circle : Icons.radio_button_unchecked,
-                color: set.done ? Colors.green : theme.colorScheme.onSurfaceVariant,
+                color: set.done ? AppColors.of(context).good : theme.colorScheme.onSurfaceVariant,
               ),
               onPressed: () => gym.toggleDone(set: index, of: exerciseID),
             ),

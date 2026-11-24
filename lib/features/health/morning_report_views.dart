@@ -9,6 +9,7 @@ import '../../data/settings/coach_settings.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 import '../today/today_controller.dart';
 import '../training/sleep_coach_screen.dart';
 import 'wake_alarm_section.dart';
@@ -106,7 +107,7 @@ class MorningReportHeader extends StatelessWidget {
             Text(report.headline, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
             Text(
               DateFormat('EEEE, d. MMMM', 'de_DE').format(report.day.referenceDate),
-              style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              style: AppText.footnote(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -204,7 +205,7 @@ class MorningReportCard extends StatelessWidget {
                                       item.title,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(fontSize: 11),
+                                      style: AppText.caption(context),
                                     ),
                                   ),
                                 ],
@@ -217,7 +218,7 @@ class MorningReportCard extends StatelessWidget {
                 if (first != null)
                   Text(
                     report.findings.length > 1 ? '$first (+${report.findings.length - 1})' : first,
-                    style: TextStyle(fontSize: 13, color: secondary),
+                    style: AppText.footnote(context).copyWith(color: secondary),
                   ),
               ],
             ),
@@ -321,7 +322,7 @@ class _MorningReportScreenState extends ConsumerState<MorningReportScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           spacing: 6,
                           children: [
-                            const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 18),
+                            Icon(Icons.warning_amber_rounded, color: AppColors.of(context).caution, size: 18),
                             Expanded(child: Text(finding)),
                           ],
                         ),

@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/fuel/fuel_store.dart';
 import '../../ui/components.dart';
 import '../../ui/liquid.dart';
+import '../../ui/tokens.dart';
 import '../endurance/endurance_controller.dart';
 import 'fuel_parts.dart';
 import 'fuel_plan_screen.dart';
@@ -187,7 +188,7 @@ class _PlanTile extends ConsumerWidget {
       key: ValueKey(saved.id),
       direction: DismissDirection.endToStart,
       background: Container(
-        color: Colors.red,
+        color: AppColors.of(context).alert,
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
         child: const Icon(Icons.delete, color: Colors.white),

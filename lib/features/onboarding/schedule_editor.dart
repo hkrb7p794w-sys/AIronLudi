@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../ui/components.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
+import '../../ui/tokens.dart';
 import '../evidence/evidence_views.dart';
 
 /// Wochenplan bearbeiten: je Tag Einheiten hinzufügen, Intensität ändern oder entfernen.
@@ -161,9 +162,9 @@ class _SlotChip extends StatelessWidget {
             checked: intensity == slot.intensity,
             child: Text(intensity.label),
           ),
-        const PopupMenuItem<_SlotAction>(
+        PopupMenuItem<_SlotAction>(
           value: _RemoveSlot(),
-          child: Text('Entfernen', style: TextStyle(color: Colors.red)),
+          child: Text('Entfernen', style: TextStyle(color: AppColors.of(context).alert)),
         ),
       ],
       child: Container(
@@ -208,8 +209,8 @@ class ScheduleHintsSection extends StatelessWidget {
                 HintSeverity.info => Icons.info,
               },
               color: switch (hint.severity) {
-                HintSeverity.warning => Colors.orange,
-                HintSeverity.tip => Colors.blue,
+                HintSeverity.warning => AppColors.of(context).caution,
+                HintSeverity.tip => AppColors.of(context).info,
                 HintSeverity.info => Theme.of(context).colorScheme.onSurfaceVariant,
               },
             ),
@@ -245,9 +246,9 @@ class InputIssuesSection extends StatelessWidget {
                 InputSeverity.info => Icons.check_circle,
               },
               color: switch (issue.severity) {
-                InputSeverity.warning => Colors.orange,
+                InputSeverity.warning => AppColors.of(context).caution,
                 InputSeverity.tip => Colors.amber,
-                InputSeverity.info => Colors.green,
+                InputSeverity.info => AppColors.of(context).good,
               },
             ),
             title: Text(issue.message),

@@ -14,6 +14,7 @@ import '../../platform/notifications.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/platform_names.dart';
+import '../../ui/tokens.dart';
 import '../onboarding/personalization_widgets.dart';
 import 'data_sources_screen.dart';
 
@@ -199,7 +200,7 @@ class _TrainingBreakSectionState extends ConsumerState<TrainingBreakSection> {
           ? [
               LabeledRow(label: 'Pause', value: pause.label),
               ListTile(
-                title: const Text('Pause beenden', style: TextStyle(color: Colors.red)),
+                title: Text('Pause beenden', style: TextStyle(color: AppColors.of(context).alert)),
                 onTap: () => settings.trainingBreak = null,
               ),
             ]
@@ -357,7 +358,7 @@ class SeasonSettingsScreen extends ConsumerWidget {
           FormSection(
             children: [
               ListTile(
-                title: const Text('Auf Standardwerte zurücksetzen', style: TextStyle(color: Colors.red)),
+                title: Text('Auf Standardwerte zurücksetzen', style: TextStyle(color: AppColors.of(context).alert)),
                 onTap: () => settings.season = SeasonConfig.standard,
               ),
             ],
@@ -508,7 +509,7 @@ class _AndroidShareRowState extends ConsumerState<AndroidShareRow> {
         ),
       if (_error case final error?)
         ListTile(
-          title: Text(error, style: const TextStyle(color: Colors.red)),
+          title: Text(error, style: TextStyle(color: AppColors.of(context).alert)),
         ),
     ],
   );

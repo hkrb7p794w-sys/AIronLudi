@@ -11,6 +11,7 @@ import '../../data/storage.dart';
 import '../../platform/notifications.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 import '../evidence/evidence_views.dart';
 
 /// Erinnerung 30 Minuten vor der empfohlenen Schlafenszeit, täglich bis zur Neuberechnung (Port von
@@ -197,7 +198,9 @@ class _SleepCoachScreenState extends ConsumerState<SleepCoachScreen> {
                                   BarChartRodData(
                                     toY: (night.sleepSeconds ?? 0) / 3600,
                                     width: 12,
-                                    color: (night.sleepSeconds ?? 0) / 3600 >= 7 ? Colors.indigo : Colors.orange,
+                                    color: (night.sleepSeconds ?? 0) / 3600 >= 7
+                                        ? Colors.indigo
+                                        : AppColors.of(context).caution,
                                     borderRadius: BorderRadius.circular(3),
                                   ),
                                 ],
@@ -222,7 +225,7 @@ class _SleepCoachScreenState extends ConsumerState<SleepCoachScreen> {
                                 showTitles: true,
                                 getTitlesWidget: (value, meta) => SideTitleWidget(
                                   meta: meta,
-                                  child: Text('${recent[value.toInt()].day.day}', style: const TextStyle(fontSize: 10)),
+                                  child: Text('${recent[value.toInt()].day.day}', style: AppText.caption(context)),
                                 ),
                               ),
                             ),

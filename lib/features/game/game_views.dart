@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:coach_core/coach_core.dart' hide Badge;
 import 'package:coach_core/coach_core.dart' as core show Badge;
+import 'package:coach_core/coach_core.dart' hide Badge;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -13,6 +13,7 @@ import '../../services/social/game_service.dart';
 import '../../ui/components.dart';
 import '../../ui/liquid.dart';
 import '../../ui/symbols.dart';
+import '../../ui/tokens.dart';
 import '../motivation/motivation_views.dart';
 import '../social/social_views.dart';
 import '../today/now_views.dart';
@@ -233,11 +234,14 @@ class _GameSectionState extends ConsumerState<GameSection> {
                 Row(
                   spacing: 8,
                   children: [
-                    Icon(Icons.local_fire_department, color: streak.activeToday ? Colors.orange : secondary),
+                    Icon(
+                      Icons.local_fire_department,
+                      color: streak.activeToday ? AppColors.of(context).caution : secondary,
+                    ),
                     Expanded(
                       child: Text(
                         streak.current == 1 ? '1 Tag in Folge' : '${streak.current} Tage in Folge',
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                        style: AppText.headline(context),
                       ),
                     ),
                     Text('Stufe ${level.level}', style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -250,7 +254,7 @@ class _GameSectionState extends ConsumerState<GameSection> {
                 if (!streak.activeToday && streak.current > 0)
                   Text(
                     'Erfasse heute ein Training oder eine Mahlzeit, damit die Serie weiterläuft.',
-                    style: TextStyle(fontSize: 12, color: secondary),
+                    style: AppText.caption(context).copyWith(color: secondary),
                   ),
                 if (next != null)
                   Row(
@@ -260,7 +264,7 @@ class _GameSectionState extends ConsumerState<GameSection> {
                       Expanded(
                         child: Text(
                           'Nächstes Abzeichen: ${next.title} (${next.progress(stats)}/${next.target})',
-                          style: TextStyle(fontSize: 12, color: secondary),
+                          style: AppText.caption(context).copyWith(color: secondary),
                         ),
                       ),
                     ],
@@ -300,7 +304,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           Text(
             label,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
+            style: AppText.caption(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -331,14 +335,24 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   child: Row(
                     spacing: 8,
                     children: [
-                      _tile('${snapshot.streak.current}', 'Tage in Folge', Icons.local_fire_department, Colors.orange),
+                      _tile(
+                        '${snapshot.streak.current}',
+                        'Tage in Folge',
+                        Icons.local_fire_department,
+                        AppColors.of(context).caution,
+                      ),
                       _tile(
                         '${GameLevel.progress(snapshot.summary.totalPoints).level}',
                         'Stufe',
                         Icons.star,
                         Colors.amber,
                       ),
-                      _tile('${snapshot.summary.weekPoints}', 'Punkte diese Woche', Icons.bar_chart, Colors.blue),
+                      _tile(
+                        '${snapshot.summary.weekPoints}',
+                        'Punkte diese Woche',
+                        Icons.bar_chart,
+                        AppColors.of(context).info,
+                      ),
                     ],
                   ),
                 ),
@@ -355,10 +369,10 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       spacing: 6,
                       children: [
-                        Text(challenge.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                        Text(challenge.title, style: AppText.headline(context)),
                         Text(
                           '${challenge.metricTitle} · Woche ab ${challenge.monday == null ? challenge.week : shortDate(challenge.monday!)}',
-                          style: TextStyle(fontSize: 12, color: secondary),
+                          style: AppText.caption(context).copyWith(color: secondary),
                         ),
                         Wrap(
                           spacing: 8,
@@ -406,7 +420,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   subtitle: Text('Stufe ${entry.level < 1 ? 1 : entry.level} · 🔥 ${entry.dayStreak}'),
                   trailing: Text(
                     entry.reported ? '${entry.weekPoints}' : '–',
-                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+                    style: AppText.body(context).copyWith(fontWeight: FontWeight.w600),
                   ),
                 ),
             ],
@@ -431,7 +445,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           if (snapshot != null) BadgeGrid(stats: snapshot.stats),
           if (game.lastError case final error?)
             ListTile(
-              title: Text(error, style: const TextStyle(fontSize: 13, color: Colors.orange)),
+              title: Text(error, style: AppText.footnote(context).copyWith(color: AppColors.of(context).caution)),
             ),
         ],
       ),
@@ -454,7 +468,7 @@ class _ChallengeRow extends ConsumerWidget {
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Abbrechen')),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(label, style: const TextStyle(color: Colors.red)),
+            child: Text(label, style: TextStyle(color: AppColors.of(context).alert)),
           ),
         ],
       ),
@@ -475,16 +489,14 @@ class _ChallengeRow extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Expanded(
-                child: Text(challenge.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-              ),
+              Expanded(child: Text(challenge.title, style: AppText.headline(context))),
               if (challenge.finished)
                 Text(
                   challenge.iWon ? '🏆 Gewonnen' : 'Beendet',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: challenge.iWon ? Colors.orange : secondary,
+                    color: challenge.iWon ? AppColors.of(context).caution : secondary,
                   ),
                 ),
               IconButton(
@@ -494,7 +506,10 @@ class _ChallengeRow extends ConsumerWidget {
               ),
             ],
           ),
-          Text(challenge.kind?.rule ?? challenge.metricTitle, style: TextStyle(fontSize: 12, color: secondary)),
+          Text(
+            challenge.kind?.rule ?? challenge.metricTitle,
+            style: AppText.caption(context).copyWith(color: secondary),
+          ),
           for (final member in challenge.joined)
             Semantics(
               container: true,
@@ -520,14 +535,14 @@ class _ChallengeRow extends ConsumerWidget {
                     child: Text(
                       '${member.progress.toInt()} ${challenge.kind?.unit ?? ''}',
                       textAlign: TextAlign.end,
-                      style: const TextStyle(fontSize: 12),
+                      style: AppText.caption(context),
                     ),
                   ),
                 ],
               ),
             ),
           if (pending > 0)
-            Text('$pending eingeladen, noch nicht dabei', style: TextStyle(fontSize: 11, color: secondary)),
+            Text('$pending eingeladen, noch nicht dabei', style: AppText.caption(context).copyWith(color: secondary)),
         ],
       ),
     );
@@ -556,20 +571,25 @@ class BadgeGrid extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 24,
-                backgroundColor: done ? Colors.orange.withValues(alpha: 0.15) : secondary.withValues(alpha: 0.08),
-                child: Icon(badgeIcon(badge.symbol), color: done ? Colors.orange : secondary.withValues(alpha: 0.5)),
+                backgroundColor: done
+                    ? AppColors.of(context).caution.withValues(alpha: 0.15)
+                    : secondary.withValues(alpha: 0.08),
+                child: Icon(
+                  badgeIcon(badge.symbol),
+                  color: done ? AppColors.of(context).caution : secondary.withValues(alpha: 0.5),
+                ),
               ),
               Text(
                 badge.title,
                 textAlign: TextAlign.center,
                 maxLines: 2,
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                style: AppText.caption(context).copyWith(fontWeight: FontWeight.bold),
               ),
               Text(
                 done ? badge.detail : '${badge.progress(stats)}/${badge.target}',
                 textAlign: TextAlign.center,
                 maxLines: 2,
-                style: TextStyle(fontSize: 11, color: secondary),
+                style: AppText.caption(context).copyWith(color: secondary),
               ),
             ],
           ),
