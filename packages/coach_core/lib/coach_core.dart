@@ -13,6 +13,7 @@ export 'src/analysis/activity_report.dart';
 export 'src/analysis/activity_source.dart';
 export 'src/analysis/aerobic_decoupling.dart';
 export 'src/analysis/chart_zoom.dart';
+export 'src/analysis/feed_weeks.dart';
 export 'src/analysis/pace_check.dart';
 export 'src/analysis/session_kind.dart';
 export 'src/app/app_appearance.dart';

@@ -49,8 +49,12 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await tester.pumpAndSettle();
     expect(find.byType(ActivitiesScreen), findsOneWidget);
-    // „Alle“: eigene Trainings auch ohne Konto, dazu der Hinweis auf Freunde.
+    // „Alle“: eigene Trainings auch ohne Konto, nach Wochen; der Hinweis auf Freunde steht nur unter „Freunde“.
     expect(find.text('Morgenlauf'), findsOneWidget);
+    expect(find.textContaining('KW '), findsWidgets);
+    expect(find.text('Mit Freunden wird daraus ein Feed'), findsNothing);
+    await tester.tap(find.text('Freunde'));
+    await tester.pumpAndSettle();
     expect(find.text('Mit Freunden wird daraus ein Feed'), findsOneWidget);
 
     await tester.tap(find.text('Meine'));

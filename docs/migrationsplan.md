@@ -468,3 +468,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Roast Stufe 4 (F-6): „KI“ statt „AI“ in allen Texten (Schnellaktion, Bereich, Heute-Modul, Export-Anleitung) | erledigt |
 | Roast Stufe 4 / PR 23: Ernährung geordnet – Wochen-Check-in unter dem Tag, Navigationszeilen in „Planen“ und „Verlauf“, „Fuel Planner“ heißt „Verpflegung“ (Glossar) | erledigt |
 | Roast Stufe 3 / PR 17 (F-1): Demo-Modus – Ich › Technik › Demo ansehen legt Benutzer „Demo“ mit Demo-Daten an (`coach.demo`), kein Abruf/Sicherung/Teilen | erledigt |
+| Roast Stufe 4 / PR 21: Verlauf nach Wochen (KW, Zeitraum, Anzahl, Dauer; `FeedWeek`), Hinweis auf Freunde nur im Filter „Freunde“ | erledigt |
