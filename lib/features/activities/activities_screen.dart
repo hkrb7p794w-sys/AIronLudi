@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:coach_core/coach_core.dart' hide Badge;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../app/deep_links.dart';
 import '../../data/repositories/gym_repository.dart';
@@ -13,6 +12,7 @@ import '../../services/providers.dart';
 import '../../services/social/social_service.dart';
 import '../../ui/components.dart';
 import '../../ui/large_title.dart';
+import '../../ui/liquid.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
 import '../../ui/tokens.dart';
@@ -256,19 +256,11 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> with Pendin
     search: search ?? filter.search,
   );
 
-  static String _monthTitle(String key) {
-    final day = CalendarDay.tryParse('$key-01');
-    return day == null ? key : DateFormat('MMMM y', 'de_DE').format(day.referenceDate);
-  }
-
   Widget _mine(CoachSettings settings) {
     final all = _feed(settings);
     final entries = _filter.apply(all, today: CalendarDay.today());
-    final months = <String, List<FeedEntry>>{};
-    for (final entry in entries) {
-      (months[entry.day.iso.substring(0, 7)] ??= []).add(entry);
-    }
-    final keys = months.keys.toList()..sort((a, b) => b.compareTo(a));
+    // Nach Wochen mit Anzahl und Dauer (Roast Stufe 4 / PR 21; vorher nach Monaten).
+    final weeks = FeedWeek.group(entries);
     final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -314,11 +306,11 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> with Pendin
                 : 'Nichts gefunden für „${_filter.search}“.',
             color: secondary,
           ),
-        for (final month in keys)
+        for (final week in weeks)
           FormSection(
-            header: _monthTitle(month),
+            header: week.header,
             children: [
-              for (final entry in months[month]!)
+              for (final entry in week.entries)
                 FeedRow(entry: entry, onTap: entry.activity != null || entry.gym != null ? () => _open(entry) : null),
             ],
           ),
@@ -360,7 +352,8 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> with Pendin
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 32),
         children: [
-          if (!social.isAvailable)
+          // Werbung für Freunde nur im Filter „Freunde“, nicht über den eigenen Aktivitäten.
+          if (!social.isAvailable && friendsOnly)
             FormSection(
               children: [
                 ListTile(
@@ -390,7 +383,16 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> with Pendin
                   : 'Deine Trainings von Uhr und Gym erscheinen hier, dazu alles, was deine Freunde teilen.',
               color: secondary,
             ),
-          for (final item in items)
+          for (final (index, item) in items.indexed) ...[
+            // Wochen-Zwischenüberschrift (Roast Stufe 4 / PR 21).
+            if (index == 0 || _monday(items[index - 1].date) != _monday(item.date))
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                child: Text(
+                  FeedWeek(monday: _monday(item.date), entries: const []).title.toUpperCase(),
+                  style: LiquidText.sectionHeader(context),
+                ),
+              ),
             if (item.entry case final entry?) ...[
               FeedRow(entry: entry, onTap: entry.activity != null || entry.gym != null ? () => _open(entry) : null),
               // Eigener geteilter Beitrag: nur eine dezente Zeile, wenn Freunde reagiert oder kommentiert haben.
@@ -408,6 +410,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> with Pendin
               ),
               const Divider(height: 1),
             ],
+          ],
           if (social.isLoading)
             const Padding(
               padding: EdgeInsets.all(16),
@@ -492,4 +495,10 @@ class _FilterMenu extends StatelessWidget {
         ),
     ],
   );
+}
+
+/// Montag der Woche eines Zeitpunkts (lokal).
+CalendarDay _monday(DateTime date) {
+  final day = CalendarDay.fromDate(date.toLocal());
+  return day.adding(-day.weekdayIndex);
 }
