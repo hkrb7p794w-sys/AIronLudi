@@ -335,7 +335,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen>
     );
   }
 
-  /// Empfehlungen aus Regeln und KI (früher eigener Reiter „AI“), ganz ausblendbar.
+  /// Empfehlungen aus Regeln und KI (früher eigener Reiter „KI“), ganz ausblendbar.
   Widget _aiSection(BuildContext context, CoachSettings settings) {
     final theme = Theme.of(context);
     void open(Widget screen) => unawaited(Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen)));
@@ -343,7 +343,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen>
       children: [
         ListTile(
           leading: const Icon(Icons.auto_awesome),
-          title: const Text('AI-Empfehlungen'),
+          title: const Text('KI-Empfehlungen'),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             spacing: 6,

@@ -334,7 +334,7 @@ abstract final class Personalization {
     return order;
   }
 
-  /// Empfehlungs-Themen in der Reihenfolge der Prioritäten (für den Reiter „AI“).
+  /// Empfehlungs-Themen in der Reihenfolge der Prioritäten (für den Reiter „KI“).
   static List<InsightTopic> insightTopics(PersonalGoals goals) {
     final order = <InsightTopic>[];
     void add(List<InsightTopic> topics) {

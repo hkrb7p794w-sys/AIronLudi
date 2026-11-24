@@ -49,7 +49,7 @@ final class ImportPreview {
   Map<Weekday, List<SessionSlot>> currentWeek = {};
   List<String> notes = [];
 
-  /// Empfehlungen der externen KI für den Bereich „AI“ (gleiche ID wie eine bestehende = ersetzt sie).
+  /// Empfehlungen der externen KI für den Bereich „KI“ (gleiche ID wie eine bestehende = ersetzt sie).
   List<Insight> insights = [];
 
   /// IDs bestehender Empfehlungen, die die externe KI für falsch oder überholt hält.

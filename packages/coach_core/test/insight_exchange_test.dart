@@ -1,4 +1,4 @@
-// Empfehlungen aus dem Bereich „AI“ mit einer externen KI prüfen lassen: Export mit Prüfauftrag, Import mit Auswahl
+// Empfehlungen aus dem Bereich „KI“ mit einer externen KI prüfen lassen: Export mit Prüfauftrag, Import mit Auswahl
 // (neu in AIronLudi, keine Swift-Vorlage).
 import 'package:coach_core/coach_core.dart';
 import 'package:test/test.dart';

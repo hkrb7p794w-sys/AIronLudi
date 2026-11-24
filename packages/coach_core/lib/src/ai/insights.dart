@@ -14,7 +14,7 @@ import '../util/text_prefix.dart';
 final _digit = RegExp(r'\p{N}', unicode: true);
 final _wordSeparator = RegExp(r'[^\p{L}\p{N}]+', unicode: true);
 
-/// Thema einer Empfehlung im Reiter „AI“.
+/// Thema einer Empfehlung im Reiter „KI“.
 enum InsightTopic implements RawEnum {
   training('training'),
   planning('plan'),
@@ -188,7 +188,7 @@ enum InsightDirection implements RawEnum {
   final String rawValue;
 }
 
-/// Eine Empfehlung im Reiter „AI“. `basis`, `origin` und `model` sind intern (Nachvollziehbarkeit), die Ansicht zeigt
+/// Eine Empfehlung im Reiter „KI“. `basis`, `origin` und `model` sind intern (Nachvollziehbarkeit), die Ansicht zeigt
 /// nur Titel und Text.
 final class Insight {
   Insight({
@@ -680,7 +680,7 @@ final class InsightFact {
   String toString() => 'InsightFact($id, $text)';
 }
 
-/// KI-Analyse im Reiter „AI“ (Worker-Aufgabe `ai_insights`): Die App schickt nummerierte Fakten, fehlende Daten und
+/// KI-Analyse im Reiter „KI“ (Worker-Aufgabe `ai_insights`): Die App schickt nummerierte Fakten, fehlende Daten und
 /// die Empfehlungen der Regeln; die KI darf nur daraus folgern und muss je Empfehlung Fakten nennen.
 abstract final class InsightAnalysis {
   /// Fakten mit IDs (`f1`, `f2` …) aus Klartextzeilen.
