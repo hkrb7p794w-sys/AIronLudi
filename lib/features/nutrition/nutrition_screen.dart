@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../app/day_change.dart';
+import '../../app/deep_links.dart';
 import '../../data/repositories/meal_repository.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
@@ -44,7 +45,13 @@ class NutritionScreen extends ConsumerStatefulWidget {
   ConsumerState<NutritionScreen> createState() => _NutritionScreenState();
 }
 
-class _NutritionScreenState extends ConsumerState<NutritionScreen> {
+class _NutritionScreenState extends ConsumerState<NutritionScreen> with PendingRouteHandler<NutritionScreen> {
+  @override
+  Set<AppRoute> get handledRoutes => const {AppRoute.logMeal};
+
+  @override
+  void handlePendingRoute(PendingRoute pending) => unawaited(_showLogger(category: pending.mealCategory));
+
   late final NutritionController _controller;
   List<StoredMeal> _meals = const [];
   List<StoredFood> _foods = const [];
@@ -226,6 +233,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    listenPendingRoutes();
     // Neuer Kalendertag (Mitternacht, Rückkehr in die App): neu laden wie `onDayChange`.
     ref.listen(currentDayProvider, (_, _) => unawaited(_reload()));
     final settings = ref.watch(coachSettingsProvider);
@@ -404,15 +412,15 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
 
   /// Erfassen, Suche zuerst: Vorschläge zur Mahlzeit, Korb mit „+“, Eintragen in einem Schritt. Die anderen Wege
   /// (Scannen, KI mit Foto/Text, Nur kcal, Manuell) stehen dort als Reiter.
-  Future<void> _showLogger() async {
-    final category = NutritionController.category(DateTime.now());
+  Future<void> _showLogger({MealCategory? category}) async {
+    final chosen = category ?? NutritionController.category(DateTime.now());
     final result = await Navigator.of(context).push<FoodLogResult>(
       MaterialPageRoute(
         fullscreenDialog: true,
         builder: (_) => ProductSearchScreen(
           own: [for (final food in _foods) ?food.item],
-          picks: ProductSearch.picks(MealRepository.entries(_meals), category: category, today: _controller.day),
-          category: category,
+          picks: ProductSearch.picks(MealRepository.entries(_meals), category: chosen, today: _controller.day),
+          category: chosen,
           eaten: _controller.totals,
           targets: _controller.targets?.values,
         ),
