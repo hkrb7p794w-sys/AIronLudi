@@ -175,6 +175,8 @@ final seasonScheduleProvider = Provider<SeasonSchedule?>((ref) => null);
 final appModelProvider = ChangeNotifierProvider<AppModel>((ref) {
   final db = ref.watch(databaseProvider);
   return AppModel(
+    // Demo-Benutzer (Ich › Technik › Demo ansehen): nichts abrufen, sichern oder teilen.
+    isDemo: ref.read(settingsStoreProvider).boolValue(SettingsKeys.demo),
     settings: ref.read(coachSettingsProvider),
     garmin: ref.watch(garminClientProvider),
     sync: ref.watch(garminSyncServiceProvider),

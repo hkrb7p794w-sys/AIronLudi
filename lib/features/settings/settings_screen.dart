@@ -25,6 +25,7 @@ import '../training/sleep_coach_screen.dart';
 import 'ai_settings.dart';
 import 'backup_screen.dart';
 import 'data_sources_screen.dart';
+import 'demo_section.dart';
 import 'diagnostics_screens.dart';
 import 'discipline_settings.dart';
 import 'lock_screen_settings.dart';
@@ -298,6 +299,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 () => [
                   _AISection(controller: _controller),
                   _GarminKeySection(controller: _controller),
+                  const DemoSection(),
                   FormSection(
                     header: 'Diagnose',
                     children: [
