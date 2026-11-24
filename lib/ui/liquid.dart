@@ -135,7 +135,8 @@ class LiquidTheme extends ThemeExtension<LiquidTheme> {
       LiquidGlow(Color(0x3384E8D0), Alignment(-0.6, 0.75), 0.9),
       LiquidGlow(Color(0x26FFB9A8), Alignment(1.0, 1.05), 0.75),
     ],
-    glassFill: Color(0xB8FFFFFF),
+    // Karten fast deckend (Roast F-3): ruhiger, besserer Kontrast, weniger GPU-Last; Glas nur für Leisten und Sheets.
+    glassFill: Color(0xF2FFFFFF),
     glassFillStrong: Color(0xE6FBFCFE),
     edgeTop: Color(0xE6FFFFFF),
     edgeBottom: Color(0x33FFFFFF),
@@ -154,7 +155,7 @@ class LiquidTheme extends ThemeExtension<LiquidTheme> {
       LiquidGlow(Color(0x3314C8A8), Alignment(-0.8, 0.8), 0.9),
       LiquidGlow(Color(0x26FF4D8D), Alignment(1.0, 1.1), 0.7),
     ],
-    glassFill: Color(0x17FFFFFF),
+    glassFill: Color(0xF21C1F27),
     glassFillStrong: Color(0xD9161A24),
     edgeTop: Color(0x40FFFFFF),
     edgeBottom: Color(0x08FFFFFF),
@@ -400,7 +401,8 @@ class LiquidSurface extends StatelessWidget {
     );
     content = ClipRRect(
       borderRadius: borderRadius,
-      child: blur && liquid.blurSigma > 0
+      // Unschärfe nur für deckendes Glas (Tab-Leiste, schwebende Leisten, Sheets); Karten sind deckend (Roast F-3).
+      child: blur && strong && liquid.blurSigma > 0
           ? BackdropFilter.grouped(
               filter: ui.ImageFilter.blur(sigmaX: liquid.blurSigma, sigmaY: liquid.blurSigma),
               child: content,

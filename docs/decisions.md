@@ -1486,3 +1486,12 @@ planen; dazu Joggen von Start zu Ziel.
   Distanz ist nur eine Schätzung (Luftlinie × 1,25). Mit Wegart ein Zwischenpunkt auf einem passenden Weg nahe der
   Mitte (höchstens 20 % der Luftlinie abseits). Grenze: Luftlinie höchstens Höchstdistanz / 1,25.
 
+
+## 2026-11-24 – Glas dosieren (Roast F-3 nach Empfehlung)
+
+- Karten (`LiquidSurface` ohne `strong`) sind nahezu deckend (hell #F2FFFFFF, dunkel #F21C1F27) und ohne
+  Hintergrund-Unschärfe; Unschärfe bleibt für deckendes Glas (`strong`: Tab-Leiste, schwebende Leisten, Sheets).
+- Gründe: ruhigeres Bild, Textkontrast unabhängig vom Lichtfleck dahinter, weniger GPU-Last auf kleinen Android-Geräten
+  (vorher Unschärfe auf jeder der über 500 `FormSection`s). Lichtkante, Radien, Bewegung und Hintergrund bleiben.
+- Entscheidung „Standard-Ernährungsweise“ (F-5) bewusst **nicht** umgesetzt: Fehlt der Wert, liest die App
+  „pescetarisch“; ein anderer Standard würde Bestandsnutzer ohne gespeicherte Einstellung still umstellen.
