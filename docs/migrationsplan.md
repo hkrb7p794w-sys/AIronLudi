@@ -462,3 +462,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Roast Stufe 2 / PR 12: Barrierefreiheits-Tests der vier Reiter (iOS-Tap-Flächen 44 pt, Beschriftungen, Kontrast 4,5 : 1); Nebentexte, Akzent und Tab-Leiste kontrastreicher, Tab-Beschriftung 12 pt, Segmente 44 pt, ein Symbolsatz in der Tab-Leiste | erledigt |
 | Roast Stufe 2 / PR 8: Designsystem-Tokens (`lib/ui/tokens.dart`) und Sperrklinken-Test gegen neue Rohfarben/Schriftgrößen in `lib/features` | erledigt |
 | Roast Stufe 2 / PR 11b: gemeinsame Diagramm-Achsen (`lib/ui/chart_axes.dart`: deutsches Zahlenformat, keine krummen Randwerte, kein Umbruch, skalierende Schrift) in allen fl_chart-Diagrammen | erledigt |
+| Roast Stufe 3 / PR 13: Einheiten des adaptiven Ausdauerplans unter „Jetzt dran“ (`TodayFocus.withEndurance`, ersetzt gleiche Sportart des Wochenplans, Ampel warnt), Antippen öffnet den Ausdauerplan | erledigt |

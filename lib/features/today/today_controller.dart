@@ -70,6 +70,7 @@ final class TodayController extends ChangeNotifier {
     required CoachSettings settings,
     List<CalendarDay> gymDays = const [],
     List<GymItem> gym = const [],
+    List<PlanSlot> enduranceToday = const [],
     DateTime? now,
   }) {
     final today = CalendarDay.fromDate(now ?? DateTime.now());
@@ -130,6 +131,10 @@ final class TodayController extends ChangeNotifier {
         plan: plan,
         week: week,
       );
+    }
+    // Einheiten des Ausdauerplans gehören unter „Jetzt dran“ (Roast B-01).
+    if (focus != null && enduranceToday.isNotEmpty) {
+      focus = focus.withEndurance(enduranceToday, reasons: hasRecovery ? recommendation.reasons : const []);
     }
     snapshot = TodaySnapshot(
       metrics: metrics,

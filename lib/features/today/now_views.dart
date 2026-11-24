@@ -8,6 +8,7 @@ import '../../ui/liquid.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
 import '../../ui/tokens.dart';
+import '../endurance/endurance_screens.dart';
 import '../evidence/evidence_views.dart';
 import '../health/mobility_screen.dart';
 import '../plan/my_week_screen.dart';
@@ -180,6 +181,10 @@ class NowSection extends ConsumerWidget {
                 final screen? => () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen)),
                 null => null,
               },
+              // Offene Einheit aus dem Ausdauerplan: dort stehen Ablauf, Route, Verpflegung und „An Uhr senden“.
+              _ when item.id.startsWith(TodayFocus.enduranceItemPrefix) => () => Navigator.of(
+                context,
+              ).push(MaterialPageRoute<void>(builder: (_) => const EnduranceScreen())),
               _ => null,
             },
           ),
