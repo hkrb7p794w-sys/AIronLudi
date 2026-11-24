@@ -30,6 +30,7 @@ import '../health/health_screen.dart';
 import '../health/morning_report_views.dart';
 import '../plan/my_week_screen.dart';
 import '../routes/routes_screen.dart';
+import '../settings/data_sources_screen.dart';
 import '../settings/settings_screen.dart';
 import 'now_views.dart';
 import 'today_controller.dart';
@@ -271,7 +272,13 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with TrainingDataRelo
                     ),
                 ],
               ),
-            if (!model.garmin.isConfigured && !model.health.isEnabled && !model.isWhoopConnected)
+            // Nur ohne Quelle und ohne Tageswerte der letzten sieben Tage (z. B. aus einer Sicherung oder Hand-Eingabe);
+            // mit direktem Weg zu den Datenquellen statt nur einem Text.
+            if (showsConnectSourceHint(
+              hasSource: model.garmin.isConfigured || model.health.isEnabled || model.isWhoopConnected,
+              metricDays: _days.map((metrics) => metrics.day),
+              today: today,
+            ))
               FormSection(
                 children: [
                   ListTile(
@@ -280,6 +287,16 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with TrainingDataRelo
                       'damit die App deine Erholung einordnen kann.',
                       style: secondary,
                     ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.link),
+                    title: const Text('Quelle verbinden'),
+                    textColor: theme.colorScheme.primary,
+                    iconColor: theme.colorScheme.primary,
+                    onTap: () => Navigator.of(
+                      context,
+                      rootNavigator: true,
+                    ).push(MaterialPageRoute<void>(fullscreenDialog: true, builder: (_) => const DataSourcesScreen())),
                   ),
                 ],
               ),

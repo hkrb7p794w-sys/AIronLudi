@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import '../calendar/calendar_day.dart';
 import '../garmin/daily_metrics.dart';
 import '../json/json_value.dart';
 import '../util/enum_codec.dart';
@@ -31,6 +32,7 @@ final class Kpi {
     required this.status,
     required this.caption,
     this.secondaryFraction,
+    this.valueStatus,
   });
 
   final String title;
@@ -45,6 +47,10 @@ final class Kpi {
   final double? secondaryFraction;
   final KpiStatus status;
   final String caption;
+
+  /// Eigene Farbe für den Wert in der Mitte, wenn er etwas anderes aussagt als der Ring (beim Strain: noch nichts
+  /// trainiert, aber viel geplant – die „0,0“ ist neutral, die Warnung gilt dem Geplanten). `null` = [status].
+  final KpiStatus? valueStatus;
 }
 
 /// Die drei Kennzahlen oben auf „Heute“: Schlaf, Erholung, Strain (0–21). Regeln, keine KI; die Farbe der Erholung
@@ -172,6 +178,8 @@ abstract final class TodayKpis {
       caption: total > done
           ? '+${_decimal(total - done)} geplant'
           : (measured == null ? 'von 21' : strain.source.label),
+      // Noch (fast) nichts trainiert: der Wert ist neutral, die Einordnung betrifft nur das Geplante.
+      valueStatus: done < 1 && total > done ? KpiStatus.unknown : null,
     );
   }
 }
@@ -238,3 +246,11 @@ final class TodayDashboard {
   @override
   int get hashCode => Object.hashAllUnordered(hidden);
 }
+
+/// Hinweis „Verbinde eine Datenquelle“ auf „Heute“: nur ohne verbundene Quelle **und** ohne Tageswerte der letzten
+/// sieben Tage (Werte können auch aus einer Sicherung oder von Hand stammen).
+bool showsConnectSourceHint({
+  required bool hasSource,
+  required Iterable<CalendarDay> metricDays,
+  required CalendarDay today,
+}) => !hasSource && !metricDays.any((day) => !(day < today.adding(-7)));

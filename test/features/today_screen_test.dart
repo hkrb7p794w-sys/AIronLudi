@@ -71,6 +71,7 @@ void main() {
     expect(find.text('Strain'), findsOneWidget);
     expect(find.text('MEINE BELASTUNG HEUTE'), findsNothing);
     expect(find.textContaining('Verbinde in den Einstellungen eine Datenquelle'), findsOneWidget);
+    expect(find.text('Quelle verbinden'), findsOneWidget);
     // „Warum?“ steht in den AI-Empfehlungen; auf „Heute“ nur der erste Punkt als Vorschau.
     expect(find.text('WARUM?'), findsNothing);
     await tester.tap(find.text('AI-Empfehlungen'));
