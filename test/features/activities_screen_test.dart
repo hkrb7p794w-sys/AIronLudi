@@ -45,7 +45,7 @@ void main() {
       _run(1, now.subtract(const Duration(days: 2))),
       _run(2, now.subtract(const Duration(days: 200)), name: 'Alter Lauf'),
     ]);
-    await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Aktivitäten')));
+    await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Verlauf')));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await tester.pumpAndSettle();
     expect(find.byType(ActivitiesScreen), findsOneWidget);

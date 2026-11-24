@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../app/deep_links.dart';
 import '../../data/repositories/gym_repository.dart';
 import '../../data/settings/coach_settings.dart';
 import '../../data/storage.dart';
@@ -16,8 +17,10 @@ import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
 import '../../ui/tokens.dart';
 import '../gym/gym_screen.dart';
+import '../health/health_screen.dart';
 import '../social/social_views.dart';
 import '../today/today_controller.dart';
+import '../training/training_screen.dart';
 import 'activity_detail_screen.dart';
 import 'activity_parts.dart';
 
@@ -49,7 +52,14 @@ class ActivitiesScreen extends ConsumerStatefulWidget {
   ConsumerState<ActivitiesScreen> createState() => _ActivitiesScreenState();
 }
 
-class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
+class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> with PendingRouteHandler<ActivitiesScreen> {
+  @override
+  Set<AppRoute> get handledRoutes => const {AppRoute.health};
+
+  @override
+  void handlePendingRoute(PendingRoute pending) =>
+      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const HealthScreen()));
+
   late ActivitiesScope _scope = widget.initialScope;
   List<GarminActivity> _activities = const [];
   List<StoredGymSession> _gym = const [];
@@ -133,6 +143,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    listenPendingRoutes();
     ref.listen(appModelProvider.select((model) => model.lastSync), (_, _) => unawaited(_reload()));
     final settings = ref.watch(coachSettingsProvider);
     final social = ref.watch(socialServiceProvider);
@@ -155,8 +166,15 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                 decoration: const InputDecoration(hintText: 'Name, Sportart, Wert', border: InputBorder.none),
                 onChanged: (text) => setState(() => _filter = _copy(_filter, search: text)),
               )
-            : const CollapsingTitle(child: Text('Aktivitäten')),
+            : const CollapsingTitle(child: Text('Verlauf')),
         actions: [
+          // Auswertungen (früher im Reiter Training): Gesundheit, Erholung, Trends, Schlaf, Form, Wochenbericht.
+          IconButton(
+            tooltip: 'Auswertungen',
+            icon: const Icon(Icons.insights_outlined),
+            onPressed: () => Navigator.of(context)
+                .push(MaterialPageRoute<void>(builder: (_) => const TrainingScreen(section: TrainingSection.history))),
+          ),
           if (_scope == ActivitiesScope.mine) ...[
             IconButton(
               tooltip: _searching ? 'Suche schließen' : 'Suchen',
@@ -192,7 +210,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
       ),
       body: Column(
         children: [
-          if (!_searching) const LargeTitleHeader('Aktivitäten', collapsible: true),
+          if (!_searching) const LargeTitleHeader('Verlauf', collapsible: true),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: SizedBox(

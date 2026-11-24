@@ -27,7 +27,7 @@ void main() {
     await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
     await tester.pumpAndSettle();
     final container = ProviderScope.containerOf(tester.element(find.byType(LiquidTabBar)));
-    await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Training')));
+    await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Plan')));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await tester.pumpAndSettle();
 

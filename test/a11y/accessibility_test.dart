@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../app_test.dart' show app;
 
 void main() {
-  for (final tab in ['Heute', 'Aktivitäten', 'Training', 'Ernährung']) {
+  for (final tab in ['Heute', 'Plan', 'Verlauf', 'Ernährung', 'Ich']) {
     testWidgets('$tab: Tap-Flächen, Beschriftungen, Kontrast', (tester) async {
       final handle = tester.ensureSemantics();
       await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);

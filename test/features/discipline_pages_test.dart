@@ -17,14 +17,17 @@ Future<ProviderContainer> _openTraining(WidgetTester tester, {UserProfile? profi
   await tester.pumpAndSettle();
   final container = ProviderScope.containerOf(tester.element(find.byType(LiquidTabBar)));
   if (profile != null) container.read(coachSettingsProvider).profile = profile;
-  await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Training')));
+  await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Verlauf')));
+  await tester.pumpAndSettle();
+  // Auswertungen (früher Reiter Training) liegen im Reiter Verlauf.
+  await tester.tap(find.byTooltip('Auswertungen'));
   await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
   await tester.pumpAndSettle();
   return container;
 }
 
 Future<void> _openRow(WidgetTester tester, String title) async {
-  await tester.scrollUntilVisible(find.text(title), 300, scrollable: find.byType(Scrollable).first);
+  await tester.scrollUntilVisible(find.text(title), 300, scrollable: find.byType(Scrollable).last);
   await tester.pumpAndSettle();
   await tester.tap(find.text(title).last);
   await tester.pumpAndSettle();
@@ -36,7 +39,7 @@ void main() {
   testWidgets('Saisonplan: Disziplinen und Ziele', (tester) async {
     final container = await _openTraining(tester, profile: UserProfile(mode: ProfileMode.season, onboardingDone: true));
     final settings = container.read(coachSettingsProvider);
-    await tester.scrollUntilVisible(find.text('DISZIPLINEN'), 300, scrollable: find.byType(Scrollable).first);
+    await tester.scrollUntilVisible(find.text('DISZIPLINEN'), 300, scrollable: find.byType(Scrollable).last);
     expect(find.text('DISZIPLINEN'), findsOneWidget);
     expect(find.text('Meine Sportarten'.toUpperCase()), findsNothing);
 
@@ -54,12 +57,19 @@ void main() {
     _back(tester, SwimScreen);
     await tester.pumpAndSettle();
 
-    for (final (title, type) in [
-      ('Rad', BikeScreen),
-      ('Laufen', RunScreen),
-      ('Almere', AlmereScreen),
-      ('Marathon', MarathonScreen),
-    ]) {
+    for (final (title, type) in [('Rad', BikeScreen), ('Laufen', RunScreen)]) {
+      await _openRow(tester, title);
+      expect(find.byType(type), findsOneWidget, reason: title);
+      expect(tester.takeException(), isNull, reason: title);
+      _back(tester, type);
+      await tester.pumpAndSettle();
+    }
+
+    // Saisonziele stehen im Reiter Plan unter „Saison“ (Roast F-4).
+    await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Plan')));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await tester.pumpAndSettle();
+    for (final (title, type) in [('Almere', AlmereScreen), ('Marathon', MarathonScreen)]) {
       await _openRow(tester, title);
       expect(find.byType(type), findsOneWidget, reason: title);
       expect(tester.takeException(), isNull, reason: title);

@@ -27,10 +27,10 @@ Future<ProviderContainer> _openPlan(WidgetTester tester, UserProfile profile) as
   await tester.pumpAndSettle();
   final container = ProviderScope.containerOf(tester.element(find.byType(LiquidTabBar)));
   container.read(coachSettingsProvider).profile = profile;
-  await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Training')));
+  await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Plan')));
   await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Plan'));
+  await tester.tap(find.text('Woche'));
   await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
   await tester.pumpAndSettle();
   return container;
