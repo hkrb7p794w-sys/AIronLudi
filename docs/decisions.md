@@ -1386,3 +1386,11 @@ Auf Wunsch des Nutzers: nicht nur *was*, sondern *wie* – und mit dem, was da i
   nutzt dafür WHOOPs Skala: rot (< 34) → Pause, gelb und grün stufen nicht herab. Garmin bleibt unverändert.
 - Die Schwellen 34/67 sind Herstellerangaben von WHOOP, kein Studienwert. Schon gespeicherte WHOOP-Tage behalten die
   alten Werte bis zum nächsten Abruf. Die Kennzahl oben auf „Heute“ (67/34 für beide Quellen) bleibt vorerst gleich.
+## 2026-11-24 – Designsystem-Tokens als Sperrklinke (Roast B-05, Stufe 2)
+
+- `lib/ui/tokens.dart`: `AppColors` (gut, eingeschränkt, handeln, Info – iOS-Systemfarben hell/dunkel) und
+  `AppText` (Rollen von 34 bis 12 pt aus dem `TextTheme`). Abstände und Radien bleiben in `LiquidSpacing`/`LiquidRadii`.
+- `test/ui/ui_tokens_test.dart` zählt rohe Farben und feste Schriftgrößen je Datei in `lib/features` gegen
+  `test/ui/ui_tokens_baseline.json`: mehr ist ein Fehler, weniger verlangt das Neuschreiben des Bestands. So wird der
+  Bestand (beim Einführen 473 Farben, 56 Hex-Werte, 279 Schriftgrößen) Bereich für Bereich abgebaut, ohne dass neue
+  Rohwerte dazukommen. Sportfarben (`sport_style.dart`) und `kpiColor` liegen in `lib/ui` und zählen nicht.
