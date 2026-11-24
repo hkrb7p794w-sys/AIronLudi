@@ -268,7 +268,7 @@ final shots = <Shot>[
   // Ernährung
   for (final (name, row) in const [
     ('50-ernaehrung-woche', 'Woche und Auswertung'),
-    ('51-fuel-planner', 'Fuel Planner'),
+    ('51-fuel-planner', 'Verpflegung'),
     ('52-gewicht', 'Gewichtsverlauf'),
     ('53-rezeptideen', 'Rezeptideen für die kommende Woche'),
     ('54-eigene-rezepte', 'Eigene Rezepte und Meal-Prep'),
