@@ -64,7 +64,7 @@ iCloud/CloudKit.
       (Trends, Übungsverlauf). → `fl_chart` plus eigene Zoom-Geste (`ChartZoom` steckt schon als Logik in CoachCore)
 - [x] **Karte** der Aktivitätsstrecke (MapKit). → `flutter_map` (OpenStreetMap, kein API-Schlüssel nötig)
 - [x] Gezeichneter Avatar „Daisy“ (`DaisyGeometry` in CoachCore). → `CustomPainter`
-- [x] Körperkarte für die Muskel-Heatmap. → `CustomPainter`
+- [x] Körperkarte für die Muskel-Heatmap. → `CustomPainter` (anatomische Vektorzeichnung, `tool/body_map_art.py`)
 - [x] Haptik (`sensoryFeedback`) bei Auswahl, erledigtem Satz, Pausenende. → `HapticFeedback` aus Flutter
 - [x] Wischaktionen in Listen, Kontextmenüs, Ziffernblock, Stepper. → Flutter-Bordmittel (`Dismissible`, `MenuAnchor`)
 
@@ -466,3 +466,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Fehler aus Stufe-4-Vorbereitung: Schnellaktionen, Widgets und `coach://open/…` führen ihre Aktion aus (`PendingRouteHandler`: Erfassen mit Mahlzeit, Gesundheit, Gym, Einheit starten, KI, KI-Analyse); vorher nur Reiterwechsel | erledigt |
 | Roast Stufe 3 / PR 14: Modul „Ernährung heute“ auf „Heute“ (übrige kcal und Protein mit denselben Tageszielen, „Mahlzeit erfassen“; standardmäßig sichtbar, alte Einstellungen kompatibel) | erledigt |
 | Roast Stufe 3 / PR 15: „Route dazu planen“ auch für Lauf- und Radeinheiten des Wochenplans (`RouteForSessionSection`, gemeinsamer Baustein `RouteForUnitSection`) | erledigt |
+| Anatomische Körperkarte für die Muskel-Heatmap: eigene Vektorzeichnung mit Schattierung und Fasern, Vorder-/Rückseite zum Blättern, Seite mit mehr Last zuerst (`BodyMap`, `tool/body_map_art.py`) | erledigt |

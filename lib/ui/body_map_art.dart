@@ -1,0 +1,70 @@
+// GENERIERT von tool/body_map_art.py – nicht von Hand ändern.
+// Eigene anatomische Zeichnung (vorn und hinten), Zeichenfläche 200 × 400, Körpermitte x = 100.
+// dart format off
+part of 'body_map.dart';
+
+const _silhouette = <_ArtShape>[
+  _ArtShape('M100 58 C95 58 92 59 90 60 C84 66 72 70 62 73 C56 75 54 82 56 92 C58 100 62 106 64 112 C63 125 64 140 67 152 C70 162 71 172 69 182 C66 192 63 205 62 220 C61 245 65 268 69 285 C70 292 68 300 67 310 C66 326 70 346 76 364 C78 372 78 378 77 384 C73 388 70 393 75 396 C82 399 90 398 94 395 C96 389 94 380 93 372 C91 354 95 334 94 318 C93 305 91 296 92 286 C94 270 96 246 98 230 C99 228 100 227 100 227 C100 227 101 228 102 230 C104 246 106 270 108 286 C109 296 107 305 106 318 C105 334 109 354 107 372 C106 380 104 389 106 395 C110 398 118 399 125 396 C130 393 127 388 123 384 C122 378 122 372 124 364 C130 346 134 326 133 310 C132 300 130 292 131 285 C135 268 139 245 138 220 C137 205 134 192 131 182 C129 172 130 162 133 152 C136 140 137 125 136 112 C138 106 142 100 144 92 C146 82 144 75 138 73 C128 70 116 66 110 60 C108 59 105 58 100 58 Z'),
+  _ArtShape('M58 74 C48 76 43 86 43 98 C42 110 41 124 41 136 C40 146 39 152 37 160 C34 176 31 192 32 208 C32 212 32 215 33 218 C29 224 29 236 35 241 C41 245 48 242 49 234 C50 227 48 221 46 217 C49 200 52 180 54 162 C55 155 56 150 57 145 C60 130 62 118 63 110 C62 100 62 86 58 74 Z', mirror: true),
+  _ArtShape('M100 40 C96 40 91 41 90 44 C90 52 89 60 86 68 C92 70 97 71 100 71 C103 71 108 70 114 68 C111 60 110 52 110 44 C109 41 104 40 100 40 Z'),
+  _ArtShape('M84.5 25 C86.2 25 87.5 27.7 87.5 31 C87.5 34.3 86.2 37 84.5 37 C82.8 37 81.5 34.3 81.5 31 C81.5 27.7 82.8 25 84.5 25 Z', mirror: true),
+  _ArtShape('M100 8 C108.6 8 115.5 17.4 115.5 29 C115.5 40.6 108.6 50 100 50 C91.4 50 84.5 40.6 84.5 29 C84.5 17.4 91.4 8 100 8 Z'),
+];
+
+const _skin = <_ArtShape>[
+  _ArtShape('M84.5 25 C86.2 25 87.5 27.7 87.5 31 C87.5 34.3 86.2 37 84.5 37 C82.8 37 81.5 34.3 81.5 31 C81.5 27.7 82.8 25 84.5 25 Z', mirror: true),
+  _ArtShape('M100 8 C108.6 8 115.5 17.4 115.5 29 C115.5 40.6 108.6 50 100 50 C91.4 50 84.5 40.6 84.5 29 C84.5 17.4 91.4 8 100 8 Z'),
+  _ArtShape('M33 217 C29 224 29 236 35 241 C41 245 48 242 49 234 C50 227 48 221 46 216 C42 217.5 37 217.5 33 217 Z', mirror: true, lines: ['M34 225 C38 227.5 43 227.5 47.5 225', 'M33 231 C37 233.5 43 233.5 48.5 231', 'M34.5 237 C38 239 43 239 47.5 236.5']),
+  _ArtShape('M77.5 371 C78 377 78 381 77 384 C73 388 70 393 75 396 C82 399 90 398 94 395 C96 389 94 380 93 371 Z', mirror: true, lines: ['M76 391 C80 392.5 86 392.5 93 390']),
+];
+
+const _hair = 'M84.6 30 C84 14 91 8 100 8 C109 8 116 14 115.4 30 C114 38 110 44 106 46.5 C102 45 98 45 94 46.5 C90 44 86 38 84.6 30 Z';
+
+const _front = <_ArtMuscle>[
+  _ArtMuscle('sternocleidomastoid', null, 'M86 44 C88 44 90 48 92 54 C94 60 96 66 98 70 C96.5 71 95 71 93.5 70 C91 62 88 52 86 44 Z', fibre: _Fibre.angle(70)),
+  _ArtMuscle('trapsFront', Muscle.traps, 'M90 56 C88 63 80 68 64 72 C72 73 81 72 89 70 C91 66 91 61 90 56 Z', fibre: _Fibre.angle(160)),
+  _ArtMuscle('sideDeltFront', Muscle.sideDelts, 'M58 74 C49 76 44 86 44 98 C44 107 46 115 49 121 C50 110 52 98 55 89 C56 83 57 78 58 74 Z', fibre: _Fibre.angle(80)),
+  _ArtMuscle('frontDelt', Muscle.frontDelts, 'M58 74 C64 72 70 72 76 73 C72 80 66 89 62 98 C58 106 53 114 49 121 C50 110 52 98 55 89 C56 83 57 78 58 74 Z', fibre: _Fibre.fan(52, 120)),
+  _ArtMuscle('chest', Muscle.chest, 'M98.5 72 C90 70 83 71 76.5 73.5 C71 81 65 91 61 101 C63 105 65 109 67 112 C73 118 82 122 91 120 C95 119 97.5 117 98.5 114 Z', fibre: _Fibre.fan(60, 103), lines: ['M77 74 C84 84 90 96 98 106']),
+  _ArtMuscle('serratus', null, 'M64 112 C68 116 73 120 78 124 C76 130 72 134 67 138 C65 130 64 121 64 112 Z', fibre: _Fibre.angle(145), lines: ['M64.5 118 L74 123', 'M65.5 125 L75 128', 'M66 132 L72 132']),
+  _ArtMuscle('obliques', Muscle.obliques, 'M67 138 C73 134 80 128 86.5 124 C86 148 87 172 90 198 C84 193 76 189 70 186 C71 172 71 160 68 150 C67 146 67 142 67 138 Z', fibre: _Fibre.angle(60)),
+  _ArtMuscle('abs', Muscle.abs, 'M87.5 121 C92 119 96 119 100 120 C104 119 108 119 112.5 121 C113.5 142 113.5 170 111.5 190 C109.5 203 105 212 100 216 C95 212 90.5 203 88.5 190 C86.5 170 86.5 142 87.5 121 Z', fibre: _Fibre.angle(90), mirror: false, lines: ['M100 121 L100 214', 'M88 140 C92 142 96 141 100 140 C104 141 108 142 112 140', 'M87.5 159 C92 161 96 160 100 159 C104 160 108 161 112.5 159', 'M88 178 C92 180 96 179 100 178 C104 179 108 180 112 178']),
+  _ArtMuscle('biceps', Muscle.biceps, 'M55 107 C49 113 45.5 123 45.5 134 C45.5 143 47 150 50 155 C54.5 152 58.5 144 60 134 C61 124 59.5 113 55 107 Z', fibre: _Fibre.angle(92), lines: ['M53 112 C52 126 52 140 51 152']),
+  _ArtMuscle('brachialis', null, 'M44 112 C43 124 42 136 41 147 C44 150 47 153 50 155 C47 150 45.5 143 45.5 134 C45.5 125 46.5 117 49 111 C47 110 45.5 110 44 112 Z', fibre: _Fibre.angle(95)),
+  _ArtMuscle('tricepsFront', Muscle.triceps, 'M60.5 116 C62 126 61 136 58.5 146 C57.5 149 56.5 151 55 153 C58 146 60 138 60.5 128 Z', fibre: _Fibre.angle(95)),
+  _ArtMuscle('brachioradialis', Muscle.forearms, 'M42 140 C38 151 35.5 166 34.5 184 C34 198 34 207 35 214 C38 200 41 185 44 171 C46.5 161 47.5 153 46 147 C45 144 43.5 141 42 140 Z', fibre: _Fibre.angle(96)),
+  _ArtMuscle('forearmFlexors', Muscle.forearms, 'M46 147 C50 152 53.5 156 55.5 158 C53.5 176 50 196 46 215 C42 216 38.5 216 35 214 C38 200 41 185 44 171 C46.5 161 47.5 153 46 147 Z', fibre: _Fibre.angle(100), lines: ['M50 156 C47 172 44 190 41 214']),
+  _ArtMuscle('tfl', null, 'M63 212 C63 202 66 194 72 190 C72 200 71 210 70 220 C68 214 66 212 63 212 Z', fibre: _Fibre.angle(100)),
+  _ArtMuscle('vastusLateralis', Muscle.quads, 'M63 214 C66 212 69 214 70 220 C70 240 72 262 75 282 C73 285 71 286 69 284 C65 268 62 248 62 232 C62 224 62.5 218 63 214 Z', fibre: _Fibre.angle(100)),
+  _ArtMuscle('rectusFemoris', Muscle.quads, 'M72 194 C77 206 82 222 84 236 C84 252 83 270 80 284 C78 286 76 285 75 282 C72 262 70 240 70 220 C70 210 71 200 72 194 Z', fibre: _Fibre.angle(93), lines: ['M73.5 206 C77 226 79 252 78 278']),
+  _ArtMuscle('sartorius', null, 'M72 192 C77 204 83 224 86 244 C88 258 89 272 89 286 L92 286 C93 272 92 258 90 244 C87 224 81 204 75 191 C74 190.5 73 191 72 192 Z', fibre: _Fibre.angle(76)),
+  _ArtMuscle('vastusMedialis', Muscle.quads, 'M84 236 C87 250 89 266 89 284 C86 289 82 288 80 284 C83 270 84 252 84 236 Z', fibre: _Fibre.angle(60)),
+  _ArtMuscle('adductors', Muscle.adductors, 'M75 191 C84 204 92 216 98 229 C96.5 244 95 258 93 272 C92 258 91 248 90 244 C87 224 81 204 75 191 Z', fibre: _Fibre.angle(55), lines: ['M82 202 C88 216 92 226 96 236']),
+  _ArtMuscle('patella', null, 'M84 286.5 C87 286.5 89.5 289.4 89.5 293 C89.5 296.6 87 299.5 84 299.5 C81 299.5 78.5 296.6 78.5 293 C78.5 289.4 81 286.5 84 286.5 Z', plain: true),
+  _ArtMuscle('tibia', null, 'M80 302 C83 300 86 300 87 304 C86 326 86 348 87 370 L84.5 370 C83 350 81.5 326 80 302 Z', plain: true),
+  _ArtMuscle('peroneus', null, 'M67.5 308 C69 312 70.5 318 71.5 324 C73.5 336 75.5 348 77.5 360 C76.5 361 76 361 75.5 360 C71 346 67.5 332 67 320 C67 316 67.2 312 67.5 308 Z', fibre: _Fibre.angle(98)),
+  _ArtMuscle('tibialis', null, 'M70 300 C74 300 78 302 80 306 C81.5 326 83 348 84.5 370 C82 370 80 368 79 365 C76 348 73.5 334 71.5 322 C70.5 314 69.5 306 70 300 Z', fibre: _Fibre.angle(94)),
+  _ArtMuscle('calfInner', Muscle.calves, 'M91 291 C95 301 96 318 94.5 334 C93 344 90 352 88 358 C86.5 340 86.5 322 87 306 C88 299 89.5 294 91 291 Z', fibre: _Fibre.angle(100)),
+  _ArtMuscle('soleusFront', Muscle.calves, 'M88 359 C90.5 352 93 344 94.5 335 C94 347 93.5 359 93 371 C91 369 89 365 88 359 Z', fibre: _Fibre.angle(92)),
+];
+
+const _back = <_ArtMuscle>[
+  _ArtMuscle('traps', Muscle.traps, 'M100 46 C97 54 94 60 89 63 C81 67 71 70 62 74 C70 78 80 85 87 96 C92 108 96 122 100 136 C104 122 108 108 113 96 C120 85 130 78 138 74 C129 70 119 67 111 63 C106 60 103 54 100 46 Z', fibre: _Fibre.fan(100, 150), mirror: false, lines: ['M100 50 L100 134']),
+  _ArtMuscle('sideDeltBack', Muscle.sideDelts, 'M58 74 C49 76 44 86 44 98 C44 107 46 115 49 121 C50 110 52 98 55 89 C56 83 57 78 58 74 Z', fibre: _Fibre.angle(80)),
+  _ArtMuscle('rearDelt', Muscle.rearDelts, 'M58 74 C63 74 67 76 71 80 C68 90 61 102 49 121 C50 110 52 98 55 89 C56 83 57 78 58 74 Z', fibre: _Fibre.fan(50, 120)),
+  _ArtMuscle('infraspinatus', null, 'M71 80 C78 84 84 90 87 96 C86 102 84 106 81 109 C74 110 68 111 62 112 C60 108 58 106 57 104 C61 96 66 88 71 80 Z', fibre: _Fibre.fan(58, 104), lines: ['M60 108 C67 104 74 101 85 100']),
+  _ArtMuscle('lats', Muscle.lats, 'M62 112 C70 111 77 110 81 109 C85 106 87 101 88 97 C92 108 96 122 100 136 L100 160 C96 170 92 178 87 184 C80 178 74 170 70 160 C66 146 64 128 62 112 Z', fibre: _Fibre.fan(62, 112)),
+  _ArtMuscle('lowerBack', Muscle.lowerBack, 'M100 136 C103 150 108 166 113 182 C110 190 105 196 100 199 C95 196 90 190 87 182 C92 166 97 150 100 136 Z', fibre: _Fibre.angle(90), mirror: false, lines: ['M100 140 L100 198']),
+  _ArtMuscle('obliquesBack', Muscle.obliques, 'M67 150 C70 162 76 174 86 185 C80 188 73 188 69 186 C70 174 69 162 67 150 Z', fibre: _Fibre.angle(60)),
+  _ArtMuscle('gluteusMedius', null, 'M68 188 C74 186 82 187 88 190 C93 192 97 196 100 200 C92 198 82 198 74 200 C70 198 68 194 68 188 Z', fibre: _Fibre.angle(120)),
+  _ArtMuscle('glutes', Muscle.glutes, 'M74 200 C84 198 93 199 99.5 202 L99.5 228 C92 236 80 237 70 231 C65 222 65 210 74 200 Z', fibre: _Fibre.angle(140)),
+  _ArtMuscle('triceps', Muscle.triceps, 'M61 110 C62.5 122 61.5 136 58.5 148 C54 151 49.5 151 45.5 148 C43.5 136 43.5 122 45.5 112 C50 106 56 106 61 110 Z', fibre: _Fibre.angle(90), lines: ['M52 108 C51 120 51 134 52 148', 'M47 140 C51 136 55 136 58.5 140']),
+  _ArtMuscle('forearmExtensors', Muscle.forearms, 'M42 142 C46 148 51 152 56 156 C54 176 50 196 46 215 C42 216 38.5 216 35 214 C34 198 34.5 184 36.5 168 C38 156 40 148 42 142 Z', fibre: _Fibre.angle(100), lines: ['M47 152 C45 172 42 194 40.5 215']),
+  _ArtMuscle('itBand', null, 'M64 214 C65 236 67 258 70 280 C68 282 67 282 66 280 C63 262 62 240 63 222 C63 218 63.5 216 64 214 Z', fibre: _Fibre.angle(95)),
+  _ArtMuscle('bicepsFemoris', Muscle.hamstrings, 'M66 230 C71 234 76 236 80.5 236 C80 252 80 268 81 284 C78 286 75 286 72 284 C69 266 67 248 66 230 Z', fibre: _Fibre.angle(98)),
+  _ArtMuscle('semitendinosus', Muscle.hamstrings, 'M80.5 236 C86 236 92 235 97 232 C96 250 93 268 89 285 C86 287 83.5 286.5 81 284 C80 268 80 252 80.5 236 Z', fibre: _Fibre.angle(85)),
+  _ArtMuscle('adductorsBack', Muscle.adductors, 'M97.5 232 C98 238 97.5 246 96 252 C95 262 93 272 91.5 278 C92.5 266 95 248 97.5 232 Z', fibre: _Fibre.angle(80)),
+  _ArtMuscle('gastrocLateral', Muscle.calves, 'M69 293 C73 289 78 289 81.5 292 C82 306 82 320 81 332 C77 340 73 341 70 336 C66.5 322 66.5 306 69 293 Z', fibre: _Fibre.angle(95)),
+  _ArtMuscle('gastrocMedial', Muscle.calves, 'M81.5 292 C85 288 90 289 93 293 C95 306 95 322 93 336 C90 343 85 342 81 332 C82 320 82 306 81.5 292 Z', fibre: _Fibre.angle(85)),
+  _ArtMuscle('soleus', Muscle.calves, 'M70 336 C73 341 77 340 81 332 C85 342 90 343 93 336 C92 348 91 360 90 372 L81 372 C79 360 75 348 70 336 Z', fibre: _Fibre.angle(90), lines: ['M85.5 344 L85.5 372']),
+];

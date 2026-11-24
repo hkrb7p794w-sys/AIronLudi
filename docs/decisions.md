@@ -1417,3 +1417,14 @@ Auf Wunsch des Nutzers: nicht nur *was*, sondern *wie* – und mit dem, was da i
   Text auf getönten Flächen (`onPrimaryContainer`) #00509E. Tab-Leiste: Beschriftung 12 statt 10,5 pt, nicht gewählte
   Reiter 72 % statt 60 %, gewählter in `onPrimaryContainer`; ein Symbolsatz (Material) statt Cupertino und Material
   gemischt. Segmentauswahl mindestens 44 pt hoch (vorher 40).
+
+## 2026-11-24 – Anatomische Körperkarte statt schematischer Figur
+
+- Wunsch des Nutzers: Die Muskel-Heatmap soll wie eine anatomische Zeichnung aussehen (einzelne Muskeln mit
+  Schattierung und Faserstruktur, vorn und hinten zum Blättern) statt der Rechteck-Figur aus `BodyMapView`.
+- Eigene Vektorzeichnung (`tool/body_map_art.py` → `lib/ui/body_map_art.dart`), keine fremden Bilder: Die
+  Vorlage aus einer anderen App ist urheberrechtlich geschützt, das Repo ist öffentlich. Rund 30 Muskeln je Seite,
+  davon einige nur zur Darstellung (z. B. Sartorius, Sägemuskel, Schienbeinmuskel) und immer grau.
+- Logik unverändert: dieselben 17 `Muscle`-Werte, dieselbe Farbskala gelb → rot (`MuscleLoad.intensity`), dieselben
+  eigenen Farben für „Erholung“. Neu: Vorder- und Rückseite blättern (Wischen oder Pfeil); zuerst die Seite mit mehr
+  Last auf Muskeln, die nur dort zu sehen sind (Zugübungen zeigen den Rücken).

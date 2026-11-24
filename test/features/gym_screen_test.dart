@@ -135,7 +135,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(GymAnalysisScreen), findsOneWidget);
     expect(find.text('1 Woche in Folge trainiert'), findsOneWidget);
-    await tester.scrollUntilVisible(find.byType(BodyMap), 200);
-    expect(find.bySemanticsLabel(RegExp('Muskelkarte: Brust')), findsOneWidget);
+    await tester.scrollUntilVisible(find.byType(BodyMap), 200, scrollable: find.byType(Scrollable).first);
+    expect(find.bySemanticsLabel(RegExp('Muskelkarte, Vorderseite: Brust')), findsOneWidget);
   });
 }
