@@ -6,6 +6,7 @@ import '../garmin/garmin_activity.dart';
 import '../util/german_format.dart';
 import '../whoop/whoop.dart';
 import 'fitness_form.dart';
+import 'hrv_trend.dart';
 import 'recovery_level.dart';
 
 /// Regelbasierte Tagesempfehlung – deterministisch, ohne Netzwerk. Die KI formuliert nur den Text dazu und darf die
@@ -77,6 +78,7 @@ abstract final class RecoveryEvaluator {
     DailyMetrics metrics, {
     required double? restingHeartRate7DayAverage,
     double? readinessScore,
+    HrvTrend? hrvTrend,
   }) {
     var level = RecoveryLevel.normal;
     final reasons = <String>[];
@@ -101,6 +103,17 @@ abstract final class RecoveryEvaluator {
       }
     } else if (status == 'BALANCED') {
       reasons.add('HRV-Status ausgeglichen');
+    } else if (hrvTrend != null) {
+      // Ohne Garmins Status (WHOOP, Apple Health, Health Connect): eigener 7-Tage-Schnitt gegen die eigene Basis.
+      if (hrvTrend.isBelowBaseline) {
+        worsen(RecoveryLevel.locker);
+        reasons.add(
+          'HRV 7-Tage-Schnitt ${hrvTrend.weekAverage.round()} ms, unter deinem üblichen Bereich '
+          '(ab ${hrvTrend.baselineLow.round()} ms)',
+        );
+      } else {
+        reasons.add('HRV 7-Tage-Schnitt im üblichen Bereich');
+      }
     }
 
     final score = readinessScore ?? metrics.trainingReadiness;
@@ -174,6 +187,7 @@ abstract final class RecoveryEvaluator {
     final recommendation = evaluate(
       metrics ?? DailyMetrics(today),
       restingHeartRate7DayAverage: averageFor(metrics?.day ?? today),
+      hrvTrend: HrvTrend.of(days, day: metrics?.day ?? today),
     ).limitedByForm(form);
     return TodayState(
       metrics: metrics,
