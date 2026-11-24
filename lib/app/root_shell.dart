@@ -13,7 +13,6 @@ import 'package:coach_core/coach_core.dart'
         RoutineLink,
         SyncPlan,
         TrainingSport;
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -333,9 +332,9 @@ class _RootShellState extends ConsumerState<RootShell> {
         // Erneutes Tippen auf den aktiven Reiter springt an den Anfang seines Stapels.
         onTap: (index) => shell.goBranch(index, initialLocation: index == shell.currentIndex),
         items: [
-          const LiquidTabItem(icon: CupertinoIcons.sun_max, label: 'Heute'),
+          const LiquidTabItem(icon: Icons.wb_sunny_outlined, label: 'Heute'),
           LiquidTabItem(icon: Icons.directions_run, label: 'Aktivitäten', badge: incoming),
-          const LiquidTabItem(icon: CupertinoIcons.heart_circle, label: 'Training'),
+          const LiquidTabItem(icon: Icons.monitor_heart_outlined, label: 'Training'),
           const LiquidTabItem(icon: Icons.restaurant, label: 'Ernährung'),
         ],
       ),

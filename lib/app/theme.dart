@@ -48,7 +48,8 @@ final class IOSColors {
   final Color orange;
 
   static const light = IOSColors._(
-    accent: Color(0xFF007AFF),
+    // Etwas dunkler als systemBlue (#007AFF), damit Link-Text auf dem hellen Glas 4,5 : 1 erreicht.
+    accent: Color(0xFF0066D6),
     groupedBackground: Color(0xFFF2F2F7),
     secondaryGroupedBackground: Color(0xFFFFFFFF),
     tertiaryGroupedBackground: Color(0xFFF2F2F7),
@@ -103,11 +104,12 @@ abstract final class AppTheme {
       primary: ios.accent,
       onPrimary: Colors.white,
       primaryContainer: ios.accent.withValues(alpha: 0.15),
-      onPrimaryContainer: ios.accent,
+      // Text auf getönten Flächen (z. B. „+250 ml“): im hellen Modus dunkler als der Akzent, sonst < 4,5 : 1.
+      onPrimaryContainer: dark ? ios.accent : const Color(0xFF00509E),
       secondary: ios.accent,
       onSecondary: Colors.white,
       secondaryContainer: ios.accent.withValues(alpha: 0.18),
-      onSecondaryContainer: ios.accent,
+      onSecondaryContainer: dark ? ios.accent : const Color(0xFF00509E),
       tertiary: ios.green,
       onTertiary: Colors.white,
       error: ios.red,
@@ -116,7 +118,9 @@ abstract final class AppTheme {
       onErrorContainer: ios.red,
       surface: liquid.base,
       onSurface: ios.label,
-      onSurfaceVariant: ios.secondaryLabel,
+      // Nebentexte: iOS-„secondaryLabel“ (60 % Deckkraft) erreicht auf dem hellen Glas nur ~3,3 : 1; 74 % ergeben
+      // ≥ 4,5 : 1. Im Dunkeln reicht der iOS-Wert.
+      onSurfaceVariant: dark ? ios.secondaryLabel : const Color(0xBD3C3C43),
       surfaceContainerLowest: liquid.glassFill,
       surfaceContainerLow: liquid.glassFill,
       surfaceContainer: liquid.glassFill,
@@ -272,7 +276,9 @@ abstract final class AppTheme {
           shape: const WidgetStatePropertyAll(StadiumBorder()),
           animationDuration: LiquidMotion.medium,
           textStyle: WidgetStatePropertyAll(text.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
-          visualDensity: VisualDensity.compact,
+          visualDensity: const VisualDensity(horizontal: -2, vertical: -1),
+          // Tap-Fläche mindestens 44 pt (iOS-Richtlinie); kompakt war sie 40 pt hoch.
+          minimumSize: const WidgetStatePropertyAll(Size(0, 44)),
         ),
       ),
       switchTheme: SwitchThemeData(
