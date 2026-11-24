@@ -20,21 +20,21 @@ Langbilder (`-lang`) zeigen die ganze Seite (iPhone, hell).
 
 Ganze Seite: <img src="screenshots/iphone15/hell/01-heute-lang.png" width="220">
 
-## 02-aktivitaeten
+## 02-verlauf
 
 | iPhone hell | iPhone dunkel | iPhone große Schrift | Android hell | Android dunkel | Android große Schrift |
 |---|---|---|---|---|---|
-| <img src="screenshots/iphone15/hell/02-aktivitaeten.png" width="140"> | <img src="screenshots/iphone15/dunkel/02-aktivitaeten.png" width="140"> | <img src="screenshots/iphone15/grossschrift/02-aktivitaeten.png" width="140"> | <img src="screenshots/android-klein/hell/02-aktivitaeten.png" width="140"> | <img src="screenshots/android-klein/dunkel/02-aktivitaeten.png" width="140"> | <img src="screenshots/android-klein/grossschrift/02-aktivitaeten.png" width="140"> |
+| <img src="screenshots/iphone15/hell/02-verlauf.png" width="140"> | <img src="screenshots/iphone15/dunkel/02-verlauf.png" width="140"> | <img src="screenshots/iphone15/grossschrift/02-verlauf.png" width="140"> | <img src="screenshots/android-klein/hell/02-verlauf.png" width="140"> | <img src="screenshots/android-klein/dunkel/02-verlauf.png" width="140"> | <img src="screenshots/android-klein/grossschrift/02-verlauf.png" width="140"> |
 
-Ganze Seite: <img src="screenshots/iphone15/hell/02-aktivitaeten-lang.png" width="220">
+Ganze Seite: <img src="screenshots/iphone15/hell/02-verlauf-lang.png" width="220">
 
-## 03-training
+## 03-plan
 
 | iPhone hell | iPhone dunkel | iPhone große Schrift | Android hell | Android dunkel | Android große Schrift |
 |---|---|---|---|---|---|
-| <img src="screenshots/iphone15/hell/03-training.png" width="140"> | <img src="screenshots/iphone15/dunkel/03-training.png" width="140"> | <img src="screenshots/iphone15/grossschrift/03-training.png" width="140"> | <img src="screenshots/android-klein/hell/03-training.png" width="140"> | <img src="screenshots/android-klein/dunkel/03-training.png" width="140"> | <img src="screenshots/android-klein/grossschrift/03-training.png" width="140"> |
+| <img src="screenshots/iphone15/hell/03-plan.png" width="140"> | <img src="screenshots/iphone15/dunkel/03-plan.png" width="140"> | <img src="screenshots/iphone15/grossschrift/03-plan.png" width="140"> | <img src="screenshots/android-klein/hell/03-plan.png" width="140"> | <img src="screenshots/android-klein/dunkel/03-plan.png" width="140"> | <img src="screenshots/android-klein/grossschrift/03-plan.png" width="140"> |
 
-Ganze Seite: <img src="screenshots/iphone15/hell/03-training-lang.png" width="220">
+Ganze Seite: <img src="screenshots/iphone15/hell/03-plan-lang.png" width="220">
 
 ## 04-ernaehrung
 
@@ -43,6 +43,22 @@ Ganze Seite: <img src="screenshots/iphone15/hell/03-training-lang.png" width="22
 | <img src="screenshots/iphone15/hell/04-ernaehrung.png" width="140"> | <img src="screenshots/iphone15/dunkel/04-ernaehrung.png" width="140"> | <img src="screenshots/iphone15/grossschrift/04-ernaehrung.png" width="140"> | <img src="screenshots/android-klein/hell/04-ernaehrung.png" width="140"> | <img src="screenshots/android-klein/dunkel/04-ernaehrung.png" width="140"> | <img src="screenshots/android-klein/grossschrift/04-ernaehrung.png" width="140"> |
 
 Ganze Seite: <img src="screenshots/iphone15/hell/04-ernaehrung-lang.png" width="220">
+
+## 05-ich
+
+| iPhone hell | iPhone dunkel | iPhone große Schrift | Android hell | Android dunkel | Android große Schrift |
+|---|---|---|---|---|---|
+| <img src="screenshots/iphone15/hell/05-ich.png" width="140"> | <img src="screenshots/iphone15/dunkel/05-ich.png" width="140"> | <img src="screenshots/iphone15/grossschrift/05-ich.png" width="140"> | <img src="screenshots/android-klein/hell/05-ich.png" width="140"> | <img src="screenshots/android-klein/dunkel/05-ich.png" width="140"> | <img src="screenshots/android-klein/grossschrift/05-ich.png" width="140"> |
+
+Ganze Seite: <img src="screenshots/iphone15/hell/05-ich-lang.png" width="220">
+
+## 06-auswertungen
+
+| iPhone hell | iPhone dunkel | iPhone große Schrift | Android hell | Android dunkel | Android große Schrift |
+|---|---|---|---|---|---|
+| <img src="screenshots/iphone15/hell/06-auswertungen.png" width="140"> | <img src="screenshots/iphone15/dunkel/06-auswertungen.png" width="140"> | <img src="screenshots/iphone15/grossschrift/06-auswertungen.png" width="140"> | <img src="screenshots/android-klein/hell/06-auswertungen.png" width="140"> | <img src="screenshots/android-klein/dunkel/06-auswertungen.png" width="140"> | <img src="screenshots/android-klein/grossschrift/06-auswertungen.png" width="140"> |
+
+Ganze Seite: <img src="screenshots/iphone15/hell/06-auswertungen-lang.png" width="220">
 
 ## 10-ki-empfehlungen
 
