@@ -42,7 +42,7 @@ void main() {
     expect(NutritionSummary.totals(meals.single.items)[Nutrient.kcal], 650);
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('Kantine'), 200);
+    await tester.scrollUntilVisible(find.text('Kantine'), 200, scrollable: _nutritionList);
     expect(find.text('Kantine'), findsWidgets);
   });
 
@@ -61,10 +61,10 @@ void main() {
     await tester.pumpAndSettle();
     // Protein ist beim Schnell-Eintrag unbekannt: übrig ist höchstens das ganze Ziel.
     expect(find.textContaining('noch höchstens'), findsWidgets);
-    await tester.scrollUntilVisible(find.text('Alle Nährstoffe'), 300);
+    await _reveal(tester, find.text('Alle Nährstoffe'));
     await tester.tap(find.text('Alle Nährstoffe'));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('Eisen'), 200);
+    await tester.scrollUntilVisible(find.text('Eisen'), 200, scrollable: _nutritionList);
     expect(find.text('Keine Angabe in den Einträgen'), findsWidgets);
     expect(find.textContaining(RegExp(r'^– / 1[16] mg$')), findsOneWidget);
   });
@@ -134,7 +134,7 @@ void main() {
   testWidgets('Übersicht anpassen: Karte ausblenden bleibt gespeichert', (tester) async {
     await openNutrition(tester);
     final adjust = find.text('Übersicht anpassen');
-    await tester.scrollUntilVisible(adjust, 200);
+    await _reveal(tester, adjust);
     await tester.tap(adjust);
     await tester.pumpAndSettle();
     final container = ProviderScope.containerOf(tester.element(find.byType(NutritionDashboardEditor)));
@@ -143,4 +143,19 @@ void main() {
     await tester.pumpAndSettle();
     expect(container.read(coachSettingsProvider).nutritionDashboard.visible, isNot(contains(card)));
   });
+}
+
+/// Liste des Reiters Ernährung (mit fünf Reitern liegen mehrere Listen im Baum).
+final _nutritionList = find
+    .descendant(
+      of: find.byType(NutritionScreen),
+      matching: find.byWidgetPredicate((widget) => widget is Scrollable && widget.axisDirection == AxisDirection.down),
+    )
+    .first;
+
+/// In die Mitte der Liste holen – sonst liegt der Eintrag knapp unter der schwebenden Tab-Leiste.
+Future<void> _reveal(WidgetTester tester, Finder finder) async {
+  await tester.scrollUntilVisible(finder, 200, scrollable: _nutritionList);
+  await Scrollable.ensureVisible(tester.element(finder), alignment: 0.5);
+  await tester.pumpAndSettle();
 }
