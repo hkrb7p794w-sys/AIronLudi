@@ -6,6 +6,7 @@ import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
+import '../../ui/tokens.dart';
 
 /// Auslassen, Verschieben und Rückgängig für die Einheiten eines Tages – nur für diese Woche
 /// (Port von `PlanDayActions`).
@@ -140,7 +141,7 @@ class AdjustDaySheet extends ConsumerWidget {
               footer: 'Der Wochenplan selbst bleibt unverändert; nächste Woche gilt er wieder.',
               children: [
                 ListTile(
-                  title: const Text('Diese Woche auslassen', style: TextStyle(color: Colors.red)),
+                  title: Text('Diese Woche auslassen', style: TextStyle(color: AppColors.of(context).alert)),
                   onTap: () {
                     reminders.skip(day);
                     Navigator.of(context).pop();

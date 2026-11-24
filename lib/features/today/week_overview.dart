@@ -7,6 +7,7 @@ import '../../ui/components.dart';
 import '../../ui/liquid.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
+import '../../ui/tokens.dart';
 import '../activities/activities_screen.dart';
 import '../activities/activity_detail_screen.dart';
 import '../activities/activity_parts.dart';
@@ -70,12 +71,10 @@ class _TodayItemRowState extends State<TodayItemRow> {
                               if (item.day case final day?)
                                 TextSpan(
                                   text: '$day  ',
-                                  style: secondary.copyWith(fontSize: 12, fontWeight: FontWeight.bold),
+                                  style: AppText.caption(context)
+                                      .copyWith(color: secondary.color, fontWeight: FontWeight.bold),
                                 ),
-                              TextSpan(
-                                text: item.title,
-                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                              ),
+                              TextSpan(text: item.title, style: AppText.headline(context)),
                             ],
                           ),
                         ),
@@ -83,15 +82,18 @@ class _TodayItemRowState extends State<TodayItemRow> {
                         if (item.chip.isNotEmpty)
                           CoachChip(
                             text: item.chip,
-                            color: item.chip == 'nur locker bewegen' ? Colors.red : Colors.orange,
+                            color: item.chip == 'nur locker bewegen'
+                                ? AppColors.of(context).alert
+                                : AppColors.of(context).caution,
                           ),
                       ],
                     ),
                   ),
-                  if (item.done) const Icon(Icons.check_circle, color: Colors.green, semanticLabel: 'erledigt'),
+                  if (item.done) Icon(Icons.check_circle, color: AppColors.of(context).good, semanticLabel: 'erledigt'),
                 ],
               ),
-              if (_expanded && item.detail.isNotEmpty) Text(item.detail, style: secondary.copyWith(fontSize: 13)),
+              if (_expanded && item.detail.isNotEmpty)
+                Text(item.detail, style: AppText.footnote(context).copyWith(color: secondary.color)),
             ],
           ),
         ),
@@ -174,7 +176,7 @@ class WeekOverviewScreen extends ConsumerWidget {
               children: [
                 for (final text in imported.texts) ListTile(leading: const Icon(Icons.auto_awesome), title: Text(text)),
                 ListTile(
-                  title: const Text('Hinweise entfernen', style: TextStyle(color: Colors.red)),
+                  title: Text('Hinweise entfernen', style: TextStyle(color: AppColors.of(context).alert)),
                   onTap: () => settings.importedNotes = null,
                 ),
               ],
@@ -214,7 +216,7 @@ class _WeekSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final secondary = TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant);
+    final secondary = AppText.caption(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
     return FormSection(
       header: 'Woche (${plan.weekday}, noch ${plan.daysLeftInWeek} Tage)',
       footer: plan.weekOpen.isEmpty ? null : 'Noch offen: ${plan.weekOpen.join(', ')}',
@@ -231,13 +233,13 @@ class _WeekSection extends StatelessWidget {
                     Expanded(child: Text(item.target.label)),
                     Text(
                       '${item.done} / ${item.target.minimum == item.target.maximum ? '${item.target.minimum}' : '${item.target.minimum}–${item.target.maximum}'}',
-                      style: secondary.copyWith(fontSize: 14),
+                      style: AppText.callout(context).copyWith(color: secondary.color),
                     ),
                   ],
                 ),
                 LiquidProgressBar(
                   value: item.percent / 100,
-                  color: item.done >= item.target.minimum ? Colors.green : null,
+                  color: item.done >= item.target.minimum ? AppColors.of(context).good : null,
                 ),
                 if (item.target.detail.isNotEmpty) Text(item.target.detail, style: secondary),
               ],
@@ -252,7 +254,10 @@ class _WeekSection extends StatelessWidget {
             ListTile(
               dense: true,
               leading: Icon(item.done ? Icons.check_circle : Icons.circle_outlined),
-              title: Text(item.text, style: item.done ? secondary.copyWith(fontSize: 14) : null),
+              title: Text(
+                item.text,
+                style: item.done ? AppText.callout(context).copyWith(color: secondary.color) : null,
+              ),
             ),
         ],
       ],
@@ -303,19 +308,19 @@ class _PersonalWeekStrip extends StatelessWidget {
                     final slots = schedule.slots(weekday);
                     final state = _state(planned: slots.isNotEmpty, day: day, today: today);
                     final fill = switch (state) {
-                      _DayState.done => Colors.green,
-                      _DayState.partial => Colors.orange,
-                      _DayState.extra => Colors.green.withValues(alpha: 0.25),
+                      _DayState.done => AppColors.of(context).good,
+                      _DayState.partial => AppColors.of(context).caution,
+                      _DayState.extra => AppColors.of(context).good.withValues(alpha: 0.25),
                       _DayState.today => theme.colorScheme.primary.withValues(alpha: 0.15),
                       _DayState.planned => secondary.withValues(alpha: 0.15),
-                      _DayState.missed => Colors.red.withValues(alpha: 0.12),
+                      _DayState.missed => AppColors.of(context).alert.withValues(alpha: 0.12),
                       _DayState.rest => Colors.transparent,
                     };
                     final Widget icon = switch (state) {
                       _DayState.done => const Icon(Icons.check, size: 16, color: Colors.white),
                       _DayState.partial => const Icon(Icons.contrast, size: 16, color: Colors.white),
-                      _DayState.extra => const Icon(Icons.add, size: 16, color: Colors.green),
-                      _DayState.missed => const Icon(Icons.close, size: 16, color: Colors.red),
+                      _DayState.extra => Icon(Icons.add, size: 16, color: AppColors.of(context).good),
+                      _DayState.missed => Icon(Icons.close, size: 16, color: AppColors.of(context).alert),
                       _DayState.rest => Text('–', style: TextStyle(color: secondary)),
                       _ => Icon(
                         AppSymbols.of(slots.firstOrNull?.sport.symbol ?? 'circle'),
@@ -339,8 +344,7 @@ class _PersonalWeekStrip extends StatelessWidget {
                         children: [
                           Text(
                             weekday.short,
-                            style: TextStyle(
-                              fontSize: 11,
+                            style: AppText.caption(context).copyWith(
                               fontWeight: FontWeight.w600,
                               color: day == today ? theme.colorScheme.primary : secondary,
                             ),
@@ -417,7 +421,7 @@ class _PersonalGoalSection extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               GoalRules.restingHeartRateOutlook(current: snapshot.metrics?.restingHeartRate, target: target),
-              style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              style: AppText.footnote(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ),
           const EvidenceDisclosure(ruleIDs: ['rhr.endurance']),

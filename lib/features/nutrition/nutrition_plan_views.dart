@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 import 'nutrition_controller.dart';
 
 /// „Was esse ich jetzt?“: drei Ideen zu den übrigen Makros, auf Wunsch mit dem Vorrat aus der Einkaufsliste
@@ -167,7 +168,7 @@ class OwnRecipesScreen extends ConsumerWidget {
                     key: ValueKey(recipe.id),
                     direction: DismissDirection.endToStart,
                     background: Container(
-                      color: Colors.red,
+                      color: AppColors.of(context).alert,
                       alignment: Alignment.centerRight,
                       padding: const EdgeInsets.only(right: 16),
                       child: const Icon(Icons.delete, color: Colors.white),
@@ -321,7 +322,7 @@ class _OwnRecipeEditorState extends State<OwnRecipeEditor> {
               if (recipe.remainingPortions case final remaining?) ...[
                 LabeledRow(label: 'Vorrat', value: '${PortionGuess.format(remaining)} Portionen'),
                 ListTile(
-                  title: const Text('Vorrat leeren', style: TextStyle(color: Colors.red)),
+                  title: Text('Vorrat leeren', style: TextStyle(color: AppColors.of(context).alert)),
                   onTap: () => setState(() => recipe.remainingPortions = null),
                 ),
               ],
@@ -334,7 +335,7 @@ class _OwnRecipeEditorState extends State<OwnRecipeEditor> {
                 Dismissible(
                   key: ValueKey(item.id),
                   direction: DismissDirection.endToStart,
-                  background: Container(color: Colors.red),
+                  background: Container(color: AppColors.of(context).alert),
                   onDismissed: (_) => setState(() => recipe.ingredients.removeWhere((other) => other.id == item.id)),
                   child: LabeledRow(label: item.name, value: item.amountLabel),
                 ),
@@ -485,7 +486,7 @@ class NutritionWeekScreen extends StatelessWidget {
                                 BarChartRodData(
                                   toY: day.kilocalories,
                                   width: 18,
-                                  color: day.trained ? Colors.orange : theme.colorScheme.primary,
+                                  color: day.trained ? AppColors.of(context).caution : theme.colorScheme.primary,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                               ],
@@ -521,7 +522,7 @@ class NutritionWeekScreen extends StatelessWidget {
                         child: Text(
                           day.targetKilocalories == null ? '' : '◆ ${day.targetKilocalories!.round()}',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 9, color: theme.colorScheme.onSurfaceVariant),
+                          style: AppText.caption(context).copyWith(color: theme.colorScheme.onSurfaceVariant),
                         ),
                       ),
                   ],
@@ -546,8 +547,8 @@ class NutritionWeekScreen extends StatelessWidget {
                 if (paceNote(goal, trend.weeklyPercent) case final note?)
                   ListTile(
                     dense: true,
-                    leading: const Icon(Icons.warning_amber, color: Colors.orange),
-                    title: Text(note, style: const TextStyle(color: Colors.orange)),
+                    leading: Icon(Icons.warning_amber, color: AppColors.of(context).caution),
+                    title: Text(note, style: TextStyle(color: AppColors.of(context).caution)),
                   ),
               ],
             ),

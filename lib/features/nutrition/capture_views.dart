@@ -9,6 +9,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../services/nutrition/meal_photo.dart';
 import '../../services/providers.dart';
+import '../../ui/tokens.dart';
 import 'meal_shortcuts.dart';
 
 /// Weitere Wege aus dem Erfassen-Bildschirm.
@@ -98,7 +99,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
           children: [
             Icon(icon),
             const SizedBox(height: 2),
-            FittedBox(child: Text(title, style: const TextStyle(fontSize: 13))),
+            FittedBox(child: Text(title, style: AppText.footnote(context))),
           ],
         ),
       ),
@@ -180,7 +181,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
               title: Text('Foto ausgewählt', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
               trailing: TextButton(
                 onPressed: () => setState(() => _photo = null),
-                child: const Text('Entfernen', style: TextStyle(color: Colors.red)),
+                child: Text('Entfernen', style: TextStyle(color: AppColors.of(context).alert)),
               ),
             ),
           Padding(
@@ -203,7 +204,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
               child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size.fromHeight(44),
-                  foregroundColor: dictation.isRecording ? Colors.red : null,
+                  foregroundColor: dictation.isRecording ? AppColors.of(context).alert : null,
                 ),
                 onPressed: () {
                   if (!dictation.isRecording) {
@@ -221,8 +222,8 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
           if (dictation.error case final error?)
             ListTile(
               dense: true,
-              leading: const Icon(Icons.warning_amber, color: Colors.orange),
-              title: Text(error, style: const TextStyle(color: Colors.orange)),
+              leading: Icon(Icons.warning_amber, color: AppColors.of(context).caution),
+              title: Text(error, style: TextStyle(color: AppColors.of(context).caution)),
             ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../data/repositories/meal_repository.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 import 'bls_views.dart';
 import 'nutrition_controller.dart';
 
@@ -142,7 +143,7 @@ class _MealEditorScreenState extends ConsumerState<MealEditorScreen> {
                   key: ValueKey(item.id),
                   direction: DismissDirection.endToStart,
                   background: Container(
-                    color: Colors.red,
+                    color: AppColors.of(context).alert,
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.only(right: 16),
                     child: const Icon(Icons.delete, color: Colors.white),
@@ -245,7 +246,9 @@ class DraftSummary extends StatelessWidget {
               if (after != null)
                 Text(
                   after >= 0 ? 'danach ${after.round()} übrig' : 'danach ${(-after).round()} drüber',
-                  style: TextStyle(color: after >= 0 ? theme.colorScheme.onSurfaceVariant : Colors.red),
+                  style: TextStyle(
+                    color: after >= 0 ? theme.colorScheme.onSurfaceVariant : AppColors.of(context).alert,
+                  ),
                 ),
             ],
           ),
@@ -261,7 +264,7 @@ class DraftSummary extends StatelessWidget {
                 missing == 1
                     ? 'Bei 1 Position fehlen Makros – Summe ohne sie.'
                     : 'Bei $missing Positionen fehlen Makros.',
-                style: const TextStyle(color: Colors.orange, fontSize: 12),
+                style: AppText.caption(context).copyWith(color: AppColors.of(context).caution),
               ),
             ),
         ],
@@ -562,8 +565,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 ),
               if (warning != null)
                 ListTile(
-                  leading: const Icon(Icons.warning_amber_rounded, color: Colors.orange),
-                  title: Text(warning, style: const TextStyle(color: Colors.orange)),
+                  leading: Icon(Icons.warning_amber_rounded, color: AppColors.of(context).caution),
+                  title: Text(warning, style: TextStyle(color: AppColors.of(context).caution)),
                 ),
             ],
           ),

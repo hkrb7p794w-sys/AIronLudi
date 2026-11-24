@@ -134,45 +134,25 @@
     "hex": 0,
     "fontSize": 4
   },
-  "lib/features/nutrition/brand_product_results.dart": {
-    "colors": 1,
-    "hex": 0,
-    "fontSize": 2
-  },
-  "lib/features/nutrition/capture_views.dart": {
-    "colors": 4,
-    "hex": 0,
-    "fontSize": 1
-  },
   "lib/features/nutrition/meal_editor.dart": {
-    "colors": 7,
-    "hex": 0,
-    "fontSize": 1
-  },
-  "lib/features/nutrition/meal_share_views.dart": {
-    "colors": 8,
+    "colors": 2,
     "hex": 0,
     "fontSize": 0
   },
   "lib/features/nutrition/nutrition_plan_views.dart": {
-    "colors": 7,
+    "colors": 1,
     "hex": 0,
-    "fontSize": 1
+    "fontSize": 0
   },
   "lib/features/nutrition/nutrition_screen.dart": {
-    "colors": 13,
+    "colors": 2,
     "hex": 0,
-    "fontSize": 6
+    "fontSize": 0
   },
   "lib/features/nutrition/product_search_screen.dart": {
-    "colors": 8,
+    "colors": 5,
     "hex": 0,
-    "fontSize": 5
-  },
-  "lib/features/nutrition/weight_views.dart": {
-    "colors": 10,
-    "hex": 0,
-    "fontSize": 1
+    "fontSize": 0
   },
   "lib/features/onboarding/schedule_editor.dart": {
     "colors": 6,
@@ -310,24 +290,14 @@
     "fontSize": 15
   },
   "lib/features/today/now_views.dart": {
-    "colors": 23,
-    "hex": 0,
-    "fontSize": 13
-  },
-  "lib/features/today/plan_day_actions.dart": {
-    "colors": 1,
+    "colors": 10,
     "hex": 0,
     "fontSize": 0
   },
-  "lib/features/today/today_screen.dart": {
-    "colors": 5,
-    "hex": 0,
-    "fontSize": 5
-  },
   "lib/features/today/week_overview.dart": {
-    "colors": 15,
+    "colors": 4,
     "hex": 0,
-    "fontSize": 8
+    "fontSize": 0
   },
   "lib/features/training/discipline_pages.dart": {
     "colors": 12,

@@ -13,6 +13,7 @@ import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/large_title.dart';
 import '../../ui/liquid.dart';
+import '../../ui/tokens.dart';
 import '../evidence/evidence_views.dart';
 import '../fuel/fuel_planner_screen.dart';
 import '../recipes/recipe_views.dart';
@@ -653,7 +654,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
                   key: ValueKey(meal.id),
                   direction: DismissDirection.endToStart,
                   background: Container(
-                    color: Colors.red,
+                    color: AppColors.of(context).alert,
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.only(right: 16),
                     child: const Icon(Icons.delete, color: Colors.white),
@@ -759,8 +760,8 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete_outline, color: Colors.red),
-              title: const Text('Löschen', style: TextStyle(color: Colors.red)),
+              leading: Icon(Icons.delete_outline, color: AppColors.of(context).alert),
+              title: Text('Löschen', style: TextStyle(color: AppColors.of(context).alert)),
               onTap: () {
                 Navigator.of(sheet).pop();
                 _after(_controller.delete(meal));
@@ -780,7 +781,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         Dismissible(
           key: ValueKey(item.id),
           direction: DismissDirection.endToStart,
-          background: Container(color: Colors.red),
+          background: Container(color: AppColors.of(context).alert),
           onDismissed: (_) => _controller.removePending(item),
           child: ListTile(
             leading: Icon(item.hasPhoto ? Icons.photo_outlined : Icons.chat_bubble_outline),
@@ -996,7 +997,7 @@ class _DayStripState extends State<_DayStrip> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(Weekday.of(day).short, style: const TextStyle(fontSize: 11)),
+                          Text(Weekday.of(day).short, style: AppText.caption(context)),
                           Text(
                             '${day.day}',
                             style: TextStyle(
@@ -1165,12 +1166,12 @@ class _DayAdjustmentSheetState extends State<DayAdjustmentSheet> {
                 onChanged: (value) => setState(() => _kcal = value),
               ),
             ),
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Text(
               'Gilt nur für diesen Tag. Höchstens ein Viertel Defizit und die Mindest-Energieverfügbarkeit bleiben '
               'immer bestehen.',
-              style: TextStyle(fontSize: 12),
+              style: AppText.caption(context),
             ),
           ),
           Padding(
@@ -1216,7 +1217,7 @@ class _CalorieRing extends StatelessWidget {
                 strokeWidth: 12,
                 strokeCap: StrokeCap.round,
                 backgroundColor: scheme.surfaceContainerHighest,
-                color: line.isOver ? Colors.red : scheme.primary,
+                color: line.isOver ? AppColors.of(context).alert : scheme.primary,
               ),
             ),
             Column(
@@ -1225,7 +1226,7 @@ class _CalorieRing extends StatelessWidget {
                 Text('$amount', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                 Text(
                   line.remaining >= 0 ? 'kcal übrig' : 'kcal drüber',
-                  style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
+                  style: AppText.caption(context).copyWith(color: scheme.onSurfaceVariant),
                 ),
               ],
             ),
@@ -1255,12 +1256,12 @@ class _MacroBar extends StatelessWidget {
             Text(line.nutrient.label),
             Text(
               NutritionBudget.remainingText(line),
-              style: TextStyle(fontWeight: FontWeight.bold, color: line.isOver ? Colors.red : null),
+              style: TextStyle(fontWeight: FontWeight.bold, color: line.isOver ? AppColors.of(context).alert : null),
             ),
           ],
         ),
         const SizedBox(height: 3),
-        LiquidProgressBar(value: line.progress, color: line.isOver ? Colors.red : null),
+        LiquidProgressBar(value: line.progress, color: line.isOver ? AppColors.of(context).alert : null),
       ],
     ),
   );
@@ -1354,9 +1355,9 @@ class _DaySummarySection extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
-                      Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold), maxLines: 1),
-                      Text(unit, style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant), maxLines: 1),
+                      Text(title, style: AppText.caption(context).copyWith(color: scheme.onSurfaceVariant)),
+                      Text(value, style: LiquidText.kpi(context, size: 20), maxLines: 1),
+                      Text(unit, style: AppText.caption(context).copyWith(color: scheme.onSurfaceVariant), maxLines: 1),
                     ],
                   ),
                 ),
@@ -1433,8 +1434,8 @@ class _TargetsSection extends StatelessWidget {
                                 color: nutrient.isReference
                                     ? null
                                     : nutrient.isUpperLimit
-                                    ? (percent > 100 ? Colors.red : Colors.orange)
-                                    : (percent >= 100 ? Colors.green : null),
+                                    ? (percent > 100 ? AppColors.of(context).alert : AppColors.of(context).caution)
+                                    : (percent >= 100 ? AppColors.of(context).good : null),
                               ),
                             if (gap != null) Text(gap, style: Theme.of(context).textTheme.bodySmall),
                           ],
@@ -1543,7 +1544,7 @@ class _UndoBarState extends State<_UndoBar> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.check_circle, color: Colors.green),
+            Icon(Icons.check_circle, color: AppColors.of(context).good),
             const SizedBox(width: 8),
             Flexible(child: Text(widget.label, maxLines: 1, overflow: TextOverflow.ellipsis)),
             TextButton(

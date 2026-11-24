@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/nutrition/open_food_facts_client.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 import 'bls_views.dart';
 import 'product_search_screen.dart';
 
@@ -91,15 +92,15 @@ class _BrandProductResultsState extends ConsumerState<BrandProductResults> {
     final key = _key;
     if (key.length < ProductSearch.onlineMinimumLength) return const SizedBox.shrink();
     final products = _results[key];
-    final secondary = TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant);
+    final secondary = AppText.footnote(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
     return FormSection(
       header: 'Markenprodukte',
       footer: 'Quelle: Open Food Facts (ODbL). Angaben der Community – bitte mit der Packung vergleichen.',
       children: [
         if (_error case final error?)
           ListTile(
-            leading: const Icon(Icons.wifi_off, color: Colors.orange),
-            title: Text(error, style: const TextStyle(fontSize: 13)),
+            leading: Icon(Icons.wifi_off, color: AppColors.of(context).caution),
+            title: Text(error, style: AppText.footnote(context)),
             trailing: TextButton(onPressed: () => unawaited(_search(key)), child: const Text('Erneut')),
           )
         else if (products == null)
