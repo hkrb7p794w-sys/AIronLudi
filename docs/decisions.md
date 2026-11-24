@@ -1418,6 +1418,31 @@ Auf Wunsch des Nutzers: nicht nur *was*, sondern *wie* – und mit dem, was da i
   Reiter 72 % statt 60 %, gewählter in `onPrimaryContainer`; ein Symbolsatz (Material) statt Cupertino und Material
   gemischt. Segmentauswahl mindestens 44 pt hoch (vorher 40).
 
+## 2026-11-24 – Fünf Reiter (Roast Stufe 4, F-2 nach Empfehlung)
+
+- Auftrag des Nutzers: Stufe 4 ohne weitere Rückfrage umsetzen; offene Fragen nach den Empfehlungen des Konzepts.
+- Reiter **Heute · Plan · Verlauf · Ernährung · Ich** (`AppTab.today, plan, history, nutrition, me`; Pfade `/heute`,
+  `/plan`, `/verlauf`, `/ernaehrung`, `/ich`; alte Pfade `/aktivitaeten` und `/training` leiten weiter).
+- **Plan** = bisheriger Reiter Training im Teil `TrainingSection.plan`: Belastung heute, Woche, Ausdauerplan, Gym,
+  Routen, Verpflegung (neu als Kachel), Saison (im Saisonplan, F-4).
+- **Verlauf** = bisherige Aktivitäten (Titel „Verlauf“) mit „Auswertungen“ oben rechts: `TrainingSection.history`
+  mit Wochenminuten, Gesundheit, Erholung, Herzfrequenz, Trends, Schlaf, Fitness & Form, Wochenbericht, Disziplinen
+  bzw. Sportarten.
+- **Ich** = bisherige Einstellungen als Reiter, oben „Freunde & Liga“ und „KI“; das Abzeichen für Freundschaftsanfragen
+  sitzt jetzt am Reiter Ich. Das Zahnrad auf „Heute“ entfällt.
+- Links und Schnellaktionen: `gym`/`startWorkout` → Plan, `health` → Verlauf, Rest unverändert (`coach://open/…` bleibt
+  kompatibel).
+- Keine Funktion entfällt; alle Unterseiten sind dieselben wie vorher (Nachweis: docs/roast/design-konzept.md,
+  Abschnitt 7).
+
+## 2026-11-24 – Demo-Modus (Roast F-1 nach Empfehlung)
+
+- Bisher toter Code: `AppModel.isDemo` war nie `true`, `coach.demo` wurde nie gelesen.
+- Jetzt: *Ich › Technik › Demo ansehen* legt einen eigenen Benutzer „Demo“ (Benutzername `demo`) an, schreibt
+  `coach.demo = true` in dessen Einstellungen und füllt ihn mit den Demo-Daten (`lib/services/demo/demo_seed.dart`,
+  dieselben wie im Screenshot-Prüfstand). `appModelProvider` liest den Schlüssel; im Demo-Modus gilt das bisherige
+  Verhalten von `isDemo`: kein Abruf, keine Sicherung, kein automatisches Teilen, keine Widgets, kein Update-Hinweis.
+- Trennung wie bei jedem Benutzer; zurück und löschen über *Ich › Benutzer*. Ein zweites „Demo ansehen“ wechselt nur.
 ## 2026-11-24 – Anatomische Körperkarte statt schematischer Figur
 
 - Wunsch des Nutzers: Die Muskel-Heatmap soll wie eine anatomische Zeichnung aussehen (einzelne Muskeln mit

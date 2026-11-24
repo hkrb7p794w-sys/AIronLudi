@@ -29,7 +29,8 @@ void main() {
 
   testWidgets('Einstellungen: Konto erstellen mit Prüfungen', (tester) async {
     await _start(tester);
-    await tester.tap(find.byTooltip('Einstellungen'));
+    // Einstellungen liegen im Reiter „Ich“ (vorher Zahnrad auf „Heute“).
+    await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Ich')));
     await tester.pumpAndSettle();
     expect(find.byType(SettingsScreen), findsOneWidget);
     expect(find.text('KONTO'), findsOneWidget);

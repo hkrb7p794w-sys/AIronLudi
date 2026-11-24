@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:coach_core/coach_core.dart' hide Badge;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
+import '../../app/deep_links.dart';
 import '../../data/repositories/gym_repository.dart';
 import '../../data/settings/coach_settings.dart';
 import '../../data/storage.dart';
@@ -12,12 +12,15 @@ import '../../services/providers.dart';
 import '../../services/social/social_service.dart';
 import '../../ui/components.dart';
 import '../../ui/large_title.dart';
+import '../../ui/liquid.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
 import '../../ui/tokens.dart';
 import '../gym/gym_screen.dart';
+import '../health/health_screen.dart';
 import '../social/social_views.dart';
 import '../today/today_controller.dart';
+import '../training/training_screen.dart';
 import 'activity_detail_screen.dart';
 import 'activity_parts.dart';
 
@@ -49,7 +52,14 @@ class ActivitiesScreen extends ConsumerStatefulWidget {
   ConsumerState<ActivitiesScreen> createState() => _ActivitiesScreenState();
 }
 
-class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
+class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> with PendingRouteHandler<ActivitiesScreen> {
+  @override
+  Set<AppRoute> get handledRoutes => const {AppRoute.health};
+
+  @override
+  void handlePendingRoute(PendingRoute pending) =>
+      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const HealthScreen()));
+
   late ActivitiesScope _scope = widget.initialScope;
   List<GarminActivity> _activities = const [];
   List<StoredGymSession> _gym = const [];
@@ -133,6 +143,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    listenPendingRoutes();
     ref.listen(appModelProvider.select((model) => model.lastSync), (_, _) => unawaited(_reload()));
     final settings = ref.watch(coachSettingsProvider);
     final social = ref.watch(socialServiceProvider);
@@ -155,8 +166,15 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                 decoration: const InputDecoration(hintText: 'Name, Sportart, Wert', border: InputBorder.none),
                 onChanged: (text) => setState(() => _filter = _copy(_filter, search: text)),
               )
-            : const CollapsingTitle(child: Text('Aktivitäten')),
+            : const CollapsingTitle(child: Text('Verlauf')),
         actions: [
+          // Auswertungen (früher im Reiter Training): Gesundheit, Erholung, Trends, Schlaf, Form, Wochenbericht.
+          IconButton(
+            tooltip: 'Auswertungen',
+            icon: const Icon(Icons.insights_outlined),
+            onPressed: () => Navigator.of(context)
+                .push(MaterialPageRoute<void>(builder: (_) => const TrainingScreen(section: TrainingSection.history))),
+          ),
           if (_scope == ActivitiesScope.mine) ...[
             IconButton(
               tooltip: _searching ? 'Suche schließen' : 'Suchen',
@@ -192,7 +210,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
       ),
       body: Column(
         children: [
-          if (!_searching) const LargeTitleHeader('Aktivitäten', collapsible: true),
+          if (!_searching) const LargeTitleHeader('Verlauf', collapsible: true),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: SizedBox(
@@ -238,19 +256,11 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
     search: search ?? filter.search,
   );
 
-  static String _monthTitle(String key) {
-    final day = CalendarDay.tryParse('$key-01');
-    return day == null ? key : DateFormat('MMMM y', 'de_DE').format(day.referenceDate);
-  }
-
   Widget _mine(CoachSettings settings) {
     final all = _feed(settings);
     final entries = _filter.apply(all, today: CalendarDay.today());
-    final months = <String, List<FeedEntry>>{};
-    for (final entry in entries) {
-      (months[entry.day.iso.substring(0, 7)] ??= []).add(entry);
-    }
-    final keys = months.keys.toList()..sort((a, b) => b.compareTo(a));
+    // Nach Wochen mit Anzahl und Dauer (Roast Stufe 4 / PR 21; vorher nach Monaten).
+    final weeks = FeedWeek.group(entries);
     final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -296,11 +306,11 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                 : 'Nichts gefunden für „${_filter.search}“.',
             color: secondary,
           ),
-        for (final month in keys)
+        for (final week in weeks)
           FormSection(
-            header: _monthTitle(month),
+            header: week.header,
             children: [
-              for (final entry in months[month]!)
+              for (final entry in week.entries)
                 FeedRow(entry: entry, onTap: entry.activity != null || entry.gym != null ? () => _open(entry) : null),
             ],
           ),
@@ -342,7 +352,8 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 32),
         children: [
-          if (!social.isAvailable)
+          // Werbung für Freunde nur im Filter „Freunde“, nicht über den eigenen Aktivitäten.
+          if (!social.isAvailable && friendsOnly)
             FormSection(
               children: [
                 ListTile(
@@ -372,7 +383,16 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                   : 'Deine Trainings von Uhr und Gym erscheinen hier, dazu alles, was deine Freunde teilen.',
               color: secondary,
             ),
-          for (final item in items)
+          for (final (index, item) in items.indexed) ...[
+            // Wochen-Zwischenüberschrift (Roast Stufe 4 / PR 21).
+            if (index == 0 || _monday(items[index - 1].date) != _monday(item.date))
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                child: Text(
+                  FeedWeek(monday: _monday(item.date), entries: const []).title.toUpperCase(),
+                  style: LiquidText.sectionHeader(context),
+                ),
+              ),
             if (item.entry case final entry?) ...[
               FeedRow(entry: entry, onTap: entry.activity != null || entry.gym != null ? () => _open(entry) : null),
               // Eigener geteilter Beitrag: nur eine dezente Zeile, wenn Freunde reagiert oder kommentiert haben.
@@ -390,6 +410,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
               ),
               const Divider(height: 1),
             ],
+          ],
           if (social.isLoading)
             const Padding(
               padding: EdgeInsets.all(16),
@@ -474,4 +495,10 @@ class _FilterMenu extends StatelessWidget {
         ),
     ],
   );
+}
+
+/// Montag der Woche eines Zeitpunkts (lokal).
+CalendarDay _monday(DateTime date) {
+  final day = CalendarDay.fromDate(date.toLocal());
+  return day.adding(-day.weekdayIndex);
 }

@@ -40,7 +40,10 @@ void main() {
     }
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pump();
-    await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Training')));
+    await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Verlauf')));
+    await tester.pumpAndSettle();
+    // Auswertungen (früher Reiter Training) liegen im Reiter Verlauf.
+    await tester.tap(find.byTooltip('Auswertungen'));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Gesundheit'));

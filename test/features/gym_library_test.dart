@@ -25,7 +25,7 @@ void main() {
       sports: const [TrainingSport.strength],
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Training')));
+    await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Plan')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Gym'));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));

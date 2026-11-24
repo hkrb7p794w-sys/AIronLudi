@@ -278,8 +278,8 @@ void main() {
     await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Ernährung')));
     await tester.pumpAndSettle();
 
-    await tester.scrollUntilVisible(find.text('Fuel Planner'), 300, scrollable: find.byType(Scrollable).first);
-    await tester.tap(find.text('Fuel Planner'));
+    await tester.scrollUntilVisible(find.text('Verpflegung'), 300, scrollable: find.byType(Scrollable).first);
+    await tester.tap(find.text('Verpflegung'));
     await tester.pumpAndSettle();
     expect(find.byType(FuelPlannerScreen), findsOneWidget);
     expect(find.text('Noch keine Pläne'), findsOneWidget);

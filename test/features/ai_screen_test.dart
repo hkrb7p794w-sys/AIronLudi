@@ -76,11 +76,11 @@ void main() {
       ),
     ];
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('AI-Empfehlungen'), 300, scrollable: find.byType(Scrollable).first);
-    expect(find.text('AI-Empfehlungen'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('KI-Empfehlungen'), 300, scrollable: find.byType(Scrollable).first);
+    expect(find.text('KI-Empfehlungen'), findsOneWidget);
     expect(find.text('1 neu'), findsOneWidget);
 
-    await tester.tap(find.text('AI-Empfehlungen'));
+    await tester.tap(find.text('KI-Empfehlungen'));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await tester.pumpAndSettle();
     expect(find.byType(AIScreen), findsOneWidget);

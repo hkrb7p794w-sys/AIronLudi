@@ -73,11 +73,11 @@ void main() {
     expect(find.text('MEINE BELASTUNG HEUTE'), findsNothing);
     expect(find.textContaining('Verbinde in den Einstellungen eine Datenquelle'), findsOneWidget);
     expect(find.text('Quelle verbinden'), findsOneWidget);
-    // „Warum?“ steht in den AI-Empfehlungen; auf „Heute“ nur der erste Punkt als Vorschau.
+    // „Warum?“ steht in den KI-Empfehlungen; auf „Heute“ nur der erste Punkt als Vorschau.
     expect(find.text('WARUM?'), findsNothing);
-    await tester.ensureVisible(find.text('AI-Empfehlungen'));
+    await tester.ensureVisible(find.text('KI-Empfehlungen'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('AI-Empfehlungen'));
+    await tester.tap(find.text('KI-Empfehlungen'));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pumpAndSettle();
     expect(find.byType(AIScreen), findsOneWidget);
@@ -105,7 +105,7 @@ void main() {
     expect(find.text('Ruhepuls'), findsOneWidget);
   });
 
-  testWidgets('Heute anpassen: AI-Empfehlungen ganz ausblenden, Motivation zuschalten', (tester) async {
+  testWidgets('Heute anpassen: KI-Empfehlungen ganz ausblenden, Motivation zuschalten', (tester) async {
     tester.view.physicalSize = const Size(1170, 3600);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
@@ -113,13 +113,13 @@ void main() {
     await tester.pumpAndSettle();
     final container = ProviderScope.containerOf(tester.element(find.byType(LiquidTabBar)));
     final settings = container.read(coachSettingsProvider);
-    await tester.scrollUntilVisible(find.text('AI-Empfehlungen'), 300, scrollable: find.byType(Scrollable).first);
-    expect(find.text('AI-Empfehlungen'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('KI-Empfehlungen'), 300, scrollable: find.byType(Scrollable).first);
+    expect(find.text('KI-Empfehlungen'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Heute anpassen'));
     await tester.pumpAndSettle();
     expect(find.byType(TodayDashboardEditor), findsOneWidget);
-    await tester.tap(find.widgetWithText(SwitchListTile, 'AI-Empfehlungen'));
+    await tester.tap(find.widgetWithText(SwitchListTile, 'KI-Empfehlungen'));
     await tester.pumpAndSettle();
     expect(settings.todayDashboard.shows(TodayModule.ai), isFalse);
     await tester.tap(find.widgetWithText(SwitchListTile, 'Motivation und Begleiter'));
@@ -127,7 +127,7 @@ void main() {
     expect(settings.todayDashboard.shows(TodayModule.motivation), isTrue);
     Navigator.of(tester.element(find.byType(TodayDashboardEditor))).pop();
     await tester.pumpAndSettle();
-    expect(find.text('AI-Empfehlungen'), findsNothing);
+    expect(find.text('KI-Empfehlungen'), findsNothing);
     expect(find.byType(TodayScreen), findsOneWidget);
   });
 

@@ -196,7 +196,7 @@ Future<ProviderContainer> openPlanner(
   );
   await tester.pumpAndSettle();
   final container = ProviderScope.containerOf(tester.element(find.byType(LiquidTabBar)));
-  await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Training')));
+  await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Plan')));
   await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
   await tester.pumpAndSettle();
   await tapCentered(tester, find.text('Routen'));
@@ -253,7 +253,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     final container = ProviderScope.containerOf(tester.element(find.byType(LiquidTabBar)));
-    await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Training')));
+    await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Plan')));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await tester.pumpAndSettle();
 

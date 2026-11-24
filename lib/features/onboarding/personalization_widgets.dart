@@ -101,7 +101,7 @@ class PrioritiesPicker extends StatelessWidget {
         const SizedBox(height: 12),
         Text('Das ändert sich dadurch:', style: muted?.copyWith(fontWeight: FontWeight.w600)),
         Text(
-          'Reihenfolge der AI-Empfehlungen unter „Heute“, Startauswahl der Gesundheits-Widgets, worauf die KI in '
+          'Reihenfolge der KI-Empfehlungen unter „Heute“, Startauswahl der Gesundheits-Widgets, worauf die KI in '
           'Analysen achtet, und wie vorsichtig die Wochenbelastung steigen darf (Recovery/Gesundheit: 20 % statt '
           '30 %).',
           style: muted,

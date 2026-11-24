@@ -33,7 +33,6 @@ import '../health/morning_report_views.dart';
 import '../plan/my_week_screen.dart';
 import '../routes/routes_screen.dart';
 import '../settings/data_sources_screen.dart';
-import '../settings/settings_screen.dart';
 import 'now_views.dart';
 import 'today_controller.dart';
 import 'today_dashboard_editor.dart';
@@ -256,14 +255,6 @@ class _TodayScreenState extends ConsumerState<TodayScreen>
             onPressed: () =>
                 Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const TodayDashboardEditor())),
           ),
-          IconButton(
-            tooltip: 'Einstellungen',
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => Navigator.of(
-              context,
-              rootNavigator: true,
-            ).push(MaterialPageRoute<void>(fullscreenDialog: true, builder: (_) => const SettingsScreen())),
-          ),
         ],
       ),
       body: RefreshIndicator(
@@ -344,7 +335,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen>
     );
   }
 
-  /// Empfehlungen aus Regeln und KI (früher eigener Reiter „AI“), ganz ausblendbar.
+  /// Empfehlungen aus Regeln und KI (früher eigener Reiter „KI“), ganz ausblendbar.
   Widget _aiSection(BuildContext context, CoachSettings settings) {
     final theme = Theme.of(context);
     void open(Widget screen) => unawaited(Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen)));
@@ -352,7 +343,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen>
       children: [
         ListTile(
           leading: const Icon(Icons.auto_awesome),
-          title: const Text('AI-Empfehlungen'),
+          title: const Text('KI-Empfehlungen'),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             spacing: 6,
