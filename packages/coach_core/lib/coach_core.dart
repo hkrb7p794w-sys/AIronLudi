@@ -70,6 +70,7 @@ export 'src/garmin/race_predictions.dart';
 export 'src/garmin/strength_duplicates.dart';
 export 'src/garmin/sync_plan.dart';
 export 'src/gym/active_session_state.dart';
+export 'src/gym/body_load.dart';
 export 'src/gym/exercise_catalog.dart';
 export 'src/gym/exercise_library.dart';
 export 'src/gym/gym_book_import.dart';

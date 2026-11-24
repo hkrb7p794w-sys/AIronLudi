@@ -467,3 +467,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Roast Stufe 3 / PR 14: Modul „Ernährung heute“ auf „Heute“ (übrige kcal und Protein mit denselben Tageszielen, „Mahlzeit erfassen“; standardmäßig sichtbar, alte Einstellungen kompatibel) | erledigt |
 | Roast Stufe 3 / PR 15: „Route dazu planen“ auch für Lauf- und Radeinheiten des Wochenplans (`RouteForSessionSection`, gemeinsamer Baustein `RouteForUnitSection`) | erledigt |
 | Anatomische Körperkarte für die Muskel-Heatmap: eigene Vektorzeichnung mit Schattierung und Fasern, Vorder-/Rückseite zum Blättern, Seite mit mehr Last zuerst (`BodyMap`, `tool/body_map_art.py`) | erledigt |
+| Körperkarte: Umschalter Kraft/Kardio/Dehnen in der Gym-Auswertung (`CardioLoad`, `StretchLoad` in coach_core; Ausdauerminuten und Mobility-Protokoll je Muskel) | erledigt |

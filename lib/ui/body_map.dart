@@ -339,7 +339,14 @@ class _FigurePainter extends CustomPainter {
 /// Anatomische Körperkarte (vorn und hinten zum Blättern) mit Farbe je Muskel: grau = nicht beansprucht, gelb bis
 /// rot = mehr. Eigene Zeichnung; die Zuordnung der Muskeln bleibt eine Übersicht (Port von `BodyMapView`).
 class BodyMap extends StatefulWidget {
-  const BodyMap({super.key, required this.values, required this.full, this.colors = const {}, this.height = 320});
+  const BodyMap({
+    super.key,
+    required this.values,
+    required this.full,
+    this.colors = const {},
+    this.height = 320,
+    this.unit = 'Sätze',
+  });
 
   /// Wert je Muskel; ab [full] volle Farbe.
   final Map<Muscle, double> values;
@@ -350,6 +357,9 @@ class BodyMap extends StatefulWidget {
 
   /// Höhe der Figur.
   final double height;
+
+  /// Einheit der Werte (für die Bildschirmleser-Beschreibung).
+  final String unit;
 
   /// Gelb → Orange → Rot je nach Anteil an [full]; ohne Last null (grau).
   static Color? heat(double value, {required double full}) {
@@ -387,7 +397,7 @@ class _BodyMapState extends State<BodyMap> {
       ..sort((a, b) => b.value.compareTo(a.value));
     final prefix = 'Muskelkarte, ${_side.label}';
     if (shown.isEmpty) return '$prefix: keine Muskeln beansprucht';
-    return '$prefix: ${[for (final entry in shown) '${entry.key.label} ${GermanFormat.decimal(entry.value)} Sätze'].join(', ')}';
+    return '$prefix: ${[for (final entry in shown) '${entry.key.label} ${GermanFormat.decimal(entry.value)} ${widget.unit}'].join(', ')}';
   }
 
   void _show(BodySide side) =>

@@ -122,7 +122,7 @@ void main() {
         ),
       ],
     );
-    await openGym(tester, sessions: [session]);
+    final container = await openGym(tester, sessions: [session]);
     expect(find.text('Oberkörper'), findsOneWidget);
     await tester.tap(find.text('Oberkörper'));
     await tester.pumpAndSettle();
@@ -137,5 +137,36 @@ void main() {
     expect(find.text('1 Woche in Folge trainiert'), findsOneWidget);
     await tester.scrollUntilVisible(find.byType(BodyMap), 200, scrollable: find.byType(Scrollable).first);
     expect(find.bySemanticsLabel(RegExp('Muskelkarte, Vorderseite: Brust')), findsOneWidget);
+
+    // Kraft/Kardio/Dehnen: ohne Ausdauer- und Mobility-Einheiten ein Hinweis, „Erholung“ nur für Kraft.
+    // Segmente in die Bildmitte holen (unten liegt die Tab-Leiste darüber).
+    Future<void> tapSegment(String label) async {
+      await tester.scrollUntilVisible(find.text(label), 200, scrollable: find.byType(Scrollable).first);
+      await Scrollable.ensureVisible(tester.element(find.text(label)), alignment: 0.5);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(label));
+    }
+
+    await tapSegment('Kardio');
+    await tester.pumpAndSettle();
+    expect(find.text('Erholung'), findsNothing);
+    await tester.scrollUntilVisible(
+      find.text('Keine Lauf-, Rad- oder Schwimmeinheiten in den letzten 7 Tagen.'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.bySemanticsLabel(RegExp('Muskelkarte, .*: keine Muskeln beansprucht')), findsOneWidget);
+    container.read(coachSettingsProvider).mobility = MobilitySettings()
+      ..log = [
+        MobilityLogEntry(day: CalendarDay.today(), minutes: 10, areas: const [MobilityArea.hips]),
+      ];
+    await tapSegment('Dehnen');
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Hüfte und Gesäß'), 200, scrollable: find.byType(Scrollable).first);
+    expect(find.text('10 min'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('Muskelkarte, .*: Gesäß 10 min')), findsOneWidget);
+    await tapSegment('Kraft');
+    await tester.pumpAndSettle();
+    expect(find.text('Erholung'), findsOneWidget);
   });
 }
