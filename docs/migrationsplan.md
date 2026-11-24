@@ -471,3 +471,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Roast Stufe 4 / PR 21: Verlauf nach Wochen (KW, Zeitraum, Anzahl, Dauer; `FeedWeek`), Hinweis auf Freunde nur im Filter „Freunde“ | erledigt |
 | Anatomische Körperkarte für die Muskel-Heatmap: eigene Vektorzeichnung mit Schattierung und Fasern, Vorder-/Rückseite zum Blättern, Seite mit mehr Last zuerst (`BodyMap`, `tool/body_map_art.py`) | erledigt |
 | Körperkarte: Umschalter Kraft/Kardio/Dehnen in der Gym-Auswertung (`CardioLoad`, `StretchLoad` in coach_core; Ausdauerminuten und Mobility-Protokoll je Muskel) | erledigt |
+| Routenplaner: Luftlinie-Abschnitte in „Frei planen“ (z. B. Brücke nach Baustelle), lauffreundliche Wege beim Laufen, „Zum Ziel“ ohne Wunschdistanz | erledigt |

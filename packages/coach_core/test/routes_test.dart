@@ -1718,6 +1718,117 @@ void main() {
     });
   });
 
+  test('Frei planen: Luftlinie für Stellen ohne Weg (z. B. Brücke nach einer Baustelle)', () {
+    final a = Geo.destination(berlin, 0, 500);
+    final b = Geo.destination(a, 90, 300);
+    final c = Geo.destination(b, 0, 400);
+    final route = DrawnRoute()..setStart(berlin);
+    route.add([berlin, Geo.destination(berlin, 0, 250), a]);
+    route.addDirect(b);
+    expect(route.unrouted, isEmpty);
+    expect(route.directSegments, [1]);
+    expect(route.segments[1], [a, b]);
+    expect(route.directMeters, closeTo(300, 1));
+    expect(route.stats.distanceMeters, closeTo(800, 2));
+
+    // Wegpunkt verschieben: Luftlinie bleibt Luftlinie, nur der geroutete Nachbar muss neu.
+    route.add([b, c]);
+    expect(route.moveWaypoint(2, Geo.destination(b, 0, 20)), [2]);
+    route.setRouted(2, [Geo.destination(b, 0, 20), c]);
+    expect(route.directSegments, [1]);
+    // Einfügen in eine Luftlinie: zwei Luftlinien, nichts zu routen.
+    expect(route.insertWaypoint(1, Geo.midpoint(a, b)), isEmpty);
+    expect(route.directSegments, [1, 2]);
+    // Löschen zwischen zwei Luftlinien: bleibt Luftlinie.
+    expect(route.removeWaypoint(2), isEmpty);
+    expect(route.directSegments, [1]);
+
+    // Zurück auf Wege: muss geroutet werden; Rückgängig stellt die Luftlinie wieder her.
+    expect(route.setDirect(1, direct: false), [1]);
+    expect(route.unrouted, [1]);
+    route.undo();
+    expect(route.directSegments, [1]);
+    // Gerouteten Abschnitt zur Luftlinie machen.
+    expect(route.setDirect(0, direct: true), isEmpty);
+    expect(route.segments[0], [berlin, a]);
+  });
+
+  test('Zum Ziel ohne Wunschdistanz: eine Anfrage je Variante, keine Distanzregel, gespeichert', () async {
+    final destination = Geo.destination(berlin, 60, 3000);
+    final request = RouteRequest(
+      discipline: RouteDiscipline.run,
+      shape: RouteShape.toDestination,
+      start: berlin,
+      destination: destination,
+      distanceMeters: RouteRequest.directEstimate(berlin, destination),
+      direct: true,
+    );
+    expect(request.isDirect, isTrue);
+    expect(request.problem, isNull);
+    expect(request.withinTolerance(9999), isTrue);
+    final backend = CurvedBackend();
+    final routes = await RoutePlanner(backend).generate(request, username: 'anna');
+    expect(routes, isNotEmpty);
+    expect(backend.calls.length, RouteVariant.values.length);
+    for (final call in backend.calls) {
+      expect(call, [berlin, destination]);
+    }
+    expect(Geo.distance(routes.first.points.last, destination), lessThan(1));
+    final restored = RouteRequest.fromJson(jsonDecode(jsonEncode(request.toJson())))!;
+    expect(restored.isDirect, isTrue);
+    // Rundweg ignoriert den Schalter; zu weit oder zu nah wird gemeldet.
+    expect(
+      const RouteRequest(
+        discipline: RouteDiscipline.run,
+        shape: RouteShape.loop,
+        start: berlin,
+        distanceMeters: 5000,
+        direct: true,
+      ).isDirect,
+      isFalse,
+    );
+    expect(
+      RouteRequest(
+        discipline: RouteDiscipline.run,
+        shape: RouteShape.toDestination,
+        start: berlin,
+        destination: Geo.destination(berlin, 0, 60000),
+        distanceMeters: 1000,
+        direct: true,
+      ).problem,
+      contains('zu weit'),
+    );
+  });
+
+  test('Zum Ziel ohne Wunschdistanz mit Wegart: Zwischenpunkt auf passendem Weg nahe der Mitte', () async {
+    final destination = Geo.destination(berlin, 90, 4000);
+    final park = Geo.destination(Geo.midpoint(berlin, destination), 0, 300);
+    final request = RouteRequest(
+      discipline: RouteDiscipline.run,
+      shape: RouteShape.toDestination,
+      start: berlin,
+      destination: destination,
+      distanceMeters: RouteRequest.directEstimate(berlin, destination),
+      preferences: const {RoutePreference.nature},
+      direct: true,
+    );
+    final backend = CurvedBackend();
+    await RoutePlanner(
+      backend,
+      features: FakeFeatures([park]),
+    ).generate(request, username: 'anna', variants: [RouteVariant.balanced]);
+    expect(backend.calls.single, [berlin, park, destination]);
+  });
+
+  test('Laufen: lauffreundliche Gewichtung (Fußwege vor Hauptstraßen mit Gehweg)', () {
+    final run = ValhallaFormat.costing(RouteDiscipline.run, RouteVariant.balanced).options;
+    expect(run['walkway_factor'], lessThan(1));
+    expect(run['sidewalk_factor'], greaterThan(1));
+    expect(run['driveway_factor'], greaterThan(1));
+    final green = ValhallaFormat.costing(RouteDiscipline.run, RouteVariant.green).options;
+    expect(green['walkway_factor'] as double, lessThan(run['walkway_factor']! as double));
+  });
+
   test('Anzeige', () {
     expect(RouteFormat.distance(850), '850 m');
     expect(RouteFormat.distance(10249), '10,2 km');

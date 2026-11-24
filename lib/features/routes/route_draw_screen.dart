@@ -49,6 +49,9 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
   int? _selected;
   bool _moving = false;
 
+  /// Neue Abschnitte auf Wegen (Standard) oder als Luftlinie – für Stellen, die OSM nicht als begehbar kennt.
+  bool _followPaths = true;
+
   @override
   void initState() {
     super.initState();
@@ -100,12 +103,42 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
       });
       unawaited(HapticFeedback.selectionClick());
     } on NoRouteFound {
-      _say('Dorthin gibt es keinen passenden Weg. Setze den Punkt näher an einen Weg.');
+      _say(
+        'Dorthin kennt die Karte keinen Weg. Weißt du, dass man dort lang kann, verbinde den Abschnitt als Luftlinie.',
+        action: SnackBarAction(label: 'Luftlinie', onPressed: () => _addDirect(waypoints.skip(1).toList())),
+      );
     } on RoutingUnavailable catch (error) {
       _say('${error.message} Bitte gleich noch einmal versuchen.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  /// Abschnitte als Luftlinie über [targets] anhängen (ohne Router).
+  void _addDirect(List<GeoPoint> targets) {
+    if (!mounted || _route.isEmpty || targets.isEmpty) return;
+    setState(() {
+      for (final target in targets) {
+        _route.addDirect(target);
+      }
+    });
+    unawaited(HapticFeedback.selectionClick());
+  }
+
+  /// Neuer Abschnitt bis [target]: auf Wegen oder als Luftlinie, je nach Umschalter.
+  Future<void> _extend(List<GeoPoint> waypoints) async {
+    if (_followPaths) return _routeTo(waypoints);
+    _addDirect(waypoints.skip(1).toList());
+  }
+
+  /// Abschnitt bis zum gewählten Punkt auf Luftlinie bzw. wieder auf Wege umstellen.
+  void _toggleSelectedDirect() {
+    final index = _selected;
+    if (index == null || index == 0 || _busy) return;
+    final segment = index - 1;
+    final direct = !_route.parts[segment].direct;
+    final dirty = _route.setDirect(segment, direct: direct);
+    unawaited(_reroute(dirty));
   }
 
   /// Nach dem Bearbeiten die betroffenen Abschnitte neu routen; klappt es nicht, wird die Änderung zurückgenommen.
@@ -181,11 +214,11 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
     return {for (var index = 0; index < max; index++) (index * step).round()}.toList();
   }
 
-  void _say(String text) {
+  void _say(String text, {SnackBarAction? action}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(text)));
+      ..showSnackBar(SnackBar(content: Text(text), action: action));
   }
 
   // Eingaben auf der Karte
@@ -214,7 +247,7 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
       setState(() => _selected = null);
       return;
     }
-    unawaited(_routeTo([_route.end!, point]));
+    unawaited(_extend([_route.end!, point]));
   }
 
   void _strokeStart(DragStartDetails details) {
@@ -245,7 +278,7 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
     // Vom bisherigen Ende an den Anfang des Strichs anschließen.
     final end = _route.end!;
     final connected = Geo.distance(end, waypoints.first) > 30 ? [end, ...waypoints] : [end, ...waypoints.skip(1)];
-    unawaited(_routeTo(Geo.thin(connected, FreehandStroke.maxWaypoints)));
+    unawaited(_extend(Geo.thin(connected, FreehandStroke.maxWaypoints)));
   }
 
   // Werkzeuge
@@ -257,7 +290,7 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
   });
 
   Future<void> _close() async {
-    if (_route.start case final start? when _route.canClose) await _routeTo([_route.end!, start]);
+    if (_route.start case final start? when _route.canClose) await _extend([_route.end!, start]);
   }
 
   Future<void> _reset() async {
@@ -355,7 +388,7 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
       setState(() => _route.setStart(place.point));
       _map.move(latLng(place.point), 15);
     } else {
-      await _routeTo([_route.end!, place.point]);
+      await _extend([_route.end!, place.point]);
       if (mounted) PlannerMap.fit(_map, Geo.thin(_route.points, 200));
     }
   }
@@ -484,14 +517,19 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
                         const BaseTiles(),
                         PolylineLayer(
                           polylines: [
-                            if (points.length > 1)
-                              Polyline(
-                                points: [for (final point in points) latLng(point)],
-                                color: color,
-                                strokeWidth: 5,
-                                borderColor: Colors.white.withValues(alpha: 0.85),
-                                borderStrokeWidth: 1.5,
-                              ),
+                            // Je Abschnitt eine Linie; Luftlinien gestrichelt.
+                            for (final (index, line) in _route.segments.indexed)
+                              if (line.length > 1)
+                                Polyline(
+                                  points: [for (final point in line) latLng(point)],
+                                  color: color,
+                                  strokeWidth: 5,
+                                  borderColor: Colors.white.withValues(alpha: 0.85),
+                                  borderStrokeWidth: 1.5,
+                                  pattern: _route.parts[index].direct
+                                      ? StrokePattern.dashed(segments: const [12, 8])
+                                      : const StrokePattern.solid(),
+                                ),
                             if (_stroke.length > 1)
                               Polyline(
                                 points: [for (final point in _stroke) latLng(point)],
@@ -560,13 +598,16 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
                       IgnorePointer(
                         child: LiquidSwitcher(
                           child: _Hint(
-                            key: ValueKey('${_tool.name}${_route.isEmpty}$_busy$_selected$_moving'),
+                            key: ValueKey('${_tool.name}${_route.isEmpty}$_busy$_selected$_moving$_followPaths'),
                             text: _busy
                                 ? 'Wird auf Wege gelegt …'
+                                : !_followPaths && !_route.isEmpty && _selected == null && !_moving
+                                ? 'Luftlinie: Neue Punkte werden direkt verbunden – für Stellen, die die Karte nicht '
+                                      'als Weg kennt (z. B. eine wieder offene Brücke).'
                                 : _moving
                                 ? 'Tippe auf die neue Position des Punkts.'
                                 : _selected != null
-                                ? 'Punkt gewählt: verschieben oder löschen.'
+                                ? 'Punkt gewählt: verschieben, löschen oder den Abschnitt bis hier als Luftlinie.'
                                 : _route.isEmpty
                                 ? (drawing
                                       ? 'Zeichne mit dem Finger los – der Anfang wird zum Start.'
@@ -599,6 +640,8 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
                               ? 'Ziel'
                               : 'Punkt $index',
                           moving: _moving,
+                          direct: index == 0 ? null : _route.parts[index - 1].direct,
+                          onToggleDirect: _busy || index == 0 ? null : _toggleSelectedDirect,
                           onMove: _busy ? null : () => setState(() => _moving = !_moving),
                           onDelete: _busy ? null : _deleteSelected,
                           onDone: () => setState(() {
@@ -612,7 +655,11 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
                         duration: duration,
                         pendingMeters: _stroke.length > 1 ? Geo.length(_stroke) : null,
                         busy: _busy,
-                        surroundings: '${_discipline.label} · ${RoutePreference.describe(_preferences)}',
+                        surroundings:
+                            '${_discipline.label} · ${RoutePreference.describe(_preferences)}'
+                            '${_route.directMeters > 0 ? ' · ${RouteFormat.distance(_route.directMeters)} Luftlinie' : ''}',
+                        followPaths: _followPaths,
+                        onToggleFollow: _busy ? null : () => setState(() => _followPaths = !_followPaths),
                         onUndo: _busy || _route.isEmpty ? null : _undo,
                         onClose: _busy || !_route.canClose ? null : () => unawaited(_close()),
                         onReset: _busy || _route.isEmpty ? null : () => unawaited(_reset()),
@@ -692,6 +739,8 @@ class _TelemetryBar extends StatelessWidget {
     required this.pendingMeters,
     required this.busy,
     required this.surroundings,
+    required this.followPaths,
+    required this.onToggleFollow,
     required this.onUndo,
     required this.onClose,
     required this.onReset,
@@ -704,6 +753,10 @@ class _TelemetryBar extends StatelessWidget {
   final double? pendingMeters;
   final bool busy;
   final String surroundings;
+
+  /// Neue Abschnitte auf Wegen (sonst Luftlinie).
+  final bool followPaths;
+  final VoidCallback? onToggleFollow;
   final VoidCallback? onUndo;
   final VoidCallback? onClose;
   final VoidCallback? onReset;
@@ -749,6 +802,12 @@ class _TelemetryBar extends StatelessWidget {
             IconButton(tooltip: 'Rückgängig', onPressed: onUndo, icon: const Icon(Icons.undo)),
             IconButton(tooltip: 'Rundweg schließen', onPressed: onClose, icon: const Icon(Icons.loop)),
             IconButton(tooltip: 'Zurücksetzen', onPressed: onReset, icon: const Icon(Icons.delete_sweep_outlined)),
+            IconButton(
+              tooltip: followPaths ? 'Nächste Punkte als Luftlinie verbinden' : 'Nächste Punkte wieder auf Wegen',
+              isSelected: !followPaths,
+              onPressed: onToggleFollow,
+              icon: const Icon(Icons.straight),
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Align(
@@ -835,6 +894,8 @@ class _EditBar extends StatelessWidget {
   const _EditBar({
     required this.label,
     required this.moving,
+    required this.direct,
+    required this.onToggleDirect,
     required this.onMove,
     required this.onDelete,
     required this.onDone,
@@ -842,6 +903,10 @@ class _EditBar extends StatelessWidget {
 
   final String label;
   final bool moving;
+
+  /// Abschnitt bis zu diesem Punkt als Luftlinie (`null` beim Start).
+  final bool? direct;
+  final VoidCallback? onToggleDirect;
   final VoidCallback? onMove;
   final VoidCallback? onDelete;
   final VoidCallback onDone;
@@ -865,6 +930,13 @@ class _EditBar extends StatelessWidget {
             onPressed: onMove,
             icon: const Icon(Icons.open_with),
           ),
+          if (direct != null)
+            IconButton(
+              tooltip: direct! ? 'Abschnitt bis hier wieder auf Wege legen' : 'Abschnitt bis hier als Luftlinie',
+              isSelected: direct,
+              onPressed: onToggleDirect,
+              icon: const Icon(Icons.straight),
+            ),
           IconButton(tooltip: 'Punkt löschen', onPressed: onDelete, icon: const Icon(Icons.delete_outline)),
           IconButton(tooltip: 'Fertig', onPressed: onDone, icon: const Icon(Icons.check)),
         ],

@@ -350,15 +350,23 @@ abstract final class FreehandStroke {
 /// Abschnitt einer frei geplanten Route: Ziel (vom Nutzer gesetzter Punkt), Zwischenpunkte eines gezeichneten Strichs
 /// und die geroutete Linie (leer, solange der Abschnitt noch neu geroutet werden muss).
 final class DrawnSegment {
-  const DrawnSegment({required this.target, this.vias = const [], this.points = const []});
+  const DrawnSegment({required this.target, this.vias = const [], this.points = const [], this.direct = false});
 
   final GeoPoint target;
   final List<GeoPoint> vias;
   final List<GeoPoint> points;
 
-  bool get isRouted => points.length >= 2;
+  /// Luftlinie statt Wegen: für Stellen, die OSM (noch) nicht als begehbar kennt, z. B. eine Brücke nach einer
+  /// Baustelle. Wird nie geroutet.
+  final bool direct;
 
-  DrawnSegment withPoints(List<GeoPoint> value) => DrawnSegment(target: target, vias: vias, points: value);
+  bool get isRouted => direct || points.length >= 2;
+
+  DrawnSegment withPoints(List<GeoPoint> value) =>
+      DrawnSegment(target: target, vias: vias, points: value, direct: direct);
+
+  /// Gleiches Ziel, neu zu routen (bzw. weiter als Luftlinie).
+  DrawnSegment retarget(GeoPoint value) => DrawnSegment(target: value, direct: direct);
 }
 
 /// Frei geplante Route: Wegpunkte mit Abschnitten dazwischen (je angetipptem Punkt bzw. gezeichnetem Strich).
@@ -376,11 +384,23 @@ final class DrawnRoute {
 
   GeoPoint? get start => _start;
 
-  /// Geroutete Linie je Abschnitt (unroutete als gerade Verbindung).
+  /// Geroutete Linie je Abschnitt (unroutete und Luftlinien als gerade Verbindung).
   List<List<GeoPoint>> get segments => [
     for (final (index, segment) in _segments.indexed)
-      segment.isRouted ? segment.points : [waypoint(index), ...segment.vias, segment.target],
+      segment.points.length >= 2 && !segment.direct
+          ? segment.points
+          : [waypoint(index), ...segment.vias, segment.target],
   ];
+
+  /// Abschnitte als Luftlinie.
+  List<int> get directSegments => [
+    for (final (index, segment) in _segments.indexed)
+      if (segment.direct) index,
+  ];
+
+  /// Länge aller Luftlinien-Abschnitte (Meter).
+  double get directMeters =>
+      [for (final index in directSegments) Geo.length(segments[index])].fold(0, (sum, value) => sum + value);
 
   List<DrawnSegment> get parts => List.unmodifiable(_segments);
   bool get isEmpty => _start == null;
@@ -435,6 +455,22 @@ final class DrawnRoute {
     _segments = [..._segments, DrawnSegment(target: target ?? segment.last, vias: vias, points: segment)];
   }
 
+  /// Abschnitt als Luftlinie bis [target] anhängen (ohne Router).
+  void addDirect(GeoPoint target) {
+    if (_start == null) return;
+    _remember();
+    _segments = [..._segments, DrawnSegment(target: target, direct: true)];
+  }
+
+  /// Abschnitt [index] auf Luftlinie bzw. wieder auf Wege umstellen; liefert die neu zu routenden Abschnitte.
+  List<int> setDirect(int index, {required bool direct}) {
+    if (index < 0 || index >= _segments.length || _segments[index].direct == direct) return const [];
+    _remember();
+    final old = _segments[index];
+    _segments = [..._segments]..[index] = DrawnSegment(target: old.target, vias: old.vias, direct: direct);
+    return direct ? const [] : [index];
+  }
+
   /// Geroutete Linie für Abschnitt [index] eintragen (nach einer Änderung; kein eigener Schritt für „Rückgängig“).
   void setRouted(int index, List<GeoPoint> points) {
     if (index < 0 || index >= _segments.length || points.length < 2) return;
@@ -450,12 +486,12 @@ final class DrawnRoute {
     if (index == 0) {
       _start = point;
     } else {
-      next[index - 1] = DrawnSegment(target: point, vias: const []);
-      dirty.add(index - 1);
+      next[index - 1] = next[index - 1].retarget(point);
+      if (!next[index - 1].direct) dirty.add(index - 1);
     }
     if (index < next.length) {
-      next[index] = DrawnSegment(target: next[index].target, vias: const []);
-      dirty.add(index);
+      next[index] = next[index].retarget(next[index].target);
+      if (!next[index].direct) dirty.add(index);
     }
     _segments = next;
     return dirty;
@@ -480,10 +516,12 @@ final class DrawnRoute {
       return const [];
     }
     final next = [..._segments];
-    next[index - 1] = DrawnSegment(target: next[index].target);
+    // Zwei Luftlinien bleiben eine Luftlinie, sonst wird der zusammengelegte Abschnitt geroutet.
+    final direct = next[index - 1].direct && next[index].direct;
+    next[index - 1] = DrawnSegment(target: next[index].target, direct: direct);
     next.removeAt(index);
     _segments = next;
-    return [index - 1];
+    return direct ? const [] : [index - 1];
   }
 
   /// Neuen Wegpunkt [point] in Abschnitt [segment] einfügen; liefert die beiden neu zu routenden Abschnitte.
@@ -493,10 +531,10 @@ final class DrawnRoute {
     final next = [..._segments];
     final old = next[segment];
     next
-      ..[segment] = DrawnSegment(target: point)
-      ..insert(segment + 1, DrawnSegment(target: old.target));
+      ..[segment] = DrawnSegment(target: point, direct: old.direct)
+      ..insert(segment + 1, DrawnSegment(target: old.target, direct: old.direct));
     _segments = next;
-    return [segment, segment + 1];
+    return old.direct ? const [] : [segment, segment + 1];
   }
 
   /// Abschnitt, dessen Linie höchstens [maxDistance] neben [point] verläuft (zum Einfügen), sonst `null`.

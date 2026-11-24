@@ -202,6 +202,9 @@ final class RoutePlanner {
     List<GeoPoint> dogParks = const [],
     void Function(String message)? onProgress,
   }) async {
+    if (request.isDirect) {
+      return _direct(request, variant, attractors: attractors, dogParks: dogParks);
+    }
     final variantSeed = seed * 31 + variant.index;
     var bearing = RouteWaypointPlanner.bearingFor(
       seed: seed,
@@ -326,6 +329,49 @@ final class RoutePlanner {
     return best;
   }
 
+  /// Zum Ziel ohne Wunschdistanz: eine Anfrage je Variante; die Varianten unterscheiden sich nur in der Gewichtung
+  /// des Routers (lauffreundlich, hügelig, im Grünen). Mit gewählten Wegarten führt ein Zwischenpunkt über einen
+  /// passenden Weg nahe der Mitte, sofern der höchstens 20 % der Luftlinie abseits liegt.
+  Future<RoutedPath?> _direct(
+    RouteRequest request,
+    RouteVariant variant, {
+    required List<GeoPoint> attractors,
+    required List<GeoPoint> dogParks,
+  }) async {
+    final start = request.start;
+    final destination = request.destination!;
+    var waypoints = [start, destination];
+    if (attractors.isNotEmpty) {
+      final middle = Geo.midpoint(start, destination);
+      final snapped = PreferenceSnapper.snap(
+        [start, middle, destination],
+        attractors,
+        maxShift: Geo.distance(start, destination) * 0.2,
+      );
+      if (snapped[1] != middle) waypoints = snapped;
+    }
+    if (dogParks.isNotEmpty) waypoints = PreferenceSnapper.force(waypoints, dogParks);
+    try {
+      return await backend.route(
+        waypoints,
+        discipline: request.discipline,
+        variant: variant,
+        elevationGain: request.elevationGainMeters,
+        preferences: request.preferences,
+      );
+    } on NoRouteFound {
+      // Zwischenpunkt lag ungünstig: direkt versuchen.
+      if (waypoints.length == 2) rethrow;
+      return backend.route(
+        [start, destination],
+        discipline: request.discipline,
+        variant: variant,
+        elevationGain: request.elevationGainMeters,
+        preferences: request.preferences,
+      );
+    }
+  }
+
   /// Rundweg vom Ausweich-Dienst; dessen Länge wird bis zu dreimal proportional nachgeführt.
   Future<RoutedPath?> _roundTrip(RouteRequest request, RouteVariant variant, {required int seed}) async {
     final target = request.distanceMeters;
@@ -436,6 +482,7 @@ final class RoutePlannerSettings {
     this.distanceKilometers = 10,
     this.elevationGain,
     Set<RoutePreference>? preferences,
+    this.directToDestination = false,
   }) : preferences = preferences ?? {};
 
   /// Gebiete und Erkundungskarte (standardmäßig aus, wie ausblendbare Bereiche).
@@ -445,6 +492,9 @@ final class RoutePlannerSettings {
   double distanceKilometers;
   int? elevationGain;
   Set<RoutePreference> preferences;
+
+  /// „Zum Ziel“ ohne Wunschdistanz (direkt).
+  bool directToDestination;
 
   Map<String, Object?> toJson() => {
     'explorationEnabled': explorationEnabled,
@@ -456,6 +506,7 @@ final class RoutePlannerSettings {
       for (final preference in RoutePreference.values)
         if (preferences.contains(preference)) preference.rawValue,
     ],
+    if (directToDestination) 'directToDestination': true,
   };
 
   static RoutePlannerSettings? fromJson(Object? json) {
@@ -469,6 +520,7 @@ final class RoutePlannerSettings {
       distanceKilometers: distance is num && distance > 0 ? distance.toDouble() : 10,
       elevationGain: gain is num ? gain.toInt() : null,
       preferences: {...enumListFromRaw(RoutePreference.values, json['preferences'])},
+      directToDestination: json['directToDestination'] == true,
     );
   }
 }

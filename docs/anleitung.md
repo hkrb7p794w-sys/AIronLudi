@@ -162,7 +162,7 @@ von Hand: denselben Link wieder öffnen.
    Favorisierte Orte* umbenennen oder löschen. **Disziplin:** Laufen (Fuß- und Waldwege, Parks), Rennrad (Asphalt), Gravel
    (Schotter, Feld- und Waldwege) oder Spazieren (ruhige Wege und Parks, z. B. Gassi mit dem Hund). **Umgebung:** *Wald & Natur*, *Am Wasser* (Kanäle, Flüsse, Seen),
    *Straße & Asphalt* oder *Ausgewogener Mix*.
-2. **Strecke:** *Rundweg*, *Zum Ziel* (Zieladresse eingeben oder Ziel-Pin setzen; ist es näher als die Wunschdistanz, gibt es einen Umweg)
+2. **Strecke:** *Rundweg*, *Zum Ziel* (Zieladresse eingeben oder Ziel-Pin setzen; ist es näher als die Wunschdistanz, gibt es einen Umweg – oder *Mit Wunschdistanz* ausschalten: dann der beste Weg direkt zum Ziel, z. B. Lauf zur Arbeit; beim Laufen bevorzugt auf Fuß-, Park- und Uferwegen)
    oder *Richtung* (Himmelsrichtung, offenes Ziel, genau auf die Distanz gekürzt). **Distanz** wählen (der Planer
    trifft sie auf ±2,5 %), optional **Höhenmeter vorgeben**.
 3. **Routen vorschlagen:** bis zu drei Varianten – *Direkt & ausgeglichen*, *Höhenmeter-Fokus*, *Grün &
@@ -175,7 +175,9 @@ von Hand: denselben Link wieder öffnen.
    Wahoo, Dateien).
 5. **Frei planen:** oben auf *Frei planen* umschalten. *Punkte*: Start und weitere Punkte antippen oder über die Lupe als Adresse suchen; *Zeichnen*: mit
    dem Finger eine grobe Linie ziehen. Jeder Abschnitt wird auf echte Wege gelegt; unten stehen Distanz, Höhenmeter
-   und Dauer. Einen Punkt antippen wählt ihn: verschieben oder löschen; lange auf die Linie drücken fügt einen Punkt ein. ↶ nimmt die letzte Aktion zurück, ⟳ schließt den Rundweg zum Start, **Speichern** legt die Route ab.
+   und Dauer. Einen Punkt antippen wählt ihn: verschieben oder löschen; lange auf die Linie drücken fügt einen Punkt ein. ↶ nimmt die letzte Aktion zurück, ⟳ schließt den Rundweg zum Start, **Speichern** legt die Route ab. Kennt die Karte an einer Stelle keinen Weg (z. B. eine Brücke, die nach einer Baustelle noch als gesperrt
+   eingetragen ist), verbindet **Luftlinie** (gerader Pfeil in der Leiste) die nächsten Punkte direkt; einen schon
+   gesetzten Abschnitt stellst du um, indem du seinen Endpunkt antippst. Luftlinien sind gestrichelt.
 6. **Archiv und Uhr:** Gelaufene bzw. gefahrene Routen wandern ins *Archiv*, sobald am geplanten Tag eine passende
    Aktivität vorliegt (oder per „Als erledigt markieren“). Auf jeder Route stehen Kilometermarken. **An Uhr senden**
    zeigt den Weg je Hersteller: Garmin über Garmin Connect („An Gerät senden“), Apple Watch über eine App mit

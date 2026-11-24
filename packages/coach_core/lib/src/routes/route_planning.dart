@@ -158,6 +158,7 @@ final class RouteRequest {
     this.bearingDegrees,
     this.elevationGainMeters,
     this.preferences = const {},
+    this.direct = false,
   });
 
   final RouteDiscipline discipline;
@@ -175,6 +176,20 @@ final class RouteRequest {
   /// Bevorzugte Wegearten (leer: ausgewogener Mix).
   final Set<RoutePreference> preferences;
 
+  /// Nur bei [RouteShape.toDestination]: ohne Wunschdistanz – der beste Weg von Start zum Ziel (z. B. Lauf zur
+  /// Arbeit). [distanceMeters] ist dann nur eine Schätzung.
+  final bool direct;
+
+  /// Strecke zum Ziel ohne Wunschdistanz.
+  bool get isDirect => direct && shape == RouteShape.toDestination;
+
+  /// Geschätzte Distanz eines direkten Wegs (Luftlinie × typischer Umweg des Wegenetzes).
+  static double directEstimate(GeoPoint start, GeoPoint destination) =>
+      Geo.distance(start, destination) * RouteWaypointPlanner.roadFactor;
+
+  /// Größte Luftlinie für Strecken ohne Wunschdistanz.
+  static double maxDirect(RouteDiscipline discipline) => maxDistance(discipline) / RouteWaypointPlanner.roadFactor;
+
   /// Erlaubte Abweichung der Distanz (±2,5 %, bei 10 km also ±250 m).
   static const tolerance = 0.025;
 
@@ -190,6 +205,14 @@ final class RouteRequest {
   String? get problem {
     if (!start.isValid) return 'Bitte einen Startpunkt wählen.';
     if (shape == RouteShape.drawn) return null;
+    if (isDirect) {
+      final destination = this.destination;
+      if (destination == null || !destination.isValid) return 'Bitte einen Zielpunkt auf der Karte setzen.';
+      final distance = Geo.distance(start, destination);
+      if (distance < 100) return 'Start und Ziel liegen zu nah beieinander.';
+      if (distance > maxDirect(discipline)) return 'Das Ziel liegt zu weit weg für ${discipline.label}.';
+      return null;
+    }
     if (distanceMeters < minDistance) return 'Die Distanz muss mindestens 1 km betragen.';
     if (distanceMeters > maxDistance(discipline)) {
       return 'Höchstens ${maxDistance(discipline) ~/ 1000} km für ${discipline.label}.';
@@ -204,7 +227,8 @@ final class RouteRequest {
     return null;
   }
 
-  bool withinTolerance(double meters) => (meters - distanceMeters).abs() <= distanceMeters * tolerance;
+  /// Ohne Wunschdistanz passt jede Länge.
+  bool withinTolerance(double meters) => isDirect || (meters - distanceMeters).abs() <= distanceMeters * tolerance;
 
   RouteRequest copyWith({GeoPoint? start, GeoPoint? destination}) => RouteRequest(
     discipline: discipline,
@@ -215,6 +239,7 @@ final class RouteRequest {
     distanceMeters: distanceMeters,
     elevationGainMeters: elevationGainMeters,
     preferences: preferences,
+    direct: direct,
   );
 
   Map<String, Object?> toJson() => {
@@ -230,6 +255,7 @@ final class RouteRequest {
         for (final preference in RoutePreference.values)
           if (preferences.contains(preference)) preference.rawValue,
       ],
+    if (direct) 'direct': true,
   };
 
   static RouteRequest? fromJson(Object? json) {
@@ -250,6 +276,7 @@ final class RouteRequest {
       distanceMeters: distance.toDouble(),
       elevationGainMeters: gain is num ? gain.toDouble() : null,
       preferences: {...enumListFromRaw(RoutePreference.values, json['preferences'])},
+      direct: json['direct'] == true,
     );
   }
 }

@@ -1467,3 +1467,22 @@ Auf Wunsch des Nutzers: nicht nur *was*, sondern *wie* – und mit dem, was da i
   Schwerpunkt → Muskeln als Gegenstück zu `MobilityArea.forMuscle`. Volle Farbe ab 5 min pro Woche und Muskel
   (Praxiswert: zwei bis drei Einheiten mit je etwa einer Minute je Muskel, Regel `mobility.stretching`).
 - „Erholung“ gibt es nur für Kraft; „7 Tage“ und „Ø 4 Wochen“ gelten für alle drei.
+
+## 2026-11-24 – Routenplaner: Luftlinie, lauffreundliche Wege, „Zum Ziel“ ohne Wunschdistanz
+
+Wunsch des Nutzers: An einer Brücke, die OSM nach einer Baustelle noch als gesperrt führt, ließ sich keine Route
+planen; dazu Joggen von Start zu Ziel.
+
+- **Luftlinie in „Frei planen“** (`DrawnSegment.direct`): Abschnitte ohne Router, gestrichelt gezeichnet. Umschalter
+  für die nächsten Punkte, Umstellen eines Abschnitts über seinen Endpunkt, und wenn der Router keinen Weg findet,
+  bietet die Meldung „Luftlinie“ an. Verschieben, Einfügen und Löschen behalten die Art (zwei Luftlinien bleiben eine).
+  Die Länge der Luftlinien steht in der Leiste. Bewusst nur in „Frei planen“: Im automatischen Planer würde eine
+  Luftlinie die Regeln (Distanz, Wegarten) unterlaufen.
+- **Lauffreundliche Gewichtung** (Valhalla `pedestrian` für Laufen): Fußwege `walkway_factor` 0,75 (Im Grünen 0,6),
+  Straßen mit Gehweg 1,2 (1,4) – also eher Park- und Uferwege als Hauptstraßen –, Wald- und Feldwege 0,75,
+  Hinterhöfe und Einfahrten gemieden. Gilt für alle Laufrouten.
+- **„Zum Ziel“ ohne Wunschdistanz** (`RouteRequest.direct`, Einstellung `directToDestination`): je Variante eine
+  Anfrage direkt von Start zum Ziel (Varianten unterscheiden sich nur in der Gewichtung), keine ±2,5 %-Regel; die
+  Distanz ist nur eine Schätzung (Luftlinie × 1,25). Mit Wegart ein Zwischenpunkt auf einem passenden Weg nahe der
+  Mitte (höchstens 20 % der Luftlinie abseits). Grenze: Luftlinie höchstens Höchstdistanz / 1,25.
+
