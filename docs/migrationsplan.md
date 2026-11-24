@@ -454,3 +454,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Roast Stufe 1 / PR 7: Export-Ordner (KI, Routen) beim Benutzerwechsel geleert (`ExportFolders`, `clearSharedExports`); PR 6 (Ladefenster „Heute“) nach Prüfung verworfen | erledigt |
 | Roast Stufe 2 / PR 8: Designsystem-Tokens (`lib/ui/tokens.dart`) und Sperrklinken-Test gegen neue Rohfarben/Schriftgrößen in `lib/features` | erledigt |
 | Roast Stufe 3 / PR 16: HRV-Trend für WHOOP und Health in der Tagesampel (`HrvTrend`, 7-Tage-Schnitt gegen eigene Basis) | erledigt |
+| Roast Stufe 2 / PR 8: Designsystem-Tokens (`lib/ui/tokens.dart`) und Sperrklinken-Test gegen neue Rohfarben/Schriftgrößen in `lib/features` | erledigt |
