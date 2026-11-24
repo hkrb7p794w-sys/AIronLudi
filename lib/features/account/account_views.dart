@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../services/ai/ai_client.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 
 String _errorText(Object error) => error is AIClientError ? error.message : '$error';
 
@@ -64,8 +65,8 @@ class AccountSettingsSection extends ConsumerWidget {
         else ...[
           if (account.notice case final notice?)
             ListTile(
-              leading: const Icon(Icons.warning_amber_rounded, color: Colors.orange),
-              title: Text(notice, style: const TextStyle(color: Colors.orange)),
+              leading: Icon(Icons.warning_amber_rounded, color: AppColors.of(context).caution),
+              title: Text(notice, style: TextStyle(color: AppColors.of(context).caution)),
             ),
           ListTile(
             title: const Text('Anmelden'),
@@ -313,7 +314,7 @@ class _AccountAuthScreenState extends ConsumerState<AccountAuthScreen> {
           if (_error case final error?)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(error, style: const TextStyle(color: Colors.red)),
+              child: Text(error, style: TextStyle(color: AppColors.of(context).alert)),
             ),
         ],
       ),
@@ -455,7 +456,7 @@ class _AccountDetailScreenState extends ConsumerState<AccountDetailScreen> {
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Abbrechen')),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Überall abmelden', style: TextStyle(color: Colors.red)),
+            child: Text('Überall abmelden', style: TextStyle(color: AppColors.of(context).alert)),
           ),
         ],
       ),
@@ -491,7 +492,7 @@ class _AccountDetailScreenState extends ConsumerState<AccountDetailScreen> {
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Abbrechen')),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Endgültig löschen', style: TextStyle(color: Colors.red)),
+            child: Text('Endgültig löschen', style: TextStyle(color: AppColors.of(context).alert)),
           ),
         ],
       ),
@@ -606,7 +607,7 @@ class _AccountDetailScreenState extends ConsumerState<AccountDetailScreen> {
                   subtitle: Text('Zuletzt aktiv ${AccountDetailScreen.shortDate(session.lastUsed)}'),
                 ),
               ListTile(
-                title: const Text('Auf allen Geräten abmelden', style: TextStyle(color: Colors.red)),
+                title: Text('Auf allen Geräten abmelden', style: TextStyle(color: AppColors.of(context).alert)),
                 onTap: _confirmLogoutEverywhere,
               ),
             ],
@@ -629,7 +630,7 @@ class _AccountDetailScreenState extends ConsumerState<AccountDetailScreen> {
                 },
               ),
               ListTile(
-                title: const Text('Konto löschen', style: TextStyle(color: Colors.red)),
+                title: Text('Konto löschen', style: TextStyle(color: AppColors.of(context).alert)),
                 onTap: _delete,
               ),
             ],
@@ -638,7 +639,7 @@ class _AccountDetailScreenState extends ConsumerState<AccountDetailScreen> {
             FormSection(
               children: [
                 ListTile(
-                  title: Text(error, style: const TextStyle(color: Colors.red)),
+                  title: Text(error, style: TextStyle(color: AppColors.of(context).alert)),
                 ),
               ],
             ),

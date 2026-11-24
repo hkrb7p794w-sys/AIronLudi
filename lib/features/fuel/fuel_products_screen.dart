@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/fuel/fuel_store.dart';
 import '../../ui/components.dart';
 import '../../ui/liquid.dart';
+import '../../ui/tokens.dart';
 import 'fuel_parts.dart';
 import 'fuel_stock_screen.dart';
 
@@ -339,7 +340,7 @@ class _FuelProductEditorState extends ConsumerState<FuelProductEditor> {
             FormSection(
               children: [
                 ListTile(
-                  title: const Text('Löschen', style: TextStyle(color: Colors.red)),
+                  title: Text('Löschen', style: TextStyle(color: AppColors.of(context).alert)),
                   onTap: () => unawaited(_delete()),
                 ),
               ],

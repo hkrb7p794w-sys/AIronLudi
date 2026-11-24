@@ -12,6 +12,7 @@ import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/platform_names.dart';
+import '../../ui/tokens.dart';
 
 /// Zeigt, was Garmin tatsächlich liefert: Fehler des letzten Abrufs, befüllte Tageswerte und die Feldnamen jeder
 /// Rohantwort. Damit lässt sich die Zuordnung an echte Daten anpassen (Port von `GarminDiagnosticsView`).
@@ -48,7 +49,7 @@ class _GarminDiagnosticsScreenState extends ConsumerState<GarminDiagnosticsScree
   Widget build(BuildContext context) {
     final report = ref.watch(appModelProvider).lastReport;
     final latest = _latest;
-    final secondary = TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant);
+    final secondary = AppText.caption(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
     final time = DateFormat('d. MMM, HH:mm', 'de_DE');
     return Scaffold(
       appBar: AppBar(title: const Text('Garmin-Diagnose')),
@@ -63,7 +64,7 @@ class _GarminDiagnosticsScreenState extends ConsumerState<GarminDiagnosticsScree
                 for (final error in report.errors)
                   ListTile(
                     dense: true,
-                    title: Text(error, style: const TextStyle(color: Colors.orange)),
+                    title: Text(error, style: TextStyle(color: AppColors.of(context).caution)),
                   ),
               ],
             ),
@@ -170,12 +171,12 @@ class _HealthDiagnosticsScreenState extends ConsumerState<HealthDiagnosticsScree
   Widget build(BuildContext context) {
     final diagnosis = _diagnosis;
     final (icon, color) = switch (diagnosis) {
-      HealthWorking() => (Icons.check_circle, Colors.green),
+      HealthWorking() => (Icons.check_circle, AppColors.of(context).good),
       _ when diagnosis == HealthAccessDiagnosis.notDetermined => (
         Icons.help_outline,
         Theme.of(context).colorScheme.onSurfaceVariant,
       ),
-      _ => (Icons.warning_amber, Colors.orange),
+      _ => (Icons.warning_amber, AppColors.of(context).caution),
     };
     final version = ref.watch(appVersionProvider).value ?? '?';
     return Scaffold(

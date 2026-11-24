@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 
 /// „vor 3 Stunden“ wie `.relative(presentation: .named)`.
 String relativeTime(DateTime date, {DateTime? now}) {
@@ -187,7 +188,7 @@ class _ProviderRow extends StatelessWidget {
             ProviderAvailability.unavailable => 'nicht verfügbar',
           };
     final color = connected
-        ? (error == null ? Colors.green : Colors.orange)
+        ? (error == null ? AppColors.of(context).good : AppColors.of(context).caution)
         : Theme.of(context).colorScheme.onSurfaceVariant;
     final small = Theme.of(context).textTheme.bodySmall;
     return ListTile(
@@ -202,7 +203,7 @@ class _ProviderRow extends StatelessWidget {
                 'Letzter Fehler: $error',
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: small?.copyWith(color: Colors.orange),
+                style: small?.copyWith(color: AppColors.of(context).caution),
               ),
             if (state!.lastSuccess case final success?) Text('Zuletzt erfolgreich ${relativeTime(success)}'),
           ] else if (!connected)

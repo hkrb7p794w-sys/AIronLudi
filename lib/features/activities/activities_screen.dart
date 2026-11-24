@@ -14,6 +14,7 @@ import '../../ui/components.dart';
 import '../../ui/large_title.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
+import '../../ui/tokens.dart';
 import '../gym/gym_screen.dart';
 import '../social/social_views.dart';
 import '../today/today_controller.dart';
@@ -360,8 +361,8 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
             )
           else if (social.lastError case final error?)
             ListTile(
-              leading: const Icon(Icons.warning_amber_rounded, color: Colors.orange),
-              title: Text(error, style: const TextStyle(fontSize: 13, color: Colors.orange)),
+              leading: Icon(Icons.warning_amber_rounded, color: AppColors.of(context).caution),
+              title: Text(error, style: AppText.footnote(context).copyWith(color: AppColors.of(context).caution)),
             ),
           if (items.isEmpty && !social.isLoading)
             _Empty(

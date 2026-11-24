@@ -14,6 +14,7 @@ import '../../ui/components.dart';
 import '../../ui/large_title.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/strain_card.dart';
+import '../../ui/tokens.dart';
 import '../../ui/week_minutes_chart.dart';
 import '../endurance/endurance_controller.dart';
 import '../endurance/endurance_screens.dart';
@@ -194,7 +195,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> with TrainingDa
                 _HubRow(
                   title: 'Plan',
                   symbol: 'calendar',
-                  color: Colors.orange,
+                  color: AppColors.of(context).caution,
                   value: '',
                   caption: settings.profile.mode == ProfileMode.season ? 'Saisonplan und Woche' : 'Deine Woche',
                   onTap: () => _open(
@@ -214,9 +215,9 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> with TrainingDa
                   _HubRow(
                     title: 'Gym',
                     symbol: 'dumbbell.fill',
-                    color: Colors.green,
+                    color: AppColors.of(context).good,
                     value: running == null ? 'Einheit starten' : 'läuft',
-                    valueColor: running == null ? null : Colors.green,
+                    valueColor: running == null ? null : AppColors.of(context).good,
                     caption: running ?? 'Pläne, Übungen, Auswertung',
                     onTap: () => _open((_) => const GymScreen()),
                   ),
@@ -244,7 +245,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> with TrainingDa
                 _HubRow(
                   title: 'Herzfrequenz',
                   symbol: 'heart.fill',
-                  color: Colors.red,
+                  color: AppColors.of(context).alert,
                   value: controller.zones?.run.lactateThreshold == null
                       ? '–'
                       : '${controller.zones!.run.lactateThreshold} bpm',
@@ -270,7 +271,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> with TrainingDa
                 _HubRow(
                   title: 'Fitness & Form',
                   symbol: 'chart.line.uptrend.xyaxis',
-                  color: Colors.blue,
+                  color: AppColors.of(context).info,
                   value: formPercent == null ? '–' : FormZone.of(formPercent).label,
                   caption: 'Belastung der Uhr',
                   onTap: () => _open((_) => FitnessFormScreen(points: form)),
@@ -304,7 +305,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> with TrainingDa
                   _HubRow(
                     title: 'Schwimmen',
                     symbol: 'figure.pool.swim',
-                    color: Colors.blue,
+                    color: AppColors.of(context).info,
                     value: '${PlanTokens.mmss(season.cssSecondsPer100m)} /100 m',
                     caption: 'CSS',
                     onTap: () => _open((_) => SwimScreen(controller: controller)),
@@ -312,7 +313,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> with TrainingDa
                   _HubRow(
                     title: 'Rad',
                     symbol: 'figure.outdoor.cycle',
-                    color: Colors.orange,
+                    color: AppColors.of(context).caution,
                     value: '${season.ftpWatts} W',
                     caption: 'FTP',
                     onTap: () => _open((_) => BikeScreen(controller: controller)),
@@ -320,7 +321,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> with TrainingDa
                   _HubRow(
                     title: 'Laufen',
                     symbol: 'figure.run',
-                    color: Colors.green,
+                    color: AppColors.of(context).good,
                     value: '${PlanTokens.mmss(season.thresholdPaceSecondsPerKm)} /km',
                     caption: 'Schwelle',
                     onTap: () => _open((_) => RunScreen(controller: controller)),
@@ -433,7 +434,7 @@ class _HubRow extends StatelessWidget {
                 value.isEmpty || value == '–' ? caption : title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 12, color: secondary),
+                style: AppText.caption(context).copyWith(color: secondary),
               ),
             ],
           ),

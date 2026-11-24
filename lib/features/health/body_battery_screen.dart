@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/storage.dart';
 import '../../ui/components.dart';
 import '../../ui/platform_names.dart';
+import '../../ui/tokens.dart';
 
 /// Body Battery: aktueller Stand, Tagesverlauf, 30 Tage und Zusammenhang mit Schlaf und Stress (Port von
 /// `BodyBatteryView`).
@@ -126,7 +127,7 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final secondary = TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant);
+    final secondary = AppText.caption(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
     final current = summary.current;
     final wake = summary.wake;
     final latest = summary.history.lastOrNull;
@@ -242,7 +243,7 @@ class _CurveChart extends StatelessWidget {
             lineBarsData: [
               LineChartBarData(
                 spots: [for (final sample in curve) FlSpot(sample.minute / 60, sample.value.toDouble())],
-                color: Colors.blue,
+                color: AppColors.of(context).info,
                 barWidth: 2,
                 isCurved: true,
                 preventCurveOverShooting: true,
@@ -252,7 +253,10 @@ class _CurveChart extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Colors.blue.withValues(alpha: 0.35), Colors.blue.withValues(alpha: 0.05)],
+                    colors: [
+                      AppColors.of(context).info.withValues(alpha: 0.35),
+                      AppColors.of(context).info.withValues(alpha: 0.05),
+                    ],
                   ),
                 ),
               ),
@@ -269,7 +273,7 @@ class _CurveChart extends StatelessWidget {
                   reservedSize: 22,
                   getTitlesWidget: (value, meta) => SideTitleWidget(
                     meta: meta,
-                    child: Text('${value.toInt()} Uhr', style: const TextStyle(fontSize: 10)),
+                    child: Text('${value.toInt()} Uhr', style: AppText.caption(context)),
                   ),
                 ),
               ),
@@ -311,7 +315,7 @@ class _HistoryChart extends StatelessWidget {
                         fromY: day.low!,
                         toY: day.high!,
                         width: 6,
-                        color: Colors.blue.withValues(alpha: 0.35),
+                        color: AppColors.of(context).info.withValues(alpha: 0.35),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     // Stand beim Aufwachen als kurze Marke (Punkt in Swift).
@@ -320,7 +324,7 @@ class _HistoryChart extends StatelessWidget {
                         fromY: (wake - 1.5).clamp(0, 100),
                         toY: (wake + 1.5).clamp(0, 100),
                         width: 6,
-                        color: Colors.blue,
+                        color: AppColors.of(context).info,
                         borderRadius: BorderRadius.circular(3),
                       ),
                   ],

@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../services/routing/routing_providers.dart';
 import '../../ui/liquid.dart';
+import '../../ui/tokens.dart';
 
 /// Adresszeile für Start oder Ziel: Favoriten beim Antippen, Vorschläge beim Tippen (nach kurzer Pause, ab drei
 /// Zeichen, nach Nähe sortiert), Eingabetaste sucht ausdrücklich (dann auch über Nominatim), Koordinaten
@@ -183,7 +184,7 @@ class _AddressFieldState extends ConsumerState<AddressField> {
       if (_problem case final problem?)
         Padding(
           padding: const EdgeInsets.all(12),
-          child: Text(problem, style: TextStyle(fontSize: 13, color: secondary)),
+          child: Text(problem, style: AppText.footnote(context).copyWith(color: secondary)),
         ),
       for (final favorite in favorites)
         ListTile(
@@ -194,7 +195,7 @@ class _AddressFieldState extends ConsumerState<AddressField> {
               ? null
               : Text(favorite.address!, maxLines: 1, overflow: TextOverflow.ellipsis),
           trailing: switch (GeocodingFormat.distanceLabel(favorite.place, widget.near)) {
-            final distance? => Text(distance, style: TextStyle(fontSize: 12, color: secondary)),
+            final distance? => Text(distance, style: AppText.caption(context).copyWith(color: secondary)),
             null => null,
           },
           onTap: () => _choose(favorite.place),
@@ -206,7 +207,7 @@ class _AddressFieldState extends ConsumerState<AddressField> {
           title: Text(place.title, maxLines: 1, overflow: TextOverflow.ellipsis),
           subtitle: place.detail.isEmpty ? null : Text(place.detail, maxLines: 1, overflow: TextOverflow.ellipsis),
           trailing: switch (GeocodingFormat.distanceLabel(place, widget.near)) {
-            final distance? => Text(distance, style: TextStyle(fontSize: 12, color: secondary)),
+            final distance? => Text(distance, style: AppText.caption(context).copyWith(color: secondary)),
             null => null,
           },
           onTap: () => _choose(place),

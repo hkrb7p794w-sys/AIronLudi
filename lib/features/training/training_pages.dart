@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../ui/components.dart';
 import '../../ui/sport_style.dart';
+import '../../ui/tokens.dart';
 import '../../ui/zoomable_chart.dart';
 import '../evidence/evidence_views.dart';
 import 'training_controller.dart';
@@ -113,7 +114,7 @@ class RecoveryScreen extends StatelessWidget {
                                   ),
                                   Text(
                                     tile.title,
-                                    style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+                                    style: AppText.caption(context).copyWith(color: theme.colorScheme.onSurfaceVariant),
                                   ),
                                 ],
                               ),
@@ -155,12 +156,12 @@ class TrendCardView extends StatelessWidget {
     final higher = card.higherIsBetter;
     final changeColor = change == null || higher == null || change.abs() < 0.05
         ? theme.colorScheme.onSurfaceVariant
-        : ((change > 0) == higher ? Colors.green : Colors.orange);
+        : ((change > 0) == higher ? AppColors.of(context).good : AppColors.of(context).caution);
     final values = [for (final point in trend.points) point.value];
     final low = values.isEmpty ? 0.0 : values.reduce(math.min);
     final high = values.isEmpty ? 1.0 : values.reduce(math.max);
     final padding = math.max((high - low) * 0.15, 1.0);
-    final secondary = TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant);
+    final secondary = AppText.caption(context).copyWith(color: theme.colorScheme.onSurfaceVariant);
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -245,9 +246,9 @@ class SleepStages extends StatelessWidget {
   Widget build(BuildContext context) {
     final stages = [
       ('Tief', metrics.deepSleepSeconds ?? 0, Colors.indigo),
-      ('Leicht', metrics.lightSleepSeconds ?? 0, Colors.blue),
+      ('Leicht', metrics.lightSleepSeconds ?? 0, AppColors.of(context).info),
       ('REM', metrics.remSleepSeconds ?? 0, Colors.cyan),
-      ('Wach', metrics.awakeSleepSeconds ?? 0, Colors.orange),
+      ('Wach', metrics.awakeSleepSeconds ?? 0, AppColors.of(context).caution),
     ];
     final total = math.max(stages.fold<double>(0, (sum, stage) => sum + stage.$2), 1.0);
     return Column(
@@ -277,8 +278,8 @@ class SleepStages extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(name, style: TextStyle(fontSize: 12, color: color)),
-                    Text(formatDuration(seconds), style: const TextStyle(fontSize: 12)),
+                    Text(name, style: AppText.caption(context).copyWith(color: color)),
+                    Text(formatDuration(seconds), style: AppText.caption(context)),
                   ],
                 ),
               ),
@@ -302,7 +303,7 @@ class HeartRateScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final report = this.report;
-    final secondary = TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant);
+    final secondary = AppText.caption(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
     return Scaffold(
       appBar: AppBar(title: const Text('Herzfrequenz')),
       body: report == null
@@ -382,7 +383,8 @@ class _CoachZoneSection extends StatelessWidget {
           ListTile(
             title: Text(
               zones.source,
-              style: TextStyle(fontSize: 12, color: zones.isApproximate ? Colors.orange : secondary),
+              style: AppText.caption(context)
+                  .copyWith(color: zones.isApproximate ? AppColors.of(context).caution : secondary),
             ),
             trailing: Text(
               '${zones.lactateThreshold ?? 0} bpm Schwelle',
@@ -435,11 +437,11 @@ class _ZoneBand extends StatelessWidget {
             Expanded(
               child: Column(
                 children: [
-                  Text(zone.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  Text(zone.name, style: AppText.caption(context).copyWith(fontWeight: FontWeight.bold)),
                   FittedBox(
                     child: Text(
                       zone.rangeText,
-                      style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      style: AppText.caption(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                     ),
                   ),
                 ],
@@ -481,7 +483,7 @@ class _IntensitySection extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'Woche ab ${GermanFormat.date(week.monday)}',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    style: AppText.caption(context).copyWith(fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -512,7 +514,7 @@ class _ShareRow extends StatelessWidget {
             Expanded(child: Text(title)),
             Text(
               formatDuration(share.minutes * 60.0),
-              style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              style: AppText.caption(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -535,7 +537,8 @@ class _ShareRow extends StatelessWidget {
         ),
         Text(
           'locker ${share.easyPercent} % · mittel ${share.moderatePercent} % · hart ${share.hardPercent} %',
-          style: TextStyle(fontSize: 12, color: share.easyPercent >= 75 ? Colors.green : Colors.orange),
+          style: AppText.caption(context)
+              .copyWith(color: share.easyPercent >= 75 ? AppColors.of(context).good : AppColors.of(context).caution),
         ),
       ],
     ),
@@ -649,7 +652,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
                                   meta: meta,
                                   child: Text(
                                     DateFormat('d.M.', 'de_DE').format(mondays[value.toInt()].referenceDate),
-                                    style: const TextStyle(fontSize: 10),
+                                    style: AppText.caption(context),
                                   ),
                                 ),
                               ),
@@ -672,7 +675,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
                           spacing: 4,
                           children: [
                             CircleAvatar(radius: 5, backgroundColor: sport.color),
-                            Text(sport.label, style: const TextStyle(fontSize: 12)),
+                            Text(sport.label, style: AppText.caption(context)),
                           ],
                         ),
                     ],
@@ -797,13 +800,14 @@ class FitnessFormScreen extends StatelessWidget {
                             for (final point in recent)
                               LineChartBarData(
                                 spots: [FlSpot(_x(point.day), 0), FlSpot(_x(point.day), point.form)],
-                                color: (point.form >= 0 ? Colors.green : Colors.orange).withValues(alpha: 0.5),
+                                color: (point.form >= 0 ? AppColors.of(context).good : AppColors.of(context).caution)
+                                    .withValues(alpha: 0.5),
                                 barWidth: 2,
                                 dotData: const FlDotData(show: false),
                               ),
                             LineChartBarData(
                               spots: [for (final point in recent) FlSpot(_x(point.day), point.fitness)],
-                              color: Colors.blue,
+                              color: AppColors.of(context).info,
                               barWidth: 2,
                               dotData: const FlDotData(show: false),
                             ),
@@ -821,14 +825,14 @@ class FitnessFormScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                const Padding(
+                Padding(
                   padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
                   child: Row(
                     spacing: 12,
                     children: [
-                      _Legend(color: Colors.blue, label: 'Fitness'),
+                      _Legend(color: AppColors.of(context).info, label: 'Fitness'),
                       _Legend(color: Colors.pink, label: 'Ermüdung'),
-                      _Legend(color: Colors.green, label: 'Form'),
+                      _Legend(color: AppColors.of(context).good, label: 'Form'),
                     ],
                   ),
                 ),
@@ -865,7 +869,7 @@ class _Legend extends StatelessWidget {
     spacing: 4,
     children: [
       CircleAvatar(radius: 5, backgroundColor: color),
-      Text(label, style: const TextStyle(fontSize: 12)),
+      Text(label, style: AppText.caption(context)),
     ],
   );
 }

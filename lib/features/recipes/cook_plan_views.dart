@@ -11,6 +11,7 @@ import '../../services/ai/ai_client.dart';
 import '../../services/nutrition/cook_share_service.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 import '../nutrition/meal_editor.dart';
 import '../nutrition/nutrition_controller.dart';
 import 'cook_plan_controller.dart';
@@ -253,8 +254,8 @@ class _CookPlanScreenState extends ConsumerState<CookPlanScreen> {
               ),
               if (controller.cookError case final error?)
                 ListTile(
-                  leading: const Icon(Icons.warning_amber, color: Colors.red),
-                  title: Text(error, style: const TextStyle(fontSize: 13, color: Colors.red)),
+                  leading: Icon(Icons.warning_amber, color: AppColors.of(context).alert),
+                  title: Text(error, style: AppText.footnote(context).copyWith(color: AppColors.of(context).alert)),
                 ),
             ],
           ),
@@ -275,7 +276,7 @@ class _CookPlanScreenState extends ConsumerState<CookPlanScreen> {
                     key: ValueKey(plan.id),
                     direction: DismissDirection.endToStart,
                     background: Container(
-                      color: Colors.red,
+                      color: AppColors.of(context).alert,
                       alignment: Alignment.centerRight,
                       padding: const EdgeInsets.only(right: 20),
                       child: const Icon(Icons.delete, color: Colors.white),
@@ -413,7 +414,7 @@ class _CookPlanDetailScreenState extends ConsumerState<CookPlanDetailScreen> {
   }
 
   Widget _content(BuildContext context, CookPlan plan) {
-    final secondary = TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant);
+    final secondary = AppText.caption(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
     final mine = plan.portions.where((portion) => portion.person.id == CookPerson.meID).firstOrNull;
     final storage = plan.storagePlan;
     return ListView(
@@ -471,7 +472,7 @@ class _CookPlanDetailScreenState extends ConsumerState<CookPlanDetailScreen> {
                   key: ValueKey(item.id),
                   direction: DismissDirection.endToStart,
                   background: Container(
-                    color: Colors.red,
+                    color: AppColors.of(context).alert,
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.only(right: 20),
                     child: const Icon(Icons.delete, color: Colors.white),
@@ -520,11 +521,11 @@ class _CookPlanDetailScreenState extends ConsumerState<CookPlanDetailScreen> {
                 for (var index = 0; index < storage.length; index++)
                   LabeledRow(label: 'Tag ${index + 1}', value: storage[index].label)
               else
-                const ListTile(
-                  leading: Icon(Icons.warning_amber, color: Colors.orange),
+                ListTile(
+                  leading: Icon(Icons.warning_amber, color: AppColors.of(context).caution),
                   title: Text(
                     'Nach deiner Änderung reicht die Haltbarkeit nicht für alle Tage.',
-                    style: TextStyle(color: Colors.orange),
+                    style: TextStyle(color: AppColors.of(context).caution),
                   ),
                 ),
               if (plan.storageHint.isNotEmpty) ListTile(dense: true, title: Text(plan.storageHint)),
@@ -740,7 +741,7 @@ class _CookPartnersScreenState extends ConsumerState<CookPartnersScreen> {
     final release = settings.cookRelease;
     final invite = _service.inviteLink();
     final releaseLink = release == null ? null : _service.link(release.code);
-    final secondary = TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant);
+    final secondary = AppText.footnote(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
     return Scaffold(
       appBar: AppBar(title: const Text('Gemeinsam kochen')),
       body: ListView(
@@ -758,7 +759,7 @@ class _CookPartnersScreenState extends ConsumerState<CookPartnersScreen> {
                   subtitle: Text(cookShareSummary(partner.share)),
                   trailing: TextButton(
                     onPressed: () => unawaited(_plans.forget(partner, settings: settings)),
-                    style: TextButton.styleFrom(foregroundColor: Colors.red),
+                    style: TextButton.styleFrom(foregroundColor: AppColors.of(context).alert),
                     child: const Text('Lösen'),
                   ),
                 ),
@@ -851,9 +852,9 @@ class _CookPartnersScreenState extends ConsumerState<CookPartnersScreen> {
                   ),
                 ListTile(
                   enabled: !_busy,
-                  leading: const Icon(Icons.cancel_outlined, color: Colors.red),
+                  leading: Icon(Icons.cancel_outlined, color: AppColors.of(context).alert),
                   title: const Text('Freigabe zurückziehen'),
-                  textColor: Colors.red,
+                  textColor: AppColors.of(context).alert,
                   onTap: () => _revoke(release),
                 ),
               ],

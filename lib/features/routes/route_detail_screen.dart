@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/routing/routing_providers.dart';
 import '../../ui/components.dart';
 import '../../ui/liquid.dart';
+import '../../ui/tokens.dart';
 import '../endurance/endurance_controller.dart';
 import 'follow_route_screen.dart';
 import 'route_parts.dart';
@@ -133,7 +134,7 @@ class _RouteDetailScreenState extends ConsumerState<RouteDetailScreen> {
               ),
               if (route.isCompleted)
                 ListTile(
-                  leading: const Icon(Icons.check_circle, color: Colors.green),
+                  leading: Icon(Icons.check_circle, color: AppColors.of(context).good),
                   title: Text(
                     'Erledigt am ${GermanFormat.date(CalendarDay.fromDate(route.completedAt!.toLocal()))}'
                     '${route.activityID == null ? '' : ' (Aktivität erkannt)'}',

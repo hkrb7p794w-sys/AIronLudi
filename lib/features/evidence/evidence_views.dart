@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 
 /// Aufklappbare Quellen zu einer Empfehlung; nur sichtbar, wenn „Quellen einblenden“ an ist.
 class EvidenceDisclosure extends ConsumerWidget {
@@ -75,9 +76,9 @@ class StrengthBadge extends StatelessWidget {
   Widget build(BuildContext context) => AppChip(
     text: strength.rawValue,
     color: switch (strength) {
-      EvidenceStrength.strong => Colors.green,
-      EvidenceStrength.moderate => Colors.blue,
-      EvidenceStrength.practice => Colors.orange,
+      EvidenceStrength.strong => AppColors.of(context).good,
+      EvidenceStrength.moderate => AppColors.of(context).info,
+      EvidenceStrength.practice => AppColors.of(context).caution,
     },
   );
 }
@@ -221,7 +222,7 @@ class UserSourcesScreen extends ConsumerWidget {
                   key: ValueKey(source.id),
                   direction: DismissDirection.endToStart,
                   background: Container(
-                    color: Colors.red,
+                    color: AppColors.of(context).alert,
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.only(right: 16),
                     child: const Icon(Icons.delete, color: Colors.white),

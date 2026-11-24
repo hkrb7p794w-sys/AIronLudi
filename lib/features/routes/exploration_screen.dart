@@ -11,6 +11,7 @@ import '../../services/routing/exploration_import.dart';
 import '../../services/routing/routing_providers.dart';
 import '../../ui/components.dart';
 import '../../ui/liquid.dart';
+import '../../ui/tokens.dart';
 import 'my_location.dart';
 import 'route_parts.dart';
 
@@ -125,10 +126,10 @@ class _ExplorationScreenState extends ConsumerState<ExplorationScreen> {
         padding: const EdgeInsets.fromLTRB(LiquidSpacing.page, 8, LiquidSpacing.page, 32),
         children: [
           if (store.hasForeignExploration)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(bottom: 12),
               child: LiquidCard(
-                tint: Colors.orange,
+                tint: AppColors.of(context).caution,
                 child: Text('Die Karte in diesem Speicher gehört einem anderen Benutzer und wird nicht angezeigt.'),
               ),
             ),

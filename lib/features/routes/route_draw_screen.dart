@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../services/routing/routing_providers.dart';
 import '../../ui/liquid.dart';
+import '../../ui/tokens.dart';
 import '../endurance/endurance_controller.dart';
 import 'address_field.dart';
 import 'my_location.dart';
@@ -338,7 +339,7 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
               AddressField(
                 hint: 'Adresse oder Ort',
                 icon: _route.isEmpty ? Icons.flag : Icons.add_location_alt_outlined,
-                color: _route.isEmpty ? Colors.green : Colors.red,
+                color: _route.isEmpty ? AppColors.of(context).good : AppColors.of(context).alert,
                 near: _route.end ?? _nearCenter,
                 autofocus: true,
                 onSelected: (place) => Navigator.pop(context, place),
@@ -517,7 +518,7 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
                               Marker(
                                 point: latLng(end),
                                 child: _Dot(
-                                  color: Colors.red,
+                                  color: AppColors.of(context).alert,
                                   icon: Icons.sports_score,
                                   selected: _selected == _route.waypoints.length - 1,
                                 ),
@@ -525,7 +526,11 @@ class _RouteDrawScreenState extends ConsumerState<RouteDrawScreen> {
                             if (_route.start case final start?)
                               Marker(
                                 point: latLng(start),
-                                child: _Dot(color: Colors.green, icon: Icons.flag, selected: _selected == 0),
+                                child: _Dot(
+                                  color: AppColors.of(context).good,
+                                  icon: Icons.flag,
+                                  selected: _selected == 0,
+                                ),
                               ),
                           ],
                         ),
@@ -671,7 +676,7 @@ class _Hint extends StatelessWidget {
         child: Text(
           text,
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+          style: AppText.footnote(context).copyWith(fontWeight: FontWeight.w500),
         ),
       ),
     ),

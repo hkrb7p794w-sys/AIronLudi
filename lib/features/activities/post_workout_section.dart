@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 import '../evidence/evidence_views.dart';
 import '../plan/my_week_screen.dart';
 import '../today/now_views.dart';
@@ -41,12 +42,7 @@ class _PostWorkoutSectionState extends ConsumerState<PostWorkoutSection> {
           ? '1 = sehr leicht, 10 = maximal. Daraus und aus der Dauer schätzt die App die Belastung (session RPE).'
           : null,
       children: [
-        ListTile(
-          title: Text(
-            activity.name ?? activity.typeKey ?? 'Training',
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 17),
-          ),
-        ),
+        ListTile(title: Text(activity.name ?? activity.typeKey ?? 'Training', style: AppText.headline(context))),
         if (effort != null)
           ..._review(activity, effort)
         else
@@ -96,11 +92,11 @@ class _PostWorkoutSectionState extends ConsumerState<PostWorkoutSection> {
             Row(
               spacing: 6,
               children: [
-                const Icon(Icons.verified, color: Colors.green, size: 18),
+                Icon(Icons.verified, color: AppColors.of(context).good, size: 18),
                 Expanded(
                   child: Text(
                     result.headline,
-                    style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.green),
+                    style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.of(context).good),
                   ),
                 ),
               ],

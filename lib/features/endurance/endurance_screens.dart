@@ -10,6 +10,7 @@ import '../../app/user_providers.dart';
 import '../../services/endurance/workout_exporter_service.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 import '../fuel/fuel_for_slot.dart';
 import '../routes/route_for_slot.dart';
 import 'endurance_controller.dart';
@@ -98,7 +99,7 @@ class _EnduranceScreenState extends ConsumerState<EnduranceScreen> {
             'Einheiten und deine Erholungswerte an.',
         children: [
           ListTile(
-            leading: const SportIcon(symbol: 'figure.run', color: Colors.orange),
+            leading: SportIcon(symbol: 'figure.run', color: AppColors.of(context).caution),
             title: const Text('Plan erstellen'),
             subtitle: switch (_nextGoal()) {
               final goal? => Text('Für ${goal.name} am ${GermanFormat.date(goal.day)}'),
@@ -164,7 +165,7 @@ class _EnduranceScreenState extends ConsumerState<EnduranceScreen> {
             footer: 'Dein Plan richtet sich noch nach dem bisherigen Ziel.',
             children: [
               ListTile(
-                leading: const Icon(Icons.flag_outlined, color: Colors.orange),
+                leading: Icon(Icons.flag_outlined, color: AppColors.of(context).caution),
                 title: Text('Neues Ziel: ${changed.name} am ${GermanFormat.date(changed.day)}'),
                 subtitle: const Text('Plan dafür erstellen'),
                 trailing: const DisclosureChevron(),
@@ -300,9 +301,9 @@ class _SlotTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final workout = slot.current;
     final status = switch (slot.status) {
-      SlotStatus.completed => const Icon(Icons.check_circle, color: Colors.green),
+      SlotStatus.completed => Icon(Icons.check_circle, color: AppColors.of(context).good),
       SlotStatus.missed => const Icon(Icons.cancel, color: Colors.grey),
-      SlotStatus.planned => slot.isAdapted ? const Icon(Icons.auto_fix_high, color: Colors.orange) : null,
+      SlotStatus.planned => slot.isAdapted ? Icon(Icons.auto_fix_high, color: AppColors.of(context).caution) : null,
     };
     return ListTile(
       leading: SportIcon(

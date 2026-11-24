@@ -8,6 +8,7 @@ import '../../data/settings/coach_settings.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 import '../evidence/evidence_views.dart';
 
 /// Mobility-Einstellungen ändern und neu zuweisen (die Setter speichern).
@@ -148,7 +149,7 @@ class _MobilityScreenState extends ConsumerState<MobilityScreen> {
                     for (final (index, step) in block.drill.steps.indexed)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 4),
-                        child: Text('${index + 1}. $step', style: const TextStyle(fontSize: 13)),
+                        child: Text('${index + 1}. $step', style: AppText.footnote(context)),
                       ),
                   ],
                 ),
@@ -191,7 +192,7 @@ class _MobilityScreenState extends ConsumerState<MobilityScreen> {
                         color: mobilityColor(test.rating(result.value)),
                       ),
                     ),
-                    null => Text('noch nicht getestet', style: TextStyle(fontSize: 12, color: secondary)),
+                    null => Text('noch nicht getestet', style: AppText.caption(context).copyWith(color: secondary)),
                   },
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(fullscreenDialog: true, builder: (_) => MobilityTestScreen(test: test)),
@@ -351,7 +352,7 @@ class _MobilityTestScreenState extends ConsumerState<MobilityTestScreen> {
                           TextSpan(text: MobilityTestScreen.text(result.value, test)),
                           TextSpan(
                             text: '  ${test.rating(result.value).label}',
-                            style: TextStyle(fontSize: 12, color: mobilityColor(test.rating(result.value))),
+                            style: AppText.caption(context).copyWith(color: mobilityColor(test.rating(result.value))),
                           ),
                         ],
                       ),
@@ -388,7 +389,7 @@ class MobilitySummary extends ConsumerWidget {
               Text(
                 '${count == 0 ? 'Diese Woche noch keine Einheit' : 'Diese Woche $count Einheiten'}'
                 '${tested ? '' : ' · Selbsttests noch offen'}',
-                style: TextStyle(fontSize: 13, color: secondary),
+                style: AppText.footnote(context).copyWith(color: secondary),
               ),
             ],
           ),

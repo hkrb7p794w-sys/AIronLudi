@@ -12,6 +12,7 @@ import '../../ui/components.dart';
 import '../../ui/platform_names.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
+import '../../ui/tokens.dart';
 import '../account/account_views.dart';
 import '../ai/coach_exchange.dart';
 import '../evidence/evidence_views.dart';
@@ -424,12 +425,15 @@ class _ConnectSection extends ConsumerWidget {
       children: [
         if (controller.connectLoggedIn) ...[
           ListTile(
-            leading: const Icon(Icons.verified_user, color: Colors.green),
-            title: Text(model.garmin.connect?.email ?? 'Angemeldet', style: const TextStyle(color: Colors.green)),
+            leading: Icon(Icons.verified_user, color: AppColors.of(context).good),
+            title: Text(
+              model.garmin.connect?.email ?? 'Angemeldet',
+              style: TextStyle(color: AppColors.of(context).good),
+            ),
           ),
           ListTile(title: const Text('Jetzt abrufen'), onTap: () => unawaited(model.syncNow())),
           ListTile(
-            title: const Text('Abmelden', style: TextStyle(color: Colors.red)),
+            title: Text('Abmelden', style: TextStyle(color: AppColors.of(context).alert)),
             onTap: controller.logoutConnect,
           ),
         ] else if (controller.awaitingCodeVia != null) ...[
@@ -462,8 +466,11 @@ class _ConnectSection extends ConsumerWidget {
         _status(context, controller.connectStatus),
         if (problem != null && controller.connectLoggedIn)
           ListTile(
-            leading: const Icon(Icons.call_split, color: Colors.orange),
-            title: Text('Personal API ist eingesprungen: $problem', style: const TextStyle(color: Colors.orange)),
+            leading: Icon(Icons.call_split, color: AppColors.of(context).caution),
+            title: Text(
+              'Personal API ist eingesprungen: $problem',
+              style: TextStyle(color: AppColors.of(context).caution),
+            ),
           ),
       ],
     );
@@ -487,14 +494,14 @@ class _GarminKeySection extends ConsumerWidget {
           'bleibt nur im sicheren Speicher dieses Geräts.',
       children: [
         if (controller.hasGarminKey)
-          const ListTile(
-            leading: Icon(Icons.verified, color: Colors.green),
-            title: Text('Key hinterlegt', style: TextStyle(color: Colors.green)),
+          ListTile(
+            leading: Icon(Icons.verified, color: AppColors.of(context).good),
+            title: Text('Key hinterlegt', style: TextStyle(color: AppColors.of(context).good)),
           ),
         if (controller.expiryWarning case final warning?)
           ListTile(
-            leading: const Icon(Icons.schedule, color: Colors.orange),
-            title: Text(warning, style: const TextStyle(color: Colors.orange)),
+            leading: Icon(Icons.schedule, color: AppColors.of(context).caution),
+            title: Text(warning, style: TextStyle(color: AppColors.of(context).caution)),
           ),
         _ControllerField(
           label: controller.hasGarminKey ? 'Neuen Key einfügen' : 'Personal API Key',
@@ -519,7 +526,7 @@ class _GarminKeySection extends ConsumerWidget {
         if (controller.hasGarminKey) ...[
           ListTile(title: const Text('Jetzt abrufen'), onTap: () => unawaited(model.syncNow())),
           ListTile(
-            title: const Text('Key entfernen', style: TextStyle(color: Colors.red)),
+            title: Text('Key entfernen', style: TextStyle(color: AppColors.of(context).alert)),
             onTap: controller.removeGarminKey,
           ),
         ],

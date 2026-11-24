@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 
 /// KI-Stufe und bevorzugter Anbieter; darunter Anbieter im Worker und das Nutzungsprotokoll.
 class AISettingsSection extends ConsumerWidget {
@@ -172,7 +173,7 @@ class _AIUsageScreenState extends ConsumerState<AIUsageScreen> {
                   title: Text(provider.label),
                   trailing: Icon(
                     provider.enabled ? Icons.check_circle : Icons.remove_circle_outline,
-                    color: provider.enabled ? Colors.green : Theme.of(context).colorScheme.outline,
+                    color: provider.enabled ? AppColors.of(context).good : Theme.of(context).colorScheme.outline,
                     semanticLabel: provider.enabled ? 'eingerichtet' : 'nicht eingerichtet',
                   ),
                   subtitle: provider.enabled && provider.model != null

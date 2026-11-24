@@ -11,6 +11,7 @@ import '../../ui/components.dart';
 import '../../ui/liquid.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
+import '../../ui/tokens.dart';
 import '../activities/activity_detail_screen.dart';
 import '../activities/activity_parts.dart';
 import '../ai/coach_exchange.dart';
@@ -184,13 +185,13 @@ class _MyWeekScreenState extends ConsumerState<MyWeekScreen> {
                     background: target == null
                         ? const SizedBox.shrink()
                         : Container(
-                            color: Colors.blue,
+                            color: AppColors.of(context).info,
                             alignment: Alignment.centerLeft,
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Text('Auf ${target.short}', style: const TextStyle(color: Colors.white)),
                           ),
                     secondaryBackground: Container(
-                      color: Colors.red,
+                      color: AppColors.of(context).alert,
                       alignment: Alignment.centerRight,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: const Text('Auslassen', style: TextStyle(color: Colors.white)),
@@ -323,7 +324,8 @@ class _WeekDayRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: 10,
               children: [
-                if (note != null) Text(note, style: const TextStyle(fontSize: 12, color: Colors.orange)),
+                if (note != null)
+                  Text(note, style: AppText.caption(context).copyWith(color: AppColors.of(context).caution)),
                 if (slots.isEmpty) Text('Frei', style: TextStyle(color: secondary)),
                 for (final (index, slot) in slots.indexed)
                   () {
@@ -345,7 +347,10 @@ class _WeekDayRow extends StatelessWidget {
                                   run == null ? slot.title : '${slot.title} · ${run.minutes} min',
                                   style: const TextStyle(fontWeight: FontWeight.w500),
                                 ),
-                                Text(run?.detail ?? slot.guide, style: TextStyle(fontSize: 12, color: secondary)),
+                                Text(
+                                  run?.detail ?? slot.guide,
+                                  style: AppText.caption(context).copyWith(color: secondary),
+                                ),
                                 if (result != null) ...[
                                   Wrap(
                                     spacing: 8,
@@ -353,17 +358,23 @@ class _WeekDayRow extends StatelessWidget {
                                     children: [
                                       SessionStatusBadge(status: result.status),
                                       if (result.actualMinutes != null || result.status != SessionStatus.planned)
-                                        Text(result.compareText, style: TextStyle(fontSize: 12, color: secondary)),
+                                        Text(
+                                          result.compareText,
+                                          style: AppText.caption(context).copyWith(color: secondary),
+                                        ),
                                     ],
                                   ),
                                   if (result.intensityNote case final intensity?)
-                                    Text(intensity, style: const TextStyle(fontSize: 12, color: Colors.orange)),
+                                    Text(
+                                      intensity,
+                                      style: AppText.caption(context).copyWith(color: AppColors.of(context).caution),
+                                    ),
                                 ],
                                 Row(
                                   spacing: 4,
                                   children: [
                                     Icon(Icons.info_outline, size: 14, color: primary),
-                                    Text('Ausführlich', style: TextStyle(fontSize: 12, color: primary)),
+                                    Text('Ausführlich', style: AppText.caption(context).copyWith(color: primary)),
                                   ],
                                 ),
                               ],
@@ -464,7 +475,7 @@ class _PlanDayMenu extends ConsumerWidget {
             ),
           PopupMenuItem(
             value: () => reminders.skip(day),
-            child: const Text('Diese Woche auslassen', style: TextStyle(color: Colors.red)),
+            child: Text('Diese Woche auslassen', style: TextStyle(color: AppColors.of(context).alert)),
           ),
         ],
         if (note != null)
@@ -531,7 +542,7 @@ class MissedSessionSection extends ConsumerWidget {
           'Höchstens ${MissedSessions.maxMakeUpsPerWeek}× pro Woche nachholen, sonst staut sich die Belastung.',
       children: [
         ListTile(
-          leading: const Icon(Icons.cancel_outlined, color: Colors.red),
+          leading: Icon(Icons.cancel_outlined, color: AppColors.of(context).alert),
           title: Text(
             '${Weekday.of(session.day).long}: ${session.slot.title} nicht gemacht',
             style: const TextStyle(fontWeight: FontWeight.w600),

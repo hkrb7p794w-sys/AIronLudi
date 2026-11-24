@@ -8,6 +8,7 @@ import '../../data/storage.dart';
 import '../../services/routing/routing_providers.dart';
 import '../../ui/components.dart';
 import '../../ui/liquid.dart';
+import '../../ui/tokens.dart';
 import 'address_field.dart';
 import 'exploration_screen.dart';
 import 'route_detail_screen.dart';
@@ -277,7 +278,7 @@ class ArchivedRouteTile extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         SportIcon(symbol: route.discipline.symbol, color: variantColor(route.variant), size: 32),
-        const Positioned(right: -4, bottom: -4, child: Icon(Icons.check_circle, size: 16, color: Colors.green)),
+        Positioned(right: -4, bottom: -4, child: Icon(Icons.check_circle, size: 16, color: AppColors.of(context).good)),
       ],
     ),
     title: Text(route.name, maxLines: 1, overflow: TextOverflow.ellipsis),

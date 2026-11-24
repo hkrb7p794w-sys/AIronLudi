@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 import '../evidence/evidence_views.dart';
 
 /// Ein Muskel mit seinen Flächen auf der Zeichenfläche 100 × 200.
@@ -98,7 +99,7 @@ class BodyMap extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Text(title, style: TextStyle(fontSize: 11, color: secondary)),
+        Text(title, style: AppText.caption(context).copyWith(color: secondary)),
       ],
     );
     return Semantics(
@@ -203,8 +204,8 @@ class _MuscleOverviewSectionState extends ConsumerState<MuscleOverviewSection> {
   double _value(MuscleStatus status) => _mode == _OverviewMode.month ? status.averageWeeklySets : status.weeklySets;
 
   static Color recoveryColor(MuscleRecovery recovery, BuildContext context) => switch (recovery) {
-    MuscleRecovery.recovering => Colors.orange,
-    MuscleRecovery.ready => Colors.green,
+    MuscleRecovery.recovering => AppColors.of(context).caution,
+    MuscleRecovery.ready => AppColors.of(context).good,
     MuscleRecovery.neglected => Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
   };
 
@@ -288,7 +289,7 @@ class _MuscleOverviewSectionState extends ConsumerState<MuscleOverviewSection> {
             trailing: Text(
               '${GermanFormat.decimal(_value(status))} Sätze',
               style: TextStyle(
-                color: status.isLow && _mode != _OverviewMode.recovery ? Colors.orange : secondary,
+                color: status.isLow && _mode != _OverviewMode.recovery ? AppColors.of(context).caution : secondary,
                 fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),

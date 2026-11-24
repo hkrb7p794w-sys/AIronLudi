@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../services/providers.dart';
 import '../../services/whoop/whoop_service.dart';
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 
 /// WHOOP verbinden, Stand und Trennen (Einstellungen › Training und Fitness).
 class WhoopSection extends ConsumerStatefulWidget {
@@ -64,7 +65,7 @@ class _WhoopSectionState extends ConsumerState<WhoopSection> {
   Widget build(BuildContext context) {
     final whoop = ref.watch(whoopServiceProvider);
     final syncing = ref.watch(appModelProvider.select((model) => model.isSyncing)) || whoop.isSyncing;
-    final secondary = TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant);
+    final secondary = AppText.footnote(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
     final time = DateFormat('d. MMM, HH:mm', 'de_DE');
     final profile = whoop.profile;
     final body = whoop.body;
@@ -78,7 +79,7 @@ class _WhoopSectionState extends ConsumerState<WhoopSection> {
       children: [
         if (whoop.isConnected) ...[
           ListTile(
-            leading: const Icon(Icons.check_circle, color: Colors.green),
+            leading: Icon(Icons.check_circle, color: AppColors.of(context).good),
             title: Text(
               profile == null || profile.firstName.isEmpty ? 'Verbunden' : 'Verbunden als ${profile.firstName}',
             ),
@@ -104,8 +105,8 @@ class _WhoopSectionState extends ConsumerState<WhoopSection> {
             onTap: () => unawaited(ref.read(appModelProvider).syncNow()),
           ),
           ListTile(
-            leading: const Icon(Icons.link_off, color: Colors.red),
-            title: const Text('Trennen', style: TextStyle(color: Colors.red)),
+            leading: Icon(Icons.link_off, color: AppColors.of(context).alert),
+            title: Text('Trennen', style: TextStyle(color: AppColors.of(context).alert)),
             onTap: _disconnect,
           ),
         ] else

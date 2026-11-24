@@ -9,6 +9,7 @@ import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/platform_names.dart';
+import '../../ui/tokens.dart';
 import '../today/now_views.dart';
 import '../training/sleep_coach_screen.dart';
 import '../training/training_pages.dart';
@@ -166,8 +167,11 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                     ],
                   ),
                   if (report.findings.isNotEmpty)
-                    Text(report.findings.take(2).join(' '), style: TextStyle(fontSize: 13, color: secondary)),
-                  Text(report.recommendation, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    Text(
+                      report.findings.take(2).join(' '),
+                      style: AppText.footnote(context).copyWith(color: secondary),
+                    ),
+                  Text(report.recommendation, style: AppText.footnote(context).copyWith(fontWeight: FontWeight.w600)),
                 ],
               ),
             ),
@@ -226,7 +230,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                 child: Text(
                   'Ohne Daten in den letzten 30 Tagen (ausgeblendet): '
                   '${missing.map((entry) => '${entry.kind.title} (${entry.kind.sources})').join(', ')}',
-                  style: TextStyle(fontSize: 13, color: secondary),
+                  style: AppText.footnote(context).copyWith(color: secondary),
                 ),
               ),
           ],
@@ -296,8 +300,8 @@ class HealthWidgetCard extends StatelessWidget {
     if (norm == null || higher == null) return secondary;
     return switch (norm.position(latest.value)) {
       NormPosition.within => secondary,
-      NormPosition.above => higher ? Colors.green : Colors.orange,
-      NormPosition.below => higher ? Colors.orange : Colors.green,
+      NormPosition.above => higher ? AppColors.of(context).good : AppColors.of(context).caution,
+      NormPosition.below => higher ? AppColors.of(context).caution : AppColors.of(context).good,
     };
   }
 
@@ -325,7 +329,7 @@ class HealthWidgetCard extends StatelessWidget {
                     kind.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: secondary),
+                    style: AppText.caption(context).copyWith(fontWeight: FontWeight.w600, color: secondary),
                   ),
                 ),
               ],
@@ -339,10 +343,10 @@ class HealthWidgetCard extends StatelessWidget {
               Text(
                 _caption(latest, norm),
                 maxLines: 2,
-                style: TextStyle(fontSize: 11, color: _color(context, latest, norm)),
+                style: AppText.caption(context).copyWith(color: _color(context, latest, norm)),
               )
             else
-              Text('Keine Werte in den letzten 7 Tagen', style: TextStyle(fontSize: 11, color: secondary)),
+              Text('Keine Werte in den letzten 7 Tagen', style: AppText.caption(context).copyWith(color: secondary)),
             if (entry.style != HealthWidgetStyle.value && series.length >= 2)
               SizedBox(
                 height: entry.style == HealthWidgetStyle.month ? 70 : 44,
@@ -561,7 +565,7 @@ class HealthDashboardEditor extends ConsumerWidget {
                       ),
                       subtitle: available.contains(entry.kind)
                           ? null
-                          : Text('keine Daten (${entry.kind.sources})', style: const TextStyle(fontSize: 11)),
+                          : Text('keine Daten (${entry.kind.sources})', style: AppText.caption(context)),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -575,7 +579,7 @@ class HealthDashboardEditor extends ConsumerWidget {
                             ],
                             child: Padding(
                               padding: const EdgeInsets.all(8),
-                              child: Text(entry.style.label, style: const TextStyle(fontSize: 12)),
+                              child: Text(entry.style.label, style: AppText.caption(context)),
                             ),
                           ),
                           IconButton(
@@ -602,8 +606,8 @@ class HealthDashboardEditor extends ConsumerWidget {
                       leading: Icon(kind.icon, color: kind.color),
                       title: Text(kind.title),
                       trailing: available.contains(kind)
-                          ? const Icon(Icons.add_circle, color: Colors.green)
-                          : Text('keine Daten', style: TextStyle(fontSize: 12, color: secondary)),
+                          ? Icon(Icons.add_circle, color: AppColors.of(context).good)
+                          : Text('keine Daten', style: AppText.caption(context).copyWith(color: secondary)),
                       onTap: () => _change(ref, (dashboard) => dashboard.add(kind)),
                     ),
                 ],

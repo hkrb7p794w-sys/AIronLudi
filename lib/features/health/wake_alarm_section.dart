@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/alarm/wake_alarm_service.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 
 /// Wecker zur Aufstehzeit stellen: Weckzeit aus dem Schlaf-Coach oder „jetzt ins Bett“ plus Schlafbedarf (Port von
 /// `WakeAlarmSection`).
@@ -92,8 +93,8 @@ class _WakeAlarmSectionState extends ConsumerState<WakeAlarmSection> {
                 : '${stored.time.text} Uhr · ${stored.repeats.label}',
           ),
           ListTile(
-            leading: const Icon(Icons.alarm_off, color: Colors.red),
-            title: const Text('Wecker löschen', style: TextStyle(color: Colors.red)),
+            leading: Icon(Icons.alarm_off, color: AppColors.of(context).alert),
+            title: Text('Wecker löschen', style: TextStyle(color: AppColors.of(context).alert)),
             onTap: () async {
               await alarms.cancel();
               setState(() => _confirmation = null);
@@ -140,12 +141,12 @@ class _WakeAlarmSectionState extends ConsumerState<WakeAlarmSection> {
           ),
         if (_confirmation case final confirmation?)
           ListTile(
-            leading: const Icon(Icons.check_circle, color: Colors.green),
-            title: Text(confirmation, style: const TextStyle(color: Colors.green)),
+            leading: Icon(Icons.check_circle, color: AppColors.of(context).good),
+            title: Text(confirmation, style: TextStyle(color: AppColors.of(context).good)),
           ),
         if (alarms.lastError case final error?)
           ListTile(
-            title: Text(error, style: const TextStyle(fontSize: 13, color: Colors.red)),
+            title: Text(error, style: AppText.footnote(context).copyWith(color: AppColors.of(context).alert)),
           ),
       ],
     );

@@ -11,6 +11,7 @@ import '../../services/routing/location_source.dart';
 import '../../services/routing/routing_providers.dart';
 import '../../ui/components.dart';
 import '../../ui/liquid.dart';
+import '../../ui/tokens.dart';
 import 'address_field.dart';
 import 'my_location.dart';
 import 'route_detail_screen.dart';
@@ -307,7 +308,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
               AddressField(
                 hint: 'Startadresse oder Ort',
                 icon: Icons.flag,
-                color: Colors.green,
+                color: AppColors.of(context).good,
                 value: c.startAddress,
                 near: _near,
                 enabled: !c.planning,
@@ -416,7 +417,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                 AddressField(
                   hint: 'Zieladresse oder Ort',
                   icon: Icons.sports_score,
-                  color: Colors.red,
+                  color: AppColors.of(context).alert,
                   value: c.destinationAddress,
                   near: _near,
                   enabled: !c.planning,
@@ -536,11 +537,11 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(LiquidSpacing.page, 12, LiquidSpacing.page, 0),
               child: LiquidCard(
-                tint: Colors.orange,
+                tint: AppColors.of(context).caution,
                 child: Row(
                   spacing: 12,
                   children: [
-                    const Icon(Icons.info_outline, color: Colors.orange),
+                    Icon(Icons.info_outline, color: AppColors.of(context).caution),
                     Expanded(child: Text(problem)),
                   ],
                 ),
@@ -625,7 +626,7 @@ class _MapHint extends StatelessWidget {
         child: Text(
           text,
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+          style: AppText.footnote(context).copyWith(fontWeight: FontWeight.w500),
         ),
       ),
     ),
@@ -710,7 +711,7 @@ class _Results extends StatelessWidget {
                               route.stats.distanceMeters > route.request.distanceMeters
                           ? 'Das Ziel liegt weiter als die Wunschdistanz – kürzer geht es nicht.'
                           : 'Näher an die Wunschdistanz kam das Wegenetz hier nicht. „Neu würfeln“ probiert andere Wege.',
-                      style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      style: AppText.footnote(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                     ),
                 ],
               ),
@@ -810,7 +811,7 @@ class _VariantCard extends StatelessWidget {
                         route.variant.label,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                        style: AppText.footnote(context).copyWith(fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],

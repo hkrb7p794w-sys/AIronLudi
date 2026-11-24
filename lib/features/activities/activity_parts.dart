@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../ui/components.dart';
 import '../../ui/sport_style.dart';
+import '../../ui/tokens.dart';
 import '../today/now_views.dart';
 
 /// „Sa., 14. Nov.“ wie `Formatters.day`.
@@ -25,7 +26,10 @@ class FeedBadges extends StatelessWidget {
       runSpacing: 4,
       children: [
         if (intensity != null && intensity != SessionKind.gym)
-          _Badge(intensity.label, intensity == SessionKind.easy ? Colors.green : Colors.orange),
+          _Badge(
+            intensity.label,
+            intensity == SessionKind.easy ? AppColors.of(context).good : AppColors.of(context).caution,
+          ),
         for (final source in sources) _Badge(source.label, secondary),
       ],
     );
@@ -44,7 +48,7 @@ class _Badge extends StatelessWidget {
     decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
     child: Text(
       text,
-      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
+      style: AppText.caption(context).copyWith(fontWeight: FontWeight.w600, color: color),
     ),
   );
 }
@@ -89,7 +93,7 @@ class ZoneShareBar extends StatelessWidget {
               for (var index = 0; index < shares.length; index++)
                 Text(
                   'Z${index + 1} ${percent(index)} %',
-                  style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  style: AppText.caption(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
             ],
           ),
@@ -116,7 +120,7 @@ class MissingDataSection extends StatelessWidget {
           ListTile(
             dense: true,
             leading: Icon(Icons.info_outline, color: secondary),
-            title: Text(note, style: TextStyle(fontSize: 13, color: secondary)),
+            title: Text(note, style: AppText.footnote(context).copyWith(color: secondary)),
           ),
       ],
     );
@@ -168,11 +172,14 @@ class FeedRow extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      Text(formatDay(entry.day), style: TextStyle(fontSize: 12, color: secondary)),
+                      Text(formatDay(entry.day), style: AppText.caption(context).copyWith(color: secondary)),
                     ],
                   ),
                   if (entry.values.isNotEmpty || extra != null)
-                    Text([...entry.values, ?extra].join(' · '), style: TextStyle(fontSize: 12, color: secondary)),
+                    Text(
+                      [...entry.values, ?extra].join(' · '),
+                      style: AppText.caption(context).copyWith(color: secondary),
+                    ),
                   Wrap(
                     spacing: 6,
                     runSpacing: 4,
@@ -185,7 +192,7 @@ class FeedRow extends StatelessWidget {
                   if (planned != null)
                     Text(
                       'Plan: ${planned.planned.slot.title}${planned.intensityNote == null ? '' : ' · ${planned.intensityNote}'}',
-                      style: TextStyle(fontSize: 11, color: secondary),
+                      style: AppText.caption(context).copyWith(color: secondary),
                     ),
                 ],
               ),

@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/tokens.dart';
 import '../nutrition/capture_views.dart';
 import 'pantry_controller.dart';
 import 'recipe_views.dart';
@@ -111,7 +112,7 @@ class _PantryRecipesScreenState extends ConsumerState<PantryRecipesScreen> {
                 FormSection(
                   children: [
                     ListTile(
-                      leading: const Icon(Icons.error_outline, color: Colors.orange),
+                      leading: Icon(Icons.error_outline, color: AppColors.of(context).caution),
                       title: Text(message),
                     ),
                   ],
@@ -226,8 +227,12 @@ class _RecipeTile extends StatelessWidget {
     final kcal = PantryRecipes.kilocalories(recipe).round();
     final base = '${recipe.recipe.minutes} min · $kcal kcal';
     final (icon, color, detail) = switch (status) {
-      PantryRecipeStatus.ready => (Icons.check_circle, Colors.green, base),
-      PantryRecipeStatus.waiting => (Icons.help_outline, Colors.orange, '$base · braucht ${recipe.missing.join(', ')}'),
+      PantryRecipeStatus.ready => (Icons.check_circle, AppColors.of(context).good, base),
+      PantryRecipeStatus.waiting => (
+        Icons.help_outline,
+        AppColors.of(context).caution,
+        '$base · braucht ${recipe.missing.join(', ')}',
+      ),
       PantryRecipeStatus.blocked => (Icons.block, secondary, 'Fehlt: ${recipe.missing.join(', ')}'),
     };
     final blocked = status == PantryRecipeStatus.blocked;

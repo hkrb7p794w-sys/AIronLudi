@@ -10,6 +10,7 @@ import '../../services/providers.dart';
 import '../../services/routing/location_source.dart';
 import '../../services/routing/routing_providers.dart';
 import '../../ui/liquid.dart';
+import '../../ui/tokens.dart';
 import 'my_location.dart';
 import 'route_parts.dart';
 
@@ -145,7 +146,7 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen> {
                   child: LiquidSurface(
                     radius: LiquidRadii.pill,
                     strong: true,
-                    tint: offRoute ? Colors.red : null,
+                    tint: offRoute ? AppColors.of(context).alert : null,
                     shadow: false,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
@@ -163,7 +164,7 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: offRoute ? Colors.red : null,
+                          color: offRoute ? AppColors.of(context).alert : null,
                         ),
                       ),
                     ),
@@ -227,7 +228,10 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen> {
                           ],
                         ),
                       ),
-                      LiquidProgressBar(value: state?.fraction ?? 0, color: offRoute ? Colors.red : color),
+                      LiquidProgressBar(
+                        value: state?.fraction ?? 0,
+                        color: offRoute ? AppColors.of(context).alert : color,
+                      ),
                     ],
                   ),
                 ),
