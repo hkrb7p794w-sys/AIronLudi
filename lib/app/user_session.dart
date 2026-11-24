@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:coach_core/coach_core.dart';
 import 'package:flutter/foundation.dart';
@@ -10,6 +11,7 @@ import '../data/secure/secret_store.dart';
 import '../data/storage.dart';
 import '../data/users/user_storage.dart';
 import '../platform/notifications.dart';
+import '../services/share/export_folders.dart';
 import '../services/widgets/widget_providers.dart';
 
 /// Öffnet den Container eines Benutzers (`createAppContainer`); in Tests ersetzbar.
@@ -129,7 +131,11 @@ final class UserSession extends ChangeNotifier {
   }
 
   /// Aufräumen, bevor der Container eines Benutzers verworfen wird (auch für Tests).
-  static Future<void> leave(ProviderContainer container, {NotificationCenterBridge? notificationCenter}) async {
+  static Future<void> leave(
+    ProviderContainer container, {
+    NotificationCenterBridge? notificationCenter,
+    Future<Directory> Function()? exportTemp,
+  }) async {
     Future<void> attempt(Future<void> Function() step) async {
       try {
         await step();
@@ -145,6 +151,8 @@ final class UserSession extends ChangeNotifier {
     await attempt(() => host.updateWorkout(null, title: ''));
     await attempt(() => host.updateMeals(null, now: DateTime.now()));
     await attempt(() => container.read(widgetStoreProvider).clear());
+    // Exporte (KI, Routen) liegen im Temp-Ordner des Geräts: nicht für den nächsten Benutzer liegen lassen.
+    await attempt(() => clearSharedExports(temp: exportTemp));
     final center = notificationCenter;
     if (center != null) {
       await attempt(() async => center.removePending(await center.pendingIdentifiers()));
