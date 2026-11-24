@@ -247,8 +247,12 @@ void main() {
     await storage.settings.setBool(SettingsKeys.showsEvidence, true);
     await storage.database.close();
 
+    // Ordner, dessen „Elternordner“ eine Datei ist: auf jedem System unbeschreibbar (`/proc/…` gibt es unter Windows
+    // nicht, dort ließe sich der Ordner anlegen).
+    final blocker = File('${Directory.systemTemp.createTempSync('blocker').path}/datei')..writeAsStringSync('x');
+    addTearDown(() => blocker.parent.deleteSync(recursive: true));
     final broken = await AppStorage.open(
-      executor: NativeDatabase(File('/proc/nicht-beschreibbar/coach.sqlite')),
+      executor: NativeDatabase(File('${blocker.path}/coach.sqlite')),
       secrets: InMemorySecretStore(),
     );
     expect(broken.isTemporary, isTrue);

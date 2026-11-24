@@ -35,7 +35,7 @@ der nativen iPhone-App aus `hkrb7p794w-sys/Coach-App` (Swift, Stand `793d408`). 
 - **Zwei Modi** (`UserProfile.mode`): Saisonplan und persönlich; keine Saisonwerte für andere Personen anzeigen.
   Gewichtsziele nur mit den Schutzgrenzen aus `GoalRules`.
 - **Datenformate bleiben kompatibel:** `AppBackup` (Umzug von der Swift-App), Mahlzeit-Teilen, Coach-Export,
-  Einstellungsschlüssel `coach.*`, Link-Schema `coach://`.
+  Einstellungsschlüssel `coach.*`, Link-Schemata `coach://` und `ironludi://` (Android, bisherige App).
 - UI-Texte auf Deutsch mit echten Umlauten, Bezeichner auf Englisch, Kommentare auf Deutsch.
 - iOS 18+, Android 8.0+ (minSdk 26), nur Hochformat.
 
@@ -50,7 +50,14 @@ cd packages/coach_core && dart test
 cd worker && npm ci && npm run lint && npm run typecheck && npm test   # Node 22
 ```
 
-Flutter-Version: 3.47.9 (in allen Workflows festgelegt).
+Flutter-Version: 3.47.9 (in allen Workflows festgelegt). Zeilenenden: LF (`.gitattributes`), auch unter Windows.
+
+Screenshot-Prüfstand (nicht im normalen Testlauf; Bilder und Übersicht in `docs/roast/`):
+
+```sh
+flutter test --tags screenshots --dart-define=SCREENSHOTS=true --update-goldens test/screenshots
+bash test/screenshots/make_index.sh
+```
 
 ## CI
 
