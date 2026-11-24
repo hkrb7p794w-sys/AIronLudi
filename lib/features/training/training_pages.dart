@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../ui/chart_axes.dart';
 import '../../ui/components.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/tokens.dart';
@@ -34,7 +35,7 @@ String _dayLabel(double value) => DateFormat(
 FlTitlesData _titles({double? interval}) => FlTitlesData(
   topTitles: const AxisTitles(),
   rightTitles: const AxisTitles(),
-  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40)),
+  leftTitles: valueAxis(reservedSize: 40),
   bottomTitles: AxisTitles(
     sideTitles: SideTitles(
       showTitles: true,
@@ -643,7 +644,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
                           titlesData: FlTitlesData(
                             topTitles: const AxisTitles(),
                             rightTitles: const AxisTitles(),
-                            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40)),
+                            leftTitles: valueAxis(reservedSize: 40),
                             bottomTitles: AxisTitles(
                               sideTitles: SideTitles(
                                 showTitles: true,

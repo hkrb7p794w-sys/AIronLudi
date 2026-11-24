@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../ui/chart_axes.dart';
 import '../../ui/components.dart';
 import '../../ui/tokens.dart';
 
@@ -57,7 +58,7 @@ class _ExerciseHistoryChartsState extends State<ExerciseHistoryCharts> {
     final titles = FlTitlesData(
       topTitles: const AxisTitles(),
       rightTitles: const AxisTitles(),
-      leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40)),
+      leftTitles: valueAxis(reservedSize: 40),
       bottomTitles: AxisTitles(
         sideTitles: SideTitles(
           showTitles: true,

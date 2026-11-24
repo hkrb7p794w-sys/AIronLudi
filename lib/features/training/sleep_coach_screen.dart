@@ -10,6 +10,7 @@ import '../../data/settings/coach_settings.dart';
 import '../../data/storage.dart';
 import '../../platform/notifications.dart';
 import '../../services/providers.dart';
+import '../../ui/chart_axes.dart';
 import '../../ui/components.dart';
 import '../../ui/tokens.dart';
 import '../evidence/evidence_views.dart';
@@ -219,7 +220,7 @@ class _SleepCoachScreenState extends ConsumerState<SleepCoachScreen> {
                           titlesData: FlTitlesData(
                             topTitles: const AxisTitles(),
                             rightTitles: const AxisTitles(),
-                            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 28)),
+                            leftTitles: valueAxis(reservedSize: 28),
                             bottomTitles: AxisTitles(
                               sideTitles: SideTitles(
                                 showTitles: true,

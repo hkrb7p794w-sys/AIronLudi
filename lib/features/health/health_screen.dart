@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/storage.dart';
 import '../../services/providers.dart';
+import '../../ui/chart_axes.dart';
 import '../../ui/components.dart';
 import '../../ui/platform_names.dart';
 import '../../ui/tokens.dart';
@@ -464,11 +465,11 @@ class _HealthMetricDetailState extends State<HealthMetricDetail> {
                         rangeAnnotations: RangeAnnotations(
                           horizontalRangeAnnotations: [if (norm != null) _band(norm, alpha: 0.15)],
                         ),
-                        titlesData: const FlTitlesData(
+                        titlesData: FlTitlesData(
                           topTitles: AxisTitles(),
                           rightTitles: AxisTitles(),
                           bottomTitles: AxisTitles(),
-                          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40)),
+                          leftTitles: valueAxis(reservedSize: 40),
                         ),
                         borderData: FlBorderData(show: false),
                       ),
