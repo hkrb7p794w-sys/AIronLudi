@@ -451,6 +451,7 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Roast Stufe 1 / PR 3: „Heute“ – Hinweis „Datenquelle verbinden“ mit Knopf und nur ohne Werte der letzten Woche (`showsConnectSourceHint`), Strain-Wert neutral, solange nichts trainiert ist (`Kpi.valueStatus`) | erledigt |
 | Roast Stufe 1 / PR 4: WHOOP-Recovery mit eigener Skala in der Tagesampel (`WhoopRecoveryLevel`, rot < 34 → Pause), Garmin unverändert | erledigt |
 | Roast Stufe 1 / PR 5: `.gitattributes` (LF), Tests laufen unter Windows (Pfade, Temp-Ordner, unbeschreibbarer Pfad), Abschnitt 8 ohne veraltetes „in PR“, `CLAUDE.md` mit `ironludi://` und Prüfstand | erledigt |
+| Agenten-Anweisungen: `AGENTS.md` als gemeinsame Quelle für alle KI-Werkzeuge (Funktionsübersicht, Architektur, UI-Regeln, Doku-Pflege), `CLAUDE.md` bindet sie ein, `worker/AGENTS.md` für den Worker; doppelte Zeilen in Abschnitt 8 entfernt | erledigt |
 | Roast Stufe 1 / PR 7: Export-Ordner (KI, Routen) beim Benutzerwechsel geleert (`ExportFolders`, `clearSharedExports`); PR 6 (Ladefenster „Heute“) nach Prüfung verworfen | erledigt |
 | Roast Stufe 2 / PR 8: Designsystem-Tokens (`lib/ui/tokens.dart`) und Sperrklinken-Test gegen neue Rohfarben/Schriftgrößen in `lib/features` | erledigt |
 | Roast Stufe 3 / PR 16: HRV-Trend für WHOOP und Health in der Tagesampel (`HrvTrend`, 7-Tage-Schnitt gegen eigene Basis) | erledigt |
@@ -465,4 +466,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Roast Stufe 3 / PR 16b: ein Titel je Tagesbewertung (`RecoveryLevel.headline`) auf „Heute“ und im Morning Report; Einheitennamen im Satz in Anführungszeichen | erledigt |
 | Roast Stufe 4 / PR 18–21 (Grundumbau): fünf Reiter Heute · Plan · Verlauf · Ernährung · Ich; Training aufgeteilt in Plan und Auswertungen, Einstellungen als Reiter Ich mit Freunde & Liga und KI | erledigt |
 | Roast Stufe 4 (F-6): „KI“ statt „AI“ in allen Texten (Schnellaktion, Bereich, Heute-Modul, Export-Anleitung) | erledigt |
-| Agenten-Anweisungen: `AGENTS.md` als gemeinsame Quelle für alle KI-Werkzeuge (Funktionsübersicht, Architektur, UI-Regeln, Doku-Pflege), `CLAUDE.md` bindet sie ein, `worker/AGENTS.md` für den Worker; doppelte Zeilen in Abschnitt 8 entfernt | erledigt |
+| Roast Stufe 4 / PR 23: Ernährung geordnet – Wochen-Check-in unter dem Tag, Navigationszeilen in „Planen“ und „Verlauf“, „Fuel Planner“ heißt „Verpflegung“ (Glossar) | erledigt |

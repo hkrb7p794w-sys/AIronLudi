@@ -284,23 +284,39 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> with PendingR
                     },
                   ),
                   if (controller.pending.isNotEmpty) _pendingSection(),
-                  if (_showsCheckIn) _checkInSection(),
                   for (final card in settings.nutritionDashboard.visible) ..._dashboardCard(card),
+                  // Wochen-Check-in unter dem Tag (Roast, Konzept 6.4): bleibt sichtbar, solange er fällig ist.
+                  if (_showsCheckIn) _checkInSection(),
                 ],
                 if (DateTime.now().hour >= 18 || controller.reviewPoints.isNotEmpty) _reviewSection(),
                 FormSection(
+                  header: 'Planen',
                   children: [
                     ListTile(
-                      leading: const Icon(Icons.tune),
-                      title: const Text('Übersicht anpassen'),
-                      onTap: () => _push((_) => const NutritionDashboardEditor(), fullscreen: true),
+                      leading: const Icon(Icons.soup_kitchen_outlined),
+                      title: const Text('Rezeptideen für die kommende Woche'),
+                      trailing: const DisclosureChevron(),
+                      onTap: () => _push((_) => const RecipesScreen()),
                     ),
-                    if (ref.watch(aiClientProvider).isConfigured)
-                      ListTile(
-                        leading: const Icon(Icons.move_to_inbox_outlined),
-                        title: const Text('Geteilte Mahlzeit öffnen'),
-                        onTap: () => _push((_) => const ReceivedMealScreen(), fullscreen: true),
-                      ),
+                    ListTile(
+                      leading: const Icon(Icons.restaurant),
+                      title: const Text('Eigene Rezepte und Meal-Prep'),
+                      trailing: const DisclosureChevron(),
+                      onTap: () =>
+                          _push((_) => OwnRecipesScreen(log: (recipe, grams) => _logOwnRecipe(recipe, grams: grams))),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.local_drink_outlined),
+                      title: const Text('Verpflegung'),
+                      subtitle: const Text('Fuel Planner: vor, während und nach dem Training'),
+                      trailing: const DisclosureChevron(),
+                      onTap: () => _push((_) => const FuelPlannerScreen()),
+                    ),
+                  ],
+                ),
+                FormSection(
+                  header: 'Verlauf',
+                  children: [
                     ListTile(
                       leading: const Icon(Icons.calendar_month_outlined),
                       title: const Text('Woche und Auswertung'),
@@ -315,31 +331,26 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> with PendingR
                       ),
                     ),
                     ListTile(
-                      leading: const Icon(Icons.restaurant),
-                      title: const Text('Eigene Rezepte und Meal-Prep'),
-                      trailing: const DisclosureChevron(),
-                      onTap: () =>
-                          _push((_) => OwnRecipesScreen(log: (recipe, grams) => _logOwnRecipe(recipe, grams: grams))),
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.local_drink_outlined),
-                      title: const Text('Fuel Planner'),
-                      subtitle: const Text('Verpflegung vor, während und nach dem Training'),
-                      trailing: const DisclosureChevron(),
-                      onTap: () => _push((_) => const FuelPlannerScreen()),
-                    ),
-                    ListTile(
                       leading: const Icon(Icons.monitor_weight_outlined),
                       title: const Text('Gewichtsverlauf'),
                       trailing: const DisclosureChevron(),
                       onTap: () => _push((_) => const WeightTrendScreen()),
                     ),
+                  ],
+                ),
+                FormSection(
+                  children: [
                     ListTile(
-                      leading: const Icon(Icons.soup_kitchen_outlined),
-                      title: const Text('Rezeptideen für die kommende Woche'),
-                      trailing: const DisclosureChevron(),
-                      onTap: () => _push((_) => const RecipesScreen()),
+                      leading: const Icon(Icons.tune),
+                      title: const Text('Übersicht anpassen'),
+                      onTap: () => _push((_) => const NutritionDashboardEditor(), fullscreen: true),
                     ),
+                    if (ref.watch(aiClientProvider).isConfigured)
+                      ListTile(
+                        leading: const Icon(Icons.move_to_inbox_outlined),
+                        title: const Text('Geteilte Mahlzeit öffnen'),
+                        onTap: () => _push((_) => const ReceivedMealScreen(), fullscreen: true),
+                      ),
                   ],
                 ),
               ],

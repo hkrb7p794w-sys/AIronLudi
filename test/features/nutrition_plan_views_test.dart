@@ -2,6 +2,7 @@
 import 'package:aironludi/data/storage.dart';
 import 'package:aironludi/features/nutrition/meal_share_views.dart';
 import 'package:aironludi/features/nutrition/nutrition_plan_views.dart';
+import 'package:aironludi/features/nutrition/nutrition_screen.dart';
 import 'package:aironludi/features/nutrition/weight_views.dart';
 import 'package:aironludi/services/providers.dart';
 import 'package:aironludi/ui/liquid.dart';
@@ -66,7 +67,7 @@ void main() {
     await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Ernährung')));
     await tester.pumpAndSettle();
     final link = find.text('Gewichtsverlauf');
-    await tester.scrollUntilVisible(link, 200);
+    await tester.scrollUntilVisible(link, 200, scrollable: _nutritionList);
     // Nicht unter der Reiterleiste antippen (je nach Wochentag steht oben eine Karte mehr).
     await tester.ensureVisible(link);
     await tester.pumpAndSettle();
@@ -111,3 +112,11 @@ void main() {
 void unawaitedPush(WidgetTester tester, Widget page) {
   Navigator.of(tester.element(find.byType(LiquidTabBar))).push(MaterialPageRoute<void>(builder: (_) => page));
 }
+
+/// Liste des Reiters Ernährung (mit fünf Reitern liegen mehrere Listen im Baum).
+final _nutritionList = find
+    .descendant(
+      of: find.byType(NutritionScreen),
+      matching: find.byWidgetPredicate((widget) => widget is Scrollable && widget.axisDirection == AxisDirection.down),
+    )
+    .first;

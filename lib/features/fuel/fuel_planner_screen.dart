@@ -55,7 +55,7 @@ class FuelPlannerScreen extends ConsumerWidget {
     final store = ref.watch(fuelStoreProvider);
     final profile = store.profile;
     return Scaffold(
-      appBar: AppBar(title: const Text('Fuel Planner')),
+      appBar: AppBar(title: const Text('Verpflegung')),
       body: ListView(
         padding: const EdgeInsets.only(bottom: 120),
         children: [
