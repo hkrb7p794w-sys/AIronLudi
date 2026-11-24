@@ -13,28 +13,93 @@ import 'route_planner_screen.dart';
 
 /// In einer Einheit des Ausdauerplans: „Route dazu planen“ (Disziplin und Distanz aus der Einheit vorbelegt, Vorschläge
 /// werden der Einheit zugeordnet) und die schon zugeordneten Routen.
-class RouteForSlotSection extends ConsumerWidget {
+class RouteForSlotSection extends StatelessWidget {
   const RouteForSlotSection({super.key, required this.slot, this.runThresholdPace});
 
   final PlanSlot slot;
   final int? runThresholdPace;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final workout = slot.current;
-    final suggestion = workout.isRest
-        ? null
-        : RouteForWorkout.suggest(
-            isBike: workout.sport == EnduranceSport.bike,
-            isRun: workout.sport == EnduranceSport.run,
-            minutes: workout.minutes,
-            meters: workout.meters,
-            runThresholdPace: runThresholdPace,
-          );
+    if (workout.isRest) return const SizedBox.shrink();
+    return RouteForUnitSection(
+      unitID: slot.id,
+      day: slot.day,
+      title: workout.title,
+      isBike: workout.sport == EnduranceSport.bike,
+      isRun: workout.sport == EnduranceSport.run,
+      minutes: workout.minutes,
+      meters: workout.meters,
+      runThresholdPace: runThresholdPace,
+    );
+  }
+}
+
+/// Einheit aus dem Wochenplan (Roast B-04): gleiche Route-Funktion wie im Ausdauerplan, die Kennung verbindet
+/// Tag, Sportart und Intensität.
+class RouteForSessionSection extends StatelessWidget {
+  const RouteForSessionSection({super.key, required this.slot, required this.day, this.minutes});
+
+  final SessionSlot slot;
+  final CalendarDay day;
+  final int? minutes;
+
+  static String unitID(SessionSlot slot, CalendarDay day) =>
+      'woche:${day.iso}:${slot.sport.rawValue}:${slot.intensity.rawValue}';
+
+  @override
+  Widget build(BuildContext context) {
+    final isRun = slot.sport == TrainingSport.run;
+    final isBike = slot.sport == TrainingSport.bike;
+    if (!isRun && !isBike) return const SizedBox.shrink();
+    return RouteForUnitSection(
+      unitID: unitID(slot, day),
+      day: day,
+      title: slot.title,
+      isBike: isBike,
+      isRun: isRun,
+      minutes: minutes ?? SessionMatcher.defaultMinutes(slot),
+    );
+  }
+}
+
+/// Gemeinsamer Teil: Vorschlag aus Sportart und Dauer bzw. Strecke, zugeordnete Routen, „Route dazu planen“.
+class RouteForUnitSection extends ConsumerWidget {
+  const RouteForUnitSection({
+    super.key,
+    required this.unitID,
+    required this.day,
+    required this.title,
+    required this.isBike,
+    required this.isRun,
+    required this.minutes,
+    this.meters,
+    this.runThresholdPace,
+  });
+
+  final String unitID;
+  final CalendarDay day;
+  final String title;
+  final bool isBike;
+  final bool isRun;
+  final int minutes;
+  final int? meters;
+  final int? runThresholdPace;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final suggestion = RouteForWorkout.suggest(
+      isBike: isBike,
+      isRun: isRun,
+      minutes: minutes,
+      meters: meters,
+      runThresholdPace: runThresholdPace,
+    );
     final store = ref.watch(routeStoreProvider);
     final assigned = [
       for (final route in [...store.openRoutes, ...store.archive])
-        if (route.slotID == slot.id) route,
+        if (route.slotID == unitID) route,
     ];
     if (suggestion == null && assigned.isEmpty) return const SizedBox.shrink();
     return FormSection(
@@ -42,7 +107,7 @@ class RouteForSlotSection extends ConsumerWidget {
       footer: suggestion == null
           ? null
           : 'Vorbelegt: ${suggestion.discipline.label}, ${GermanFormat.decimal(suggestion.kilometers)} km '
-                '(${workout.meters != null ? 'Strecke der Einheit' : '${workout.minutes} min im lockeren Tempo'}). '
+                '(${meters != null ? 'Strecke der Einheit' : '$minutes min im lockeren Tempo'}). '
                 'Gespeicherte Vorschläge gehören dann zu dieser Einheit.',
       children: [
         for (final route in assigned)
@@ -68,9 +133,9 @@ class RouteForSlotSection extends ConsumerWidget {
                   .prepareForSlot(
                     discipline: suggestion.discipline,
                     kilometers: suggestion.kilometers,
-                    day: slot.day,
-                    slotID: slot.id,
-                    title: workout.title,
+                    day: day,
+                    slotID: unitID,
+                    title: title,
                   );
               unawaited(
                 Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const RoutePlannerScreen())),

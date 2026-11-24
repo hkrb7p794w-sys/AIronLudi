@@ -13,6 +13,7 @@ import '../../ui/sport_style.dart';
 import '../../ui/tokens.dart';
 import '../evidence/evidence_views.dart';
 import '../fuel/fuel_for_slot.dart';
+import '../routes/route_for_slot.dart';
 import 'plan_controller.dart';
 
 /// Farbe und Symbol je Einheit (wie `SportStyle.swift`).
@@ -638,6 +639,7 @@ class SessionGuideScreen extends StatelessWidget {
             ],
           ),
           ...unitGuideSections(UnitGuides.guideForSlot(slot)),
+          if (day case final day?) RouteForSessionSection(slot: slot, day: day, minutes: minutes),
           FuelForSessionSection(slot: slot, day: day, minutes: minutes),
           FormSection(
             children: [
