@@ -20,7 +20,7 @@ test/screenshots`) für die betroffenen Screens, damit Vorher/Nachher im PR sich
 | 3 | `fix(today): Hinweis mit Knopf, Strain-Farbe` | B-10, B-11 | Hinweis hat „Quelle verbinden“ → Datenquellen und erscheint nur ohne Tageswerte der letzten 7 Tage; Ist-Belastung 0 ist neutral; Tests in `today_screen_test.dart` |
 | 4 | `fix(coach): WHOOP-Skala in der Ampel` | B-09 | Readiness-Schwellen je Quelle; Testfälle WHOOP 30 → Pause, 50 → locker, Garmin unverändert (alle bestehenden `today-cases.json` grün) |
 | 5 | `chore: .gitattributes, Windows-Tests, Doku-Stand` | B-18, B-20, B-21, B-24 | `npm run lint` und `flutter test` laufen unter Windows grün; Migrationsplan Abschnitt 8 ohne „in PR“; `CLAUDE.md` nennt `ironludi://` und „Clean Liquid Design“ |
-| 6 | `perf(today): kleineres Ladefenster` | B-16 | Heute lädt ≤ 60 Tage Tageswerte und ≤ 42 Tage Aktivitäten; Ampel- und Strain-Tests unverändert grün |
+| 6 | ~~`perf(today): kleineres Ladefenster`~~ **verworfen nach Prüfung** | B-16 | Die Form (Fitness/Ermüdung) wird exponentiell über die ganze Aktivitätshistorie gerechnet, Morning Report und Hinweise nutzen eigene Fenster: Kürzen würde Ampelwerte ändern; der Gewinn (einige hundert Zeilen aus SQLite) ist vernachlässigbar. Später ggf. als gemeinsamer Provider statt je Screen (B-15). |
 | 7 | `fix(privacy): Exporte je Benutzer` | B-23 | Temp-Ordner je Benutzer, nach dem Teilen gelöscht; Test im `user_session_test.dart` |
 
 ## Stufe 2 – Designsystem (Grundlage für alles Weitere)

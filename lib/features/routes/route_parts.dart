@@ -10,13 +10,14 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/routing/garmin_course_service.dart';
 import '../../services/routing/routing_providers.dart';
 import '../../services/routing/worker_maps.dart';
+import '../../services/share/export_folders.dart';
 import '../../ui/liquid.dart';
 import 'my_location.dart';
 
@@ -807,9 +808,7 @@ String? plannedLabel(PlannedRoute route) {
 
 /// Exportiert die Route als GPX und/oder FIT-Kurs und öffnet das Teilen-Menü des Systems.
 Future<void> shareRoute(BuildContext context, PlannedRoute route, {required bool fit}) async {
-  final folder = Directory(p.join((await getTemporaryDirectory()).path, 'routen-export'));
-  if (folder.existsSync()) folder.deleteSync(recursive: true);
-  folder.createSync(recursive: true);
+  final folder = await ExportFolders.fresh(ExportFolders.routeExport);
   final XFile file;
   if (fit) {
     final path = p.join(folder.path, GpxExport.fileName(route, extension: 'fit'));

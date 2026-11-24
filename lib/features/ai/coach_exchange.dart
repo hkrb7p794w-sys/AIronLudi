@@ -10,11 +10,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+
 import 'package:share_plus/share_plus.dart';
 
 import '../../data/storage.dart';
 import '../../services/providers.dart';
+import '../../services/share/export_folders.dart';
 import '../../ui/components.dart';
 import '../gym/gym_screen.dart';
 import '../plan/my_week_screen.dart';
@@ -56,9 +57,7 @@ Future<CoachExportInput> loadExportInput(WidgetRef ref) async {
 
 /// Schreibt die Dateien in einen eigenen temporären Ordner (alte Exporte werden ersetzt).
 Future<List<XFile>> writeExportFiles(List<ExportFile> files) async {
-  final folder = Directory(p.join((await getTemporaryDirectory()).path, 'ki-export'));
-  if (folder.existsSync()) folder.deleteSync(recursive: true);
-  folder.createSync(recursive: true);
+  final folder = await ExportFolders.fresh(ExportFolders.aiExport);
   return [
     for (final file in files)
       () {
