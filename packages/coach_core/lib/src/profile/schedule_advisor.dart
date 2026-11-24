@@ -62,6 +62,8 @@ abstract final class ScheduleAdvisor {
     final slots = plan.slots(weekday);
     final titles = [for (final slot in slots) slot.title];
     final joined = titles.join(' + ');
+    // Im Satz in Anführungszeichen: „Halte „Lockerer Lauf“ heute ruhig“ statt „Halte Lockerer Lauf heute ruhig“.
+    final quoted = titles.map((title) => '„$title“').join(' + ');
     final demanding = slots.any((slot) => slot.intensity.isDemanding);
     final tomorrow = tomorrowNote(plan.slots(weekday.next), weekday.next);
     const recoveryEvidence = ['recovery.hrv', 'recovery.subjective'];
@@ -125,12 +127,12 @@ abstract final class ScheduleAdvisor {
         );
       case RecoveryLevel.locker:
         final detail = demanding
-            ? 'Deine Erholung ist nur mittel. Mache $joined heute lockerer: kürzer, ohne Tempo bzw. mit leichteren '
+            ? 'Deine Erholung ist nur mittel. Mache $quoted heute lockerer: kürzer, ohne Tempo bzw. mit leichteren '
                   'Gewichten, und höre auf deinen Körper.'
-            : 'Deine Erholung ist nur mittel. Halte $joined heute ruhig und eher kurz.';
+            : 'Deine Erholung ist nur mittel. Halte $quoted heute ruhig und eher kurz.';
         return ScheduleAdvice(
           mode: ScheduleAdviceMode.lighter,
-          headline: 'Heute lockerer',
+          headline: RecoveryLevel.locker.headline,
           detail: '$detail $tomorrow',
           move: null,
           plannedTitles: titles,
