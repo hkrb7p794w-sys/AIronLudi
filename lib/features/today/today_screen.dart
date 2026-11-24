@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/day_change.dart';
+import '../../app/deep_links.dart';
 import '../../app/training_data_reload.dart';
 import '../../data/repositories/gym_repository.dart';
 import '../../data/settings/coach_settings.dart';
@@ -46,7 +47,26 @@ class TodayScreen extends ConsumerStatefulWidget {
   ConsumerState<TodayScreen> createState() => _TodayScreenState();
 }
 
-class _TodayScreenState extends ConsumerState<TodayScreen> with TrainingDataReload<TodayScreen> {
+class _TodayScreenState extends ConsumerState<TodayScreen>
+    with TrainingDataReload<TodayScreen>, PendingRouteHandler<TodayScreen> {
+  @override
+  Set<AppRoute> get handledRoutes => const {AppRoute.ai, AppRoute.aiAnalysis};
+
+  @override
+  void handlePendingRoute(PendingRoute pending) => unawaited(
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AIScreen(
+          startAnalysis: pending.route == AppRoute.aiAnalysis,
+          coachNote: ListenableBuilder(
+            listenable: _controller,
+            builder: (_, _) => _CoachNoteSection(controller: _controller),
+          ),
+        ),
+      ),
+    ),
+  );
+
   late final TodayController _controller = TodayController(
     store: ref.read(settingsStoreProvider),
     schedule: ref.read(seasonScheduleProvider),
@@ -203,6 +223,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> with TrainingDataRelo
 
   @override
   Widget build(BuildContext context) {
+    listenPendingRoutes();
     // Neuer Kalendertag (Mitternacht, Rückkehr in die App): neu laden wie `onDayChange`.
     ref.listen(currentDayProvider, (_, _) => unawaited(_reload()));
     // Einstellungen, Abruf und laufende Einheit ändern die Einordnung.

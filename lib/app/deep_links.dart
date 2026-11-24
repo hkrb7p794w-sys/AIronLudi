@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:coach_core/coach_core.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quick_actions/quick_actions.dart' as plugin;
 
@@ -119,4 +120,34 @@ final class FakeQuickActionsService implements QuickActionsService {
   @override
   Future<void> update({required bool trainsStrength, required bool aiAvailable}) async =>
       routes = QuickActions.routes(trainsStrength: trainsStrength, aiAvailable: aiAvailable);
+}
+
+/// Für Reiter, die Aktionen von außen ausführen (Schnellaktion, Widget, `coach://open/…`): [handledRoutes] sind die
+/// Ziele dieses Reiters, [handlePendingRoute] führt eines aus. Die Route wird vorher freigegeben, damit sie nur einmal
+/// wirkt. Geprüft wird nach dem ersten Bild (Start aus einer Schnellaktion) und bei jeder neuen Route – dafür muss
+/// `build` [listenPendingRoutes] aufrufen.
+mixin PendingRouteHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
+  Set<AppRoute> get handledRoutes;
+
+  void handlePendingRoute(PendingRoute pending);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkPendingRoute());
+  }
+
+  /// In `build` aufrufen.
+  void listenPendingRoutes() => ref.listen(pendingRouteProvider, (_, _) {
+    // Erst nach dem Reiterwechsel ausführen, sonst landet die Seite im Stapel des alten Reiters.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkPendingRoute());
+  });
+
+  void _checkPendingRoute() {
+    if (!mounted) return;
+    final pending = ref.read(pendingRouteProvider);
+    if (pending == null || !handledRoutes.contains(pending.route)) return;
+    ref.read(pendingRouteProvider.notifier).consume();
+    handlePendingRoute(pending);
+  }
 }

@@ -5,6 +5,7 @@ import 'package:coach_core/coach_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/deep_links.dart';
 import '../../app/training_data_reload.dart';
 import '../../data/repositories/gym_repository.dart';
 import '../../data/storage.dart';
@@ -38,7 +39,18 @@ class TrainingScreen extends ConsumerStatefulWidget {
   ConsumerState<TrainingScreen> createState() => _TrainingScreenState();
 }
 
-class _TrainingScreenState extends ConsumerState<TrainingScreen> with TrainingDataReload<TrainingScreen> {
+class _TrainingScreenState extends ConsumerState<TrainingScreen>
+    with TrainingDataReload<TrainingScreen>, PendingRouteHandler<TrainingScreen> {
+  @override
+  Set<AppRoute> get handledRoutes => const {AppRoute.health, AppRoute.gym, AppRoute.startWorkout};
+
+  @override
+  void handlePendingRoute(PendingRoute pending) => switch (pending.route) {
+    AppRoute.health => _open((_) => const HealthScreen()),
+    AppRoute.startWorkout => _open((_) => const GymScreen(startWorkout: true)),
+    _ => _open((_) => const GymScreen()),
+  };
+
   final _controller = TrainingController();
   List<DailyMetrics> _days = const [];
   List<GarminActivity> _activities = const [];
@@ -142,6 +154,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> with TrainingDa
 
   @override
   Widget build(BuildContext context) {
+    listenPendingRoutes();
     ref.listen(appModelProvider.select((model) => model.lastSync), (_, _) => unawaited(_reload()));
     final settings = ref.watch(coachSettingsProvider);
     final running = ref.watch(gymControllerProvider).active?.title;

@@ -33,7 +33,11 @@ String _duration(Duration duration) {
 /// Gym (Bereich im Reiter Training): Einheit von heute starten, Planen und Auswerten, letzte Einheiten
 /// (Port von `GymView.swift`).
 class GymScreen extends ConsumerStatefulWidget {
-  const GymScreen({super.key});
+  const GymScreen({super.key, this.startWorkout = false});
+
+  /// Von „Training starten“ (Schnellaktion, Widget, Link): laufende Einheit öffnen, sonst die heutige des Plans starten;
+  /// ohne Plan für heute bleibt die Auswahl hier.
+  final bool startWorkout;
 
   @override
   ConsumerState<GymScreen> createState() => _GymScreenState();
@@ -45,7 +49,18 @@ class _GymScreenState extends ConsumerState<GymScreen> {
   @override
   void initState() {
     super.initState();
-    unawaited(_reload(loadHints: true));
+    unawaited(
+      _reload(loadHints: true).then((_) {
+        if (!mounted || !widget.startWorkout) return;
+        final gym = ref.read(gymControllerProvider);
+        if (gym.active == null) {
+          final workout = gym.todayWorkout;
+          if (workout == null) return;
+          gym.startWorkout(workout);
+        }
+        unawaited(_open());
+      }),
+    );
   }
 
   /// Daten laden und den Controller aktualisieren; einmal je Öffnen KI-Hinweise (automatisch, wenn erlaubt).

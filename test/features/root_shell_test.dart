@@ -9,6 +9,7 @@ import 'package:aironludi/data/settings/preferences.dart';
 import 'package:aironludi/data/settings/settings_store.dart';
 import 'package:aironludi/data/storage.dart';
 import 'package:aironludi/features/gym/gym_providers.dart';
+import 'package:aironludi/features/nutrition/product_search_screen.dart';
 import 'package:aironludi/services/ai/ai_client.dart';
 import 'package:aironludi/services/http/http_transport.dart';
 import 'package:aironludi/services/providers.dart';
@@ -151,7 +152,9 @@ void main() {
 
     quick.onSelect!(AppRoute.logMeal);
     await tester.pumpAndSettle();
-    expect(find.descendant(of: find.byType(AppBar), matching: find.text('Ernährung')), findsWidgets);
+    // Der Reiter Ernährung ist gewählt und hat das Erfassen geöffnet (die Aktion wird ausgeführt, nicht nur der Reiter).
+    expect(find.byType(ProductSearchScreen), findsOneWidget);
+    expect(container.read(pendingRouteProvider), isNull);
 
     container.read(gymControllerProvider).startEmpty();
     await tester.pump();
