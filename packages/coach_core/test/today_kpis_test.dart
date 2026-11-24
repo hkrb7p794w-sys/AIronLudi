@@ -44,6 +44,16 @@ void main() {
       expect(TodayKpis.strain(strainOf(done: 200, level: StrainLevel.veryHigh)).status, KpiStatus.critical);
       expect(TodayKpis.strain(strainOf(done: 0, level: StrainLevel.rest)).caption, 'von 21');
     });
+
+    test('noch nichts trainiert, viel geplant: Wert neutral, Ring warnt', () {
+      final kpi = TodayKpis.strain(
+        strainOf(done: 0, planned: 120, level: StrainLevel.veryHigh, recovery: RecoveryLevel.locker),
+      );
+      expect(kpi.value, '0,0');
+      expect(kpi.status, KpiStatus.critical);
+      expect(kpi.valueStatus, KpiStatus.unknown);
+      expect(TodayKpis.strain(strainOf(done: 50, planned: 50)).valueStatus, isNull);
+    });
   });
 
   group('Schlaf', () {
@@ -141,5 +151,15 @@ void main() {
       expect(HealthImport.label('rock_climbing'), 'Klettern');
       expect(NutritionPlanner.isStrength('bouldering'), isTrue);
     });
+  });
+
+  test('Hinweis „Datenquelle verbinden“ nur ohne Quelle und ohne Werte der letzten Woche', () {
+    final today = CalendarDay.tryParse('2026-11-24')!;
+    expect(showsConnectSourceHint(hasSource: false, metricDays: const [], today: today), isTrue);
+    expect(showsConnectSourceHint(hasSource: true, metricDays: const [], today: today), isFalse);
+    // Werte aus einer Sicherung oder von Hand vor drei Tagen: kein Hinweis.
+    expect(showsConnectSourceHint(hasSource: false, metricDays: [today.adding(-3)], today: today), isFalse);
+    expect(showsConnectSourceHint(hasSource: false, metricDays: [today.adding(-7)], today: today), isFalse);
+    expect(showsConnectSourceHint(hasSource: false, metricDays: [today.adding(-8)], today: today), isTrue);
   });
 }

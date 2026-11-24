@@ -158,7 +158,17 @@ class KpiRing extends StatelessWidget {
                   child: FittedBox(
                     child: Padding(
                       padding: const EdgeInsets.all(14),
-                      child: Text(kpi.value, style: LiquidText.kpi(context, size: 24).copyWith(color: color)),
+                      child: Text(
+                        kpi.value,
+                        style: LiquidText.kpi(context, size: 24).copyWith(
+                          color: switch (kpi.valueStatus) {
+                            null => color,
+                            // Neutraler Wert (z. B. noch nichts trainiert): normale Textfarbe statt Ampel.
+                            KpiStatus.unknown => theme.colorScheme.onSurface,
+                            final status => kpiColor(status),
+                          },
+                        ),
+                      ),
                     ),
                   ),
                 ),
