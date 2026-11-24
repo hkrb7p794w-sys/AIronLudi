@@ -473,3 +473,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Körperkarte: Umschalter Kraft/Kardio/Dehnen in der Gym-Auswertung (`CardioLoad`, `StretchLoad` in coach_core; Ausdauerminuten und Mobility-Protokoll je Muskel) | erledigt |
 | Routenplaner: Luftlinie-Abschnitte in „Frei planen“ (z. B. Brücke nach Baustelle), lauffreundliche Wege beim Laufen, „Zum Ziel“ ohne Wunschdistanz | erledigt |
 | Roast Stufe 4 (F-3): Karten nahezu deckend, Unschärfe nur für deckendes Glas (Tab-Leiste, Leisten, Sheets); Prüfstand auf fünf Reiter; Anleitung mit neuen Wegen und Übersicht der Reiter | erledigt |
+| Roast Stufe 4 / PR 22 (Teil 1): zehn große Dateien in `part`-Dateien geteilt (Klassen nur verschoben); keine Datei mehr über 1000 Zeilen | erledigt |
