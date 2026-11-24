@@ -484,9 +484,9 @@ final class MorningReport {
   // Texte
 
   static String headlineText(RecoveryLevel? level) => switch (level) {
-    RecoveryLevel.normal => 'Bereit für dein Training',
-    RecoveryLevel.locker => 'Heute eher locker',
-    RecoveryLevel.pause => 'Heute Erholung',
+    RecoveryLevel.normal => RecoveryLevel.normal.headline,
+    RecoveryLevel.locker => RecoveryLevel.locker.headline,
+    RecoveryLevel.pause => RecoveryLevel.pause.headline,
     null => 'Zu wenig Daten für eine Einschätzung',
   };
 

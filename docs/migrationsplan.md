@@ -462,4 +462,5 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Fehler aus Stufe-4-Vorbereitung: Schnellaktionen, Widgets und `coach://open/…` führen ihre Aktion aus (`PendingRouteHandler`: Erfassen mit Mahlzeit, Gesundheit, Gym, Einheit starten, KI, KI-Analyse); vorher nur Reiterwechsel | erledigt |
 | Roast Stufe 3 / PR 14: Modul „Ernährung heute“ auf „Heute“ (übrige kcal und Protein mit denselben Tageszielen, „Mahlzeit erfassen“; standardmäßig sichtbar, alte Einstellungen kompatibel) | erledigt |
 | Roast Stufe 3 / PR 15: „Route dazu planen“ auch für Lauf- und Radeinheiten des Wochenplans (`RouteForSessionSection`, gemeinsamer Baustein `RouteForUnitSection`) | erledigt |
+| Roast Stufe 3 / PR 16b: ein Titel je Tagesbewertung (`RecoveryLevel.headline`) auf „Heute“ und im Morning Report; Einheitennamen im Satz in Anführungszeichen | erledigt |
 | Agenten-Anweisungen: `AGENTS.md` als gemeinsame Quelle für alle KI-Werkzeuge (Funktionsübersicht, Architektur, UI-Regeln, Doku-Pflege), `CLAUDE.md` bindet sie ein, `worker/AGENTS.md` für den Worker; doppelte Zeilen in Abschnitt 8 entfernt | erledigt |
