@@ -1407,3 +1407,13 @@ Auf Wunsch des Nutzers: nicht nur *was*, sondern *wie* – und mit dem, was da i
   herabzustufen.
 - Bekannte Grenze: Apple Health liefert SDNN, WHOOP und Garmin RMSSD; je Tag zählt die bevorzugte Quelle. Wechselt man
   die Quelle, mischt die Basis bis zu 60 Tage lang beide Maße.
+## 2026-11-24 – Kontrast und Tap-Flächen (Roast Stufe 2 / PR 12)
+
+- `test/a11y/accessibility_test.dart` prüft die vier Reiter mit `iOSTapTargetGuideline` (44 pt),
+  `labeledTapTargetGuideline` und `textContrastGuideline`. Androids 48-dp-Richtlinie gilt bewusst nicht: Die App
+  nutzt auf beiden Plattformen iOS-Zeilenhöhen von 44 pt.
+- Gefunden und behoben (nur heller Modus, Dunkel unverändert): Nebentexte (`onSurfaceVariant`, iOS „secondaryLabel“
+  60 %) erreichten auf dem Glas ~3,3 : 1 → 74 % Deckkraft; Akzent #007AFF → #0066D6 (Link-Text 3,7 → ≥ 4,5 : 1);
+  Text auf getönten Flächen (`onPrimaryContainer`) #00509E. Tab-Leiste: Beschriftung 12 statt 10,5 pt, nicht gewählte
+  Reiter 72 % statt 60 %, gewählter in `onPrimaryContainer`; ein Symbolsatz (Material) statt Cupertino und Material
+  gemischt. Segmentauswahl mindestens 44 pt hoch (vorher 40).

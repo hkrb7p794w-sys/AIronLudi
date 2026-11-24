@@ -687,7 +687,8 @@ class _LiquidTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final color = selected ? scheme.primary : scheme.onSurfaceVariant;
+    // Nicht gewählte Reiter kräftiger als `onSurfaceVariant` (Kontrast ≥ 4,5 : 1 auf dem Glas).
+    final color = selected ? scheme.onPrimaryContainer : scheme.onSurface.withValues(alpha: 0.72);
     final duration = LiquidMotion.of(context, LiquidMotion.medium);
     final badge = item.badge ?? 0;
     return Semantics(
@@ -719,7 +720,8 @@ class _LiquidTab extends StatelessWidget {
               AnimatedDefaultTextStyle(
                 duration: duration,
                 style: DefaultTextStyle.of(context).style.copyWith(
-                  fontSize: 10.5,
+                  // 12 pt: Untergrenze des Designsystems (vorher 10,5 pt).
+                  fontSize: 12,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                   letterSpacing: 0.1,
                   color: color,
