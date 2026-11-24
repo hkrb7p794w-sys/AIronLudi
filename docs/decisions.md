@@ -1434,3 +1434,12 @@ Auf Wunsch des Nutzers: nicht nur *was*, sondern *wie* – und mit dem, was da i
   kompatibel).
 - Keine Funktion entfällt; alle Unterseiten sind dieselben wie vorher (Nachweis: docs/roast/design-konzept.md,
   Abschnitt 7).
+
+## 2026-11-24 – Demo-Modus (Roast F-1 nach Empfehlung)
+
+- Bisher toter Code: `AppModel.isDemo` war nie `true`, `coach.demo` wurde nie gelesen.
+- Jetzt: *Ich › Technik › Demo ansehen* legt einen eigenen Benutzer „Demo“ (Benutzername `demo`) an, schreibt
+  `coach.demo = true` in dessen Einstellungen und füllt ihn mit den Demo-Daten (`lib/services/demo/demo_seed.dart`,
+  dieselben wie im Screenshot-Prüfstand). `appModelProvider` liest den Schlüssel; im Demo-Modus gilt das bisherige
+  Verhalten von `isDemo`: kein Abruf, keine Sicherung, kein automatisches Teilen, keine Widgets, kein Update-Hinweis.
+- Trennung wie bei jedem Benutzer; zurück und löschen über *Ich › Benutzer*. Ein zweites „Demo ansehen“ wechselt nur.
