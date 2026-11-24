@@ -61,9 +61,11 @@ export function whoopCallbackPage(pathname: string, search: URLSearchParams): Re
   const target = `coach://whoop?${params.toString()}`;
   const failed = params.has("error");
   const title = failed ? "WHOOP nicht verbunden" : "WHOOP verbunden";
-  const hint = failed
-    ? "WHOOP hat die Anmeldung abgebrochen. Du kannst es in der App unter Einstellungen › WHOOP erneut versuchen."
-    : "Öffnet IronLudi und schließt die Verbindung ab.";
+  const hint = !failed
+    ? "Öffnet IronLudi und schließt die Verbindung ab."
+    : params.get("error") === "invalid_scope"
+      ? `In der WHOOP-Developer-App fehlt eine Berechtigung. Nötig sind: ${WHOOP_SCOPES.join(", ")}. Bitte gib das an die Person weiter, die den Worker betreibt.`
+      : "WHOOP hat die Anmeldung abgebrochen. Du kannst es in der App unter Einstellungen › WHOOP erneut versuchen.";
   const html = `<!doctype html><html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>${title}</title>
 <meta http-equiv="refresh" content="0;url=${escapeHtml(target)}"></head>

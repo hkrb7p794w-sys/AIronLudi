@@ -124,6 +124,11 @@ void main() {
       whoop.complete(Uri.parse('coach://whoop?error=access_denied')),
       throwsA(predicate((error) => '$error'.contains('abgelehnt'))),
     );
+    // Fehlender Scope in der Developer-App (z. B. „offline“): verständlich, mit Weg zur Betreiberin bzw. zum Betreiber.
+    await expectLater(
+      whoop.complete(Uri.parse('coach://whoop?error=invalid_scope')),
+      throwsA(predicate((error) => '$error'.contains('„offline“') && '$error'.contains('KI-Worker betreibt'))),
+    );
   });
 
   test('Abruf: Seiten bis next_token leer, Tageswerte im Herkunftsverzeichnis, Training als Aktivität', () async {

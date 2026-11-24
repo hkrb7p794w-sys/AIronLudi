@@ -527,3 +527,26 @@ abstract final class WhoopImport {
   /// Höchstens so viele Seiten je Liste und Abruf (Grenze 100 Anfragen je Minute, 25 Einträge je Seite).
   static int maxPages(int days) => math.max(2, (days / 20).ceil() + 1);
 }
+
+/// Fehler der WHOOP-Anmeldung (OAuth-Code aus `coach://whoop?error=…`) in Sätzen mit Lösungsweg. Die meisten Ursachen
+/// liegen in der Developer-App der Betreiberin bzw. des Betreibers, nicht bei der Person, die verbinden will – das
+/// sagt der Text dann auch.
+abstract final class WhoopAuthErrors {
+  /// Hinweis für Fehler, die nur die Betreiberin bzw. der Betreiber des Workers beheben kann.
+  static const operatorHint =
+      'Bitte gib das an die Person weiter, die den KI-Worker betreibt (Anleitung: '
+      'Einrichtung, Abschnitt WHOOP).';
+
+  static String message(String code) => switch (code) {
+    'access_denied' => 'Freigabe bei WHOOP abgelehnt. Du kannst es jederzeit erneut versuchen.',
+    'invalid_scope' =>
+      'In der WHOOP-Developer-App fehlt eine Berechtigung (Scope). Nötig sind „offline“, „read:recovery“, '
+          '„read:cycles“, „read:workout“, „read:sleep“, „read:profile“ und „read:body_measurement“. $operatorHint',
+    'unauthorized_client' || 'invalid_client' =>
+      'Die WHOOP-Developer-App ist im Worker falsch hinterlegt (Client-ID oder Client-Secret). $operatorHint',
+    'invalid_request' || 'redirect_uri_mismatch' =>
+      'Die Rücksprung-Adresse der WHOOP-Developer-App passt nicht zum Worker (…/w/whoop). $operatorHint',
+    'server_error' || 'temporarily_unavailable' => 'WHOOP ist gerade nicht erreichbar. Bitte später erneut verbinden.',
+    _ => 'WHOOP hat die Anmeldung abgebrochen ($code). Bitte erneut verbinden; tritt es wieder auf: $operatorHint',
+  };
+}

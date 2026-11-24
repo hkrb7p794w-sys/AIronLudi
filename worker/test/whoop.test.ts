@@ -133,6 +133,13 @@ describe("WHOOP", () => {
       deps(() => new Response("")),
     );
     expect(await response.text()).toContain("WHOOP nicht verbunden");
+    // Fehlender Scope (z. B. „offline“): die Seite nennt alle nötigen Berechtigungen.
+    const scope = await whoopCallbackPage(
+      "/w/whoop",
+      new URLSearchParams({ error: "invalid_scope" }),
+    )?.text();
+    expect(scope).toContain("offline, read:recovery");
+    expect(scope).toContain("Worker betreibt");
     expect(whoopCallbackPage("/w/anders", new URLSearchParams())).toBeNull();
   });
 });

@@ -101,7 +101,7 @@ final class WhoopService extends ChangeNotifier {
   Future<void> complete(Uri link) async {
     final query = link.queryParameters;
     if (query['error'] case final error?) {
-      throw WhoopError(error == 'access_denied' ? 'Freigabe bei WHOOP abgelehnt.' : 'WHOOP meldet: $error');
+      throw WhoopError(WhoopAuthErrors.message(error));
     }
     final expected = _settings.string(SettingsKeys.whoopState);
     final code = query['code'];

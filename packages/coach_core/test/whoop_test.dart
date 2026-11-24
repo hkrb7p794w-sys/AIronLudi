@@ -239,4 +239,15 @@ void main() {
     })!;
     expect(profile.toJson(), {'user_id': 10129, 'first_name': 'Sam'});
   });
+
+  test('Anmeldefehler: verständlich und mit Lösungsweg', () {
+    expect(WhoopAuthErrors.message('access_denied'), contains('abgelehnt'));
+    // Der Worker fordert „offline“ an; fehlt der Scope in der Developer-App, meldet WHOOP invalid_scope.
+    expect(WhoopAuthErrors.message('invalid_scope'), contains('„offline“'));
+    for (final code in ['invalid_scope', 'invalid_client', 'unauthorized_client', 'redirect_uri_mismatch']) {
+      expect(WhoopAuthErrors.message(code), contains(WhoopAuthErrors.operatorHint), reason: code);
+    }
+    expect(WhoopAuthErrors.message('server_error'), contains('später'));
+    expect(WhoopAuthErrors.message('etwas_neues'), contains('etwas_neues'));
+  });
 }
