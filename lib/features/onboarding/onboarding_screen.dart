@@ -279,13 +279,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 tooltip: 'Schließen',
                 icon: const Icon(Icons.close),
                 onPressed: () => Navigator.of(context).pop(),
-              )
-            else if (_step == OnboardingStep.sports)
-              // Nach einer Neuinstallation: Daten aus der Datensicherung zurückholen statt neu einzurichten.
-              TextButton(
-                onPressed: () =>
-                    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const BackupScreen())),
-                child: const Text('Sicherung einspielen'),
               ),
           ],
         ),
@@ -314,6 +307,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     padding: const EdgeInsets.all(16),
     children: [
       _intro('Wähle alles, was du regelmäßig machst oder machen möchtest. Die App richtet sich danach.'),
+      // Nach einer Neuinstallation: Daten aus der Datensicherung zurückholen statt neu einzurichten. Steht hier statt
+      // in der Kopfzeile, damit es bei großer Schrift nicht überläuft.
+      if (!widget.isEditing)
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton.icon(
+            icon: const Icon(Icons.settings_backup_restore),
+            label: const Text('Sicherung einspielen'),
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const BackupScreen())),
+          ),
+        ),
       for (final sport in TrainingSport.values)
         Padding(
           padding: const EdgeInsets.only(bottom: 12),
