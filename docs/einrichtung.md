@@ -107,8 +107,11 @@ verbinden“) – sie braucht kein Developer-Konto, und jede sieht nur ihre eige
 Speicher ihres Geräts bzw. ihres Benutzers in der App).
 
 1. <https://developer-dashboard.whoop.com> mit deinem WHOOP-Konto öffnen (beim ersten Mal ein „Team“ anlegen).
-2. **Create App**: Name z. B. `AIronLudi`; Scopes `read:recovery`, `read:cycles`, `read:workout`, `read:sleep`,
-   `read:profile`, `read:body_measurement`; **Redirect URL** `https://coach-ai.<subdomain>.workers.dev/w/whoop`.
+2. **Create App**: Name z. B. `AIronLudi`; Scopes **`offline`**, `read:recovery`, `read:cycles`, `read:workout`,
+   `read:sleep`, `read:profile`, `read:body_measurement`; **Redirect URL**
+   `https://coach-ai.<subdomain>.workers.dev/w/whoop`. Fehlt ein Scope (häufig `offline`, das die dauerhafte
+   Anmeldung ermöglicht), bricht WHOOP mit `invalid_scope` ab – die App und die Rücksprung-Seite nennen dann die
+   fehlenden Berechtigungen.
 3. **Client ID** und **Client Secret** als Secrets `WHOOP_CLIENT_ID`, `WHOOP_CLIENT_SECRET` anlegen, Worker
    bereitstellen. Der Health-Check (`/v1/health`) zeigt dann `"whoop": true`.
 4. In der App: *Einstellungen › Training und Fitness › WHOOP › Mit WHOOP verbinden*.

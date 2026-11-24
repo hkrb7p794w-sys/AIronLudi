@@ -74,7 +74,7 @@ class _WhoopSectionState extends ConsumerState<WhoopSection> {
       footer:
           'Recovery, HRV, Ruhepuls, Schlaf mit Phasen, Kalorien, Schritte und Trainings über die offizielle WHOOP-API. '
           'Welche Quelle bei Schlaf, HRV usw. zählt, steht unter Health und Erholung › Datenquellen und Vorrang. '
-          'Einrichtung im Worker: docs/whoop.md (Coach-App).',
+          'Die WHOOP-Anbindung richtet ein, wer den Worker betreibt; du meldest dich nur mit deinem WHOOP-Konto an.',
       children: [
         if (whoop.isConnected) ...[
           ListTile(

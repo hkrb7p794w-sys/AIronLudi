@@ -108,7 +108,7 @@ void main() {
     container.read(incomingLinkProvider.notifier).open(Uri.parse('coach://whoop?error=access_denied'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
-    expect(find.text('Freigabe bei WHOOP abgelehnt.'), findsOneWidget);
+    expect(find.text(WhoopAuthErrors.message('access_denied')), findsOneWidget);
     expect(container.read(incomingLinkProvider), isNull);
   });
 }

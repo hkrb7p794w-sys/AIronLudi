@@ -446,3 +446,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Umstellung: `vars.DEPLOY_SIDESTORE` bzw. `vars.DEPLOY_ANDROID` auf `true`, dann ersetzt die Flutter-App die Swift- bzw. Kotlin-App (gleiche Bundle-/Application-ID) | offen – Entscheidung des Nutzers |
 | Später möglich: Android-Widgets mit Glance (Ringe, Balken, Konfiguration), Wiederholungen ± in der Android-Mitteilung | Idee |
 | Update-Hinweis Android (neu, `docs/decisions.md`): Worker `GET /v1/app/android` (neueste Version, Link zur Download-Seite, nur mit Anmeldung), `AppUpdateService` (Prüfung beim Start/Zurückkehren höchstens alle 6 h, Vergleich `versionCode`, „Später“ je Version), Hinweis oben in der App mit „Jetzt laden“ | erledigt |
+| Roast 24.11.2026 (`docs/roast/`), Stufe 1 / PR 1: WHOOP-Anmeldefehler verständlich (`WhoopAuthErrors`, Rücksprung-Seite nennt fehlende Scopes), Anleitung mit Scope `offline` | erledigt |
