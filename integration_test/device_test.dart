@@ -97,16 +97,24 @@ void main() {
     await shot(binding, tester, '22-demo-verlauf');
 
     step('Native Brücken antworten (keine fehlende Gegenseite)');
-    Future<Object?> call(String channel, String method) => MethodChannel(channel).invokeMethod<Object?>(method);
+    Future<Object?> call(String channel, String method, [Object? arguments]) =>
+        MethodChannel(channel).invokeMethod<Object?>(method, arguments);
     expect(await call('aironludi/alarm', 'state'), isA<String>());
-    expect(await call('aironludi/activities', 'takePendingActions'), anyOf(isNull, isA<List<Object?>>()));
+    // Android holt Knopfdrucke der laufenden Mitteilung ab; iOS schickt sie selbst (`workoutAction`).
+    if (Platform.isAndroid) {
+      expect(await call('aironludi/activities', 'takePendingActions'), anyOf(isNull, isA<List<Object?>>()));
+    }
+    // Ohne laufende Einheit: beendet eine evtl. laufende Live-Aktivität bzw. Mitteilung.
+    await call('aironludi/activities', 'updateWorkout', {'state': null, 'title': ''});
     await call('aironludi/widgets', 'reload');
 
     step('Gym: Live-Einheit mit erledigtem Satz (Live-Aktivität bzw. Benachrichtigung)');
     await tab(tester, 'Plan');
     await tapText(tester, 'Einheit starten');
     await tapText(tester, 'Freies Training');
-    final container = ProviderScope.containerOf(tester.element(find.byType(ActiveWorkoutScreen)));
+    final container = ProviderScope.containerOf(
+      tester.element(await waitFor(tester, find.byType(ActiveWorkoutScreen), timeout: const Duration(seconds: 15))),
+    );
     final gym = container.read(gymControllerProvider);
     gym.addExercise(ExerciseLibrary.byID['bankdruecken']!);
     await idle(tester);
