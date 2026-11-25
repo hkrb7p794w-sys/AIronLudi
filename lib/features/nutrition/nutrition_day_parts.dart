@@ -119,7 +119,9 @@ class _BudgetSection extends StatelessWidget {
               if (kcal != null) _CalorieRing(line: kcal),
               const SizedBox(width: 20),
               Expanded(
+                // Balken über die volle Restbreite, Beschriftung links bündig.
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     for (final nutrient in NutritionBudget.main)
                       if (NutritionBudget.line(nutrient, targets: targets.values, totals: totals, intake: intake)
@@ -298,28 +300,40 @@ class _MacroBar extends StatelessWidget {
   final BudgetLine line;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 5),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Bei wenig Breite (kleines Gerät, große Schrift) rutscht der Rest in die nächste Zeile statt überzulaufen.
-        Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          spacing: 8,
-          children: [
-            Text(line.nutrient.label),
-            Text(
-              NutritionBudget.remainingText(line),
-              style: TextStyle(fontWeight: FontWeight.bold, color: line.isOver ? AppColors.of(context).alert : null),
-            ),
-          ],
-        ),
-        const SizedBox(height: 3),
-        LiquidProgressBar(value: line.progress, color: line.isOver ? AppColors.of(context).alert : null),
-      ],
-    ),
-  );
+  Widget build(BuildContext context) {
+    final alert = AppColors.of(context).alert;
+    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Name links, Rest rechts auf einer Grundlinie; bei wenig Breite (kleines Gerät, große Schrift) rutscht der
+          // Rest in die nächste Zeile statt überzulaufen.
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.end,
+            spacing: 8,
+            children: [
+              Text(line.nutrient.label, style: AppText.callout(context).copyWith(color: muted)),
+              Text(
+                NutritionBudget.remainingText(line),
+                style: AppText.callout(context)
+                    .copyWith(fontWeight: FontWeight.w600, color: line.isOver ? alert : null),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          LiquidProgressBar(
+            value: line.progress,
+            height: 8,
+            color: line.isOver ? alert : null,
+            semanticsLabel: '${line.nutrient.label}, ${NutritionBudget.remainingText(line)}',
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Wasser mit Glas-Knopf: Antippen +250 ml, gedrückt halten für andere Mengen.
