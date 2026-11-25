@@ -15,13 +15,13 @@ import 'package:flutter_test/flutter_test.dart';
 import '../app_test.dart' show app;
 
 void main() {
-  testWidgets('Strain läuft über den Tag mit: neue Aktivität ohne Garmin-Abruf zählt sofort', (tester) async {
+  testWidgets('Belastung läuft über den Tag mit: neue Aktivität ohne Garmin-Abruf zählt sofort', (tester) async {
     await tester.pumpWidget(await tester.runAsync(() => app(onboarded: true)) as Widget);
     await tester.pumpAndSettle();
     final container = ProviderScope.containerOf(tester.element(find.byType(LiquidTabBar)));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await tester.pumpAndSettle();
-    expect(find.bySemanticsLabel(RegExp(r'^Strain: 0,0')), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp(r'^Belastung: 0,0')), findsOneWidget);
     expect(container.read(appModelProvider).lastSync, isNull);
 
     // Wie ein Health- oder WHOOP-Import am Nachmittag: nur die Datenbank ändert sich, kein Garmin-Abruf.
@@ -39,8 +39,8 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await tester.pumpAndSettle();
     expect(container.read(appModelProvider).lastSync, isNull);
-    expect(find.bySemanticsLabel(RegExp(r'^Strain: 0,0')), findsNothing);
-    expect(find.bySemanticsLabel(RegExp(r'^Strain: [1-9]')), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp(r'^Belastung: 0,0')), findsNothing);
+    expect(find.bySemanticsLabel(RegExp(r'^Belastung: [1-9]')), findsOneWidget);
   });
 
   testWidgets('persönliches Profil: Jetzt dran, Notiz ohne KI, Woche, auslassen', (tester) async {
@@ -66,16 +66,20 @@ void main() {
 
     expect(find.byType(TodayScreen), findsOneWidget);
     expect(find.textContaining('JETZT DRAN'), findsOneWidget);
-    // Oben drei Ringe: Schlaf, Erholung, Strain (0–21); die Detailkarte zur Belastung ist standardmäßig aus.
+    // Oben drei Ringe: Schlaf, Erholung, Belastung (0–21); die Detailkarte zur Belastung ist standardmäßig aus.
     expect(find.text('Schlaf'), findsOneWidget);
     expect(find.text('Erholung'), findsOneWidget);
-    expect(find.text('Strain'), findsOneWidget);
+    expect(find.text('Belastung'), findsOneWidget);
     expect(find.text('MEINE BELASTUNG HEUTE'), findsNothing);
     expect(find.textContaining('Verbinde in den Einstellungen eine Datenquelle'), findsOneWidget);
     expect(find.text('Quelle verbinden'), findsOneWidget);
     // „Warum?“ steht in den KI-Empfehlungen; auf „Heute“ nur der erste Punkt als Vorschau.
     expect(find.text('WARUM?'), findsNothing);
-    await tester.ensureVisible(find.text('KI-Empfehlungen'));
+    await tester.scrollUntilVisible(
+      find.text('KI-Empfehlungen'),
+      200,
+      scrollable: find.descendant(of: find.byType(TodayScreen), matching: find.byType(Scrollable)).first,
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('KI-Empfehlungen'));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));

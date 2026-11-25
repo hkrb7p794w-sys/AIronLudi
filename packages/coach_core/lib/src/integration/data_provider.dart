@@ -12,7 +12,7 @@ enum DataKind implements RawEnum {
   calories('Kalorien'),
   steps('Schritte'),
   trainingLoad('Trainingsbelastung'),
-  strain('Strain (Puls über den Tag)'),
+  strain('Belastung (Puls über den Tag)'),
   recovery('Erholung (Recovery)'),
   body('Körperwerte');
 

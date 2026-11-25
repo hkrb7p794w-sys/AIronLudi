@@ -250,7 +250,7 @@ final class DailyMetrics {
       ('Regenerationszeit', recoveryHours),
       ('Akute Belastung', acuteLoad),
       ('Pulsverlauf', heartRateCurve),
-      ('Strain', dayStrain),
+      ('Belastung (0–21)', dayStrain),
     ];
     return [
       for (final (name, value) in fields)

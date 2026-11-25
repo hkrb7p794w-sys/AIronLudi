@@ -216,7 +216,7 @@ class DailyStrainDetails extends StatelessWidget {
         children: [
           if (strain.measured case final measured?)
             FormSection(
-              header: 'Strain wie bei WHOOP',
+              header: 'Belastung (Skala wie WHOOP-Strain)',
               footer: switch (strain.source) {
                 StrainSource.whoop => 'Wert von WHOOP (Tageszyklus).',
                 _ =>
@@ -226,7 +226,7 @@ class DailyStrainDetails extends StatelessWidget {
                       'WHOOP-Formel ist nicht öffentlich.',
               },
               children: [
-                LabeledRow(label: 'Strain', value: '${GermanFormat.decimal(measured)} von 21'),
+                LabeledRow(label: 'Belastung', value: '${GermanFormat.decimal(measured)} von 21'),
                 LabeledRow(label: 'Quelle', value: strain.source.label),
                 if (strain.heartRate case final result?) ...[
                   LabeledRow(
