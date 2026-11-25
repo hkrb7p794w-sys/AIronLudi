@@ -5,6 +5,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/training_data_reload.dart';
+
 import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/chart_axes.dart';
@@ -91,7 +93,11 @@ class HealthScreen extends ConsumerStatefulWidget {
   ConsumerState<HealthScreen> createState() => _HealthScreenState();
 }
 
-class _HealthScreenState extends ConsumerState<HealthScreen> {
+class _HealthScreenState extends ConsumerState<HealthScreen> with TrainingDataReload<HealthScreen> {
+  /// Neue Aktivität, Tageswerte oder Gym-Einheit in der Datenbank (gleich aus welcher Quelle): neu laden.
+  @override
+  Future<void> reloadTrainingData() => _reload();
+
   List<DailyMetrics> _days = const [];
   List<GarminActivity> _activities = const [];
 

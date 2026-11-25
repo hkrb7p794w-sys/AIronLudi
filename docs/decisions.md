@@ -1532,3 +1532,13 @@ planen; dazu Joggen von Start zu Ziel.
   „WHOOP-Erholung niedrig“ wie bei der Trainingsbereitschaft (Test in `recovery_test.dart`).
 - Verlauf: Wochenzeilen auch in der Standardansicht „Alle“ mit Anzahl und Dauer (nur eigene Trainings, Freunde zählen
   nicht mit); gezählt werden „Aktivitäten“ (aufgezeichnet), Dauer als „1:47 Std.“ (in Großbuchstaben lesbar).
+## 2026-11-25 – Bildschirme laden bei neuen Trainingsdaten neu
+
+- Bisher luden nur „Heute“ und die Plan-Übersicht bei jeder Änderung der Trainingsdaten neu (`TrainingDataReload`);
+  Verlauf, Ernährung (Trainingskalorien), Plan-Seite, Woche und Gesundheit hörten nur auf den Garmin-Abruf. Nach einer
+  gespeicherten Gym-Einheit, einem WHOOP-/Health-Import oder einem nachgetragenen Training zeigten sie bis zum
+  Herunterziehen den alten Stand. Jetzt nutzen sie denselben Baustein (Test in `activities_screen_test.dart`).
+- Der Gym-Bildschirm bleibt ohne: Er lädt nach jeder Einheit beim Zurückkehren ohnehin neu, und ein Neuladen während
+  des Abschlussbildschirms störte dessen Ablauf.
+- Ein gemeinsamer Zwischenspeicher für alle Bildschirme (Befund B-16) bleibt bewusst aus: Die Stände sind über das
+  Änderungssignal gleich, und das mehrfache Lesen aus SQLite kostet nur Millisekunden.
