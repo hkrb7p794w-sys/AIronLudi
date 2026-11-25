@@ -294,7 +294,7 @@ class _UserSourceEditorState extends State<UserSourceEditor> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Eigene Quelle'),
-        leading: TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Abbrechen')),
+        leading: BarTextButton('Abbrechen', onPressed: () => Navigator.of(context).pop()),
         leadingWidth: 100,
         actions: [
           TextButton(

@@ -270,7 +270,7 @@ class _MobilityTestScreenState extends ConsumerState<MobilityTestScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(test.name),
-        leading: TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Abbrechen')),
+        leading: BarTextButton('Abbrechen', onPressed: () => Navigator.of(context).pop()),
         leadingWidth: 100,
         actions: [
           TextButton(

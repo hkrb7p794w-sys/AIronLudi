@@ -9,7 +9,10 @@ import 'package:path_provider/path_provider.dart';
 abstract final class ExportFolders {
   static const aiExport = 'ki-export';
   static const routeExport = 'routen-export';
-  static const all = [aiExport, routeExport];
+
+  /// Datensicherung zum Teilen (enthält alle Daten des Benutzers).
+  static const backupExport = 'sicherung-export';
+  static const all = [aiExport, routeExport, backupExport];
 
   /// Leerer Ordner [name] im Temp-Ordner (ein alter Export wird ersetzt).
   static Future<Directory> fresh(String name, {Future<Directory> Function()? temp}) async {

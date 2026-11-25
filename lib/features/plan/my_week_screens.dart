@@ -73,7 +73,7 @@ class _ManualActivityScreenState extends ConsumerState<ManualActivityScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Training nachtragen'),
-        leading: TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Abbrechen')),
+        leading: BarTextButton('Abbrechen', onPressed: () => Navigator.of(context).pop(false)),
         leadingWidth: 100,
         actions: [TextButton(onPressed: _save, child: const Text('Sichern'))],
       ),

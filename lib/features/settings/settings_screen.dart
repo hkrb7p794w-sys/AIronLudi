@@ -170,6 +170,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   const AppearanceSettingsSection(),
                   const ReminderSettingsSection(),
                   const PrivacySettingsSection(),
+                  // Sicherung unter „Allgemein“ wie bei iOS (vorher versteckt unter „KI und Automatisierung“).
+                  FormSection(
+                    header: 'Daten',
+                    footer: 'Alles dieses Benutzers sichern oder einspielen, z. B. beim Wechsel auf ein neues Gerät.',
+                    children: [
+                      ListTile(
+                        title: const Text('Datensicherung'),
+                        trailing: const DisclosureChevron(),
+                        onTap: () => _push(const BackupScreen()),
+                      ),
+                    ],
+                  ),
                   FormSection(
                     header: 'Quellen',
                     children: [
@@ -266,13 +278,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 () => [
                   const AISettingsSection(),
                   FormSection(
-                    header: 'Eigene Daten und Quellen',
+                    header: 'Eigene Quellen und Austausch',
                     children: [
-                      ListTile(
-                        title: const Text('Datensicherung'),
-                        trailing: const DisclosureChevron(),
-                        onTap: () => _push(const BackupScreen()),
-                      ),
                       ListTile(
                         title: const Text('Eigene Quellen'),
                         trailing: const DisclosureChevron(),

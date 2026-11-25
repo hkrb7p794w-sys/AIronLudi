@@ -235,7 +235,7 @@ class _AccountAuthScreenState extends ConsumerState<AccountAuthScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
-        leading: TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Abbrechen')),
+        leading: BarTextButton('Abbrechen', onPressed: () => Navigator.of(context).pop()),
         leadingWidth: 100,
       ),
       body: ListView(

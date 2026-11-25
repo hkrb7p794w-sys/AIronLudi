@@ -530,7 +530,7 @@ class _JoinLeagueScreenState extends ConsumerState<JoinLeagueScreen> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
       title: const Text('Rangliste beitreten'),
-      leading: TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Abbrechen')),
+      leading: BarTextButton('Abbrechen', onPressed: () => Navigator.of(context).pop()),
       leadingWidth: 100,
       actions: [TextButton(onPressed: _name.text.trim().isEmpty ? null : _join, child: const Text('Beitreten'))],
     ),

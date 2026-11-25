@@ -53,7 +53,7 @@ class _MealNowScreenState extends State<MealNowScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Was jetzt?'),
-        leading: TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Schließen')),
+        leading: BarTextButton('Schließen', onPressed: () => Navigator.of(context).pop()),
         leadingWidth: 100,
       ),
       body: ListView(
@@ -250,7 +250,7 @@ class _OwnRecipeEditorState extends State<OwnRecipeEditor> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Rezept'),
-        leading: TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Abbrechen')),
+        leading: BarTextButton('Abbrechen', onPressed: () => Navigator.of(context).pop()),
         leadingWidth: 100,
         actions: [
           TextButton(
