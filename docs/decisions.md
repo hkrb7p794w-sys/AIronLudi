@@ -1530,3 +1530,5 @@ planen; dazu Joggen von Start zu Ziel.
 - Health-Import meldet nicht lesbare Daten mit deutschen Namen statt interner Bezeichner (`respiratoryRate`).
 - **Datenschutz:** Im Modus „reduziert“ ging die Begründung „WHOOP-Recovery 30 % (rot)“ mit Zahl an die KI. Jetzt
   „WHOOP-Erholung niedrig“ wie bei der Trainingsbereitschaft (Test in `recovery_test.dart`).
+- Verlauf: Wochenzeilen auch in der Standardansicht „Alle“ mit Anzahl und Dauer (nur eigene Trainings, Freunde zählen
+  nicht mit); gezählt werden „Aktivitäten“ (aufgezeichnet), Dauer als „1:47 Std.“ (in Großbuchstaben lesbar).

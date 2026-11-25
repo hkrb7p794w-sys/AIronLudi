@@ -268,7 +268,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> with Pendin
       children: [
         FormSection(
           footer: _filter.narrows || _filter.search.isNotEmpty
-              ? '${entries.length} von ${all.length} Einheiten · Filter oben rechts'
+              ? '${entries.length} von ${all.length} Aktivitäten · Filter oben rechts'
                     '${_filter.onlyPlanned ? ' · Plan-Bezug der letzten ${ActivitiesScreen.plannedWeeks} Wochen' : ''}'
               : null,
           children: [
@@ -389,7 +389,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> with Pendin
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
                 child: Text(
-                  FeedWeek(monday: _monday(item.date), entries: const []).title.toUpperCase(),
+                  FeedWeek.timelineHeader(_monday(item.date), items).toUpperCase(),
                   style: LiquidText.sectionHeader(context),
                 ),
               ),
