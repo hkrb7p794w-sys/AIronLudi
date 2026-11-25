@@ -1644,3 +1644,5 @@ Gefunden und behoben: **Direkt nach der Einrichtung zeigte „Heute“ „Verpas
 Einheit vom Montag galt als verpasst). Neuer Wert `coach.scheduleSince` (gesetzt, wenn sich der dauerhafte
 Wochenplan ändert, also auch bei der Einrichtung); `MissedSessions.open(since:)` zählt Tage davor nicht. Bestehende
 Benutzer ohne den Wert behalten das bisherige Verhalten.
+- Demo-Daten: Bankdrücken steigt jetzt in ganzen 2,5-kg-Schritten (vorher krumme Werte wie „73,93 kg“ als Vorschlag
+  in der Live-Einheit, im Gerätetest aufgefallen). Prüfstand neu gerendert.
