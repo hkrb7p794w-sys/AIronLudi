@@ -94,7 +94,7 @@ enum HealthWidgetMetric: String, AppEnum {
     .bodyBattery: "Body Battery",
     .sleep: "Schlaf",
     .hrv: "HRV",
-    .recovery: "Recovery",
+    .recovery: "Erholung",
     .restingHeartRate: "Ruhepuls",
     .stress: "Stress",
   ]

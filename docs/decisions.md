@@ -1660,3 +1660,16 @@ Benutzer ohne den Wert behalten das bisherige Verhalten.
   Freigabe, Rücksprung `coach://whoop` über den Link-Weg der App, Token-Tausch über den Worker, Abruf mit Erholung,
   Schlaf und Training. Testnaht `whoopTransportProvider`.
 - Routen: nicht erneut durchgespielt – 16 End-to-End-Tests decken Planen, Sichern, Zuordnen, Zeichnen und Folgen ab.
+
+## 2026-11-25 – Android-Widgets mit Ringen und Einstellung, Wiederholungen ± in der Gym-Mitteilung
+
+- **Widgets** (`HomeWidgets.kt`): Ringe wie unter iOS – Heute (Training, Kalorien, Body Battery, Woche), Ernährung
+  (Kalorien, Protein, Wasser), Mahlzeiten (je Mahlzeit ein Ring, Tippen öffnet das Erfassen), Health (bis zu vier
+  Werte), Gym (Woche). Gezeichnet als Bild in den bestehenden `RemoteViews` statt mit Glance: keine neue Bibliothek
+  und kein Compose-Umbau, gleiche Wirkung.
+- **Einstellung je Widget** (`WidgetConfigActivity`, „Widget bearbeiten“, beim Hinzufügen optional): dieselben
+  Optionen wie unter iOS – Heute: Kalorien / Body Battery zeigen; Ernährung: verbleibende Kalorien, Tageskalorien,
+  Protein, letzte Mahlzeit; Health: welcher Wert oben; Gym: nächstes Training, letzte Einheit, Wochenfortschritt.
+- **Gym-Mitteilung:** ausgeklappt Gewicht ± und Wiederholungen ± (vorher nur Gewicht ± als Knopf unten, Android
+  erlaubt höchstens drei Knöpfe). Unten bleiben „Satz erledigt“ und „Pause überspringen“.
+- „Recovery“ heißt in den Health-Widgets beider Plattformen jetzt „Erholung“ (Glossar).

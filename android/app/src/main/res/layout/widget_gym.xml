@@ -51,6 +51,8 @@
         android:textSize="15sp"
         android:textStyle="bold" />
 
+    <include layout="@layout/widget_rings" />
+
     <TextView
         android:id="@+id/widget_row1"
         android:layout_width="match_parent"

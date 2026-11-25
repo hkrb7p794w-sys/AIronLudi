@@ -1,5 +1,7 @@
 package io.github.hkrb7p794w.aironludi
 
+import android.app.Activity
+import android.app.AlertDialog
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -7,8 +9,13 @@ import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.RectF
 import android.net.Uri
+import android.os.Bundle
 import android.view.View
 import android.widget.RemoteViews
 import org.json.JSONArray
@@ -192,6 +199,112 @@ private fun RemoteViews.show(id: Int, text: String?) {
     }
 }
 
+/** Farben wie die Ringe der iPhone-Widgets. */
+object WidgetColors {
+    val good = Color.rgb(52, 199, 89)
+    val caution = Color.rgb(255, 159, 10)
+    val alert = Color.rgb(255, 69, 58)
+    val info = Color.rgb(10, 132, 255)
+    val neutral = Color.rgb(142, 142, 147)
+
+    fun status(raw: String?) = when (raw) {
+        "good" -> good
+        "attention" -> caution
+        "missing" -> neutral
+        else -> info
+    }
+}
+
+/** Ein Ring der Ringreihe: Anteil 0–1 (`null` = kein Wert), Farbe, Titel und Wert darunter. */
+data class WidgetRing(
+    val fraction: Double?,
+    val color: Int,
+    val title: String,
+    val value: String,
+    val route: String? = null,
+)
+
+/** Zeichnet Ringe als Bild (RemoteViews kennen keine eigenen Zeichnungen). */
+object WidgetRings {
+    private val slots = intArrayOf(R.id.widget_slot1, R.id.widget_slot2, R.id.widget_slot3, R.id.widget_slot4)
+    private val images = intArrayOf(R.id.widget_ring1, R.id.widget_ring2, R.id.widget_ring3, R.id.widget_ring4)
+    private val titles =
+        intArrayOf(R.id.widget_ring_title1, R.id.widget_ring_title2, R.id.widget_ring_title3, R.id.widget_ring_title4)
+    private val values =
+        intArrayOf(R.id.widget_ring_value1, R.id.widget_ring_value2, R.id.widget_ring_value3, R.id.widget_ring_value4)
+
+    fun bitmap(context: Context, fraction: Double?, color: Int): Bitmap {
+        val size = (44 * context.resources.displayMetrics.density).toInt().coerceAtLeast(24)
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val stroke = size * 0.14f
+        val inset = stroke / 2 + 1
+        val bounds = RectF(inset, inset, size - inset, size - inset)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = stroke
+            strokeCap = Paint.Cap.ROUND
+        }
+        paint.color = Color.argb(46, Color.red(color), Color.green(color), Color.blue(color))
+        canvas.drawArc(bounds, 0f, 360f, false, paint)
+        if (fraction != null && fraction > 0) {
+            paint.color = color
+            canvas.drawArc(bounds, -90f, (360 * fraction.coerceIn(0.0, 1.0)).toFloat(), false, paint)
+        }
+        return bitmap
+    }
+
+    fun show(context: Context, views: RemoteViews, rings: List<WidgetRing>) {
+        views.setViewVisibility(R.id.widget_rings, if (rings.isEmpty()) View.GONE else View.VISIBLE)
+        for (index in slots.indices) {
+            val ring = rings.getOrNull(index)
+            if (ring == null) {
+                views.setViewVisibility(slots[index], View.GONE)
+                continue
+            }
+            views.setViewVisibility(slots[index], View.VISIBLE)
+            views.setImageViewBitmap(images[index], bitmap(context, ring.fraction, ring.color))
+            views.setTextViewText(titles[index], ring.title)
+            views.setTextViewText(values[index], ring.value)
+            if (ring.route != null) {
+                views.setOnClickPendingIntent(slots[index], WidgetData.open(context, ring.route, 200 + index))
+            }
+        }
+    }
+}
+
+/**
+ * Einstellung je Widget (wie die Widget-Optionen unter iOS): gespeichert je Widget-ID; ohne Einstellung gilt der
+ * Standard der iOS-Widgets.
+ */
+object WidgetSettings {
+    private const val PREFERENCES = "aironludi.widgets"
+
+    private fun preferences(context: Context) = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+
+    fun string(context: Context, id: Int, key: String, default: String): String =
+        preferences(context).getString("$id.$key", null) ?: default
+
+    fun bool(context: Context, id: Int, key: String, default: Boolean): Boolean =
+        preferences(context).getBoolean("$id.$key", default)
+
+    fun put(context: Context, id: Int, key: String, value: Any) {
+        val editor = preferences(context).edit()
+        when (value) {
+            is Boolean -> editor.putBoolean("$id.$key", value)
+            else -> editor.putString("$id.$key", value.toString())
+        }
+        editor.apply()
+    }
+
+    fun remove(context: Context, ids: IntArray) {
+        val editor = preferences(context).edit()
+        val all = preferences(context).all.keys
+        for (id in ids) all.filter { it.startsWith("$id.") }.forEach(editor::remove)
+        editor.apply()
+    }
+}
+
 /** Gemeinsamer Ablauf: ohne Stand bittet das Widget ums Öffnen der App. */
 abstract class CoachWidget(private val layout: Int, private val route: String) : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
@@ -202,90 +315,150 @@ abstract class CoachWidget(private val layout: Int, private val route: String) :
             if (display.snapshot == null) {
                 views.show(R.id.widget_headline, "App öffnen, um das Widget zu füllen")
                 for (row in rows) views.show(row, null)
+                WidgetRings.show(context, views, emptyList())
             } else {
-                fill(context, views, display)
+                fill(context, views, display, id)
             }
             manager.updateAppWidget(id, views)
         }
     }
 
-    abstract fun fill(context: Context, views: RemoteViews, display: WidgetDisplay)
+    override fun onDeleted(context: Context, ids: IntArray) = WidgetSettings.remove(context, ids)
+
+    abstract fun fill(context: Context, views: RemoteViews, display: WidgetDisplay, id: Int)
 
     companion object {
         val rows = intArrayOf(R.id.widget_row1, R.id.widget_row2, R.id.widget_row3, R.id.widget_row4)
+
+        fun hideRows(views: RemoteViews) {
+            for (row in rows) views.show(row, null)
+        }
+
+        /** Wert eines Health-Eintrags (`gauge` 0–100) als Anteil. */
+        fun gauge(item: JSONObject?): Double? =
+            item?.optDouble("gauge", Double.NaN)?.takeUnless { it.isNaN() }?.let { it / 100 }
+
+        fun healthItem(display: WidgetDisplay, metric: String): JSONObject? {
+            val health = display.snapshot?.optJSONArray("health") ?: return null
+            for (index in 0 until health.length()) {
+                val item = health.optJSONObject(index)
+                if (item?.optString("metric") == metric) return item
+            }
+            return null
+        }
     }
 }
 
 class TodayWidget : CoachWidget(R.layout.widget_today, "today") {
-    override fun fill(context: Context, views: RemoteViews, display: WidgetDisplay) {
+    override fun fill(context: Context, views: RemoteViews, display: WidgetDisplay, id: Int) {
         views.show(R.id.widget_badge, display.streak("streak"))
         val today = display.todayPart
         if (today == null) {
             views.show(R.id.widget_headline, "Neuer Tag – App öffnen")
-            for (row in rows) views.show(row, null)
+            hideRows(views)
+            WidgetRings.show(context, views, emptyList())
             return
         }
         val color = when (today.optString("level")) {
-            "normal" -> Color.rgb(52, 199, 89)
-            "locker" -> Color.rgb(255, 159, 10)
-            "pause" -> Color.rgb(255, 69, 58)
-            else -> Color.GRAY
+            "normal" -> WidgetColors.good
+            "locker" -> WidgetColors.caution
+            "pause" -> WidgetColors.alert
+            else -> WidgetColors.neutral
         }
         views.setTextColor(R.id.widget_badge_level, color)
         views.show(R.id.widget_badge_level, "●")
         views.show(R.id.widget_headline, today.optString("headline"))
+        hideRows(views)
+        // Ringe wie unter iOS: Training, Kalorien und Body Battery (je nach Einstellung), Woche.
         val sessions = today.optJSONArray("sessions") ?: JSONArray()
-        for ((index, row) in rows.take(3).withIndex()) {
-            val session = sessions.optJSONObject(index)
-            views.show(
-                row,
-                session?.let {
-                    val mark = if (it.optBoolean("done")) "✓" else "○"
-                    listOf(it.optString("title"), it.optString("target")).filter { text -> text.isNotEmpty() }
-                        .joinToString(" · ").let { text -> "$mark $text" }
-                },
+        var done = 0
+        var next: String? = null
+        for (index in 0 until sessions.length()) {
+            val session = sessions.optJSONObject(index) ?: continue
+            if (session.optBoolean("done")) done++ else if (next == null) next = session.optString("title")
+        }
+        val total = sessions.length()
+        val rings = mutableListOf(
+            WidgetRing(
+                if (total > 0) done.toDouble() / total else null,
+                WidgetColors.good,
+                "Training",
+                next ?: if (total > 0) "erledigt" else "frei",
+            ),
+        )
+        val nutrition = display.nutrition
+        if (WidgetSettings.bool(context, id, "showsNutrition", true) && nutrition != null) {
+            val kcal = nutrition.optDouble("kcal", 0.0)
+            val target = nutrition.optDouble("kcalTarget", Double.NaN)
+            rings += WidgetRing(
+                if (target.isNaN() || target <= 0) null else kcal / target,
+                WidgetColors.info,
+                "Kalorien",
+                if (target.isNaN()) "${WidgetData.number(kcal)} kcal" else "${WidgetData.number(target - kcal)} übrig",
+                "nutrition",
             )
         }
-        views.show(R.id.widget_row4, today.optString("week").ifEmpty { null })
+        if (WidgetSettings.bool(context, id, "showsBodyBattery", true)) {
+            healthItem(display, "bodyBattery")?.let {
+                rings += WidgetRing(gauge(it), WidgetColors.status(it.optString("status")), "Battery", it.optString("value", "–"))
+            }
+        }
+        val week = today.optString("week")
+        rings += WidgetRing(
+            today.optDouble("weekFraction", Double.NaN).takeUnless { it.isNaN() },
+            WidgetColors.info,
+            "Woche",
+            week.substringBefore("·").trim().ifEmpty { "–" },
+        )
+        WidgetRings.show(context, views, rings.take(4))
     }
 }
 
 class NutritionWidget : CoachWidget(R.layout.widget_nutrition, "nutrition") {
-    override fun fill(context: Context, views: RemoteViews, display: WidgetDisplay) {
+    override fun fill(context: Context, views: RemoteViews, display: WidgetDisplay, id: Int) {
         views.show(R.id.widget_badge, display.streak("mealStreak"))
         val nutrition = display.nutrition
         if (nutrition == null) {
             views.show(R.id.widget_headline, "Ernährung – App öffnen")
-            for (row in rows) views.show(row, null)
+            hideRows(views)
+            WidgetRings.show(context, views, emptyList())
             return
         }
         val kcal = nutrition.optDouble("kcal", 0.0)
         val target = nutrition.optDouble("kcalTarget", Double.NaN)
-        views.show(
-            R.id.widget_headline,
-            if (target.isNaN()) "${WidgetData.number(kcal)} kcal"
-            else "${WidgetData.number(kcal)} / ${WidgetData.number(target)} kcal",
-        )
         val protein = nutrition.optDouble("protein", 0.0)
         val proteinTarget = nutrition.optDouble("proteinTarget", Double.NaN)
-        views.show(
-            R.id.widget_row1,
-            if (proteinTarget.isNaN()) "${protein.roundToInt()} g Protein"
-            else "${protein.roundToInt()} / ${proteinTarget.roundToInt()} g Protein",
-        )
         val water = nutrition.optDouble("waterMilliliters", 0.0)
         val waterTarget = nutrition.optDouble("waterTarget", Double.NaN)
-        views.show(
-            R.id.widget_row2,
-            if (waterTarget.isNaN()) "💧 ${WidgetData.liters(water)}"
-            else "💧 ${WidgetData.liters(water)} / ${WidgetData.liters(waterTarget)}",
-        )
         val last = nutrition.optJSONObject("lastMeal")
+        // Anzeige wie unter iOS: verbleibende Kalorien (Standard), Tageskalorien, Protein oder letzte Mahlzeit.
         views.show(
-            R.id.widget_row3,
-            last?.let { "Zuletzt: ${it.optString("title")} · ${it.optDouble("kcal").roundToInt()} kcal" },
+            R.id.widget_headline,
+            when (WidgetSettings.string(context, id, "display", "remaining")) {
+                "eaten" -> if (target.isNaN()) "${WidgetData.number(kcal)} kcal"
+                else "${WidgetData.number(kcal)} / ${WidgetData.number(target)} kcal"
+                "protein" -> if (proteinTarget.isNaN()) "${protein.roundToInt()} g Protein"
+                else "${protein.roundToInt()} / ${proteinTarget.roundToInt()} g Protein"
+                "lastMeal" -> last?.let { "Zuletzt: ${it.optString("title")} · ${it.optDouble("kcal").roundToInt()} kcal" }
+                    ?: "Noch keine Mahlzeit"
+                else -> when {
+                    target.isNaN() -> "${WidgetData.number(kcal)} kcal"
+                    target - kcal >= 0 -> "Noch ${WidgetData.number(target - kcal)} kcal"
+                    else -> "${WidgetData.number(kcal - target)} kcal über Ziel"
+                }
+            },
         )
-        views.show(R.id.widget_row4, null)
+        hideRows(views)
+        fun ratio(value: Double, goal: Double) = if (goal.isNaN() || goal <= 0) null else value / goal
+        WidgetRings.show(
+            context,
+            views,
+            listOf(
+                WidgetRing(ratio(kcal, target), WidgetColors.info, "Kalorien", WidgetData.number(kcal)),
+                WidgetRing(ratio(protein, proteinTarget), WidgetColors.good, "Protein", "${protein.roundToInt()} g"),
+                WidgetRing(ratio(water, waterTarget), Color.rgb(50, 173, 230), "Wasser", WidgetData.liters(water)),
+            ),
+        )
         val water250 = PendingIntent.getBroadcast(
             context,
             250,
@@ -297,7 +470,7 @@ class NutritionWidget : CoachWidget(R.layout.widget_nutrition, "nutrition") {
 }
 
 class MealsWidget : CoachWidget(R.layout.widget_meals, "logMeal") {
-    override fun fill(context: Context, views: RemoteViews, display: WidgetDisplay) {
+    override fun fill(context: Context, views: RemoteViews, display: WidgetDisplay, id: Int) {
         views.show(R.id.widget_badge, display.streak("mealStreak"))
         val nutrition = display.nutrition
         val meals = if (display.isCurrent) nutrition?.optJSONArray("meals") else null
@@ -311,8 +484,10 @@ class MealsWidget : CoachWidget(R.layout.widget_meals, "logMeal") {
                 else -> "${WidgetData.number(abs(target - kcal))} kcal über Ziel"
             },
         )
+        hideRows(views)
+        // Je Mahlzeit ein Ring (gegessen gegen Richtwert); Tippen öffnet das Erfassen dieser Mahlzeit.
         val order = listOf("fruehstueck", "mittagessen", "abendessen", "snack")
-        for ((index, raw) in order.withIndex()) {
+        val rings = order.map { raw ->
             var part: JSONObject? = null
             for (item in 0 until (meals?.length() ?: 0)) {
                 val candidate = meals!!.optJSONObject(item)
@@ -320,74 +495,184 @@ class MealsWidget : CoachWidget(R.layout.widget_meals, "logMeal") {
             }
             val eaten = part?.optDouble("kcal", 0.0) ?: 0.0
             val mealTarget = part?.optDouble("target", Double.NaN) ?: Double.NaN
-            val text = if (mealTarget.isNaN()) "${WidgetData.number(eaten)} kcal"
-            else "${WidgetData.number(eaten)} / ${WidgetData.number(mealTarget)} kcal"
-            views.show(rows[index], "＋ ${WidgetData.mealLabel(raw)} · $text")
-            views.setOnClickPendingIntent(rows[index], WidgetData.open(context, "logMeal?mahlzeit=$raw", 100 + index))
+            WidgetRing(
+                if (mealTarget.isNaN() || mealTarget <= 0) (if (eaten > 0) 1.0 else null) else eaten / mealTarget,
+                WidgetColors.info,
+                WidgetData.mealLabel(raw),
+                if (eaten > 0) "${WidgetData.number(eaten)} kcal" else "＋",
+                "logMeal?mahlzeit=$raw",
+            )
         }
+        WidgetRings.show(context, views, rings)
     }
 }
 
 class HealthWidget : CoachWidget(R.layout.widget_health, "health") {
-    override fun fill(context: Context, views: RemoteViews, display: WidgetDisplay) {
+    override fun fill(context: Context, views: RemoteViews, display: WidgetDisplay, id: Int) {
         views.show(R.id.widget_badge, if (display.healthIsOld) "von gestern" else null)
         val health = display.snapshot?.optJSONArray("health") ?: JSONArray()
-        views.show(R.id.widget_headline, "Health")
         val titles = mapOf(
             "bodyBattery" to "Body Battery",
             "sleep" to "Schlaf",
             "hrv" to "HRV",
-            "recovery" to "Recovery",
+            "recovery" to "Erholung",
             "restingHeartRate" to "Ruhepuls",
             "stress" to "Stress",
         )
-        for ((index, row) in rows.withIndex()) {
-            val item = health.optJSONObject(index)
-            views.show(
-                row,
-                item?.let {
-                    val mark = when (it.optString("status")) {
-                        "good" -> "🟢"
-                        "attention" -> "🟠"
-                        "missing" -> "⚪"
-                        else -> "🔵"
-                    }
-                    "$mark ${titles[it.optString("metric")] ?: it.optString("metric")}: ${it.optString("value", "–")}"
-                },
-            )
-        }
+        // Gewählter Wert als Überschrift (Standard Body Battery), darunter bis zu vier Ringe.
+        val chosen = WidgetSettings.string(context, id, "metric", "bodyBattery")
+        val main = healthItem(display, chosen)
+        views.show(
+            R.id.widget_headline,
+            main?.let { "${titles[chosen] ?: chosen}: ${it.optString("value", "–")}" } ?: "Health",
+        )
+        hideRows(views)
+        val items = (0 until health.length()).mapNotNull { health.optJSONObject(it) }
+            .sortedBy { if (it.optString("metric") == chosen) 0 else 1 }
+        WidgetRings.show(
+            context,
+            views,
+            items.take(4).map {
+                val metric = it.optString("metric")
+                WidgetRing(gauge(it), WidgetColors.status(it.optString("status")), titles[metric] ?: metric, it.optString("value", "–"))
+            },
+        )
     }
 }
 
 class GymWidget : CoachWidget(R.layout.widget_gym, "gym") {
-    override fun fill(context: Context, views: RemoteViews, display: WidgetDisplay) {
+    override fun fill(context: Context, views: RemoteViews, display: WidgetDisplay, id: Int) {
         val gym = display.gym
         if (gym == null) {
             views.show(R.id.widget_headline, "Gym – nur mit Krafttraining im Profil")
-            for (row in rows) views.show(row, null)
+            hideRows(views)
+            WidgetRings.show(context, views, emptyList())
             return
         }
         val running = gym.optBoolean("running")
-        views.show(
-            R.id.widget_headline,
-            if (running) "Läuft: ${gym.optString("runningTitle", "Einheit")}"
-            else gym.optString("next").ifEmpty { "Gym" },
-        )
-        views.show(R.id.widget_row1, if (running) null else gym.optString("nextDetail").ifEmpty { null })
         val last = gym.optJSONObject("last")
-        views.show(
-            R.id.widget_row2,
-            last?.let {
-                val day = WidgetData.day(it.optJSONObject("day"))
-                val date = day?.let { value -> String.format(Locale.GERMANY, "%02d.%02d.", value.dayOfMonth, value.monthValue) }
-                "Zuletzt: ${it.optString("title")} · ${date ?: ""} · ${it.optInt("sets")} Sätze"
-            },
-        )
+        val lastText = last?.let {
+            val day = WidgetData.day(it.optJSONObject("day"))
+            val date = day?.let { value -> String.format(Locale.GERMANY, "%02d.%02d.", value.dayOfMonth, value.monthValue) }
+            "${it.optString("title")} · ${date ?: ""} · ${it.optInt("sets")} Sätze"
+        }
         val planned = gym.optInt("weekPlanned", 0)
         val done = gym.optInt("weekDone", 0)
-        views.show(R.id.widget_row3, if (planned > 0) "Woche: $done von $planned" else "Woche: $done")
-        views.show(R.id.widget_row4, null)
+        val weekText = if (planned > 0) "$done von $planned" else "$done"
+        // Anzeige wie unter iOS: nächstes Training (Standard), letzte Einheit oder Wochenfortschritt.
+        views.show(
+            R.id.widget_headline,
+            when {
+                running -> "Läuft: ${gym.optString("runningTitle", "Einheit")}"
+                else -> when (WidgetSettings.string(context, id, "focus", "next")) {
+                    "last" -> lastText?.let { "Zuletzt: $it" } ?: "Noch keine Einheit"
+                    "week" -> "Woche: $weekText"
+                    else -> gym.optString("next").ifEmpty { "Gym" }
+                }
+            },
+        )
+        hideRows(views)
+        views.show(R.id.widget_row1, if (running) null else gym.optString("nextDetail").ifEmpty { null })
+        WidgetRings.show(
+            context,
+            views,
+            listOf(
+                WidgetRing(
+                    if (planned > 0) done.toDouble() / planned else null,
+                    WidgetColors.good,
+                    "Woche",
+                    weekText,
+                ),
+            ),
+        )
         views.setOnClickPendingIntent(R.id.widget_root, WidgetData.open(context, "startWorkout", 5))
+    }
+}
+
+/**
+ * Einstellung eines Widgets beim Hinzufügen und über „Widget bearbeiten“ (wie die Widget-Optionen unter iOS). Zeigt
+ * eine Auswahl, speichert sie je Widget und zeichnet die Widgets neu.
+ */
+class WidgetConfigActivity : Activity() {
+    private var widgetID = AppWidgetManager.INVALID_APPWIDGET_ID
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        widgetID = intent?.extras?.getInt(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
+            ?: AppWidgetManager.INVALID_APPWIDGET_ID
+        // Abbrechen fügt das Widget mit der Standard-Anzeige hinzu (Einstellung ist optional).
+        setResult(RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetID))
+        if (widgetID == AppWidgetManager.INVALID_APPWIDGET_ID) {
+            finish()
+            return
+        }
+        val provider = AppWidgetManager.getInstance(this).getAppWidgetInfo(widgetID)?.provider?.className ?: ""
+        when {
+            provider.endsWith("TodayWidget") -> multiChoice(
+                "Heute",
+                listOf("showsNutrition" to "Kalorien zeigen", "showsBodyBattery" to "Body Battery zeigen"),
+            )
+            provider.endsWith("NutritionWidget") -> singleChoice(
+                "Ernährung",
+                "display",
+                listOf(
+                    "remaining" to "Verbleibende Kalorien",
+                    "eaten" to "Tageskalorien",
+                    "protein" to "Protein",
+                    "lastMeal" to "Letzte Mahlzeit",
+                ),
+            )
+            provider.endsWith("HealthWidget") -> singleChoice(
+                "Health",
+                "metric",
+                listOf(
+                    "bodyBattery" to "Body Battery",
+                    "sleep" to "Schlaf",
+                    "hrv" to "HRV",
+                    "recovery" to "Erholung",
+                    "restingHeartRate" to "Ruhepuls",
+                    "stress" to "Stress",
+                ),
+            )
+            provider.endsWith("GymWidget") -> singleChoice(
+                "Gym",
+                "focus",
+                listOf("next" to "Nächstes Training", "last" to "Letzte Einheit", "week" to "Wochenfortschritt"),
+            )
+            else -> finish()
+        }
+    }
+
+    private fun done() {
+        WidgetData.updateAll(this)
+        finish()
+    }
+
+    private fun singleChoice(title: String, key: String, options: List<Pair<String, String>>) {
+        val current = WidgetSettings.string(this, widgetID, key, options.first().first)
+        AlertDialog.Builder(this)
+            .setTitle(title)
+            .setSingleChoiceItems(
+                options.map { it.second }.toTypedArray(),
+                options.indexOfFirst { it.first == current }.coerceAtLeast(0),
+            ) { dialog, which ->
+                WidgetSettings.put(this, widgetID, key, options[which].first)
+                dialog.dismiss()
+            }
+            .setOnDismissListener { done() }
+            .show()
+    }
+
+    private fun multiChoice(title: String, options: List<Pair<String, String>>) {
+        val checked = options.map { WidgetSettings.bool(this, widgetID, it.first, true) }.toBooleanArray()
+        AlertDialog.Builder(this)
+            .setTitle(title)
+            .setMultiChoiceItems(options.map { it.second }.toTypedArray(), checked) { _, which, on ->
+                WidgetSettings.put(this, widgetID, options[which].first, on)
+            }
+            .setPositiveButton("Fertig") { dialog, _ -> dialog.dismiss() }
+            .setOnDismissListener { done() }
+            .show()
     }
 }
 
