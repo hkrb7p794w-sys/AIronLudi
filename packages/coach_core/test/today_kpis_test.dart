@@ -83,7 +83,7 @@ void main() {
       expect(TodayKpis.recovery(metrics, RecoveryLevel.normal).status, KpiStatus.good);
       expect(TodayKpis.recovery(metrics, RecoveryLevel.normal).value, '72 %');
       // Unter dem Ring die Herkunft, nicht noch einmal „Normal trainieren“.
-      expect(TodayKpis.recovery(metrics, RecoveryLevel.normal).caption, 'Erholungswert');
+      expect(TodayKpis.recovery(metrics, RecoveryLevel.normal).caption, 'Messwert');
       expect(TodayKpis.recovery(metrics, RecoveryLevel.pause).status, KpiStatus.critical);
       expect(TodayKpis.recovery(metrics..trainingReadiness = 50, RecoveryLevel.normal).status, KpiStatus.moderate);
       expect(TodayKpis.recovery(metrics..trainingReadiness = 20, null).status, KpiStatus.critical);

@@ -343,7 +343,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen>
                     symbol: 'fork.knife',
                     color: AppColors.of(context).caution,
                     value: '',
-                    caption: 'Fuel Planner: vor, während, nach dem Training',
+                    caption: 'Vor, während und nach dem Training',
                     onTap: () => _open((_) => const FuelPlannerScreen()),
                   ),
               ],
@@ -479,13 +479,13 @@ class _HubRow extends StatelessWidget {
               // Ohne Kernwert steht der Bereich groß und die Erklärung klein darunter – kein einsamer Strich.
               Text(
                 value.isEmpty || value == '–' ? title : value,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: valueColor),
               ),
               Text(
                 value.isEmpty || value == '–' ? caption : title,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: AppText.caption(context).copyWith(color: secondary),
               ),

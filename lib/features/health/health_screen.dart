@@ -328,7 +328,7 @@ class HealthWidgetCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     kind.title,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: AppText.caption(context).copyWith(fontWeight: FontWeight.w600, color: secondary),
                   ),

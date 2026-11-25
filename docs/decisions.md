@@ -1504,3 +1504,15 @@ planen; dazu Joggen von Start zu Ziel.
   Knopftexte 18 pt als `headline` (17 pt).
 - `test/ui/ui_tokens_test.dart` prüft jetzt ohne Bestandsliste (`ui_tokens_baseline.json` entfällt). Ausnahmen:
   Daisy-Illustration und Sperrbildschirm-Vorschau (bilden etwas mit festen Farben/Größen nach).
+
+## 2026-11-25 – Kein Abschneiden bei großer Schrift
+
+- Der Prüfstand meldet zusätzlich abgeschnittene Texte (`docs/roast/screenshots/abgeschnitten.md`). Vorher: über 100
+  Fundstellen, danach zwei gewollte (Platzhalter im Routenplaner, gekürzte KI-Vorschau auf „Heute“).
+- Kurze Beschriftungen (Tab-Leiste, Untertitel der Ringe, Kategorie in „Erfassen“) werden bei großer Schrift leicht
+  verkleinert statt abgeschnitten, wie die Tab-Leiste von iOS; Werte und Namen in Listen und Kacheln dürfen zwei Zeilen
+  haben.
+- Untertitel des Erholungsrings „Messwert“ statt „Erholungswert“ (zeigt die Herkunft; „Erholung“ steht schon darüber).
+- „Fuel Planner“ in Untertiteln durch „Vor, während und nach dem Training“ ersetzt (Glossar: Verpflegung).
+- Knopftexte im Theme mit der Schriftfamilie des Themes (vorher ohne, im Prüfstand als Blöcke gerendert).
+- `ui_tokens_test.dart`: keine feste Schriftgröße unter 12 pt in ganz `lib/` (Diagrammachsen nutzen `AxisLabel`).

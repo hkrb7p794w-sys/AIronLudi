@@ -34,7 +34,7 @@ class _MealRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final totals = NutritionSummary.totals(meal.items);
     return ListTile(
-      title: Text(meal.title, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.w600)),
+      title: Text(meal.title, maxLines: 2, style: const TextStyle(fontWeight: FontWeight.w600)),
       trailing: Text('${(totals[Nutrient.kcal] ?? 0).round()} kcal'),
       subtitle: Text(
         '${meal.category.label} · Protein ${(totals[Nutrient.protein] ?? 0).round()} g · '

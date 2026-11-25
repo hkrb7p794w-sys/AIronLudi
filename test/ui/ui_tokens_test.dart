@@ -40,6 +40,21 @@ void main() {
     expect(found, isEmpty, reason: 'Bitte AppColors, AppPalette, AppText oder LiquidText aus lib/ui nutzen.');
   });
 
+  // Barrierefreiheit (AGENTS.md): nichts unter 12 pt – auch nicht in lib/ui und lib/app.
+  test('keine feste Schriftgröße unter 12 pt in lib', () {
+    final small = RegExp(r'fontSize:\s*(\d+(?:\.\d+)?)(?![\d.])');
+    final found = <String>[];
+    final files = Directory('lib').listSync(recursive: true).whereType<File>().where((f) => f.path.endsWith('.dart'));
+    for (final file in files) {
+      for (final (index, line) in file.readAsLinesSync().indexed) {
+        for (final match in small.allMatches(line)) {
+          if (double.parse(match.group(1)!) < 12) found.add('${file.path}:${index + 1}: ${line.trim()}');
+        }
+      }
+    }
+    expect(found, isEmpty, reason: 'Mindestens AppText.caption (12 pt) verwenden.');
+  });
+
   test('Ausnahmen gibt es noch', () {
     for (final path in _allowed) {
       expect(File(path).existsSync(), isTrue, reason: '$path aus der Ausnahmeliste entfernen');

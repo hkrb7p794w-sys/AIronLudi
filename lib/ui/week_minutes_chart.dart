@@ -4,6 +4,7 @@ import 'package:coach_core/coach_core.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import 'chart_axes.dart';
 import 'components.dart';
 import 'sport_style.dart';
 
@@ -84,9 +85,8 @@ class WeekMinutesChart extends StatelessWidget {
                                   final day = mondays[index];
                                   return SideTitleWidget(
                                     meta: meta,
-                                    child: Text(
+                                    child: AxisLabel(
                                       index == mondays.length - 1 ? 'jetzt' : '${day.day}.${day.month}.',
-                                      style: TextStyle(fontSize: 9, color: theme.colorScheme.onSurfaceVariant),
                                     ),
                                   );
                                 },

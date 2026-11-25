@@ -728,7 +728,8 @@ class _LiquidTab extends StatelessWidget {
                   letterSpacing: 0.1,
                   color: color,
                 ),
-                child: Text(item.label, maxLines: 1, overflow: TextOverflow.ellipsis),
+                // Große Schrift: lieber etwas kleiner als abgeschnitten (wie die Tab-Leiste von iOS).
+                child: FittedBox(fit: BoxFit.scaleDown, child: Text(item.label, maxLines: 1, softWrap: false)),
               ),
             ],
           ),
