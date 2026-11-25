@@ -134,6 +134,9 @@ bash test/screenshots/make_index.sh
   bereitgestellten Worker, nur manuell.
 - `ios-build.yml`: unsignierte IPA (pseudo-signiert mit `ldid` und den Entitlements) per Label `ios-build`, auf
   `main` und per „Run workflow“; Bereitstellung nur mit `vars.DEPLOY_SIDESTORE == 'true'`.
+- `device-test.yml`: Gerätetests (`integration_test/device_test.dart`) auf Android-Emulator und iOS-Simulator per
+  Label `device-test` (läuft dann bei jedem Push des PRs), „Run workflow“ und montags; Bildschirmfotos als Artefakt.
+  Vor Änderungen an nativen Brücken, Start, Speicher oder Benutzerwechsel setzen.
 - **PRs merged der Agent selbst und automatisch** (Auftrag des Nutzers vom 13.11.2026): sobald `check` und `apk`
   grün sind (bei Änderungen an `ios/` zusätzlich der iOS-Build per Label), per Merge-Commit. Gestapelte PRs danach
   auf `main` umstellen.
