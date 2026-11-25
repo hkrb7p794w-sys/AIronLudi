@@ -290,3 +290,18 @@ class NumberField extends StatelessWidget {
 
 /// Liest eine Zahl mit Komma oder Punkt.
 double? parseNumber(String text) => double.tryParse(text.trim().replaceAll(',', '.'));
+
+/// Text-Knopf links in der Navigationsleiste („Abbrechen“, mit `leadingWidth: 100`): wird bei großer Schrift leicht
+/// kleiner, statt mitten im Wort umzubrechen („Abbrec|hen“).
+class BarTextButton extends StatelessWidget {
+  const BarTextButton(this.label, {super.key, required this.onPressed});
+
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) => TextButton(
+    onPressed: onPressed,
+    child: FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1, softWrap: false)),
+  );
+}

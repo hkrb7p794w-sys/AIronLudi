@@ -311,7 +311,7 @@ class _PromptEditorState extends ConsumerState<PromptEditor> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_title.text.isEmpty ? 'Neuer Prompt' : _title.text),
-        leading: TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Abbrechen')),
+        leading: BarTextButton('Abbrechen', onPressed: () => Navigator.of(context).pop()),
         leadingWidth: 100,
         actions: [TextButton(onPressed: canSave ? _save : null, child: const Text('Sichern'))],
       ),

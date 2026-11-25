@@ -15,8 +15,35 @@ import '../screenshots/screenshots_test.dart' show loadFonts;
 
 var _fontsLoaded = false;
 
-/// App mit Demo-Daten (iPhone-Größe) starten.
-Future<ProviderContainer> startDemo(WidgetTester tester, {List<Override> overrides = const []}) async {
+/// Gerät eines Durchlaufs: iPhone 15 mit normaler Schrift oder kleines Android mit großer Schrift (1,3).
+enum WalkDevice {
+  iphone(Size(1179, 2556), 3, 1),
+  smallLargeText(Size(720, 1280), 2, 1.3);
+
+  const WalkDevice(this.physicalSize, this.ratio, this.textScale);
+
+  final Size physicalSize;
+  final double ratio;
+  final double textScale;
+}
+
+/// Durchlauf auf beiden Geräten registrieren.
+void walk(String description, Future<void> Function(WidgetTester tester, WalkDevice device) body) {
+  for (final device in WalkDevice.values) {
+    testWidgets('$description (${device.name})', timeout: const Timeout(Duration(minutes: 4)), (tester) async {
+      await body(tester, device);
+      expect(endless, isEmpty, reason: 'Dauer-Animation: $endless');
+    });
+  }
+}
+
+/// App mit Demo-Daten starten.
+Future<ProviderContainer> startDemo(
+  WidgetTester tester, {
+  List<Override> overrides = const [],
+  WalkDevice device = WalkDevice.iphone,
+}) async {
+  endless.clear();
   // Echte Schrift (Inter) statt der breiten Testschrift, sonst sind Überläufe keine echten Befunde.
   if (!_fontsLoaded) {
     await tester.runAsync(loadFonts);
@@ -24,9 +51,11 @@ Future<ProviderContainer> startDemo(WidgetTester tester, {List<Override> overrid
     if (BLS.foods.isEmpty) BLS.load(File('packages/coach_core/assets/bls.tsv').readAsStringSync());
     _fontsLoaded = true;
   }
-  tester.view.physicalSize = const Size(1179, 2556);
-  tester.view.devicePixelRatio = 3;
+  tester.view.physicalSize = device.physicalSize;
+  tester.view.devicePixelRatio = device.ratio;
+  tester.platformDispatcher.textScaleFactorTestValue = device.textScale;
   addTearDown(tester.view.reset);
+  addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
   // Erst die Daten, dann die Oberfläche: Laufende Abfragen der Screens hielten sonst die Datenbank in der Testzeit fest.
   final widget = (await tester.runAsync(() async {
     final widget = await app(onboarded: true, overrides: overrides) as UncontrolledProviderScope;

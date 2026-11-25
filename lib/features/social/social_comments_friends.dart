@@ -583,7 +583,7 @@ class _ShareWithFriendsScreenState extends ConsumerState<ShareWithFriendsScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mit Freunden teilen'),
-        leading: TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Abbrechen')),
+        leading: BarTextButton('Abbrechen', onPressed: () => Navigator.of(context).pop()),
         leadingWidth: 100,
       ),
       body: social.isAvailable

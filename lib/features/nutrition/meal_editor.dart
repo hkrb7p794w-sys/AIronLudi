@@ -77,7 +77,7 @@ class _MealEditorScreenState extends ConsumerState<MealEditorScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(draft.record == null ? 'Neue Mahlzeit' : 'Mahlzeit bearbeiten'),
-        leading: TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Abbrechen')),
+        leading: BarTextButton('Abbrechen', onPressed: () => Navigator.of(context).pop()),
         leadingWidth: 100,
         actions: [
           TextButton(
@@ -234,15 +234,16 @@ class DraftSummary extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+          // Wrap statt Row: Bei großer Schrift rutscht „danach … übrig“ unter die kcal statt überzulaufen.
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.end,
+            spacing: 12,
             children: [
               Text(
                 '${kcal.round()} kcal',
                 style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
-              const Spacer(),
               if (after != null)
                 Text(
                   after >= 0 ? 'danach ${after.round()} übrig' : 'danach ${(-after).round()} drüber',
@@ -304,8 +305,9 @@ class _ItemRow extends StatelessWidget {
           : null,
       title: Text(item.name.isEmpty ? 'Neue Position' : item.name, maxLines: 1),
       subtitle: Text(
-        '${item.amountLabel} · ${(amounts[Nutrient.kcal] ?? 0).round()} kcal · '
-        '${(amounts[Nutrient.protein] ?? 0).round()} g P${item.source == MealItemSource.ai ? ' · geschätzt' : ''}',
+        // Geschützte Leerzeichen: Zahl und Einheit bleiben bei großer Schrift zusammen.
+        '${item.amountLabel} · ${(amounts[Nutrient.kcal] ?? 0).round()} kcal · '
+        '${(amounts[Nutrient.protein] ?? 0).round()} g P${item.source == MealItemSource.ai ? ' · geschätzt' : ''}',
       ),
       onTap: onOpen,
       trailing: Row(
