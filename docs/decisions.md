@@ -1556,3 +1556,36 @@ BLS geladen wie in `bootstrap.dart`). Gefunden und behoben in der Ernährung:
   Doku von `ProductSearchScreen.own` schon beschrieb.
 - **Wasser:** Nach einem Glas stand „0,3 l“ (Rundung auf eine Stelle), jetzt „0,25 l“.
 - **„Sichern“ statt gemischt „Speichern“/„Sichern“** auf Knöpfen (wie im deutschen iOS; vorher 12 : 7).
+
+## 2026-11-25 – Durchläufe auf kleinem Android mit großer Schrift
+
+Die Durchläufe (`test/walkthrough/`) laufen jetzt je zweimal: iPhone 15 und kleines Android (360 × 640) mit Schrift
+1,3; eine Dauer-Animation (nie zur Ruhe kommend) zählt als Fehler. Neu: Plan (Training nachtragen, Wochenzeiten,
+nächste Woche; Gym mit Übungsverlauf, Auswertung, Trainingsplan anlegen und starten, Einheit löschen) und Verlauf
+(Aktivität, Filter, alle Auswertungen bis zum Ende). Gefunden und behoben:
+
+- **Mahlzeiten-Editor** lief bei großer Schrift über („427 kcal danach 1554 übrig“ in einer Zeile): Die Zeile bricht
+  jetzt um. Zahl und Einheit bleiben zusammen („9 g P“ nicht mehr auf zwei Zeilen).
+- **„Abbrechen“ brach mitten im Wort um** („Abbrec|hen“) in 20 Leisten: neuer Baustein `BarTextButton`
+  (`lib/ui/components.dart`), der sich leicht verkleinert.
+
+## 2026-11-25 – Durchlauf „Ich“: Datensicherung findbar und je Benutzer
+
+Neuer Durchlauf `test/walkthrough/me_walkthrough_test.dart` (beide Geräte): alle neun Bereiche unter „Ich“ bis zum
+Ende, Datensicherung erstellen, Datenquellen, Benutzer, Konto ohne Worker. Gefunden und behoben:
+
+- **Datensicherung war unter „KI und Automatisierung“ versteckt.** Jetzt unter *Ich › Allgemein › Daten* (wie
+  iOS: Allgemein › Übertragen); Export und Import für die KI bleiben bei der KI. Anleitung angepasst.
+- **Datenschutz:** Die Sicherungsdatei zum Teilen (alle Daten des Benutzers) lag im gemeinsamen Temp-Ordner und blieb
+  nach einem Benutzerwechsel liegen. Jetzt im Export-Ordner `sicherung-export`, den `clearSharedExports` beim Wechsel
+  löscht (wie die KI- und Routen-Exporte seit B-23).
+
+## 2026-11-25 – Durchlauf Einrichtung und Heute
+
+Neuer Durchlauf `test/walkthrough/today_walkthrough_test.dart` (beide Geräte): Einrichtung vom ersten Start bis
+„Los geht’s“ wie eine neue Person, danach „Heute“ mit Demo-Daten (KI-Empfehlungen ohne Worker, Mobility, Verschieben,
+Heute anpassen, Woche). Gefunden und behoben:
+
+- **Einrichtung, Schritt Wochenplan:** Nach dem Antippen der freien Tage blieb „Weiter“ gesperrt, bis man zusätzlich
+  „Wochenplan vorschlagen“ tippte – obwohl der Fußtext „Die App verteilt passende Einheiten auf diese Tage“ verspricht.
+  Jetzt reicht die Tagesauswahl; „Weiter“ schlägt den Plan dann vor (der Knopf bleibt für einen neuen Vorschlag).

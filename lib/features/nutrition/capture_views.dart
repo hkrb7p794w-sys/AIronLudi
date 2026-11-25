@@ -9,6 +9,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../services/nutrition/meal_photo.dart';
 import '../../services/providers.dart';
+import '../../ui/components.dart';
 import '../../ui/tokens.dart';
 import 'meal_shortcuts.dart';
 
@@ -123,7 +124,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Erfassen'),
-        leading: TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Abbrechen')),
+        leading: BarTextButton('Abbrechen', onPressed: () => Navigator.of(context).pop()),
         leadingWidth: 100,
         actions: [
           TextButton(
@@ -343,7 +344,7 @@ class _BarcodeEntryScreenState extends State<BarcodeEntryScreen> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
       title: const Text('Barcode'),
-      leading: TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Abbrechen')),
+      leading: BarTextButton('Abbrechen', onPressed: () => Navigator.of(context).pop()),
       leadingWidth: 100,
     ),
     body: Column(

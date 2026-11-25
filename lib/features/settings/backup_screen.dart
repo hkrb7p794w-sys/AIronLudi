@@ -13,6 +13,7 @@ import '../../data/backup/backup_service.dart';
 import '../../data/settings/settings_store.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
+import '../../services/share/export_folders.dart';
 import '../../ui/components.dart';
 import '../../ui/tokens.dart';
 
@@ -61,7 +62,9 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   Future<void> _createFile() async {
     try {
       final backup = await ref.read(backupServiceProvider).make();
-      final file = File(p.join(Directory.systemTemp.path, BackupService.shareFileName(backup.createdAt)));
+      // Eigener Export-Ordner: beim Benutzerwechsel gelöscht (`clearSharedExports`), nicht im gemeinsamen Temp-Ordner.
+      final folder = await ExportFolders.fresh(ExportFolders.backupExport);
+      final file = File(p.join(folder.path, BackupService.shareFileName(backup.createdAt)));
       await file.writeAsBytes(backup.encoded());
       setState(() => _shared = file);
     } on Object catch (error) {

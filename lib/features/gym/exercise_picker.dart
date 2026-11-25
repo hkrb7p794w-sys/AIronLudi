@@ -85,7 +85,7 @@ class _ExercisePickerScreenState extends ConsumerState<ExercisePickerScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Übung wählen'),
-        leading: TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Abbrechen')),
+        leading: BarTextButton('Abbrechen', onPressed: () => Navigator.of(context).pop()),
         leadingWidth: 100,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
@@ -176,7 +176,7 @@ class _CustomExerciseEditorState extends ConsumerState<CustomExerciseEditor> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
       title: const Text('Eigene Übung'),
-      leading: TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Abbrechen')),
+      leading: BarTextButton('Abbrechen', onPressed: () => Navigator.of(context).pop()),
       leadingWidth: 100,
       actions: [
         ListenableBuilder(

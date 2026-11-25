@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../services/ai/ai_client.dart';
 import '../../services/providers.dart';
+import '../../ui/components.dart';
 import '../evidence/evidence_views.dart';
 import '../today/today_controller.dart';
 import 'ai_data.dart';
@@ -127,7 +128,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       appBar: AppBar(
         title: const Text('Coach fragen'),
         automaticallyImplyLeading: false,
-        leading: TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Schließen')),
+        leading: BarTextButton('Schließen', onPressed: () => Navigator.of(context).pop()),
         leadingWidth: 100,
       ),
       body: Column(

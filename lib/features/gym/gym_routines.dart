@@ -56,7 +56,7 @@ class _RoutineEditorState extends ConsumerState<RoutineEditor> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Trainingsplan'),
-        leading: TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Abbrechen')),
+        leading: BarTextButton('Abbrechen', onPressed: () => Navigator.of(context).pop()),
         leadingWidth: 100,
         actions: [
           TextButton(
@@ -368,7 +368,7 @@ class _GymPlanScreenState extends ConsumerState<GymPlanScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(result == null ? 'KI-Trainingsplan' : 'Vorschlag'),
-        leading: TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Abbrechen')),
+        leading: BarTextButton('Abbrechen', onPressed: () => Navigator.of(context).pop()),
         leadingWidth: 100,
       ),
       body: ListView(

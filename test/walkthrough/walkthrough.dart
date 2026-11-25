@@ -6,6 +6,7 @@ import 'package:aironludi/services/demo/demo_seed.dart';
 import 'package:aironludi/ui/liquid.dart';
 import 'package:coach_core/coach_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
@@ -15,8 +16,42 @@ import '../screenshots/screenshots_test.dart' show loadFonts;
 
 var _fontsLoaded = false;
 
-/// App mit Demo-Daten (iPhone-Größe) starten.
-Future<ProviderContainer> startDemo(WidgetTester tester, {List<Override> overrides = const []}) async {
+/// Gerät eines Durchlaufs: iPhone 15 mit normaler Schrift oder kleines Android mit großer Schrift (1,3).
+enum WalkDevice {
+  iphone(Size(1179, 2556), 3, 1),
+  smallLargeText(Size(720, 1280), 2, 1.3);
+
+  const WalkDevice(this.physicalSize, this.ratio, this.textScale);
+
+  final Size physicalSize;
+  final double ratio;
+  final double textScale;
+}
+
+/// Durchlauf auf beiden Geräten registrieren.
+void walk(String description, Future<void> Function(WidgetTester tester, WalkDevice device) body) {
+  for (final device in WalkDevice.values) {
+    testWidgets('$description (${device.name})', timeout: const Timeout(Duration(minutes: 4)), (tester) async {
+      await body(tester, device);
+      expect(endless, isEmpty, reason: 'Dauer-Animation: $endless');
+    });
+  }
+}
+
+/// App mit Demo-Daten starten.
+Future<ProviderContainer> startDemo(
+  WidgetTester tester, {
+  List<Override> overrides = const [],
+  WalkDevice device = WalkDevice.iphone,
+}) async {
+  endless.clear();
+  // Temp-Ordner für Exporte (path_provider hat im Test keine Plattformseite).
+  final temp = Directory.systemTemp.createTempSync('durchlauf');
+  addTearDown(() => temp.deleteSync(recursive: true));
+  tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+    const MethodChannel('plugins.flutter.io/path_provider'),
+    (call) async => temp.path,
+  );
   // Echte Schrift (Inter) statt der breiten Testschrift, sonst sind Überläufe keine echten Befunde.
   if (!_fontsLoaded) {
     await tester.runAsync(loadFonts);
@@ -24,15 +59,31 @@ Future<ProviderContainer> startDemo(WidgetTester tester, {List<Override> overrid
     if (BLS.foods.isEmpty) BLS.load(File('packages/coach_core/assets/bls.tsv').readAsStringSync());
     _fontsLoaded = true;
   }
-  tester.view.physicalSize = const Size(1179, 2556);
-  tester.view.devicePixelRatio = 3;
+  tester.view.physicalSize = device.physicalSize;
+  tester.view.devicePixelRatio = device.ratio;
+  tester.platformDispatcher.textScaleFactorTestValue = device.textScale;
   addTearDown(tester.view.reset);
+  addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
   // Erst die Daten, dann die Oberfläche: Laufende Abfragen der Screens hielten sonst die Datenbank in der Testzeit fest.
   final widget = (await tester.runAsync(() async {
     final widget = await app(onboarded: true, overrides: overrides) as UncontrolledProviderScope;
     await seedDemo(widget.container);
     return widget;
   }))!;
+  await tester.pumpWidget(widget);
+  await settle(tester);
+  return widget.container;
+}
+
+/// App wie beim ersten Start: ohne Daten, mit Einrichtung.
+Future<ProviderContainer> startFresh(WidgetTester tester, {WalkDevice device = WalkDevice.iphone}) async {
+  endless.clear();
+  tester.view.physicalSize = device.physicalSize;
+  tester.view.devicePixelRatio = device.ratio;
+  tester.platformDispatcher.textScaleFactorTestValue = device.textScale;
+  addTearDown(tester.view.reset);
+  addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+  final widget = (await tester.runAsync(() async => await app(onboarded: false) as UncontrolledProviderScope))!;
   await tester.pumpWidget(widget);
   await settle(tester);
   return widget.container;
@@ -78,7 +129,15 @@ Future<void> tab(WidgetTester tester, String label) async {
 
 /// Text in die Sicht scrollen (im obersten Scrollbereich) und antippen.
 Future<void> tapText(WidgetTester tester, String text, {bool contains = false}) async {
-  final target = await reveal(tester, contains ? find.textContaining(text) : find.text(text));
+  // Nur angezeigte Texte, keine Eingabefelder (sonst träfe „Kniebeuge“ nach dem Suchen das Suchfeld).
+  // Ohne die Tab-Leiste: „Ernährung“ in einer Liste ist nicht der Reiter.
+  final shown = find.byElementPredicate(
+    (element) =>
+        element.widget is Text &&
+        (contains ? ((element.widget as Text).data ?? '').contains(text) : (element.widget as Text).data == text) &&
+        element.findAncestorWidgetOfExactType<LiquidTabBar>() == null,
+  );
+  final target = await reveal(tester, shown);
   await tester.tap(target, warnIfMissed: false);
   await settle(tester);
 }
@@ -111,3 +170,27 @@ Future<void> back(WidgetTester tester) async {
 
 /// Fortschritt im Testprotokoll (hilft, wenn ein Durchlauf hängt).
 void step(String text) => debugPrint('▶ $text');
+
+/// Alle Navigationsstapel auf ihre erste Seite zurücksetzen (Reiter-Übersichten).
+Future<void> home(WidgetTester tester) async {
+  final navigators = find.byType(Navigator, skipOffstage: false).evaluate().toList().reversed;
+  for (final element in navigators) {
+    if (element case StatefulElement(:final NavigatorState state) when element.mounted) {
+      state.popUntil((route) => route.isFirst);
+    }
+  }
+  await settle(tester);
+}
+
+/// Bis zum Ende der obersten Seite scrollen (baut jede Karte einmal).
+Future<void> scrollToEnd(WidgetTester tester) async {
+  final vertical = find.byWidgetPredicate(
+    (widget) => widget is Scrollable && widget.axisDirection == AxisDirection.down,
+  );
+  if (vertical.evaluate().isEmpty) return;
+  for (var i = 0; i < 12; i++) {
+    await tester.drag(vertical.last, const Offset(0, -600), warnIfMissed: false);
+    await tester.pump(const Duration(milliseconds: 200));
+  }
+  await settle(tester);
+}

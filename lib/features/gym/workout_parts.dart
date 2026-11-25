@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../data/settings/coach_settings.dart';
 import '../../services/providers.dart';
+import '../../ui/components.dart';
 import '../../ui/liquid.dart';
 import '../../ui/tokens.dart';
 import '../social/social_views.dart';
@@ -321,7 +322,7 @@ class ReplaceExerciseScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('${exercise.name} ersetzen'),
-        leading: TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Abbrechen')),
+        leading: BarTextButton('Abbrechen', onPressed: () => Navigator.of(context).pop()),
         leadingWidth: 100,
       ),
       body: ListView(
