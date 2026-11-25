@@ -17,7 +17,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: device-test-${{ github.ref }}
+  # Andere Labels (z. B. ios-build) bekommen eine eigene Gruppe und brechen einen laufenden Gerätetest nicht ab.
+  group: device-test-${{ github.ref }}-${{ (github.event.action == 'labeled' && github.event.label.name != 'device-test') && github.event.label.name || 'tests' }}
   cancel-in-progress: true
 
 env:
