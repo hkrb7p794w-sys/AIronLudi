@@ -141,7 +141,7 @@ class LiquidTheme extends ThemeExtension<LiquidTheme> {
     edgeTop: Color(0xE6FFFFFF),
     edgeBottom: Color(0x33FFFFFF),
     shadow: Color(0x142A3B5C),
-    track: Color(0x1A3C4B66),
+    track: Color(0x2E3C4B66),
     blurSigma: 24,
   );
 
@@ -160,7 +160,7 @@ class LiquidTheme extends ThemeExtension<LiquidTheme> {
     edgeTop: Color(0x40FFFFFF),
     edgeBottom: Color(0x08FFFFFF),
     shadow: Color(0x59000000),
-    track: Color(0x1FFFFFFF),
+    track: Color(0x33FFFFFF),
     blurSigma: 28,
   );
 
