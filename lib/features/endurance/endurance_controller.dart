@@ -116,7 +116,7 @@ final class EnduranceController extends ChangeNotifier {
       message = result.summary;
     } else {
       final removed = await exporter.removeUpcoming(current, today: today);
-      message = removed == 0 ? null : '$removed Workouts aus dem Garmin-Kalender entfernt.';
+      message = removed == 0 ? null : '$removed Einheiten aus dem Garmin-Kalender entfernt.';
     }
     await _save();
     notifyListeners();

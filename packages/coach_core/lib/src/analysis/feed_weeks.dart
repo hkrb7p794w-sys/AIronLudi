@@ -1,4 +1,5 @@
 import '../calendar/calendar_day.dart';
+import '../social/social_timeline.dart';
 import 'activity_feed.dart';
 
 /// Woche im Verlauf (Roast Stufe 4 / PR 21): Aktivitäten von Montag bis Sonntag mit Anzahl und Dauer.
@@ -31,10 +32,10 @@ final class FeedWeek {
     return 'KW $isoWeek · $range';
   }
 
-  /// „KW 47 · 23.–29.11. · 6 Einheiten · 4:10 h“.
+  /// „KW 47 · 23.–29.11. · 6 Aktivitäten · 4:10 Std.“ (aufgezeichnet, daher Aktivitäten – Glossar).
   String get header {
-    final count = entries.length == 1 ? '1 Einheit' : '${entries.length} Einheiten';
-    final time = minutes == 0 ? '' : ' · ${minutes ~/ 60}:${(minutes % 60).toString().padLeft(2, '0')} h';
+    final count = entries.length == 1 ? '1 Aktivität' : '${entries.length} Aktivitäten';
+    final time = minutes == 0 ? '' : ' · ${minutes ~/ 60}:${(minutes % 60).toString().padLeft(2, '0')} Std.';
     return '$title · $count$time';
   }
 
@@ -46,5 +47,16 @@ final class FeedWeek {
     }
     final mondays = weeks.keys.toList()..sort((a, b) => b.compareTo(a));
     return [for (final monday in mondays) FeedWeek(monday: monday, entries: weeks[monday]!)];
+  }
+
+  /// Kopfzeile einer Woche in der Zeitleiste mit Freunden: Summen nur aus den eigenen Trainings dieser Woche, ohne
+  /// eigene nur der Zeitraum.
+  static String timelineHeader(CalendarDay monday, Iterable<TimelineItem> items) {
+    final own = [
+      for (final item in items)
+        if (item.entry case final entry? when entry.day.adding(-entry.day.weekdayIndex) == monday) entry,
+    ];
+    final week = FeedWeek(monday: monday, entries: own);
+    return own.isEmpty ? week.title : week.header;
   }
 }

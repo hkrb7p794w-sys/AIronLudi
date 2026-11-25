@@ -379,7 +379,7 @@ class _FuelScenarioScreenState extends ConsumerState<FuelScenarioScreen> {
                 : selected.map((product) => product.name).join(', '),
             footer:
                 'Getränke decken die Flüssigkeit (mehrere im Wechsel), Gels und Riegel den Rest der Kohlenhydrate, '
-                'Salztabletten das Natrium. Eigene Produkte unter Fuel Planner › Meine Produkte.',
+                'Salztabletten das Natrium. Eigene Produkte unter Verpflegung › Meine Produkte.',
             children: [
               for (final product in store.allProducts)
                 CheckboxListTile(

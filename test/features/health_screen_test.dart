@@ -17,7 +17,7 @@ import '../app_test.dart' show app;
 void main() {
   setUpAll(() => initializeDateFormatting('de_DE'));
 
-  testWidgets('Gesundheit: Widgets, Verlauf, Anpassen, Morning Report', (tester) async {
+  testWidgets('Gesundheit: Widgets, Verlauf, Anpassen, Morgenbericht', (tester) async {
     tester.view.physicalSize = const Size(1170, 2532);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);

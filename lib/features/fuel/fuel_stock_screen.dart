@@ -50,7 +50,7 @@ class FuelStockScreen extends ConsumerWidget {
         children: [
           FormSection(
             footer:
-                'Vorrätige Gels, Riegel und Getränke plant der Fuel Planner automatisch ein – bald ablaufende zuerst. '
+                'Vorrätige Gels, Riegel und Getränke plant die Verpflegung automatisch ein – bald ablaufende zuerst. '
                 'Beim Übernehmen ins Tagebuch wird abgebucht, „Rückgängig“ bucht zurück.',
             children: [
               SwitchListTile(

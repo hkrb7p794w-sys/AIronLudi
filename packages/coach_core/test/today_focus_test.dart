@@ -50,10 +50,10 @@ void main() {
     });
 
     test('Widerspruch zwischen Regel und Plan', () {
-      const reasons = ['HRV-Status unausgeglichen, 7-Tage-Schnitt unter deiner Baseline'];
+      const reasons = ['HRV-Status unausgeglichen, 7-Tage-Schnitt unter deinem Normalbereich'];
       expect(
         TodayFocus.conflictText(level: RecoveryLevel.locker, reasons: reasons, planned: ['Qualitätslauf']),
-        'Regel: locker (HRV-Status unausgeglichen, 7-Tage-Schnitt unter deiner Baseline) · geplant: '
+        'Regel: locker (HRV-Status unausgeglichen, 7-Tage-Schnitt unter deinem Normalbereich) · geplant: '
         'Qualitätslauf. Es gilt die Regel.',
       );
       expect(

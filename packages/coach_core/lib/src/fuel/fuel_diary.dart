@@ -37,12 +37,12 @@ abstract final class FuelDiary {
 
   /// Hinweis der Mahlzeit mit Markierung: erkennt Einträge eines Plans wieder (erneut übernehmen ersetzt sie).
   static String hint(String planID, FuelPhase phase) => phase == FuelPhase.intra
-      ? 'Aus dem Fuel Planner. [fuel:$planID:${phase.name}]'
-      : 'Platzhalter aus dem Fuel Planner – wird ersetzt, sobald du deine echte Mahlzeit einträgst. '
+      ? 'Aus dem Verpflegungsplan. [fuel:$planID:${phase.name}]'
+      : 'Platzhalter aus dem Verpflegungsplan – wird ersetzt, sobald du deine echte Mahlzeit einträgst. '
             '[fuel:$planID:${phase.name}]';
 
   /// Hinweis eines bearbeiteten Eintrags (ohne Markierung: wird weder ersetzt noch erneut überschrieben).
-  static const editedHint = 'Aus dem Fuel Planner, von dir angepasst.';
+  static const editedHint = 'Aus dem Verpflegungsplan, von dir angepasst.';
 
   /// Hinweis ohne die technische Markierung (für die Anzeige).
   static String visibleHint(String hint) => hint.replaceAll(_marker, '').trim();

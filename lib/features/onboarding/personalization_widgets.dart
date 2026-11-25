@@ -102,7 +102,7 @@ class PrioritiesPicker extends StatelessWidget {
         Text('Das ändert sich dadurch:', style: muted?.copyWith(fontWeight: FontWeight.w600)),
         Text(
           'Reihenfolge der KI-Empfehlungen unter „Heute“, Startauswahl der Gesundheits-Widgets, worauf die KI in '
-          'Analysen achtet, und wie vorsichtig die Wochenbelastung steigen darf (Recovery/Gesundheit: 20 % statt '
+          'Analysen achtet, und wie vorsichtig die Wochenbelastung steigen darf (Erholung/Gesundheit: 20 % statt '
           '30 %).',
           style: muted,
         ),
@@ -129,7 +129,7 @@ class TrackerPicker extends StatelessWidget {
   static String note(DataProvider provider) => switch (provider) {
     DataProvider.garmin => 'Direkt verbinden: Anmeldung mit dem Garmin-Konto.',
     DataProvider.appleHealth => 'Direkt verbinden: Import aus $healthStoreName einschalten.',
-    DataProvider.whoop => 'Direkt verbinden: Anmeldung bei WHOOP (Recovery, HRV, Schlaf, Trainings).',
+    DataProvider.whoop => 'Direkt verbinden: Anmeldung bei WHOOP (Erholung, HRV, Schlaf, Trainings).',
     DataProvider.polar => 'Noch keine direkte Verbindung – Trainings kommen über $healthStoreName (Polar Flow).',
     DataProvider.fitbit =>
       'Derzeit nicht möglich: Fitbit schreibt nicht in Apple Health, die Web-API ist abgeschaltet.',

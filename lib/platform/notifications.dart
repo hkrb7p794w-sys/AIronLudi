@@ -93,7 +93,7 @@ final class DeviceNotificationCenter implements NotificationCenterBridge {
   static const _channel = AndroidNotificationDetails(
     'coach.reminders',
     'Erinnerungen',
-    channelDescription: 'Training, Mahlzeiten, Wochenplanung und Morning Report',
+    channelDescription: 'Training, Mahlzeiten, Wochenplanung und Morgenbericht',
     importance: Importance.high,
     priority: Priority.high,
   );

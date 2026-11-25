@@ -79,7 +79,7 @@ class RecoveryScreen extends StatelessWidget {
             FormSection(
               header: 'Werte von heute',
               footer:
-                  'Training Readiness, Trainingsstatus und Endurance Score liefern nur Uhren mit diesen Werten '
+                  'Trainingsbereitschaft, Trainingsstatus und Endurance Score liefern nur Uhren mit diesen Werten '
                   '(Garmin-Konto in den Einstellungen).',
               children: [
                 Padding(

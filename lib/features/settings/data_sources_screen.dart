@@ -87,7 +87,7 @@ class _DataSourcesScreenState extends ConsumerState<DataSourcesScreen> {
             FormSection(
               footer:
                   'Das primäre Gerät gewinnt nur bei seinen Stärken (Garmin: Training, Belastung, Body Battery; WHOOP: '
-                  'Schlaf, HRV, Recovery). Für alles andere gilt die bewährte Reihenfolge – oder deine Wahl unten.',
+                  'Schlaf, HRV, Erholung). Für alles andere gilt die bewährte Reihenfolge – oder deine Wahl unten.',
               children: [
                 ListTile(
                   title: const Text('Primäres Gerät'),

@@ -305,7 +305,7 @@ public enum AppRoute: String, Codable, CaseIterable, Sendable, Identifiable {
 
   public var subtitle: String? {
     switch self {
-    case .health: "Morning Report, Body Battery, Schlaf"
+    case .health: "Morgenbericht, Body Battery, Schlaf"
     case .logMeal: "Foto, Text, Barcode oder Suche"
     case .startWorkout: "Nächste Einheit oder laufende fortsetzen"
     case .aiAnalysis: "Alle Themen auswerten"

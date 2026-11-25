@@ -362,7 +362,7 @@ void main() {
         ..trainingReadiness = 20;
       final recommendation = RecoveryEvaluator.evaluate(metrics, restingHeartRate7DayAverage: null);
       expect(recommendation.level, RecoveryLevel.pause);
-      expect(recommendation.reasons.any((reason) => reason.startsWith('Readiness 20')), isTrue);
+      expect(recommendation.reasons.any((reason) => reason.startsWith('Trainingsbereitschaft 20')), isTrue);
     });
   });
 }

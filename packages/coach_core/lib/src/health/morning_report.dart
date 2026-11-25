@@ -439,7 +439,7 @@ final class MorningReport {
 
   static MorningItem recovery(DailyMetrics? metrics, {required Recommendation? evaluated}) {
     final parts = <String>[
-      if (metrics?.trainingReadiness case final readiness?) 'Readiness ${readiness.toInt()}',
+      if (metrics?.trainingReadiness case final readiness?) 'Bereitschaft ${readiness.toInt()}',
       if (metrics?.recoveryHours case final hours?) hours == 0 ? 'erholt' : 'noch ${hours.round()} h',
     ];
     if (evaluated == null) {
@@ -537,7 +537,7 @@ abstract final class MorningReportReminder {
           day: today.adding(offset),
           hour: hour,
           minute: 0,
-          title: 'Morning Report',
+          title: 'Morgenbericht',
           body: switch (offset == 0 ? summary?.trim() : null) {
             final text? when text.isNotEmpty => text,
             _ => morningReportFallback,

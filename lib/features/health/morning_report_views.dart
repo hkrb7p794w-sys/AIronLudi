@@ -169,7 +169,7 @@ class MorningReportCard extends StatelessWidget {
     final first = report.findings.firstOrNull;
     final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
     return FormSection(
-      header: 'Morning Report',
+      header: 'Morgenbericht',
       children: [
         InkWell(
           onTap: () =>
@@ -295,7 +295,7 @@ class _MorningReportScreenState extends ConsumerState<MorningReportScreen> {
     );
     final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
     return Scaffold(
-      appBar: AppBar(title: const Text('Morning Report')),
+      appBar: AppBar(title: const Text('Morgenbericht')),
       body: RefreshIndicator(
         onRefresh: () async {
           await ref.read(appModelProvider).syncNow();
@@ -336,7 +336,7 @@ class _MorningReportScreenState extends ConsumerState<MorningReportScreen> {
               header: 'Werte der Nacht',
               footer:
                   'Eingeordnet gegen deinen üblichen Bereich der letzten 30 Tage (ab 7 Tagen mit Werten), HRV gegen '
-                  'die Baseline deiner Uhr. Stress vom Vortag.',
+                  'den Normalbereich deiner Uhr. Stress vom Vortag.',
               children: [for (final item in report.items) MorningReportRow(item: item)],
             ),
             FormSection(
@@ -385,7 +385,7 @@ class _MorningReportScreenState extends ConsumerState<MorningReportScreen> {
             if (report.missing.isNotEmpty)
               FormSection(
                 header: 'Fehlt heute',
-                footer: 'Fehlende Werte werden nicht geschätzt. Body Battery, Stress und Readiness liefern nur Uhren mit diesen Werten.',
+                footer: 'Fehlende Werte werden nicht geschätzt. Body Battery, Stress und Trainingsbereitschaft liefern nur Uhren mit diesen Werten.',
                 children: [
                   ListTile(
                     title: Text(report.missing.join(', '), style: TextStyle(color: secondary)),

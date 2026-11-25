@@ -191,7 +191,7 @@ enum TodayModule implements RawEnum {
   nutrition('nutrition', 'Ernährung heute'),
   ai('ai', 'KI-Empfehlungen'),
   suggestions('suggestions', 'Vorschläge zum Plan'),
-  morningReport('morningReport', 'Morning Report (bis 12 Uhr)'),
+  morningReport('morningReport', 'Morgenbericht (bis 12 Uhr)'),
   strainDetails('strainDetails', 'Belastung im Detail'),
   postWorkout('postWorkout', 'Nach dem Training'),
   weeklyReview('weeklyReview', 'Wochenrückblick'),

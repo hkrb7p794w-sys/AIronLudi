@@ -100,7 +100,7 @@ class ReminderSettingsSection extends ConsumerWidget {
             },
           ),
         SwitchListTile.adaptive(
-          title: const Text('Morgens um 8 Uhr Morning Report'),
+          title: const Text('Morgens um 8 Uhr Morgenbericht'),
           value: reminders.morningReport,
           onChanged: (on) => change((value) => value.morningReport = on),
         ),
@@ -250,7 +250,7 @@ class HealthImportSection extends ConsumerWidget {
           header: Platform.isAndroid ? 'Health Connect' : 'Apple Health / Apple Watch',
           footer:
               'Übernimmt Schlaf mit Phasen, Ruhepuls, Schritte, Kalorien, Atemfrequenz, Sauerstoff, Gewicht und '
-              'Workouts. Eine verbundene Uhr hat Vorrang: $healthStoreName füllt nur Lücken, Workouts, die die Uhr '
+              'Trainings. Eine verbundene Uhr hat Vorrang: $healthStoreName füllt nur Lücken, Trainings, die die Uhr '
               'schon kennt, kommen nicht doppelt. Die HRV übernimmt die App nur ohne Uhr, weil sie hier anders '
               'gemessen wird (SDNN statt RMSSD).',
           children: available

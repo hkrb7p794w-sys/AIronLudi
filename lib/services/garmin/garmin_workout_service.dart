@@ -34,7 +34,7 @@ abstract final class GarminWorkoutService {
         await connect.sendJson(method: 'POST', path: GarminWorkout.createPath, json: body),
       );
       final id = GarminWorkout.workoutID(response);
-      if (id == null) return 'Garmin hat das Workout nicht angenommen.';
+      if (id == null) return 'Garmin hat die Einheit nicht angenommen.';
       final schedule = utf8.encode(jsonEncode(GarminWorkout.scheduleBody(day)));
       await connect.sendJson(method: 'POST', path: GarminWorkout.schedulePath(id), json: schedule);
       final sent = SentWorkouts(ids: {...settings.sentWorkouts.ids})

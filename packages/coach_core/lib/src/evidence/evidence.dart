@@ -165,7 +165,7 @@ abstract final class Evidence {
   ];
 
   static const List<EvidenceRule> rules = [
-    EvidenceRule(id: 'recovery.hrv', title: 'HRV im Wochenmittel', statement: 'Maßgeblich für die Tagesform ist der 7-Tage-Schnitt der HRV relativ zur persönlichen Baseline, nicht die einzelne Nacht.', strength: EvidenceStrength.moderate, studyIDs: ['plews2012', 'plews2013', 'buchheit2014']),
+    EvidenceRule(id: 'recovery.hrv', title: 'HRV im Wochenmittel', statement: 'Maßgeblich für die Tagesform ist der 7-Tage-Schnitt der HRV relativ zum persönlichen Normalbereich, nicht die einzelne Nacht.', strength: EvidenceStrength.moderate, studyIDs: ['plews2012', 'plews2013', 'buchheit2014']),
     EvidenceRule(id: 'recovery.rhr', title: 'Ruhepuls', statement: 'Ein Ruhepuls deutlich über dem eigenen Mittel kann auf unvollständige Erholung hinweisen; die Schwelle von +5 Schlägen ist ein vorsichtiger Praxiswert.', strength: EvidenceStrength.practice, studyIDs: ['buchheit2014']),
     EvidenceRule(id: 'recovery.sleep', title: 'Schlafdauer', statement: 'Erwachsene brauchen regelmäßig mindestens 7 Stunden Schlaf; Schlafmangel verschlechtert Ausdauerleistung und Erholung.', strength: EvidenceStrength.strong, studyIDs: ['watson2015', 'fullagar2015', 'walsh2021']),
     EvidenceRule(id: 'recovery.subjective', title: 'Befinden zählt', statement: 'Subjektives Befinden reagiert empfindlicher auf Trainingsbelastung als viele objektive Marker und gehört in die Einordnung.', strength: EvidenceStrength.strong, studyIDs: ['saw2016']),

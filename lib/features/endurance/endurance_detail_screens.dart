@@ -224,7 +224,7 @@ class _WorkoutDetailSectionsState extends ConsumerState<WorkoutDetailSections> {
           header: 'Exportieren',
           footer:
               'An die Uhr: über den Garmin-Connect-Kalender, beim nächsten Synchronisieren auf der Uhr. FIT-Datei: für '
-              'Uhren und Apps, die Workouts importieren. Zwift: die .zwo-Datei in den Ordner '
+              'Uhren und Apps, die Trainings importieren. Zwift: die .zwo-Datei in den Ordner '
               'Dokumente/Zwift/Workouts/<Zwift-ID> am PC legen, Zwift zeigt sie unter '
               '„Eigene Workouts“.',
           children: [

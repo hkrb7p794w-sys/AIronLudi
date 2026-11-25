@@ -656,7 +656,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         '$healthStoreName: Der Import wird eingeschaltet; das Gerät fragt gleich nach den Daten.',
                       DataProvider.whoop when !model.isWhoopConnected =>
                         'WHOOP: nach dem Start unter Einstellungen › Training und Fitness › WHOOP verbinden. Bis dahin '
-                            'kommen Schlaf, Ruhepuls und Workouts über $healthStoreName.',
+                            'kommen Schlaf, Ruhepuls und Trainings über $healthStoreName.',
                       DataProvider.polar =>
                         '${provider.label}: kommt über $healthStoreName – schalte dort die Weitergabe ein.',
                       DataProvider.fitbit => 'Fitbit: derzeit keine Verbindung möglich.',

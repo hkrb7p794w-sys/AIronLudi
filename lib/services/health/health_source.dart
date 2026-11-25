@@ -5,18 +5,23 @@ import 'package:health/health.dart';
 
 /// Zahlenwerte aus Apple Health bzw. Health Connect.
 enum HealthQuantity {
-  steps,
-  activeEnergy,
-  basalEnergy,
-  restingHeartRate,
-  hrvSDNN,
-  respiratoryRate,
-  oxygenSaturation,
-  heartRate,
-  bodyMass,
-  distanceWalkingRunning,
-  distanceCycling,
-  distanceSwimming,
+  steps('Schritte'),
+  activeEnergy('Aktive Kalorien'),
+  basalEnergy('Ruhekalorien'),
+  restingHeartRate('Ruhepuls'),
+  hrvSDNN('HRV'),
+  respiratoryRate('Atemfrequenz'),
+  oxygenSaturation('Sauerstoff'),
+  heartRate('Puls'),
+  bodyMass('Gewicht'),
+  distanceWalkingRunning('Strecke Gehen/Laufen'),
+  distanceCycling('Strecke Rad'),
+  distanceSwimming('Strecke Schwimmen');
+
+  const HealthQuantity(this.label);
+
+  /// Deutsche Bezeichnung für Meldungen.
+  final String label;
 }
 
 /// Eine Probe mit Zeitraum, Wert (in der Einheit der App: kcal, ms, /min, Anteil, kg, m) und Quelle.

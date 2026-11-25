@@ -176,7 +176,7 @@ final class TrainingController extends ChangeNotifier {
       null => null,
     };
     final candidates = <(String, String?)>[
-      ('Training Readiness', readiness),
+      ('Trainingsbereitschaft', readiness),
       (
         'Trainingsstatus',
         metrics?.trainingStatus == null ? null : GarminConnectMetrics.trainingStatusGerman(metrics!.trainingStatus!),

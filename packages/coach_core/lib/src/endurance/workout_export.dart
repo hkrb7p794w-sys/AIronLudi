@@ -154,7 +154,7 @@ abstract final class FitWorkoutFile {
   };
 
   static Uint8List bytes(EnduranceWorkout workout, {required DateTime created}) {
-    if (workout.isRest) throw ArgumentError('Ein Ruhetag lässt sich nicht als Workout exportieren.');
+    if (workout.isRest) throw ArgumentError('Ein Ruhetag lässt sich nicht als Einheit exportieren.');
     final encoder = FitEncoder();
     final stamp = FitEncoder.timestamp(created);
     encoder.add(

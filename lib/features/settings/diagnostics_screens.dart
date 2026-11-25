@@ -186,7 +186,7 @@ class _HealthDiagnosticsScreenState extends ConsumerState<HealthDiagnosticsScree
         children: [
           FormSection(
             header: healthStoreName,
-            footer: 'Fragt Lesezugriff auf Workouts, Schlaf und Herzfrequenz sowie Schreibzugriff für Workouts an.',
+            footer: 'Fragt Lesezugriff auf Trainings, Schlaf und Herzfrequenz sowie Schreibzugriff für Trainings an.',
             children: [
               ListTile(
                 title: const Text('Status'),

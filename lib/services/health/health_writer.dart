@@ -6,7 +6,7 @@ import 'package:health/health.dart';
 /// Fehler beim Speichern eines Workouts in Health.
 enum WorkoutWriterError implements Exception {
   unavailable('Die Gesundheitsdaten des Telefons sind auf diesem Gerät nicht verfügbar.'),
-  notAuthorized('Keine Schreibberechtigung für Workouts. Einstellungen › Health › Datenzugriff › AIronLudi prüfen.');
+  notAuthorized('Keine Schreibberechtigung für Trainings. Einstellungen › Health › Datenzugriff › AIronLudi prüfen.');
 
   const WorkoutWriterError(this.message);
 

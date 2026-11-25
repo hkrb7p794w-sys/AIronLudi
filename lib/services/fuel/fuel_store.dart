@@ -60,7 +60,7 @@ final class FuelStore extends ChangeNotifier {
   SavedFuelPlan? plan(String id) => _library.plans.where((plan) => plan.id == id).firstOrNull;
 
   Future<void> _persist() async {
-    if (hasForeignData) throw StateError('Der Fuel Planner gehört einem anderen Benutzer.');
+    if (hasForeignData) throw StateError('Der Verpflegungsplan gehört einem anderen Benutzer.');
     notifyListeners();
     await _store.setJson(SettingsKeys.fuelPlanner, _library.toJson());
   }
