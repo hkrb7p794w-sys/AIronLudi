@@ -53,8 +53,12 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   @override
   void initState() {
     super.initState();
-    unawaited(ref.read(socialServiceProvider).refresh());
-    unawaited(ref.read(gameServiceProvider).refresh());
+    // Nach dem ersten Frame: `refresh` meldet sofort „lädt“ (notifyListeners) – mitten im Aufbau der Seite verboten.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(ref.read(socialServiceProvider).refresh());
+      unawaited(ref.read(gameServiceProvider).refresh());
+    });
   }
 
   @override

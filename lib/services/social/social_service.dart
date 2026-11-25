@@ -122,6 +122,9 @@ final class SocialService extends ChangeNotifier {
   Future<void> refresh() async {
     if (!isAvailable || isLoading) return;
     isLoading = true;
+    // Erst nach dem laufenden Frame melden: Bildschirme rufen das aus `initState` auf, und eine Meldung mitten im
+    // Aufbau ist verboten (Riverpod: „Tried to modify a provider while the widget tree was building“).
+    await Future<void>.value();
     notifyListeners();
     try {
       friends = await _get('friends', SocialFriends.fromJson);

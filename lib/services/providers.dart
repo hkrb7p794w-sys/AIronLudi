@@ -24,6 +24,7 @@ import 'gym/garmin_strength_service.dart';
 import 'health/health_import_service.dart';
 import 'health/health_source.dart';
 import 'health/health_writer.dart';
+import 'http/http_transport.dart';
 import 'motivation/companion_photo.dart';
 import 'nutrition/cook_share_service.dart';
 import 'nutrition/meal_share_service.dart';
@@ -48,11 +49,18 @@ final garminClientProvider = Provider<GarminClient>(
   (ref) => GarminClient(secrets: ref.watch(secretsProvider), connect: ref.watch(garminConnectProvider)),
 );
 
+/// Transport zum Worker: `null` = echter Transport (Dio). Tests setzen hier einen nachgebauten Worker ein.
+final workerTransportProvider = Provider<HttpTransport?>((ref) => null);
+
 /// KI-Worker; KI-Stufe, eigene Quellen und Nutzungsprotokoll kommen aus den App-Einstellungen (gelesen bei jeder
 /// Anfrage, damit Änderungen der Einstellungen den Client nicht neu erzeugen).
 final aiClientProvider = Provider<AIClient>((ref) {
   CoachSettings coach() => ref.read(coachSettingsProvider);
-  return AIClient(secrets: ref.watch(secretsProvider), settings: ref.watch(settingsStoreProvider))
+  return AIClient(
+      secrets: ref.watch(secretsProvider),
+      settings: ref.watch(settingsStoreProvider),
+      transport: ref.watch(workerTransportProvider),
+    )
     ..settings = (() => coach().ai)
     ..userSources = (() => coach().userSources)
     ..onUsage = ((entry) => coach().aiUsage = AIUsageLog.appending(entry, coach().aiUsage));

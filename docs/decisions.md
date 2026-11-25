@@ -1612,3 +1612,21 @@ Gelände in den Einstellungen, Abwechslung von Woche zu Woche.
 - **Standard an**, abschaltbar unter *Ich › Disziplinen › Laufen*. Bewusst nicht: Vorschläge im Hintergrund für alle
   Einheiten der Woche (Rate-Limits der freien Router); geplant wird beim Öffnen der Einheit.
 
+## 2026-11-25 – Durchläufe Konto, Freunde, Liga und Quellen gegen einen nachgebauten Worker
+
+Neue Testnaht `workerTransportProvider` (`lib/services/providers.dart`, Standard `null` = echter Transport) und ein
+nachgebauter Worker `test/walkthrough/fake_worker.dart` (Konto, Freunde, Feed, Kommentare, Reaktionen, Suche,
+Rangliste, Challenges im Speicher, Antwortformate wie `AccountService`/`SocialService`/`GameService` sie lesen).
+Durchgespielt auf beiden Geräten: Konto anlegen (mit Wiederherstellungscode), Freundschaftsanfrage annehmen, Feed,
+Reaktion, Kommentar, jemanden suchen und anfragen, Rangliste, Challenge mit Freundin, abmelden; Trainings automatisch
+teilen; Quellen und eigene Quelle anlegen/löschen. Abdeckung: Freunde 28 → 67 %, Konto 38 → 65 %, Quellen 5 → 93 %,
+Spiel 56 → 86 %.
+
+Gefunden und behoben:
+
+- **„Freunde & Liga“ und „Verlauf“ meldeten mit Konto einen Fehler beim Öffnen** („Tried to modify a provider while
+  the widget tree was building“): `SocialService.refresh` meldete „lädt“ sofort, aufgerufen aus `initState`. Ohne Konto
+  (alle bisherigen Tests) trat es nie auf. Jetzt meldet `refresh` nach dem laufenden Frame; Freunde und Spiel laden
+  zusätzlich erst nach dem ersten Frame.
+- Geprüft und so belassen: Automatisch geteilt wird nur, was nach dem Einschalten begann (ein nachgetragenes Training
+  mit Beginn vor einer Stunde bleibt privat); der geteilte Inhalt enthält keine Körperwerte; nichts wird doppelt geteilt.
