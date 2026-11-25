@@ -1532,6 +1532,7 @@ planen; dazu Joggen von Start zu Ziel.
   „WHOOP-Erholung niedrig“ wie bei der Trainingsbereitschaft (Test in `recovery_test.dart`).
 - Verlauf: Wochenzeilen auch in der Standardansicht „Alle“ mit Anzahl und Dauer (nur eigene Trainings, Freunde zählen
   nicht mit); gezählt werden „Aktivitäten“ (aufgezeichnet), Dauer als „1:47 Std.“ (in Großbuchstaben lesbar).
+
 ## 2026-11-25 – Bildschirme laden bei neuen Trainingsdaten neu
 
 - Bisher luden nur „Heute“ und die Plan-Übersicht bei jeder Änderung der Trainingsdaten neu (`TrainingDataReload`);
