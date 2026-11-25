@@ -207,6 +207,12 @@ von Hand: denselben Link wieder öffnen.
    Fläche, alle Läufe und Fahrten mit GPS füllen deine Kachel-Karte. Neue Aktivitäten kommen nach jedem Abruf von
    selbst dazu; **Letzte 12 Wochen laden** holt ältere von Garmin (höchstens 15 je Durchgang). Alles bleibt bei
    deinem Benutzer.
+10. **Routenvorschläge zu geplanten Läufen:** In jeder Laufeinheit (Ausdauerplan oder Wochenplan) steht ein
+   **Routenvorschlag** passend zum Training: Tempo und Intervalle flach, Regeneration flach auf weichem Untergrund,
+   lange Läufe als große Runde. **Annehmen** ordnet die Route der Einheit zu, **Ablehnen** zeigt eine andere Runde
+   (die abgelehnte kommt nicht wieder). Die Runden wechseln die Richtung, sodass du nicht jede Woche dieselbe Strecke
+   läufst. Einstellen unter *Ich › Disziplinen › Laufen › Routenvorschläge*: an/aus, bevorzugtes Gelände (Wald &
+   Natur, Am Wasser, Straße & Asphalt oder ausgewogen) und Start der Runden (Favorit, sonst „Zuhause“ oder Standort).
 
 Die Routen kommen von öffentlichen, kostenlosen OSM-Diensten (Valhalla der FOSSGIS, ersatzweise BRouter; passende
 Wege über Overpass; Adressen über Photon bzw. Nominatim). Sind sie

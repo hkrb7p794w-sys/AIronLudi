@@ -86,6 +86,19 @@ final class RouteStore extends ChangeNotifier {
     return missing.isNotEmpty;
   }
 
+  /// Routenvorschläge für geplante Läufe (Einstellungen und Stand je Einheit).
+  RunRouteSuggestions get runSuggestions =>
+      RunRouteSuggestions.fromJson(_store.json(SettingsKeys.runRouteSuggestions), username: username) ??
+      RunRouteSuggestions(username: username);
+
+  Future<void> updateRunSuggestions(void Function(RunRouteSuggestions suggestions) change) async {
+    final current = runSuggestions;
+    change(current);
+    current.prune(CalendarDay.today());
+    notifyListeners();
+    await _store.setJson(SettingsKeys.runRouteSuggestions, current.toJson());
+  }
+
   @override
   void dispose() {
     unawaited(_subscription?.cancel());

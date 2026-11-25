@@ -62,6 +62,7 @@ abstract final class SettingsKeys {
   static const routePlanner = 'coach.routePlanner';
   static const favoritePlaces = 'coach.favoritePlaces';
   static const routeTemplates = 'coach.routeTemplates';
+  static const runRouteSuggestions = 'coach.runRouteSuggestions';
 
   /// Fuel Planner (neu in AIronLudi): Profil, eigene Produkte und Mischungen, gespeicherte Pläne des Benutzers.
   static const fuelPlanner = 'coach.fuelPlanner';

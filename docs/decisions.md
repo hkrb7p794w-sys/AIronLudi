@@ -1556,3 +1556,26 @@ BLS geladen wie in `bootstrap.dart`). Gefunden und behoben in der Ernährung:
   Doku von `ProductSearchScreen.own` schon beschrieb.
 - **Wasser:** Nach einem Glas stand „0,3 l“ (Rundung auf eine Stelle), jetzt „0,25 l“.
 - **„Sichern“ statt gemischt „Speichern“/„Sichern“** auf Knöpfen (wie im deutschen iOS; vorher 12 : 7).
+
+## 2026-11-25 – Routenvorschläge zu geplanten Läufen
+
+Wunsch des Nutzers: zu jeder geplanten Laufeinheit eine passende Route vorschlagen, annehmen oder ablehnen,
+Gelände in den Einstellungen, Abwechslung von Woche zu Woche.
+
+- **Regeln je Einheit** (`RunRouteBriefs`, deterministisch): Distanz wie „Route dazu planen“ (Strecke bzw. Dauer im
+  lockeren Tempo). Tempo, Schwelle, VO2max und „Intensiv“: flach (etwa 4 hm/km), damit die Abschnitte vergleichbar
+  bleiben. Regeneration: flach und – außer bei gewähltem Asphalt – Wald & Natur. Grundlage, „Locker“, lange Einheit:
+  nur die eigenen Vorlieben. Ruhetag und Wettkampf: kein Vorschlag. Immer Rundwege.
+- **Abwechslung** (`RouteVariety`): Spuren der letzten 28 Tage (gespeicherte und gelaufene Routen, abgelehnte
+  Vorschläge). Die Runde zeigt in die am wenigsten genutzte von acht Himmelsrichtungen (Nachbarrichtungen zählen halb,
+  nur Spuren bis 3 km vom Start); von den Varianten des Planers gewinnt die mit der geringsten Überschneidung
+  (Raster ≈ 110 × 70 m, Unterschiede unter 5 Prozentpunkten entscheiden nicht).
+- **Annehmen/Ablehnen:** Der offene Vorschlag bleibt gespeichert (`coach.runRouteSuggestions`, je Benutzer, in der
+  Sicherung), bis er angenommen (Route mit Tag und Einheit in die Ablage) oder abgelehnt wird (Spur gemerkt, nächster
+  Würfelwurf). „Für diese Einheit keine Route“ blendet ihn aus. Vorschläge nur für heute und kommende Tage und nur,
+  solange der Einheit keine Route zugeordnet ist; Einträge und Spuren älter als 28 Tage fallen weg.
+- **Start:** gewählter Favorit, sonst Favorit „Zuhause“, sonst der eigene Standort (höchstens 20 s); ohne beides ein
+  Hinweis statt eines Fehlers.
+- **Standard an**, abschaltbar unter *Ich › Disziplinen › Laufen*. Bewusst nicht: Vorschläge im Hintergrund für alle
+  Einheiten der Woche (Rate-Limits der freien Router); geplant wird beim Öffnen der Einheit.
+

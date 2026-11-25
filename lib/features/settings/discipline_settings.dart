@@ -8,11 +8,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/storage.dart';
 import '../../services/gym/gym_book_reader.dart';
 import '../../services/providers.dart';
+import '../../services/routing/routing_providers.dart';
 import '../../ui/components.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
+import '../../ui/tokens.dart';
 import '../gym/gym_library.dart';
 import '../gym/gym_providers.dart';
+import '../routes/route_parts.dart';
 import 'lock_screen_settings.dart';
 
 void _push(BuildContext context, Widget screen) =>
@@ -581,6 +584,7 @@ class EnduranceSettingsScreen extends ConsumerWidget {
                   ),
               ],
             ),
+          if (sport == TrainingSport.run) const RunRouteSettingsSection(),
         ],
       ),
     );
@@ -676,6 +680,57 @@ class HeartRateRow extends StatelessWidget {
           TextButton(onPressed: () => onChanged(null), child: const Text('Auto')),
         ],
       ),
+    );
+  }
+}
+
+/// Laufen › Routenvorschläge: an/aus, bevorzugtes Gelände, Start der Runden.
+class RunRouteSettingsSection extends ConsumerWidget {
+  const RunRouteSettingsSection({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final store = ref.watch(routeStoreProvider);
+    final runs = store.runSuggestions;
+    final favorites = store.favorites;
+    Future<void> change(void Function(RunRouteSuggestions runs) edit) => store.updateRunSuggestions(edit);
+    final chosen = favorites.where((place) => place.id == runs.startFavoriteID).firstOrNull;
+    return FormSection(
+      header: 'Routenvorschläge',
+      footer:
+          'Zu jeder geplanten Laufeinheit schlägt die App eine Runde vor, die zum Training passt (Tempo und Intervalle '
+          'flach, Regeneration weich, lange Läufe als große Runde) – jedes Mal in eine andere Richtung als die Strecken '
+          'der letzten vier Wochen. Annehmen ordnet sie der Einheit zu, Ablehnen zeigt eine andere.',
+      children: [
+        SwitchListTile.adaptive(
+          title: const Text('Routen zu geplanten Läufen vorschlagen'),
+          value: runs.enabled,
+          onChanged: (value) => unawaited(change((runs) => runs.enabled = value)),
+        ),
+        if (runs.enabled) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Text('Am liebsten laufe ich …', style: AppText.footnote(context)),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+            child: PreferenceChips(
+              discipline: RouteDiscipline.run,
+              selected: runs.preferences,
+              onChanged: (selection) => unawaited(change((runs) => runs.preferences = {...selection})),
+            ),
+          ),
+          _Choice<String>(
+            label: 'Start der Runden',
+            value: chosen?.id ?? '',
+            items: {
+              '': 'Automatisch (Favorit „Zuhause“, sonst Standort)',
+              for (final place in favorites) place.id: place.name,
+            },
+            onChanged: (id) => unawaited(change((runs) => runs.startFavoriteID = id.isEmpty ? null : id)),
+          ),
+        ],
+      ],
     );
   }
 }

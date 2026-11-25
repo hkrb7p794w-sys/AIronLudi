@@ -13,6 +13,7 @@ import 'location_source.dart';
 import 'route_stores.dart';
 import 'route_weather_service.dart';
 import 'routing_service.dart';
+import 'run_route_suggester.dart';
 import 'worker_maps.dart';
 
 /// Routen, Gebiete und Planer-Einstellungen des aktiven Benutzers (je Benutzer ein eigener Container).
@@ -94,4 +95,15 @@ final weatherSourceProvider = Provider<WeatherSource>((ref) {
 /// Stündliche Vorhersage am Start einer Route für einen Tag.
 final routeForecastProvider = FutureProvider.autoDispose.family<List<WeatherHour>, (GeoPoint, CalendarDay)>(
   (ref, key) => ref.read(weatherSourceProvider).forecast(key.$1, key.$2),
+);
+
+/// Routenvorschläge für geplante Läufe.
+final runRouteSuggesterProvider = Provider<RunRouteSuggester>(
+  (ref) => RunRouteSuggester(
+    store: ref.watch(routeStoreProvider),
+    backend: ref.watch(routingBackendProvider),
+    location: ref.watch(locationSourceProvider),
+    features: ref.watch(routeFeatureSourceProvider),
+    roundTrips: ref.watch(roundTripSourceProvider),
+  ),
 );

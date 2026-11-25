@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../services/routing/routing_providers.dart';
+import '../../services/routing/run_route_suggester.dart';
 import '../../ui/components.dart';
 import 'route_detail_screen.dart';
 import 'route_parts.dart';
 import 'route_planner_controller.dart';
 import 'route_planner_screen.dart';
+import 'run_route_suggestion_card.dart';
 
 /// In einer Einheit des Ausdauerplans: „Route dazu planen“ (Disziplin und Distanz aus der Einheit vorbelegt, Vorschläge
 /// werden der Einheit zugeordnet) und die schon zugeordneten Routen.
@@ -32,6 +34,8 @@ class RouteForSlotSection extends StatelessWidget {
       minutes: workout.minutes,
       meters: workout.meters,
       runThresholdPace: runThresholdPace,
+      brief: (preferences) =>
+          RunRouteBriefs.forWorkout(workout, preferences: preferences, runThresholdPace: runThresholdPace),
     );
   }
 }
@@ -60,6 +64,11 @@ class RouteForSessionSection extends StatelessWidget {
       isBike: isBike,
       isRun: isRun,
       minutes: minutes ?? SessionMatcher.defaultMinutes(slot),
+      brief: (preferences) => RunRouteBriefs.forSession(
+        slot,
+        minutes: minutes ?? SessionMatcher.defaultMinutes(slot),
+        preferences: preferences,
+      ),
     );
   }
 }
@@ -76,6 +85,7 @@ class RouteForUnitSection extends ConsumerWidget {
     required this.minutes,
     this.meters,
     this.runThresholdPace,
+    this.brief,
   });
 
   final String unitID;
@@ -86,6 +96,9 @@ class RouteForUnitSection extends ConsumerWidget {
   final int minutes;
   final int? meters;
   final int? runThresholdPace;
+
+  /// Strecke passend zum Training (nur Läufe), aus dem bevorzugten Gelände.
+  final RunRouteBrief? Function(Set<RoutePreference> preferences)? brief;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -101,8 +114,13 @@ class RouteForUnitSection extends ConsumerWidget {
       for (final route in [...store.openRoutes, ...store.archive])
         if (route.slotID == unitID) route,
     ];
+    // Automatischer Vorschlag für Läufe, solange der Einheit noch keine Route zugeordnet ist (Tag nicht vorbei).
+    final runs = store.runSuggestions;
+    final runBrief = isRun && runs.enabled && assigned.isEmpty && day >= CalendarDay.today()
+        ? brief?.call(runs.preferences)
+        : null;
     if (suggestion == null && assigned.isEmpty) return const SizedBox.shrink();
-    return FormSection(
+    final section = FormSection(
       header: 'Route',
       footer: suggestion == null
           ? null
@@ -142,6 +160,17 @@ class RouteForUnitSection extends ConsumerWidget {
               );
             },
           ),
+      ],
+    );
+    if (runBrief == null) return section;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        RunRouteSuggestionCard(
+          key: ValueKey('run-route-$unitID'),
+          unit: RunRouteUnit(unitID: unitID, day: day, title: title, brief: runBrief),
+        ),
+        section,
       ],
     );
   }
