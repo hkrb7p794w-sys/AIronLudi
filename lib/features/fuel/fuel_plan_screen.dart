@@ -95,7 +95,7 @@ class _FuelPlanScreenState extends ConsumerState<FuelPlanScreen> {
   Future<String?> _ensureSaved({bool announce = false}) async {
     final store = ref.read(fuelStoreProvider);
     if (store.hasForeignData) {
-      _show('Der Fuel Planner gehört einem anderen Benutzer – nichts gespeichert.');
+      _show('Der Verpflegungsplan gehört einem anderen Benutzer – nichts gespeichert.');
       return null;
     }
     final id = _planID ?? newUuid();
@@ -409,7 +409,7 @@ class _FuelPlanScreenState extends ConsumerState<FuelPlanScreen> {
           for (final line in lines) Text(line, style: LiquidText.label(context)),
           if (t.sweatEstimated && t.fluidPerHour > 0)
             Text(
-              'Tipp: Schweißrate einmal messen (Fuel Planner › Mein Profil) – die Schätzung kann um ±0,5 l/h abweichen.',
+              'Tipp: Schweißrate einmal messen (Verpflegung › Mein Profil) – die Schätzung kann um ±0,5 l/h abweichen.',
               style: LiquidText.label(context),
             ),
         ],

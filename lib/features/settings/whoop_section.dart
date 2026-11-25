@@ -73,7 +73,7 @@ class _WhoopSectionState extends ConsumerState<WhoopSection> {
     return FormSection(
       header: 'WHOOP',
       footer:
-          'Recovery, HRV, Ruhepuls, Schlaf mit Phasen, Kalorien, Schritte und Trainings über die offizielle WHOOP-API. '
+          'Erholung (Recovery), HRV, Ruhepuls, Schlaf mit Phasen, Kalorien, Schritte und Trainings über die offizielle WHOOP-API. '
           'Welche Quelle bei Schlaf, HRV usw. zählt, steht unter Health und Erholung › Datenquellen und Vorrang. '
           'Die WHOOP-Anbindung richtet ein, wer den Worker betreibt; du meldest dich nur mit deinem WHOOP-Konto an.',
       children: [

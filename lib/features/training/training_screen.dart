@@ -263,7 +263,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen>
                       final current? => 'BB ${current.toInt()}',
                       null => '',
                     },
-                    caption: 'Morning Report, Widgets, Body Battery',
+                    caption: 'Morgenbericht, Widgets, Body Battery',
                     onTap: () => _open((_) => const HealthScreen()),
                   ),
                 if (!_isPlan)

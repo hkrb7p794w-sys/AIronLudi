@@ -109,13 +109,13 @@ abstract final class CoachingNote {
           'HRV letzte Nacht: ${_number(metrics.hrvLastNightAverage, ' ms')}, 7-Tage-Schnitt '
               '${_number(metrics.hrvWeeklyAverage, ' ms')} (Status $status)',
           'Body Battery: ${_number(metrics.bodyBatteryHigh, '')}',
-          'Schlaf: ${sleep == null ? 'keine Daten' : '${GermanFormat.decimal(sleep)} h'}, Score '
+          'Schlaf: ${sleep == null ? 'keine Daten' : '${GermanFormat.decimal(sleep)} h'}, Schlafwert '
               '${_number(metrics.sleepScore, '')}',
         ];
       case PrivacyMode.reduced:
         final sleepSeconds = metrics.sleepSeconds;
         return [
-          'HRV-Status (7-Tage-Schnitt vs. Baseline): $status',
+          'HRV-Status (7-Tage-Schnitt vs. Normalbereich): $status',
           'Schlaf: ${_band(sleepSeconds == null ? null : sleepSeconds / 3600, const [(6, 'kurz'), (7.5, 'normal')], otherwise: 'gut')}',
           'Body Battery: ${_band(metrics.bodyBatteryHigh, const [(30, 'niedrig'), (60, 'mittel')], otherwise: 'hoch')}',
         ];
@@ -131,8 +131,10 @@ abstract final class CoachingNote {
         'sehr kurzer Schlaf'
       else if (reason.startsWith('kurzer Schlaf'))
         'kurzer Schlaf'
-      else if (reason.startsWith('Readiness'))
-        'Readiness niedrig'
+      else if (reason.startsWith('Trainingsbereitschaft'))
+        'Trainingsbereitschaft niedrig'
+      else if (reason.startsWith('WHOOP-Erholung'))
+        'WHOOP-Erholung niedrig'
       else
         reason,
   ];

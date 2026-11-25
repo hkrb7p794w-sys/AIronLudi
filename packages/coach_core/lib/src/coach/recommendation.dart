@@ -89,17 +89,19 @@ abstract final class RecoveryEvaluator {
     final status = metrics.hrvStatus?.toUpperCase();
     if (status == 'LOW' || status == 'POOR') {
       worsen(RecoveryLevel.pause);
-      reasons.add('HRV-Status ${hrvStatusGerman[status] ?? status} (7-Tage-Schnitt deutlich unter deiner Baseline)');
+      reasons.add(
+        'HRV-Status ${hrvStatusGerman[status] ?? status} (7-Tage-Schnitt deutlich unter deinem Normalbereich)',
+      );
     } else if (status == 'UNBALANCED') {
       final weekly = metrics.hrvWeeklyAverage;
       final low = metrics.hrvBaselineLow;
       if (weekly != null && low != null && weekly < low) {
         worsen(RecoveryLevel.locker);
-        reasons.add('HRV-Status unausgeglichen, 7-Tage-Schnitt unter deiner Baseline');
+        reasons.add('HRV-Status unausgeglichen, 7-Tage-Schnitt unter deinem Normalbereich');
       } else {
         // Über der Baseline ist nicht automatisch gut (kann bei viel lockerem Umfang auf Überlastung hindeuten) – nur
         // benennen, nicht herabstufen.
-        reasons.add('HRV-Status unausgeglichen (über der Baseline) – im Blick behalten');
+        reasons.add('HRV-Status unausgeglichen (über dem Normalbereich) – im Blick behalten');
       }
     } else if (status == 'BALANCED') {
       reasons.add('HRV-Status ausgeglichen');
@@ -122,15 +124,15 @@ abstract final class RecoveryEvaluator {
       // priorisieren“ → Pause; gelb ist „normal belasten“ und stuft nicht herab. Garmins Stufen gelten hier nicht.
       if (score < 34) {
         worsen(RecoveryLevel.pause);
-        reasons.add('WHOOP-Recovery ${score.round()} % (rot)');
+        reasons.add('WHOOP-Erholung ${score.round()} % (rot)');
       }
     } else if (score != null) {
       if (score < 25) {
         worsen(RecoveryLevel.pause);
-        reasons.add('Readiness ${score.round()} (Stufe „Poor“)');
+        reasons.add('Trainingsbereitschaft ${score.round()} (sehr niedrig)');
       } else if (score < 50) {
         worsen(RecoveryLevel.locker);
-        reasons.add('Readiness ${score.round()} (Stufe „Low“)');
+        reasons.add('Trainingsbereitschaft ${score.round()} (niedrig)');
       }
     }
 

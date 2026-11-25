@@ -32,7 +32,7 @@ enum HealthWidget implements RawEnum {
   vo2Max('VO2max', ''),
   trainingLoad('Trainingsbelastung', ''),
   recoveryTime('Regenerationszeit', 'h'),
-  readiness('Training Readiness', ''),
+  readiness('Trainingsbereitschaft', ''),
   steps('Schritte', ''),
   activeCalories('Aktivitätskalorien', 'kcal'),
   restingCalories('Ruhekalorien', 'kcal'),

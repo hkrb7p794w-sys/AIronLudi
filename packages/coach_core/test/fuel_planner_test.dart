@@ -602,7 +602,7 @@ void main() {
       expect(FuelDiary.marker(hint), (planID: 'PLAN-1', phase: FuelPhase.pre));
       expect(FuelDiary.marker(FuelDiary.hint('PLAN-1', FuelPhase.intra))?.phase, FuelPhase.intra);
       expect(FuelDiary.marker('Frühstück mit Ei'), isNull);
-      expect(FuelDiary.visibleHint(FuelDiary.hint('P', FuelPhase.intra)), 'Aus dem Fuel Planner.');
+      expect(FuelDiary.visibleHint(FuelDiary.hint('P', FuelPhase.intra)), 'Aus dem Verpflegungsplan.');
       final placeholder = MealItem(
         name: 'Vor dem Training (Plan)',
         grams: 100,

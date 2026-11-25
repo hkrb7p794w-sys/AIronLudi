@@ -117,7 +117,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Morning Report: Wecker ohne Systembrücke mit Ersatzhinweis', (tester) async {
+  testWidgets('Morgenbericht: Wecker ohne Systembrücke mit Ersatzhinweis', (tester) async {
     await _start(tester);
     await _push(tester, const MorningReportScreen());
     await tester.scrollUntilVisible(find.text('WECKER'), 300, scrollable: find.byType(Scrollable).first);

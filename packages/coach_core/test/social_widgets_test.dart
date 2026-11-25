@@ -309,7 +309,7 @@ void main() {
       expect(decoded.water(day), 500);
     });
 
-    test('Gesundheitswerte aus dem Morning Report', () {
+    test('Gesundheitswerte aus dem Morgenbericht', () {
       const report = MorningReport(
         day: day,
         dataDay: day,

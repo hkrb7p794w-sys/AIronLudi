@@ -734,7 +734,7 @@ class _SendToWatchScreenState extends ConsumerState<SendToWatchScreen> {
         padding: const EdgeInsets.only(bottom: 32),
         children: [
           FormSection(
-            footer: sentBefore ? 'Für diesen Tag schon gesendet – erneutes Senden ersetzt das Workout.' : null,
+            footer: sentBefore ? 'Für diesen Tag schon gesendet – erneutes Senden ersetzt die Einheit.' : null,
             children: [ListTile(title: const Text('Tag'), trailing: Text(GermanFormat.date(_day)), onTap: _pickDay)],
           ),
           FormSection(
@@ -746,7 +746,7 @@ class _SendToWatchScreenState extends ConsumerState<SendToWatchScreen> {
           if (_message case final message?) FormSection(children: [ListTile(title: Text(message))]),
           FormSection(
             footer:
-                'Das Workout landet im Garmin-Connect-Kalender und beim nächsten Synchronisieren auf der Uhr. Ziele '
+                'Die Einheit landet im Garmin-Connect-Kalender und beim nächsten Synchronisieren auf der Uhr. Ziele '
                 '(Pace, Puls) stehen als Notiz am Schritt. Garmin kann diese inoffizielle Schnittstelle jederzeit '
                 'ändern.',
             children: [

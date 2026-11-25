@@ -11,7 +11,7 @@ enum AppRoute {
   today('Heute', null),
 
   /// Gesundheitsbereich (Morning Report, Widgets, Body Battery) im Reiter Training.
-  health('Health öffnen', 'Morning Report, Body Battery, Schlaf'),
+  health('Health öffnen', 'Morgenbericht, Body Battery, Schlaf'),
   nutrition('Ernährung', null),
 
   /// Erfassen-Bildschirm der Ernährung öffnen.

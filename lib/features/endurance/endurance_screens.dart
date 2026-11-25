@@ -273,7 +273,7 @@ class _EnduranceScreenState extends ConsumerState<EnduranceScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Plan löschen?'),
-        content: const Text('Kommende Workouts im Garmin-Kalender werden ebenfalls entfernt.'),
+        content: const Text('Kommende Einheiten im Garmin-Kalender werden ebenfalls entfernt.'),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Abbrechen')),
           TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Löschen')),

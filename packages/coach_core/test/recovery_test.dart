@@ -26,7 +26,7 @@ void main() {
         ..trainingReadinessLevel = level;
       final red = RecoveryEvaluator.evaluate(whoop(30, WhoopRecoveryLevel.red), restingHeartRate7DayAverage: null);
       expect(red.level, RecoveryLevel.pause);
-      expect(red.reasons, ['WHOOP-Recovery 30 % (rot)']);
+      expect(red.reasons, ['WHOOP-Erholung 30 % (rot)']);
       // Gelb (34–66) heißt bei WHOOP „normal belasten“; Garmins Stufe „Low“ (< 50) gilt nicht.
       final yellow = RecoveryEvaluator.evaluate(
         whoop(45, WhoopRecoveryLevel.yellow),
@@ -61,7 +61,7 @@ void main() {
         restingHeartRate7DayAverage: null,
       );
       expect(above.level, RecoveryLevel.normal);
-      expect(above.reasons.first, contains('über der Baseline'));
+      expect(above.reasons.first, contains('über dem Normalbereich'));
     });
 
     test('erhöhter Ruhepuls', () {
@@ -97,7 +97,7 @@ void main() {
       expect(result.level, RecoveryLevel.pause);
       expect(result.reasons.length, 4);
       expect(result.reasons, contains('kurzer Schlaf (5,5 h)'));
-      expect(result.reasons, contains('Readiness 40 (Stufe „Low“)'));
+      expect(result.reasons, contains('Trainingsbereitschaft 40 (niedrig)'));
     });
 
     test('Mittelwert über die Tage vor heute', () {
@@ -424,5 +424,16 @@ void main() {
       expect(WeekLoad.load(intervals).value, 120);
       expect(SessionKind.of(intervals), SessionKind.vo2);
     });
+  });
+
+  // Datenschutzmodus „reduziert“ (Standard): Begründungen gehen ohne Zahlen an die KI.
+  test('Begründungen ohne Zahlen: Trainingsbereitschaft und WHOOP-Erholung', () {
+    const recommendation = Recommendation(
+      level: RecoveryLevel.pause,
+      reasons: ['Trainingsbereitschaft 20 (sehr niedrig)', 'WHOOP-Erholung 30 % (rot)'],
+    );
+    final neutral = CoachingNote.neutralReasons(recommendation, null);
+    expect(neutral, ['Trainingsbereitschaft niedrig', 'WHOOP-Erholung niedrig']);
+    expect(neutral.join().contains(RegExp('[0-9]')), isFalse);
   });
 }

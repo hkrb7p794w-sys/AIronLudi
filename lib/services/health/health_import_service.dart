@@ -110,7 +110,7 @@ final class HealthImportService extends ChangeNotifier {
           assign(days[day] ??= HealthDayValues(day), value);
         }
       } on Object {
-        problems.add(kind.name);
+        problems.add(kind.label);
       }
     }
 
@@ -176,7 +176,7 @@ final class HealthImportService extends ChangeNotifier {
       await _activities.upsertAll(fresh);
       added = fresh.where((activity) => !known.contains(activity.id)).length;
     } on Object {
-      problems.add('Workouts');
+      problems.add('Aktivitäten');
     }
 
     // Gewicht
@@ -196,7 +196,7 @@ final class HealthImportService extends ChangeNotifier {
 
     final detailed = await _detailWorkouts(now);
     await _settings.setDate(lastImportKey, now);
-    final buffer = StringBuffer('$daysUpdated Tage, $added neue Workouts aus den Gesundheitsdaten');
+    final buffer = StringBuffer('$daysUpdated Tage, $added neue Aktivitäten aus den Gesundheitsdaten');
     if (detailed > 0) buffer.write(', $detailed mit Verlauf');
     if (problems.isNotEmpty) buffer.write(' · nicht lesbar: ${problems.join(', ')}');
     lastResult = buffer.toString();

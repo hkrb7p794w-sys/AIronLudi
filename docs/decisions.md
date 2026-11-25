@@ -1516,3 +1516,17 @@ planen; dazu Joggen von Start zu Ziel.
 - „Fuel Planner“ in Untertiteln durch „Vor, während und nach dem Training“ ersetzt (Glossar: Verpflegung).
 - Knopftexte im Theme mit der Schriftfamilie des Themes (vorher ohne, im Prüfstand als Blöcke gerendert).
 - `ui_tokens_test.dart`: keine feste Schriftgröße unter 12 pt in ganz `lib/` (Diagrammachsen nutzen `AxisLabel`).
+
+## 2026-11-25 – Deutsche Begriffe statt englischer
+
+- Nach dem Glossar (`docs/roast/design-konzept.md`): „Morgenbericht“ statt „Morning Report“, „Verpflegung“ bzw.
+  „Verpflegungsplan“ statt „Fuel Planner“ (auch in Hinweisen neuer Tagebucheinträge; erkannt werden Einträge weiter
+  nur an der Markierung `[fuel:…]`, alte Einträge bleiben gültig).
+- In deutschen Sätzen: „Trainingsbereitschaft“ (Garmins deutscher Name) statt „Readiness“, Stufen „niedrig“/„sehr
+  niedrig“ statt „Low“/„Poor“; „Normalbereich“ statt „Baseline“; „Erholung“ statt „Recovery“ (WHOOP-Anmeldung nennt
+  „Erholung (Recovery)“); „Einheit“ (geplant), „Aktivität“ (aufgezeichnet) bzw. „Trainings“ (Apple Health) statt
+  „Workout“. Unverändert bleiben Produkt- und Markennamen (Body Battery, Endurance Score, Zwift-Workouts, Feed,
+  Challenge).
+- Health-Import meldet nicht lesbare Daten mit deutschen Namen statt interner Bezeichner (`respiratoryRate`).
+- **Datenschutz:** Im Modus „reduziert“ ging die Begründung „WHOOP-Recovery 30 % (rot)“ mit Zahl an die KI. Jetzt
+  „WHOOP-Erholung niedrig“ wie bei der Trainingsbereitschaft (Test in `recovery_test.dart`).

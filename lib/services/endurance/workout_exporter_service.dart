@@ -136,7 +136,7 @@ final class WorkoutExporterService {
     try {
       if (previous != null) await _delete(previous.workoutID);
       final id = await _create(workout, day);
-      if (id == null) return ('Garmin hat das Workout nicht angenommen.', null);
+      if (id == null) return ('Garmin hat die Einheit nicht angenommen.', null);
       return (
         'Im Garmin-Kalender am ${GermanFormat.date(day)}. Auf die Uhr kommt es beim nächsten Synchronisieren.',
         SyncedWorkout(workoutID: id, fingerprint: WorkoutExport.fingerprint(workout, day), day: day),
