@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ringreihe der Homescreen-Widgets (bis zu vier Ringe mit Titel und Wert; Bilder zeichnet `WidgetRings`). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_rings"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="6dp"
+    android:orientation="horizontal"
+    android:visibility="gone">
+
+    <LinearLayout android:id="@+id/widget_slot1" android:layout_width="0dp" android:layout_height="wrap_content"
+        android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical" android:visibility="gone">
+        <ImageView android:id="@+id/widget_ring1" android:layout_width="44dp" android:layout_height="44dp" />
+        <TextView android:id="@+id/widget_ring_title1" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:maxLines="1" android:textColor="@color/widget_secondary" android:textSize="12sp" />
+        <TextView android:id="@+id/widget_ring_value1" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:maxLines="1" android:ellipsize="end" android:textColor="@color/widget_text" android:textSize="12sp" android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout android:id="@+id/widget_slot2" android:layout_width="0dp" android:layout_height="wrap_content"
+        android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical" android:visibility="gone">
+        <ImageView android:id="@+id/widget_ring2" android:layout_width="44dp" android:layout_height="44dp" />
+        <TextView android:id="@+id/widget_ring_title2" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:maxLines="1" android:textColor="@color/widget_secondary" android:textSize="12sp" />
+        <TextView android:id="@+id/widget_ring_value2" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:maxLines="1" android:ellipsize="end" android:textColor="@color/widget_text" android:textSize="12sp" android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout android:id="@+id/widget_slot3" android:layout_width="0dp" android:layout_height="wrap_content"
+        android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical" android:visibility="gone">
+        <ImageView android:id="@+id/widget_ring3" android:layout_width="44dp" android:layout_height="44dp" />
+        <TextView android:id="@+id/widget_ring_title3" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:maxLines="1" android:textColor="@color/widget_secondary" android:textSize="12sp" />
+        <TextView android:id="@+id/widget_ring_value3" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:maxLines="1" android:ellipsize="end" android:textColor="@color/widget_text" android:textSize="12sp" android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout android:id="@+id/widget_slot4" android:layout_width="0dp" android:layout_height="wrap_content"
+        android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical" android:visibility="gone">
+        <ImageView android:id="@+id/widget_ring4" android:layout_width="44dp" android:layout_height="44dp" />
+        <TextView android:id="@+id/widget_ring_title4" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:maxLines="1" android:textColor="@color/widget_secondary" android:textSize="12sp" />
+        <TextView android:id="@+id/widget_ring_value4" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:maxLines="1" android:ellipsize="end" android:textColor="@color/widget_text" android:textSize="12sp" android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>

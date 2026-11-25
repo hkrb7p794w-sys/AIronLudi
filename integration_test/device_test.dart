@@ -90,10 +90,13 @@ void main() {
     await idle(tester, const Duration(seconds: 3));
     await shot(binding, tester, '20-demo-heute');
     await tab(tester, 'Ernährung');
-    await waitFor(tester, find.textContaining('Haferflocken'), timeout: const Duration(seconds: 20));
+    // Je nach Tageszeit stehen oben mehr Karten: bis zum Frühstück scrollen.
+    await idle(tester, const Duration(seconds: 2));
+    await reveal(tester, find.textContaining('Haferflocken'));
     await shot(binding, tester, '21-demo-ernaehrung');
     await tab(tester, 'Verlauf');
-    await waitFor(tester, find.textContaining('Langer Lauf'), timeout: const Duration(seconds: 20));
+    await idle(tester, const Duration(seconds: 2));
+    await reveal(tester, find.textContaining('Langer Lauf'));
     await shot(binding, tester, '22-demo-verlauf');
 
     step('Native Brücken antworten (keine fehlende Gegenseite)');

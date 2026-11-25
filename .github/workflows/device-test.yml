@@ -17,7 +17,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: device-test-${{ github.ref }}
+  # Andere Labels (z. B. ios-build) bekommen eine eigene Gruppe und brechen einen laufenden Gerätetest nicht ab.
+  group: device-test-${{ github.ref }}-${{ (github.event.action == 'labeled' && github.event.label.name != 'device-test') && github.event.label.name || 'tests' }}
   cancel-in-progress: true
 
 env:
@@ -25,7 +26,10 @@ env:
 
 jobs:
   android:
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'device-test')
+    if: >-
+      github.event_name != 'pull_request' ||
+      (github.event.action == 'labeled' && github.event.label.name == 'device-test') ||
+      (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'device-test'))
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -69,7 +73,10 @@ jobs:
           if-no-files-found: ignore
 
   ios:
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'device-test')
+    if: >-
+      github.event_name != 'pull_request' ||
+      (github.event.action == 'labeled' && github.event.label.name == 'device-test') ||
+      (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'device-test'))
     runs-on: macos-15
     timeout-minutes: 60
     env:
