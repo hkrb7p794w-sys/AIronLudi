@@ -188,7 +188,8 @@ GymSession _gym(CalendarDay day, String title, double bench) => GymSession(
 List<GymSession> demoGym(CalendarDay today) => [
   for (var offset = 34; offset >= 1; offset--)
     if (today.adding(-offset).weekdayIndex == 0 || today.adding(-offset).weekdayIndex == 3)
-      _gym(today.adding(-offset), offset.isEven ? 'Oberkörper' : 'Ganzkörper', 60 + (34 - offset) / 7 * 2.5),
+      // Je Woche 2,5 kg mehr, in ganzen 2,5-kg-Schritten (wie mit Hantelscheiben).
+      _gym(today.adding(-offset), offset.isEven ? 'Oberkörper' : 'Ganzkörper', 60 + (34 - offset) ~/ 7 * 2.5),
 ];
 
 MealItem _item(

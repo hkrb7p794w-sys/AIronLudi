@@ -532,6 +532,7 @@ class MissedSessionSection extends ConsumerWidget {
       week,
       handled: settings.handledMissed.toSet(),
       pause: settings.trainingBreak,
+      since: settings.scheduleSince,
     ).firstOrNull;
     if (missed == null) return const SizedBox.shrink();
     final session = missed.planned;
@@ -597,7 +598,10 @@ class MissedSessionSection extends ConsumerWidget {
           title: const Text('War krank'),
           onTap: () {
             settings.illnessDay = today;
-            handle(settings, [for (final result in MissedSessions.open(week, handled: const {})) result.id]);
+            handle(settings, [
+              for (final result in MissedSessions.open(week, handled: const {}, since: settings.scheduleSince))
+                result.id,
+            ]);
           },
         ),
       ],

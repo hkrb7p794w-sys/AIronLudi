@@ -46,6 +46,10 @@ abstract final class SettingsKeys {
   static const illness = 'coach.illnessDay';
   static const trainingBreak = 'coach.trainingBreak';
   static const handledMissed = 'coach.handledMissed';
+
+  /// Tag, seit dem der dauerhafte Wochenplan gilt (Einrichtung oder letzte Änderung); frühere Tage zählen nicht als
+  /// verpasst.
+  static const scheduleSince = 'coach.scheduleSince';
   static const efforts = 'coach.efforts';
   static const closedReviews = 'coach.closedReviews';
   static const dismissedSuggestions = 'coach.dismissedSuggestions';

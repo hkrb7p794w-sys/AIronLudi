@@ -1630,3 +1630,19 @@ Gefunden und behoben:
   zusätzlich erst nach dem ersten Frame.
 - Geprüft und so belassen: Automatisch geteilt wird nur, was nach dem Einschalten begann (ein nachgetragenes Training
   mit Beginn vor einer Stunde bleibt privat); der geteilte Inhalt enthält keine Körperwerte; nichts wird doppelt geteilt.
+
+## 2026-11-25 – Gerätetests auf Android-Emulator und iOS-Simulator
+
+`integration_test/device_test.dart` startet die echte App (`main()`, Benutzersitzung, echte Datenbank, Ordner,
+Schlüsselbund bzw. sicherer Speicher) auf Android 14 (Emulator) und iOS (Simulator, Xcode 26) in GitHub Actions
+(`device-test.yml`, per Label `device-test`, „Run workflow“ und montags) – ohne eigenen Mac. Geprüft: Einrichtung bis
+„Los geht’s“, alle Reiter, Datensicherung als Datei, Demo mit echtem Benutzerwechsel, native Brücken (Wecker,
+Live-Aktivitäten, Widgets) antworten, Live-Einheit mit erledigtem Satz. Bildschirmfotos als Artefakt. Nicht prüfbar:
+Garmin und WHOOP mit echtem Konto, echte Uhr, SideStore, Verhalten auf dem eigenen Gerät.
+
+Gefunden und behoben: **Direkt nach der Einrichtung zeigte „Heute“ „Verpasst“** (Einrichtung am Mittwoch: die
+Einheit vom Montag galt als verpasst). Neuer Wert `coach.scheduleSince` (gesetzt, wenn sich der dauerhafte
+Wochenplan ändert, also auch bei der Einrichtung); `MissedSessions.open(since:)` zählt Tage davor nicht. Bestehende
+Benutzer ohne den Wert behalten das bisherige Verhalten.
+- Demo-Daten: Bankdrücken steigt jetzt in ganzen 2,5-kg-Schritten (vorher krumme Werte wie „73,93 kg“ als Vorschlag
+  in der Live-Einheit, im Gerätetest aufgefallen). Prüfstand neu gerendert.

@@ -488,3 +488,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Ernährung: Makrobalken (Protein/KH/Fett) über die volle Breite, Name links und Rest rechts, 8 pt hoch; Balkenspur (`LiquidTheme.track`) kräftiger, damit der Fortschritt auf weißen Karten erkennbar ist | erledigt |
 | Routenvorschläge zu geplanten Läufen: passend zum Training, annehmen/ablehnen, Gelände und Start in den Einstellungen, Abwechslung über vier Wochen | erledigt |
 | Durchläufe Konto, Freunde & Liga, automatisch teilen, Quellen gegen nachgebauten Worker; behoben: Fehler beim Öffnen von Freunde/Verlauf mit Konto | erledigt |
+| Gerätetests auf Android-Emulator und iOS-Simulator (`device-test.yml`); behoben: „Verpasst“ direkt nach der Einrichtung | erledigt |
