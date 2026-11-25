@@ -537,9 +537,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         if (assessment != null && assessment.notes.isNotEmpty)
           FormSection(
             header: 'Hinweise zu deinem Ziel',
-            children: [
-              for (final note in assessment.notes) ListTile(title: Text(note)),
-            ],
+            children: [for (final note in assessment.notes) ListTile(title: Text(note))],
           ),
         InputIssuesSection(issues: _inputIssues),
       ],

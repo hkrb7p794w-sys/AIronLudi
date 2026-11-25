@@ -346,9 +346,7 @@ class HeartRateScreen extends StatelessWidget {
                   ),
                 FormSection(
                   header: 'Hinweise',
-                  children: [
-                    for (final hint in report.hints) ListTile(dense: true, title: Text(hint)),
-                  ],
+                  children: [for (final hint in report.hints) ListTile(dense: true, title: Text(hint))],
                 ),
               ],
             ),

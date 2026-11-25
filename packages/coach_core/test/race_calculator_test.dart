@@ -77,7 +77,9 @@ void main() {
       expect(normalized.workoutKey, 'gymbook:2026-10-23:Push & Pull B');
       expect(old.title, 'Push & Pull B');
       final settings = GymSettings.fromJson({
-        'routines': [for (final name in ['Push A', 'Lower', 'Eigene']) Routine(name: name, items: const []).toJson()],
+        'routines': [
+          for (final name in ['Push A', 'Lower', 'Eigene']) Routine(name: name, items: const []).toJson(),
+        ],
       });
       expect(settings.routines.map((routine) => routine.name), ['Push', 'Lower', 'Eigene']);
     });

@@ -322,7 +322,11 @@ class MenuPickerTile<T extends Object> extends StatelessWidget {
         children: [
           Expanded(child: Text(title)),
           Flexible(
-            child: Text(label(value), textAlign: TextAlign.end, style: TextStyle(color: theme.colorScheme.primary)),
+            child: Text(
+              label(value),
+              textAlign: TextAlign.end,
+              style: TextStyle(color: theme.colorScheme.primary),
+            ),
           ),
           Icon(Icons.unfold_more, size: 18, color: theme.colorScheme.primary),
         ],
