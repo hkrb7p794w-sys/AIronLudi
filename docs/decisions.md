@@ -1556,3 +1556,15 @@ BLS geladen wie in `bootstrap.dart`). Gefunden und behoben in der Ernährung:
   Doku von `ProductSearchScreen.own` schon beschrieb.
 - **Wasser:** Nach einem Glas stand „0,3 l“ (Rundung auf eine Stelle), jetzt „0,25 l“.
 - **„Sichern“ statt gemischt „Speichern“/„Sichern“** auf Knöpfen (wie im deutschen iOS; vorher 12 : 7).
+
+## 2026-11-25 – Durchläufe auf kleinem Android mit großer Schrift
+
+Die Durchläufe (`test/walkthrough/`) laufen jetzt je zweimal: iPhone 15 und kleines Android (360 × 640) mit Schrift
+1,3; eine Dauer-Animation (nie zur Ruhe kommend) zählt als Fehler. Neu: Plan (Training nachtragen, Wochenzeiten,
+nächste Woche; Gym mit Übungsverlauf, Auswertung, Trainingsplan anlegen und starten, Einheit löschen) und Verlauf
+(Aktivität, Filter, alle Auswertungen bis zum Ende). Gefunden und behoben:
+
+- **Mahlzeiten-Editor** lief bei großer Schrift über („427 kcal danach 1554 übrig“ in einer Zeile): Die Zeile bricht
+  jetzt um. Zahl und Einheit bleiben zusammen („9 g P“ nicht mehr auf zwei Zeilen).
+- **„Abbrechen“ brach mitten im Wort um** („Abbrec|hen“) in 20 Leisten: neuer Baustein `BarTextButton`
+  (`lib/ui/components.dart`), der sich leicht verkleinert.
