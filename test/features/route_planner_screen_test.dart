@@ -328,7 +328,7 @@ void main() {
       expect(find.text(variant.label), findsWidgets);
     }
 
-    await tapCentered(tester, find.text('Speichern'));
+    await tapCentered(tester, find.text('Sichern'));
     final store = container.read(routeStoreProvider);
     expect(store.routes.length, 1);
     expect(store.routes.single.discipline, RouteDiscipline.roadBike);
@@ -342,7 +342,7 @@ void main() {
     expect(store.plannedOn(CalendarDay.today()).length, 1);
 
     // Gespeicherte Route öffnen.
-    await tester.tap(find.text('Gespeichert – öffnen'));
+    await tester.tap(find.text('Gesichert – öffnen'));
     await tester.pumpAndSettle();
     expect(find.byType(RouteDetailScreen), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Als GPX teilen'), 300, scrollable: find.byType(Scrollable).first);
@@ -434,7 +434,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(routing.calls, 3);
 
-    await tester.tap(find.text('Speichern'));
+    await tester.tap(find.text('Sichern'));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
     await tester.pumpAndSettle();
     expect(find.byType(RouteDetailScreen), findsOneWidget);
@@ -486,7 +486,7 @@ void main() {
 
     await tester.tap(find.byTooltip('Fertig'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Speichern'));
+    await tester.tap(find.text('Sichern'));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
     await tester.pumpAndSettle();
     final saved = container.read(routeStoreProvider).routes.single;
@@ -556,7 +556,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Als Favorit speichern'), findsOneWidget);
     await tester.enterText(find.descendant(of: find.byType(AlertDialog), matching: find.byType(TextField)), 'Zuhause');
-    await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text('Speichern')));
+    await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text('Sichern')));
     await tester.pumpAndSettle();
     final store = container.read(routeStoreProvider);
     expect(store.favorites.single.name, 'Zuhause');
@@ -670,7 +670,7 @@ void main() {
     await tapCentered(tester, find.text('Routen vorschlagen'));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pumpAndSettle();
-    await tapCentered(tester, find.text('Speichern'));
+    await tapCentered(tester, find.text('Sichern'));
     final saved = container.read(routeStoreProvider).openRoutes.single;
     expect(saved.slotID, 'slot-42');
     expect(saved.slotTitle, 'Langer Lauf');
@@ -761,7 +761,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Als Vorlage speichern'), findsOneWidget);
     await tester.enterText(find.descendant(of: find.byType(AlertDialog), matching: find.byType(TextField)), 'Gassi');
-    await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text('Speichern')));
+    await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text('Sichern')));
     await tester.pumpAndSettle();
     final store = container.read(routeStoreProvider);
     expect(store.templates.single.name, 'Gassi');
@@ -793,8 +793,8 @@ void main() {
     await tapCentered(tester, find.text('Routen vorschlagen'));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pumpAndSettle();
-    await tapCentered(tester, find.text('Speichern'));
-    await tapCentered(tester, find.text('Gespeichert – öffnen'));
+    await tapCentered(tester, find.text('Sichern'));
+    await tapCentered(tester, find.text('Gesichert – öffnen'));
     await tapCentered(tester, find.text('Route folgen'));
     expect(find.byType(FollowRouteScreen), findsOneWidget);
     expect(find.text('Standort wird gesucht …'), findsOneWidget);

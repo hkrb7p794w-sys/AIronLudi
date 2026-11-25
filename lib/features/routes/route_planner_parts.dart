@@ -118,7 +118,7 @@ class _Results extends StatelessWidget {
                 OutlinedButton.icon(
                   onPressed: isSaved ? () => onOpen(route) : () => onSave(route),
                   icon: Icon(isSaved ? Icons.bookmark : Icons.bookmark_add_outlined),
-                  label: Text(isSaved ? 'Gespeichert – öffnen' : 'Speichern'),
+                  label: Text(isSaved ? 'Gesichert – öffnen' : 'Sichern'),
                 ),
                 Builder(
                   builder: (context) => OutlinedButton.icon(

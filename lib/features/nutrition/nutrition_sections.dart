@@ -81,7 +81,7 @@ extension _NutritionSections on _NutritionScreenState {
                     ),
                     actions: [
                       TextButton(onPressed: () => Navigator.of(dialog).pop(false), child: const Text('Abbrechen')),
-                      TextButton(onPressed: () => Navigator.of(dialog).pop(true), child: const Text('Speichern')),
+                      TextButton(onPressed: () => Navigator.of(dialog).pop(true), child: const Text('Sichern')),
                     ],
                   ),
                 );

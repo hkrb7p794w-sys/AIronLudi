@@ -439,13 +439,31 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen>
     _searching = false;
   });
 
+  /// Durchsuchbar in „Erfassen“: eigene Lebensmittel und alles, was in den letzten 60 Tagen eingetragen wurde (sonst
+  /// verschwänden die Vorschläge beim Tippen, und „Brokkoli“ fände nur fremde Einträge).
+  List<MealItem> _searchableFoods(MealCategory category) {
+    final own = [for (final food in _foods) ?food.item];
+    final names = {for (final item in own) FoodSearch.normalized(item.name)};
+    final history = ProductSearch.picks(
+      MealRepository.entries(_meals),
+      category: category,
+      today: _controller.day,
+      limit: 500,
+    );
+    return [
+      ...own,
+      for (final item in history)
+        if (names.add(FoodSearch.normalized(item.name))) item,
+    ];
+  }
+
   Future<void> _showLogger({MealCategory? category}) async {
     final chosen = category ?? NutritionController.category(DateTime.now());
     final result = await Navigator.of(context).push<FoodLogResult>(
       MaterialPageRoute(
         fullscreenDialog: true,
         builder: (_) => ProductSearchScreen(
-          own: [for (final food in _foods) ?food.item],
+          own: _searchableFoods(chosen),
           picks: ProductSearch.picks(MealRepository.entries(_meals), category: chosen, today: _controller.day),
           category: chosen,
           eaten: _controller.totals,

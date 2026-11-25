@@ -89,7 +89,7 @@ class _MealEditorScreenState extends ConsumerState<MealEditorScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
               }
             },
-            child: const Text('Speichern', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text('Sichern', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),

@@ -329,7 +329,7 @@ class _NameDialogState extends State<_NameDialog> {
     ),
     actions: [
       TextButton(onPressed: () => Navigator.pop(context), child: const Text('Abbrechen')),
-      FilledButton(onPressed: () => Navigator.pop(context, _controller.text.trim()), child: const Text('Speichern')),
+      FilledButton(onPressed: () => Navigator.pop(context, _controller.text.trim()), child: const Text('Sichern')),
     ],
   );
 }

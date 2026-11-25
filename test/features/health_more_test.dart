@@ -101,7 +101,7 @@ void main() {
     }
     await tester.pump();
     expect(find.text('8 cm'), findsOneWidget);
-    await tester.tap(find.text('Speichern'));
+    await tester.tap(find.text('Sichern'));
     await tester.pumpAndSettle();
     expect(settings.mobility.results.single.value, 8);
     expect(find.text(firstTest.rating(8).label), findsWidgets);

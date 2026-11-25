@@ -284,7 +284,7 @@ class _MobilityTestScreenState extends ConsumerState<MobilityTestScreen> {
               );
               Navigator.of(context).pop();
             },
-            child: const Text('Speichern'),
+            child: const Text('Sichern'),
           ),
         ],
       ),

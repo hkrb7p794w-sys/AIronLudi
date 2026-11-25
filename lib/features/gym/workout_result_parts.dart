@@ -90,7 +90,7 @@ class FinishWorkoutSheet extends StatelessWidget {
               big('Mit offenen Sätzen speichern', prominent: true, completing: true),
               if (summary.doneSets > 0) big('Nur abgehakte speichern', prominent: false, completing: false),
             ] else if (summary.doneSets > 0)
-              big('Speichern', prominent: true, completing: false)
+              big('Sichern', prominent: true, completing: false)
             else
               const Text('Noch kein Satz erledigt – nichts zu speichern.', textAlign: TextAlign.center),
             TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Weiter trainieren')),
