@@ -142,7 +142,7 @@ class _TelemetryBar extends StatelessWidget {
                     spacing: 6,
                     children: [
                       Icon(Icons.bookmark_add_outlined, size: 18),
-                      Flexible(child: Text('Speichern', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      Flexible(child: Text('Sichern', maxLines: 1, overflow: TextOverflow.ellipsis)),
                     ],
                   ),
                 ),

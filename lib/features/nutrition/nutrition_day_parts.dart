@@ -335,7 +335,7 @@ class _WaterSection extends StatelessWidget {
     children: [
       ListTile(
         leading: const Icon(Icons.water_drop, color: AppPalette.cyan),
-        title: Text('Wasser ${GermanFormat.decimal(water.total / 1000)} / ${GermanFormat.decimal(target / 1000)} l'),
+        title: Text('Wasser ${GermanFormat.number(water.total / 1000)} / ${GermanFormat.decimal(target / 1000)} l'),
         subtitle: water.food >= 50 ? Text('davon ${GermanFormat.decimal(water.food / 1000)} l aus Essen') : null,
         trailing: GestureDetector(
           onLongPress: () async {

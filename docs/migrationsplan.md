@@ -481,3 +481,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Roast-Nacharbeit: kein Abschneiden bei großer Schrift (Prüfstand meldet abgeschnittene Texte; Tab-Leiste, Ringe, Kacheln, Erfassen), Knopfschrift im Theme, nichts unter 12 pt in ganz `lib/` | erledigt |
 | Roast-Nacharbeit: deutsche Begriffe (Morgenbericht, Verpflegung, Trainingsbereitschaft, Normalbereich, Erholung, Einheit/Aktivität), Health-Meldungen ohne interne Namen; reduzierter Datenschutzmodus ohne WHOOP-Zahl | erledigt |
 | Roast-Nacharbeit: Verlauf, Ernährung, Plan, Woche und Gesundheit laden bei neuen Trainingsdaten neu (vorher nur beim Garmin-Abruf) | erledigt |
+| Durchläufe Ernährung (`test/walkthrough/`): Tagebuch, Erfassen, Gewicht, Verpflegungsprodukte; behoben: BLS-Suche mit Schreibweisen, Früheres in „Erfassen“ suchbar, Wasser 0,25 l, einheitlich „Sichern“ | erledigt |

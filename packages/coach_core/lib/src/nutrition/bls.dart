@@ -71,14 +71,25 @@ abstract final class BLS {
         .where((word) => !Tokens.stopwords.contains(word))
         .toList();
     if (words.isEmpty || words.join().length < 2) return const [];
+    // Andere Schreibweise wie in `match` (Brokkoli → Broccoli, Nudeln → Teigwaren): das erste Wort der Alternative.
+    final alternatives = [for (final word in words) Tokens.aliases[word]?.first];
     final scored = <(int, int)>[];
     for (var index = 0; index < _table.entries.length; index++) {
       final entry = _table.entries[index];
-      final allFound = words.every(
-        (word) => entry.tokens.any((token) => token.startsWith(word)) || entry.joined.contains(word),
-      );
+      bool found(String word) => entry.tokens.any((token) => token.startsWith(word)) || entry.joined.contains(word);
+      var allFound = true;
+      for (final (position, word) in words.indexed) {
+        if (found(word)) continue;
+        if (alternatives[position] case final alternative? when found(alternative)) continue;
+        allFound = false;
+        break;
+      }
       if (!allFound) continue;
-      final head = entry.tokens.isNotEmpty && Tokens.stem(entry.tokens.first) == Tokens.stem(words.first);
+      final first = entry.tokens.isEmpty ? null : Tokens.stem(entry.tokens.first);
+      final head =
+          first != null &&
+          (first == Tokens.stem(words.first) ||
+              (alternatives.first != null && first == Tokens.stem(alternatives.first!)));
       final score = (head ? 0 : 100) + (_table.foods[index].isDish ? 20 : 0) + entry.tokens.length;
       scored.add((index, score));
     }

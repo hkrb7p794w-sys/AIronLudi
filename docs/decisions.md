@@ -1543,3 +1543,16 @@ planen; dazu Joggen von Start zu Ziel.
   des Abschlussbildschirms störte dessen Ablauf.
 - Ein gemeinsamer Zwischenspeicher für alle Bildschirme (Befund B-16) bleibt bewusst aus: Die Stände sind über das
   Änderungssignal gleich, und das mehrfache Lesen aus SQLite kostet nur Millisekunden.
+
+## 2026-11-25 – Durchläufe mit Demo-Daten (Ernährung)
+
+Neue Widget-Tests unter `test/walkthrough/` bedienen Funktionen mit Demo-Daten bis zum Ende (echte Schrift Inter,
+BLS geladen wie in `bootstrap.dart`). Gefunden und behoben in der Ernährung:
+
+- **Suche „Brokkoli“ fand nichts:** Der BLS schreibt „Broccoli“. Die Schreibweisen-Tabelle (`Tokens.aliases`) galt
+  nur für die KI-Zuordnung (`BLS.match`), jetzt auch für die Suchleiste (`BLS.search`).
+- **Früher Gegessenes war in „Erfassen“ nicht suchbar:** Durchsucht wurden nur gespeicherte eigene Lebensmittel; die
+  Vorschläge verschwanden beim Tippen. Jetzt zusätzlich alles aus den letzten 60 Tagen (ohne Doppelte), wie es die
+  Doku von `ProductSearchScreen.own` schon beschrieb.
+- **Wasser:** Nach einem Glas stand „0,3 l“ (Rundung auf eine Stelle), jetzt „0,25 l“.
+- **„Sichern“ statt gemischt „Speichern“/„Sichern“** auf Knöpfen (wie im deutschen iOS; vorher 12 : 7).

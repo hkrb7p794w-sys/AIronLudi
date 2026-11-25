@@ -111,4 +111,12 @@ void main() {
     expect(BLS.food('N410100')!.item().isDrink, isTrue);
     expect(BLS.food('C133000')!.item().isDrink, isFalse);
   });
+
+  // Suchleiste mit anderer Schreibweise (Tabelle `Tokens.aliases`, bisher nur für die KI-Zuordnung genutzt).
+  test('Suche findet Brokkoli und Nudeln trotz anderer Schreibweise im BLS', () {
+    expect(BLS.search('Brokkoli').first.name, 'Broccoli roh');
+    expect(BLS.search('Brokkoli gedünstet').map((food) => food.name), contains('Broccoli gedünstet'));
+    expect(BLS.search('Nudeln'), isNotEmpty);
+    expect(BLS.search('Broccoli').first.name, 'Broccoli roh');
+  });
 }
