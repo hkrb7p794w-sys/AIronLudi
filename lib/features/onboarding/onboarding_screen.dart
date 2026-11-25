@@ -216,16 +216,24 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   void _go(int direction) {
+    // Tage gewählt, aber noch kein Plan: „Weiter“ schlägt ihn vor, wie es der Fußtext verspricht (vorher war „Weiter“
+    // gesperrt, bis man zusätzlich „Wochenplan vorschlagen“ tippte).
+    if (direction > 0 && _step == OnboardingStep.schedule && _draft.schedule.isEmpty) _suggestSchedule();
     if (direction > 0) _commit(_step);
     final index = _step.index + direction;
     if (index < 0 || index >= OnboardingStep.values.length) return;
     setState(() => _step = OnboardingStep.values[index]);
   }
 
+  void _suggestSchedule() => _draft.schedule = SchedulePlanner.suggest(
+    profile: _draft,
+    availableDays: Weekday.values.where(_availableDays.contains).toList(),
+  );
+
   bool get _canContinue => switch (_step) {
     OnboardingStep.sports => _draft.sports.isNotEmpty,
     OnboardingStep.body => _bodyIsValid,
-    OnboardingStep.schedule => !_draft.schedule.isEmpty,
+    OnboardingStep.schedule => !_draft.schedule.isEmpty || (_availableDays.isNotEmpty && _draft.sports.isNotEmpty),
     _ => true,
   };
 
@@ -594,12 +602,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               leading: Icon(AppSymbols.of('wand.and.stars')),
               title: const Text('Wochenplan vorschlagen'),
               enabled: _availableDays.isNotEmpty && _draft.sports.isNotEmpty,
-              onTap: () => setState(
-                () => _draft.schedule = SchedulePlanner.suggest(
-                  profile: _draft,
-                  availableDays: Weekday.values.where(_availableDays.contains).toList(),
-                ),
-              ),
+              onTap: () => setState(_suggestSchedule),
             ),
           ],
         ),

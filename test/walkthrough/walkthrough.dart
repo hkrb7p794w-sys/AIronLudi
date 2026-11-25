@@ -75,6 +75,20 @@ Future<ProviderContainer> startDemo(
   return widget.container;
 }
 
+/// App wie beim ersten Start: ohne Daten, mit Einrichtung.
+Future<ProviderContainer> startFresh(WidgetTester tester, {WalkDevice device = WalkDevice.iphone}) async {
+  endless.clear();
+  tester.view.physicalSize = device.physicalSize;
+  tester.view.devicePixelRatio = device.ratio;
+  tester.platformDispatcher.textScaleFactorTestValue = device.textScale;
+  addTearDown(tester.view.reset);
+  addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+  final widget = (await tester.runAsync(() async => await app(onboarded: false) as UncontrolledProviderScope))!;
+  await tester.pumpWidget(widget);
+  await settle(tester);
+  return widget.container;
+}
+
 /// Datenbank und Zeitgeber arbeiten lassen, dann alle Frames.
 Future<void> settle(WidgetTester tester, {int milliseconds = 300}) async {
   await tester.runAsync(() => Future<void>.delayed(Duration(milliseconds: milliseconds)));

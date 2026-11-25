@@ -1579,3 +1579,13 @@ Ende, Datensicherung erstellen, Datenquellen, Benutzer, Konto ohne Worker. Gefun
 - **Datenschutz:** Die Sicherungsdatei zum Teilen (alle Daten des Benutzers) lag im gemeinsamen Temp-Ordner und blieb
   nach einem Benutzerwechsel liegen. Jetzt im Export-Ordner `sicherung-export`, den `clearSharedExports` beim Wechsel
   löscht (wie die KI- und Routen-Exporte seit B-23).
+
+## 2026-11-25 – Durchlauf Einrichtung und Heute
+
+Neuer Durchlauf `test/walkthrough/today_walkthrough_test.dart` (beide Geräte): Einrichtung vom ersten Start bis
+„Los geht’s“ wie eine neue Person, danach „Heute“ mit Demo-Daten (KI-Empfehlungen ohne Worker, Mobility, Verschieben,
+Heute anpassen, Woche). Gefunden und behoben:
+
+- **Einrichtung, Schritt Wochenplan:** Nach dem Antippen der freien Tage blieb „Weiter“ gesperrt, bis man zusätzlich
+  „Wochenplan vorschlagen“ tippte – obwohl der Fußtext „Die App verteilt passende Einheiten auf diese Tage“ verspricht.
+  Jetzt reicht die Tagesauswahl; „Weiter“ schlägt den Plan dann vor (der Knopf bleibt für einen neuen Vorschlag).
