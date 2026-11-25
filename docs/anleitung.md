@@ -56,7 +56,7 @@ Niemand sonst braucht ein Konto bei Cloudflare, GitHub oder einem KI-Anbieter. D
    notieren).
 4. *Optional:* Garmin unter *Ich › Training und Fitness › Garmin-Konto*, WHOOP darunter (siehe
    [`einrichtung.md`](einrichtung.md), Abschnitte 6 und 7).
-5. *Empfohlen:* *Ich › KI und Automatisierung › Datensicherung* › Ordner in iCloud Drive wählen.
+5. *Empfohlen:* *Ich › Allgemein › Datensicherung* › Ordner in iCloud Drive wählen.
 6. *Optional:* Widgets (Homescreen lange drücken › **+** › AIronLudi) und *Ich › Sperrbildschirm*
    (Live-Aktivitäten für Gym und Ernährung).
 
@@ -73,14 +73,14 @@ bleiben.
 Die neue App hat dieselbe Kennung und ersetzt die alte in SideStore. Sie liest die alte Datenbank aber **nicht**
 direkt – deine Daten ziehen über eine **Sicherungsdatei** um. Deshalb unbedingt in dieser Reihenfolge:
 
-1. **In der alten App sichern:** *Ich › KI und Automatisierung › Datensicherung* ›
+1. **In der alten App sichern:** *Ich › Allgemein › Datensicherung* ›
    **„Sicherung teilen oder in ‚Dateien‘ sichern“** › *In Dateien sichern* › z. B. *iCloud Drive* ›
    Datei `IronLudi-Sicherung-<Datum>.json` sichern. (Ist dort schon ein Ordner für die automatische Sicherung
    gewählt, liegt dort zusätzlich `IronLudi-Sicherung.json`.)
 2. **Neue App installieren:** SideStore › *My Apps* › bei AIronLudi **Update**, sobald die neue Version in der Quelle
    ist – bzw. während der Testphase die `AIronLudi.ipa` wie oben im Kasten beschrieben.
 3. **Sicherung einspielen:** Beim ersten Start auf dem ersten Bildschirm oben **„Sicherung einspielen“** › die Datei aus
-   Schritt 1 wählen. (Später geht das auch unter *Ich › KI und Automatisierung › Datensicherung ›
+   Schritt 1 wählen. (Später geht das auch unter *Ich › Allgemein › Datensicherung ›
    Sicherung einspielen*.) Übernommen werden Gym-Einheiten, Mahlzeiten, Lebensmittel und alle Einstellungen;
    Garmin-Werte holt die App beim nächsten Abruf neu.
 4. **Zugänge prüfen:** Die Sicherung enthält aus Sicherheitsgründen keine Schlüssel. Meist übernimmt die neue App
