@@ -39,6 +39,28 @@ Future<ProviderContainer> _start(WidgetTester tester, List<GarminActivity> activ
 }
 
 void main() {
+  // Ein Health- oder WHOOP-Import, eine gespeicherte Gym-Einheit oder ein nachgetragenes Training schreibt nur in die
+  // Datenbank, ohne Garmin-Abruf: Der geöffnete Reiter Verlauf zeigt es trotzdem sofort.
+  testWidgets('Verlauf lädt bei neuen Trainingsdaten ohne Garmin-Abruf neu', (tester) async {
+    final now = DateTime.now();
+    final container = await _start(tester, [_run(1, now.subtract(const Duration(days: 2)))]);
+    await tester.tap(find.descendant(of: find.byType(LiquidTabBar), matching: find.text('Verlauf')));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await tester.pumpAndSettle();
+    expect(find.text('Morgenlauf'), findsOneWidget);
+    expect(find.text('Neuer Lauf'), findsNothing);
+
+    await tester.runAsync(
+      () => container
+          .read(activityRepositoryProvider)
+          .upsert(_run(2, now.subtract(const Duration(hours: 1)), name: 'Neuer Lauf')),
+    );
+    await tester.pump(const Duration(seconds: 1));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await tester.pumpAndSettle();
+    expect(find.text('Neuer Lauf'), findsOneWidget);
+  });
+
   testWidgets('Reiter Aktivitäten: Meine mit Filter, Detailseite', (tester) async {
     final now = DateTime.now();
     await _start(tester, [

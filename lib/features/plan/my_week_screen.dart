@@ -4,6 +4,8 @@ import 'package:coach_core/coach_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/training_data_reload.dart';
+
 import '../../data/settings/coach_settings.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
@@ -31,7 +33,11 @@ class MyWeekScreen extends ConsumerStatefulWidget {
   ConsumerState<MyWeekScreen> createState() => _MyWeekScreenState();
 }
 
-class _MyWeekScreenState extends ConsumerState<MyWeekScreen> {
+class _MyWeekScreenState extends ConsumerState<MyWeekScreen> with TrainingDataReload<MyWeekScreen> {
+  /// Neue Aktivität, Tageswerte oder Gym-Einheit in der Datenbank (gleich aus welcher Quelle): neu laden.
+  @override
+  Future<void> reloadTrainingData() => _reload();
+
   List<GarminActivity> _activities = const [];
   List<CalendarDay> _gymDays = const [];
 

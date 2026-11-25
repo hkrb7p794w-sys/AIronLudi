@@ -4,6 +4,8 @@ import 'package:coach_core/coach_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/training_data_reload.dart';
+
 import '../../data/storage.dart';
 import '../../services/garmin/garmin_workout_service.dart';
 import '../../services/providers.dart';
@@ -45,7 +47,11 @@ class PlanScreen extends ConsumerStatefulWidget {
   ConsumerState<PlanScreen> createState() => _PlanScreenState();
 }
 
-class _PlanScreenState extends ConsumerState<PlanScreen> {
+class _PlanScreenState extends ConsumerState<PlanScreen> with TrainingDataReload<PlanScreen> {
+  /// Neue Aktivität, Tageswerte oder Gym-Einheit in der Datenbank (gleich aus welcher Quelle): neu laden.
+  @override
+  Future<void> reloadTrainingData() => _reload();
+
   late final PlanController _controller = PlanController(schedule: ref.read(seasonScheduleProvider))
     ..addListener(_changed);
 

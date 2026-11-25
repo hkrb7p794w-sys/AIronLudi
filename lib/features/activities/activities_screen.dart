@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/deep_links.dart';
+import '../../app/training_data_reload.dart';
 import '../../data/repositories/gym_repository.dart';
 import '../../data/settings/coach_settings.dart';
 import '../../data/storage.dart';
@@ -52,7 +53,12 @@ class ActivitiesScreen extends ConsumerStatefulWidget {
   ConsumerState<ActivitiesScreen> createState() => _ActivitiesScreenState();
 }
 
-class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> with PendingRouteHandler<ActivitiesScreen> {
+class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen>
+    with PendingRouteHandler<ActivitiesScreen>, TrainingDataReload<ActivitiesScreen> {
+  /// Neue Aktivität, Tageswerte oder Gym-Einheit in der Datenbank (gleich aus welcher Quelle): neu laden.
+  @override
+  Future<void> reloadTrainingData() => _reload();
+
   @override
   Set<AppRoute> get handledRoutes => const {AppRoute.health};
 

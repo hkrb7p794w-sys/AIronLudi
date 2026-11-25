@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../app/day_change.dart';
 import '../../app/deep_links.dart';
+import '../../app/training_data_reload.dart';
 import '../../data/repositories/meal_repository.dart';
 import '../../data/storage.dart';
 import '../../services/providers.dart';
@@ -49,7 +50,12 @@ class NutritionScreen extends ConsumerStatefulWidget {
   ConsumerState<NutritionScreen> createState() => _NutritionScreenState();
 }
 
-class _NutritionScreenState extends ConsumerState<NutritionScreen> with PendingRouteHandler<NutritionScreen> {
+class _NutritionScreenState extends ConsumerState<NutritionScreen>
+    with PendingRouteHandler<NutritionScreen>, TrainingDataReload<NutritionScreen> {
+  /// Neue Aktivität, Tageswerte oder Gym-Einheit in der Datenbank (gleich aus welcher Quelle): neu laden.
+  @override
+  Future<void> reloadTrainingData() => _reload();
+
   @override
   Set<AppRoute> get handledRoutes => const {AppRoute.logMeal};
 
