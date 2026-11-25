@@ -147,8 +147,15 @@ abstract final class AppTheme {
     final pressGlow = WidgetStateProperty.resolveWith<Color?>(
       (states) => states.contains(WidgetState.pressed) ? Colors.white.withValues(alpha: dark ? 0.12 : 0.22) : null,
     );
-    const buttonText = TextStyle(fontSize: 17, fontWeight: FontWeight.w600, letterSpacing: -0.4);
-    const plainButtonText = TextStyle(fontSize: 17, fontWeight: FontWeight.w400, letterSpacing: -0.4);
+    // Schriftfamilie aus dem Theme: ohne sie fällt der Knopftext auf die Standardschrift der Engine zurück.
+    final buttonText = TextStyle(
+      fontFamily: text.labelLarge?.fontFamily,
+      fontFamilyFallback: text.labelLarge?.fontFamilyFallback,
+      fontSize: 17,
+      fontWeight: FontWeight.w600,
+      letterSpacing: -0.4,
+    );
+    final plainButtonText = buttonText.copyWith(fontWeight: FontWeight.w400);
     return base.copyWith(
       extensions: [liquid],
       // Seiten sind durchsichtig: den Hintergrund mit Lichtflecken malt der Seitenübergang (LiquidBackground).

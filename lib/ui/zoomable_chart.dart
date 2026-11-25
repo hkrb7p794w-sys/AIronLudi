@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'chart_axes.dart';
+import 'tokens.dart';
 
 /// Verlauf mit Zeitraum-Knöpfen, Zoom mit zwei Fingern und seitlichem Verschieben (Port von `ZoomableTrendChart`).
 class ZoomableTrendChart extends StatefulWidget {
@@ -119,9 +120,8 @@ class _ZoomableTrendChartState extends State<ZoomableTrendChart> {
               interval: math.max(1, _days / 4),
               getTitlesWidget: (value, meta) => SideTitleWidget(
                 meta: meta,
-                child: Text(
+                child: AxisLabel(
                   DateFormat('d.M.', 'de_DE').format(DateTime.fromMillisecondsSinceEpoch((value * _dayMs).round())),
-                  style: const TextStyle(fontSize: 10),
                 ),
               ),
             ),
@@ -177,7 +177,7 @@ class _ZoomableTrendChartState extends State<ZoomableTrendChart> {
         ),
         Text(
           'Mit zwei Fingern zoomen, seitlich wischen zum Verschieben.',
-          style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          style: AppText.caption(context).copyWith(color: AppColors.muted(context)),
         ),
       ],
     );

@@ -312,7 +312,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> with PendingR
                     ListTile(
                       leading: const Icon(Icons.local_drink_outlined),
                       title: const Text('Verpflegung'),
-                      subtitle: const Text('Fuel Planner: vor, während und nach dem Training'),
+                      subtitle: const Text('Vor, während und nach dem Training'),
                       trailing: const DisclosureChevron(),
                       onTap: () => _push((_) => const FuelPlannerScreen()),
                     ),

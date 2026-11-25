@@ -172,11 +172,15 @@ class KpiRing extends StatelessWidget {
                     ),
                   ),
                 ),
-                Text(
-                  kpi.caption,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                // Große Schrift: etwas kleiner statt abgeschnitten oder mitten im Wort umbrochen.
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    kpi.caption,
+                    maxLines: 1,
+                    softWrap: false,
+                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  ),
                 ),
               ],
             ),

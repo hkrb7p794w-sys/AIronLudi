@@ -113,7 +113,7 @@ abstract final class TodayKpis {
     final ruled = _levelStatus(level);
     final (score, caption) = switch ((metrics?.trainingReadiness, metrics?.bodyBatteryAtWake)) {
       // Unter dem Ring die Herkunft, nicht die Empfehlung – die steht schon in „Jetzt dran“.
-      (final readiness?, _) => (readiness, 'Erholungswert'),
+      (final readiness?, _) => (readiness, 'Messwert'),
       (_, final battery?) => (battery, 'Body Battery'),
       _ => (null, level == null ? 'keine Daten' : 'Tagesampel'),
     };

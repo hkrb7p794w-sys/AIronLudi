@@ -332,11 +332,13 @@ class _CategoryChip extends StatelessWidget {
         spacing: 4,
         children: [
           Flexible(
-            child: Text(
-              category.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppText.callout(context).copyWith(fontWeight: FontWeight.w600),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                category.label,
+                maxLines: 1,
+                style: AppText.callout(context).copyWith(fontWeight: FontWeight.w600),
+              ),
             ),
           ),
           const Icon(Icons.expand_more, size: 18),
@@ -493,7 +495,7 @@ class _FoodRow extends StatelessWidget {
                   Text(
                     foodLine(product.per100g, grams) +
                         (serving != null && product.servingGrams == grams ? ' ($serving)' : ''),
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: AppText.footnote(context).copyWith(color: theme.colorScheme.onSurfaceVariant),
                   ),
@@ -583,7 +585,7 @@ class _BottomBar extends StatelessWidget {
                       controller: query,
                       textInputAction: TextInputAction.search,
                       decoration: InputDecoration(
-                        hintText: 'Suchen …',
+                        hintText: 'Suchen',
                         prefixIcon: const Icon(Icons.search),
                         suffixIcon: ListenableBuilder(
                           listenable: query,
@@ -610,7 +612,10 @@ class _BottomBar extends StatelessWidget {
                     ),
                   ),
                   FilledButton(
-                    style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 48),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                    ),
                     onPressed: onLog,
                     child: Text(basket.isEmpty ? 'Eintragen' : 'Eintragen (${basket.length})'),
                   ),

@@ -117,7 +117,8 @@ Flutter-Version: 3.47.9 (in allen Workflows festgelegt). Zeilenenden: LF (`.gita
 Tests müssen auch unter Windows laufen (Pfade mit `package:path`, Temp-Ordner über `Directory.systemTemp`).
 Widget-Tests starten die App über `app(onboarded: …, overrides: …)` aus `test/app_test.dart`.
 
-Screenshot-Prüfstand (nicht im normalen Testlauf; Bilder und Übersicht in `docs/roast/`):
+Screenshot-Prüfstand (nicht im normalen Testlauf; Bilder und Übersicht in `docs/roast/`; meldet Überläufe in
+`screenshots/layoutfehler.md` und abgeschnittene Texte in `screenshots/abgeschnitten.md`):
 
 ```sh
 flutter test --tags screenshots --dart-define=SCREENSHOTS=true --update-goldens test/screenshots

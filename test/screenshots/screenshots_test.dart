@@ -37,6 +37,7 @@ import 'package:aironludi/ui/liquid.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -166,6 +167,22 @@ void _collect(WidgetTester tester) {
   if (error == null) return;
   final text = error.toString().split('\n').where((line) => line.trim().isNotEmpty).take(2).join(' ');
   layoutErrors.putIfAbsent(_current, () => {}).add(text);
+}
+
+/// Abgeschnittene Texte (Auslassungspunkte, `maxLines` überschritten) je Bild – sichtbare Texte innerhalb des Bildschirms.
+final truncated = <String, Set<String>>{};
+
+void _collectTruncated(WidgetTester tester) {
+  final screen = Offset.zero & tester.view.physicalSize / tester.view.devicePixelRatio;
+  for (final element in find.byType(RichText).evaluate()) {
+    final paragraph = element.renderObject;
+    if (paragraph is! RenderParagraph || !paragraph.attached || !paragraph.hasSize) continue;
+    if (!paragraph.didExceedMaxLines) continue;
+    final rect = paragraph.localToGlobal(Offset.zero) & paragraph.size;
+    if (!rect.overlaps(screen)) continue;
+    final text = paragraph.text.toPlainText().replaceAll('\n', ' ').trim();
+    if (text.isNotEmpty) truncated.putIfAbsent(_current, () => {}).add(text);
+  }
 }
 
 Future<void> settle(WidgetTester tester, {int frames = 12}) async {
@@ -321,6 +338,16 @@ void main() {
           '- `${entry.key}`: ${entry.value.join('; ')}',
       ];
       File('docs/roast/screenshots/layoutfehler.md').writeAsStringSync('${lines.join('\n')}\n');
+      final cut = [
+        '# Abgeschnittene Texte im Prüfstand',
+        '',
+        'Vom Prüfstand erzeugt (`test/screenshots`): sichtbare Texte, die mit Auslassungspunkten oder nach `maxLines` '
+            'enden. Bei langen Namen in Listen gewollt; bei Beschriftungen, Werten und Knöpfen ein Fehler.',
+        '',
+        for (final entry in (truncated.entries.toList()..sort((a, b) => a.key.compareTo(b.key))))
+          '- `${entry.key}`: ${entry.value.map((text) => '„$text“').join(', ')}',
+      ];
+      File('docs/roast/screenshots/abgeschnitten.md').writeAsStringSync('${cut.join('\n')}\n');
     }
     if (failures.isNotEmpty) {
       // ignore: avoid_print
@@ -350,6 +377,7 @@ void main() {
               await settle(tester, frames: 20);
               await shot.open(tester);
               await settle(tester);
+              _collectTruncated(tester);
               await expectLater(find.byKey(_shot), matchesGoldenFile(_path(device, look, '${shot.name}$suffix')));
             } on Object catch (error) {
               failures.add('${device.name}/${look.name}/${shot.name}$suffix: $error');
@@ -375,6 +403,7 @@ void main() {
           final (widget, _) = (await tester.runAsync(() => demoApp(onboarded: false)))!;
           await tester.pumpWidget(widget);
           await settle(tester, frames: 20);
+          _collectTruncated(tester);
           await expectLater(find.byKey(_shot), matchesGoldenFile(_path(device, look, '00-einrichtung')));
         } finally {
           debugDefaultTargetPlatformOverride = null;
