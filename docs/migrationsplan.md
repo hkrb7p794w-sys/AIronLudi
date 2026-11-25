@@ -477,3 +477,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Roast Stufe 4 / PR 24: Prüfstand nach Stufe 1–4 neu gerendert (239 Bilder, fünf Reiter, keine Layoutfehler) | erledigt |
 | Roast Stufe 2 / PR 10b: letzte Rohwerte abgebaut (`AppPalette` für Kategorie-, Karten- und Diagrammfarben; Kennzahlen über `LiquidText.kpi`); Designsystem-Test ohne Bestandsliste | erledigt |
 | Roast Stufe 4 / PR 22 (Teil 2): letzte acht Dateien über 800 Zeilen geteilt (Klassen in `part`-Dateien; Abschnitte der Ernährungsseite und reine Abfragen des Gym-Controllers als Erweiterungen, Verhalten unverändert); keine Datei in `lib/features` mehr über 800 Zeilen | erledigt |
+| Roast Glossar: Ring und Texte auf „Heute“ sagen „Belastung“ statt „Strain“ (Ring, Dashboard-Editor, Aktivitätszeile, Belastungskarte, Datenquellen, Garmin-Diagnose); „WHOOP-Strain“ bleibt als Name des WHOOP-Werts | erledigt |

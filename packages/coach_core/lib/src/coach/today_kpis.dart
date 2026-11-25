@@ -170,7 +170,7 @@ abstract final class TodayKpis {
       StrainLevel.veryHigh => KpiStatus.critical,
     };
     return Kpi(
-      title: 'Strain',
+      title: 'Belastung',
       value: _decimal(done),
       fraction: done / strainMaximum,
       secondaryFraction: total > done ? total / strainMaximum : null,
@@ -186,7 +186,7 @@ abstract final class TodayKpis {
 
 /// Bereiche der Seite „Heute“ zum Ein- und Ausblenden (Schlüssel `coach.todayDashboard`).
 enum TodayModule implements RawEnum {
-  kpis('kpis', 'Schlaf, Erholung, Strain'),
+  kpis('kpis', 'Schlaf, Erholung, Belastung'),
   training('training', 'Training heute'),
   nutrition('nutrition', 'Ernährung heute'),
   ai('ai', 'KI-Empfehlungen'),

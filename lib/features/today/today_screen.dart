@@ -624,7 +624,7 @@ class _DoneTodaySection extends StatelessWidget {
             // Strain der Einheit auf derselben Skala wie oben (0–21).
             extra: switch (entry.activity) {
               final activity? =>
-                'Strain ${GermanFormat.decimal(TodayKpis.strainOf(TrainingLoad.actual(activity, thresholds)))}',
+                'Belastung ${GermanFormat.decimal(TodayKpis.strainOf(TrainingLoad.actual(activity, thresholds)))}',
               null => null,
             },
             onTap: () {

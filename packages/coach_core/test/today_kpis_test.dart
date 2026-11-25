@@ -1,4 +1,4 @@
-// Heute: Kennzahlen-Ringe (Schlaf, Erholung, Strain 0–21), ausblendbare Bereiche und feinere Sportarten.
+// Heute: Kennzahlen-Ringe (Schlaf, Erholung, Belastung 0–21), ausblendbare Bereiche und feinere Sportarten.
 import 'package:coach_core/coach_core.dart';
 import 'package:test/test.dart';
 

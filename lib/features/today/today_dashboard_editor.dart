@@ -10,8 +10,8 @@ class TodayDashboardEditor extends ConsumerWidget {
   const TodayDashboardEditor({super.key});
 
   static String? _detail(TodayModule module) => switch (module) {
-    TodayModule.kpis => 'Drei Ringe mit Ampelfarben; Strain auf einer Skala von 0 bis 21.',
-    TodayModule.training => 'Jetzt dran, Geplantes und heute Erledigtes mit Dauer, Puls und Strain.',
+    TodayModule.kpis => 'Drei Ringe mit Ampelfarben; Belastung auf einer Skala von 0 bis 21.',
+    TodayModule.training => 'Jetzt dran, Geplantes und heute Erledigtes mit Dauer, Puls und Belastung.',
     TodayModule.ai => 'Empfehlungen aus Regeln und KI. Export und Import für externe KI bleiben in den Einstellungen.',
     TodayModule.suggestions => 'Plan an Tagesform und Wochenbelastung anpassen.',
     TodayModule.strainDetails => 'Balken mit Erledigtem, Geplantem und dem üblichen Tag.',
@@ -28,7 +28,7 @@ class TodayDashboardEditor extends ConsumerWidget {
         children: [
           FormSection(
             header: 'Bereiche',
-            footer: 'Reihenfolge fest: oben Schlaf, Erholung und Strain, darunter das Training des Tages.',
+            footer: 'Reihenfolge fest: oben Schlaf, Erholung und Belastung, darunter das Training des Tages.',
             children: [
               for (final module in TodayModule.values)
                 SwitchListTile.adaptive(
