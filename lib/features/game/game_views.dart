@@ -290,7 +290,10 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   @override
   void initState() {
     super.initState();
-    unawaited(ref.read(gameServiceProvider).refresh());
+    // Nach dem ersten Frame (siehe FriendsScreen): `refresh` meldet sofort „lädt“.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(ref.read(gameServiceProvider).refresh());
+    });
   }
 
   Widget _tile(String value, String label, IconData icon, Color color) => Expanded(
