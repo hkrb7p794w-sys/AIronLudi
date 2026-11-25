@@ -1568,3 +1568,14 @@ nächste Woche; Gym mit Übungsverlauf, Auswertung, Trainingsplan anlegen und st
   jetzt um. Zahl und Einheit bleiben zusammen („9 g P“ nicht mehr auf zwei Zeilen).
 - **„Abbrechen“ brach mitten im Wort um** („Abbrec|hen“) in 20 Leisten: neuer Baustein `BarTextButton`
   (`lib/ui/components.dart`), der sich leicht verkleinert.
+
+## 2026-11-25 – Durchlauf „Ich“: Datensicherung findbar und je Benutzer
+
+Neuer Durchlauf `test/walkthrough/me_walkthrough_test.dart` (beide Geräte): alle neun Bereiche unter „Ich“ bis zum
+Ende, Datensicherung erstellen, Datenquellen, Benutzer, Konto ohne Worker. Gefunden und behoben:
+
+- **Datensicherung war unter „KI und Automatisierung“ versteckt.** Jetzt unter *Ich › Allgemein › Daten* (wie
+  iOS: Allgemein › Übertragen); Export und Import für die KI bleiben bei der KI. Anleitung angepasst.
+- **Datenschutz:** Die Sicherungsdatei zum Teilen (alle Daten des Benutzers) lag im gemeinsamen Temp-Ordner und blieb
+  nach einem Benutzerwechsel liegen. Jetzt im Export-Ordner `sicherung-export`, den `clearSharedExports` beim Wechsel
+  löscht (wie die KI- und Routen-Exporte seit B-23).
