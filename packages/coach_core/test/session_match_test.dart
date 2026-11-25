@@ -100,6 +100,10 @@ void main() {
       // Im Urlaub gilt nichts als verpasst.
       expect(MissedSessions.open(week, handled: {}, pause: TrainingBreak(monday, monday.adding(1))), isEmpty);
       expect(MissedSessions.open(week, handled: {}, pause: TrainingBreak(monday, monday)).length, 1);
+      // Wochenplan erst seit Dienstag (Einrichtung oder Änderung): Montag gilt nicht als verpasst.
+      expect(MissedSessions.open(week, handled: {}, since: monday.adding(1)).map((result) => result.planned.day), [
+        monday.adding(1),
+      ]);
       // Intervalllauf vom Montag nachholen: nicht Fr (vor dem langen Lauf am Sa), sondern Do.
       final session = week.results.first.planned;
       final profile = UserProfile.personalDraft(SeasonConfig());

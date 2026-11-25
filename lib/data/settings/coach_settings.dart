@@ -57,6 +57,11 @@ final class CoachSettings extends ChangeNotifier {
       <CookPartner>[],
     );
     _handledMissed = _store.read(SettingsKeys.handledMissed, _strings, <String>[]);
+    _scheduleSince = _store.read(
+      SettingsKeys.scheduleSince,
+      (json) => json is String ? CalendarDay.tryParse(json) : null,
+      null,
+    );
     _efforts = _store.read(SettingsKeys.efforts, _ints, const <String, int>{});
     _closedReviews = _store.read(SettingsKeys.closedReviews, _strings, <String>[]);
     _dismissedSuggestions = _store.read(SettingsKeys.dismissedSuggestions, _strings, <String>[]);
@@ -170,6 +175,9 @@ final class CoachSettings extends ChangeNotifier {
     // Ort und Stelle geändert, deshalb zählt der zuletzt gespeicherte Wochenplan.
     if (value.schedule != _savedSchedule) {
       _savedSchedule = value.schedule;
+      // Ab heute gilt der neue Plan: Tage davor (z. B. Montag bei Einrichtung am Mittwoch) zählen nicht als verpasst.
+      _scheduleSince = _today;
+      _persist(SettingsKeys.scheduleSince, _today.iso);
       if (_planAdjustments.dropFrom(_today)) _persist(SettingsKeys.adjustments, _planAdjustments.toJson());
     }
     _changed(SettingsKeys.profile, value.toJson());
@@ -419,6 +427,11 @@ final class CoachSettings extends ChangeNotifier {
     _cookPartners = v;
     _changed(SettingsKeys.cookPartners, [for (final e in v) e.toJson()]);
   }
+
+  CalendarDay? _scheduleSince;
+
+  /// Seit wann der dauerhafte Wochenplan gilt (`null`: unbekannt, z. B. vor diesem Feld eingerichtet).
+  CalendarDay? get scheduleSince => _scheduleSince;
 
   late List<String> _handledMissed;
 

@@ -3,9 +3,14 @@
 // Ersetzt nicht das eigene Gerät (Garmin, WHOOP, SideStore), aber alles, was das Betriebssystem allein prüfen kann.
 import 'dart:io';
 
+import 'package:aironludi/features/gym/active_workout_screen.dart';
+import 'package:aironludi/features/gym/gym_providers.dart';
 import 'package:aironludi/features/today/today_screen.dart';
 import 'package:aironludi/main.dart' as app;
+import 'package:coach_core/coach_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -57,6 +62,9 @@ void main() {
     }
     await waitFor(tester, find.byType(TodayScreen));
     await shot(binding, tester, '01-heute');
+    // Am ersten Tag ist nichts „verpasst“ (der Wochenplan gilt erst ab heute).
+    await idle(tester, const Duration(seconds: 2));
+    expect(find.text('VERPASST'), findsNothing);
 
     step('Alle Reiter');
     for (final (index, label) in ['Plan', 'Verlauf', 'Ernährung', 'Ich'].indexed) {
@@ -87,5 +95,27 @@ void main() {
     await tab(tester, 'Verlauf');
     await waitFor(tester, find.textContaining('Langer Lauf'), timeout: const Duration(seconds: 20));
     await shot(binding, tester, '22-demo-verlauf');
+
+    step('Native Brücken antworten (keine fehlende Gegenseite)');
+    Future<Object?> call(String channel, String method) => MethodChannel(channel).invokeMethod<Object?>(method);
+    expect(await call('aironludi/alarm', 'state'), isA<String>());
+    expect(await call('aironludi/activities', 'takePendingActions'), anyOf(isNull, isA<List<Object?>>()));
+    await call('aironludi/widgets', 'reload');
+
+    step('Gym: Live-Einheit mit erledigtem Satz (Live-Aktivität bzw. Benachrichtigung)');
+    await tab(tester, 'Plan');
+    await tapText(tester, 'Einheit starten');
+    await tapText(tester, 'Freies Training');
+    final container = ProviderScope.containerOf(tester.element(find.byType(ActiveWorkoutScreen)));
+    final gym = container.read(gymControllerProvider);
+    gym.addExercise(ExerciseLibrary.byID['bankdruecken']!);
+    await idle(tester);
+    await tester.tap(await waitFor(tester, find.text('Satz erledigt')));
+    await idle(tester, const Duration(seconds: 2));
+    expect(gym.active?.doneSetCount, 1);
+    await shot(binding, tester, '30-gym-live');
+    gym.cancelActive();
+    await idle(tester, const Duration(seconds: 1));
+    expect(tester.takeException(), isNull);
   });
 }

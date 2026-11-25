@@ -355,13 +355,21 @@ abstract final class MissedSessions {
 
   /// Verpasste, noch nicht entschiedene Einheiten der Woche bis gestern (neueste zuerst). Tage einer Pause
   /// ([TrainingBreak]) zählen nicht als verpasst.
-  static List<SessionResult> open(SessionWeek week, {required Set<String> handled, TrainingBreak? pause}) {
+  /// [since]: Tag, seit dem der Wochenplan gilt – davor geplante Einheiten zählen nicht (Einrichtung am Mittwoch:
+  /// Montag ist nicht „verpasst“).
+  static List<SessionResult> open(
+    SessionWeek week, {
+    required Set<String> handled,
+    TrainingBreak? pause,
+    CalendarDay? since,
+  }) {
     final result = week.results
         .where(
           (result) =>
               result.status == SessionStatus.missed &&
               !handled.contains(result.id) &&
-              !(pause?.contains(result.planned.day) ?? false),
+              !(pause?.contains(result.planned.day) ?? false) &&
+              (since == null || result.planned.day >= since),
         )
         .toList();
     mergeSort(result, compare: (a, b) => b.planned.day.compareTo(a.planned.day));

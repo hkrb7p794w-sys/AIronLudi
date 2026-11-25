@@ -47,6 +47,9 @@ void main() {
     }
     expect(container.read(coachSettingsProvider).profile.onboardingDone, isTrue);
     expect(find.byType(TodayScreen), findsOneWidget);
+    // Am ersten Tag ist nichts „verpasst“ (der Wochenplan gilt erst ab heute).
+    expect(find.text('VERPASST'), findsNothing);
+    expect(container.read(coachSettingsProvider).scheduleSince, isNotNull);
   });
 
   walk('Heute: KI-Empfehlungen ohne Worker, Mobility, Verschieben, anpassen', (tester, device) async {
