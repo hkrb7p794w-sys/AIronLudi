@@ -39,9 +39,19 @@ import 'speech/dictation.dart';
 import 'update/app_update_service.dart';
 import 'whoop/whoop_service.dart';
 
+/// Transporte zu Garmin (Konto-Anmeldung und Connect-API): `null` = echte Verbindung. Tests setzen hier einen
+/// nachgebauten Garmin-Server ein, ebenso [garminPauseProvider] (keine Wartezeiten zwischen den Anmeldeschritten).
+final garminTransportProvider = Provider<HttpTransportFactory?>((ref) => null);
+final garminPauseProvider = Provider<Future<void> Function()?>((ref) => null);
+
 /// Garmin-Konto (inoffizieller Zugang).
 final garminConnectProvider = Provider<GarminConnectSession>(
-  (ref) => GarminConnectSession(secrets: ref.watch(secretsProvider), settings: ref.watch(settingsStoreProvider)),
+  (ref) => GarminConnectSession(
+    secrets: ref.watch(secretsProvider),
+    settings: ref.watch(settingsStoreProvider),
+    makeTransport: ref.watch(garminTransportProvider) ?? DioTransport.create,
+    pause: ref.watch(garminPauseProvider),
+  ),
 );
 
 /// Garmin Personal API mit dem Konto als erstem Weg.
@@ -201,10 +211,14 @@ final appModelProvider = ChangeNotifierProvider<AppModel>((ref) {
   );
 });
 
+/// Transport zur WHOOP-API: `null` = echte Verbindung; Tests setzen eine nachgebaute API ein.
+final whoopTransportProvider = Provider<HttpTransport?>((ref) => null);
+
 /// WHOOP über die offizielle API; den Token-Tausch macht der Worker.
 final whoopServiceProvider = ChangeNotifierProvider<WhoopService>(
   (ref) => WhoopService(
     ai: ref.watch(aiClientProvider),
+    transport: ref.watch(whoopTransportProvider),
     secrets: ref.watch(secretsProvider),
     settings: ref.watch(settingsStoreProvider),
     activities: ActivityRepository(ref.watch(databaseProvider)),

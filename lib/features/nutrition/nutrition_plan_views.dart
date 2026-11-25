@@ -7,11 +7,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/repositories/meal_repository.dart';
+import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/chart_axes.dart';
 import '../../ui/components.dart';
 import '../../ui/tokens.dart';
 import 'nutrition_controller.dart';
+import 'nutrition_screen.dart' show mealSummary;
 
 /// „Was esse ich jetzt?“: drei Ideen zu den übrigen Makros, auf Wunsch mit dem Vorrat aus der Einkaufsliste
 /// (Port von `MealNowSheet`). Gibt das übernommene Rezept zurück.
@@ -137,26 +140,80 @@ class OwnRecipesScreen extends ConsumerWidget {
 
   final void Function(OwnRecipe recipe, double? grams) log;
 
+  /// Mahlzeit der letzten 60 Tage wählen (je Titel die neueste) und als eigenes Rezept sichern.
+  Future<void> _fromMeal(BuildContext context, WidgetRef ref) async {
+    final today = CalendarDay.today();
+    final meals = await ref.read(mealRepositoryProvider).range(from: today.adding(-60), to: today);
+    final seen = <String>{};
+    final entries = [
+      for (final entry in MealRepository.entries(meals)..sort((a, b) => b.date.compareTo(a.date)))
+        if (entry.items.isNotEmpty && seen.add(FoodSearch.normalized(entry.title))) entry,
+    ];
+    if (!context.mounted) return;
+    final chosen = await showModalBottomSheet<MealEntry>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheet) => SafeArea(
+        child: entries.isEmpty
+            ? const Padding(
+                padding: EdgeInsets.all(24),
+                child: Text('Noch keine Mahlzeiten eingetragen. Erst eine Mahlzeit erfassen, dann daraus ein Rezept.'),
+              )
+            : ListView(
+                shrinkWrap: true,
+                children: [
+                  for (final entry in entries.take(40))
+                    ListTile(
+                      title: Text(entry.title),
+                      subtitle: Text(mealSummary(entry.items)),
+                      onTap: () => Navigator.of(sheet).pop(entry),
+                    ),
+                ],
+              ),
+      ),
+    );
+    if (chosen == null) return;
+    final settings = ref.read(coachSettingsProvider);
+    settings.ownRecipes = [...settings.ownRecipes, OwnRecipe.fromMeal(chosen.title, chosen.items)];
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(coachSettingsProvider);
     final recipes = settings.ownRecipes;
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Eigene Rezepte')),
+      appBar: AppBar(
+        title: const Text('Eigene Rezepte'),
+        actions: [
+          IconButton(
+            tooltip: 'Aus einer Mahlzeit anlegen',
+            icon: const Icon(Icons.add),
+            onPressed: () => unawaited(_fromMeal(context, ref)),
+          ),
+        ],
+      ),
       body: recipes.isEmpty
-          ? const Center(
+          ? Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
+                padding: const EdgeInsets.all(24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.restaurant, size: 48),
-                    SizedBox(height: 12),
-                    Text('Noch keine eigenen Rezepte', style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text(
-                      'Eine Mahlzeit gedrückt halten › „Als eigenes Rezept speichern“.',
+                    const Icon(Icons.restaurant, size: 48),
+                    const SizedBox(height: 12),
+                    const Text('Noch keine eigenen Rezepte', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Eine eingetragene Mahlzeit wird zum Rezept – mit Portionen und gekochtem Gewicht für Meal-Prep.',
                       textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    // Leerer Zustand mit Knopf (UI-Regeln); vorher nur der Hinweis aufs Gedrückthalten im Tagebuch.
+                    FilledButton.icon(
+                      icon: const Icon(Icons.add),
+                      label: const Text('Aus einer Mahlzeit anlegen'),
+                      onPressed: () => unawaited(_fromMeal(context, ref)),
                     ),
                   ],
                 ),

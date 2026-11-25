@@ -1646,3 +1646,17 @@ Wochenplan ändert, also auch bei der Einrichtung); `MissedSessions.open(since:)
 Benutzer ohne den Wert behalten das bisherige Verhalten.
 - Demo-Daten: Bankdrücken steigt jetzt in ganzen 2,5-kg-Schritten (vorher krumme Werte wie „73,93 kg“ als Vorschlag
   in der Live-Einheit, im Gerätetest aufgefallen). Prüfstand neu gerendert.
+
+## 2026-11-25 – Durchläufe Rezepte, Garmin und WHOOP
+
+- **Rezepte** (`recipes_walkthrough_test.dart`): eigenes Rezept anlegen, gewogen eintragen, bearbeiten, löschen;
+  Rezeptideen mit Kochplan und Vorrat. Behoben: „Eigene Rezepte“ hatte im leeren Zustand nur einen Text-Hinweis aufs
+  Gedrückthalten im Tagebuch (UI-Regel: ein Satz + ein Knopf). Jetzt „Aus einer Mahlzeit anlegen“ (auch oben als „+“):
+  zeigt die Mahlzeiten der letzten 60 Tage zur Auswahl.
+- **Garmin** (`sources_sync_walkthrough_test.dart`, nachgebauter Server `fake_garmin.dart`): Konto anmelden mit
+  Bestätigungscode, „Jetzt abrufen“, Lauf und Ruhepuls kommen an, Lauf im Verlauf, abmelden. Testnähte
+  `garminTransportProvider`, `garminPauseProvider` (Standard: echte Verbindung, zufällige Pausen).
+- **WHOOP** (nachgebaute API `fake_whoop.dart`, Worker-Endpunkte im `fake_worker.dart`): verbinden, Browser öffnet die
+  Freigabe, Rücksprung `coach://whoop` über den Link-Weg der App, Token-Tausch über den Worker, Abruf mit Erholung,
+  Schlaf und Training. Testnaht `whoopTransportProvider`.
+- Routen: nicht erneut durchgespielt – 16 End-to-End-Tests decken Planen, Sichern, Zuordnen, Zeichnen und Folgen ab.

@@ -90,6 +90,17 @@ final class FakeWorker {
 
     if (path == 'v1/health') return _json({'ok': true});
 
+    // WHOOP: Anmelde-Adresse und Token-Tausch (der Worker hält das Client-Geheimnis).
+    if (path == 'v1/whoop/authorize') {
+      return _json({
+        'url': 'https://api.prod.whoop.com/oauth/oauth2/auth?state=whoop-state-1',
+        'state': 'whoop-state-1',
+      });
+    }
+    if (path == 'v1/whoop/token') {
+      return _json({'access_token': 'whoop-a1', 'refresh_token': 'whoop-r1', 'expires_in': 3600});
+    }
+
     // Konto
     if (path == 'v1/account/register' && request.method == 'POST') {
       final username = body['username']! as String;

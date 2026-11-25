@@ -100,16 +100,22 @@ Future<void> settle(WidgetTester tester, {int milliseconds = 300}) async {
 /// Frames bis Ruhe, höchstens 5 s (Testzeit). Läuft danach noch eine Animation (Ladekreis, Puls), wird das als
 /// Befund gemeldet: Auf dem Gerät hieße das Dauer-Animation, also Akku und Unruhe.
 Future<void> settleFrames(WidgetTester tester) async {
-  try {
-    await tester.pumpAndSettle(
-      const Duration(milliseconds: 100),
-      EnginePhase.sendSemanticsUpdate,
-      const Duration(seconds: 5),
-    );
-  } on FlutterError catch (error) {
-    if (!error.message.contains('pumpAndSettle timed out')) rethrow;
-    endless.add(describeEndless(tester));
+  // Läuft noch eine Anfrage (Ladekreis während Anmeldung oder Abruf), braucht sie echte Zeit: bis zu acht Runden, erst
+  // danach gilt eine Animation als Dauer-Animation.
+  for (var round = 0; round < 8; round++) {
+    try {
+      await tester.pumpAndSettle(
+        const Duration(milliseconds: 100),
+        EnginePhase.sendSemanticsUpdate,
+        const Duration(seconds: 5),
+      );
+      return;
+    } on FlutterError catch (error) {
+      if (!error.message.contains('pumpAndSettle timed out')) rethrow;
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 400)));
+    }
   }
+  endless.add(describeEndless(tester));
 }
 
 /// Gefundene Dauer-Animationen (Bildschirm und tickende Widgets).
@@ -117,8 +123,30 @@ final endless = <String>{};
 
 String describeEndless(WidgetTester tester) {
   final route = find.byType(Scaffold).evaluate().map((element) => element.widget.runtimeType).join(',');
-  final spinners = find.byType(CircularProgressIndicator).evaluate().length;
-  return 'Seiten: $route; Ladekreise: $spinners';
+  // Wo dreht sich etwas? Je Ladekreis die nächsten Texte darüber (z. B. Titel der Zeile oder Karte).
+  final spinners = [
+    for (final element in find.byType(CircularProgressIndicator).evaluate())
+      () {
+        final texts = <String>[];
+        element.visitAncestorElements((ancestor) {
+          if (texts.length >= 2) return false;
+          ancestor.visitChildElements((child) {
+            if (child.widget case Text(:final data?) when texts.length < 2) texts.add(data);
+          });
+          return true;
+        });
+        final chain = <String>[];
+        element.visitAncestorElements((ancestor) {
+          final name = ancestor.widget.runtimeType.toString();
+          if (!name.startsWith('_') && !const {'Padding', 'Semantics', 'SizedBox', 'Center', 'Align'}.contains(name)) {
+            chain.add(name);
+          }
+          return chain.length < 10;
+        });
+        return '${texts.join(' / ')} <- ${chain.join(' <- ')}';
+      }(),
+  ];
+  return 'Schritt: $_currentStep; Seiten: $route; Ladekreise: $spinners';
 }
 
 /// Reiter wechseln.
@@ -169,7 +197,13 @@ Future<void> back(WidgetTester tester) async {
 }
 
 /// Fortschritt im Testprotokoll (hilft, wenn ein Durchlauf hängt).
-void step(String text) => debugPrint('▶ $text');
+var _currentStep = '';
+
+/// Fortschritt im Testprotokoll (hilft, wenn ein Durchlauf hängt).
+void step(String text) {
+  _currentStep = text;
+  debugPrint('▶ $text');
+}
 
 /// Alle Navigationsstapel auf ihre erste Seite zurücksetzen (Reiter-Übersichten).
 Future<void> home(WidgetTester tester) async {

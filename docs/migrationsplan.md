@@ -489,3 +489,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Routenvorschläge zu geplanten Läufen: passend zum Training, annehmen/ablehnen, Gelände und Start in den Einstellungen, Abwechslung über vier Wochen | erledigt |
 | Durchläufe Konto, Freunde & Liga, automatisch teilen, Quellen gegen nachgebauten Worker; behoben: Fehler beim Öffnen von Freunde/Verlauf mit Konto | erledigt |
 | Gerätetests auf Android-Emulator und iOS-Simulator (`device-test.yml`); behoben: „Verpasst“ direkt nach der Einrichtung | erledigt |
+| Durchläufe Rezepte, Garmin-Konto und WHOOP gegen nachgebaute Server; „Eigene Rezepte“ mit Knopf im leeren Zustand | erledigt |
