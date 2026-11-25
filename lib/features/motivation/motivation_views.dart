@@ -12,7 +12,6 @@ import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/symbols.dart';
 import '../../ui/tokens.dart';
-import '../evidence/evidence_views.dart';
 import 'daisy_avatar.dart';
 
 IconData companionIcon(CompanionKind kind) => switch (kind) {
@@ -223,7 +222,6 @@ class _LeagueSectionState extends ConsumerState<LeagueSection> {
             dense: true,
             title: Text('Noch keine anderen Einträge.', style: TextStyle(color: secondary)),
           ),
-        const EvidenceDisclosure(ruleIDs: ['motivation.gamification']),
       ],
     );
   }

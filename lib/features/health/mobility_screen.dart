@@ -9,7 +9,6 @@ import '../../data/storage.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/tokens.dart';
-import '../evidence/evidence_views.dart';
 
 /// Mobility-Einstellungen ändern und neu zuweisen (die Setter speichern).
 void changeMobility(CoachSettings settings, void Function(MobilitySettings mobility) change) {
@@ -216,11 +215,6 @@ class _MobilityScreenState extends ConsumerState<MobilityScreen> {
                     ];
                   }),
                 ),
-            ],
-          ),
-          const FormSection(
-            children: [
-              EvidenceDisclosure(ruleIDs: ['mobility.stretching', 'mobility.focus']),
             ],
           ),
         ],

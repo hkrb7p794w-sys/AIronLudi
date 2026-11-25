@@ -60,11 +60,6 @@ class SwimScreen extends ConsumerWidget {
               );
             },
           ),
-          const FormSection(
-            children: [
-              EvidenceDisclosure(ruleIDs: ['swim.css', 'intensity.distribution']),
-            ],
-          ),
         ],
       ),
     );
@@ -134,11 +129,6 @@ class BikeScreen extends ConsumerWidget {
                 apply: () => settings.record(TestKind.bikeSpeed, speed),
               );
             },
-          ),
-          const FormSection(
-            children: [
-              EvidenceDisclosure(ruleIDs: ['intensity.distribution']),
-            ],
           ),
         ],
       ),
@@ -211,11 +201,6 @@ class RunScreen extends ConsumerWidget {
             controller: controller,
             showsSkipped: true,
           ),
-          const FormSection(
-            children: [
-              EvidenceDisclosure(ruleIDs: ['run.4x4', 'intensity.distribution', 'hr.threshold-zones']),
-            ],
-          ),
         ],
       ),
     );
@@ -266,7 +251,8 @@ class _RacePredictionSection extends StatelessWidget {
   }
 }
 
-/// Zielzeit Almere: Schätzung aus den Benchmarks, Abschnitte, Aktualität, Hebel (Port von `AlmerePage`).
+/// Zielzeit Almere: Schätzung aus den Benchmarks, Abschnitte, Aktualität, Zeitrechner mit Reglern (Port von
+/// `AlmerePage`).
 class AlmereScreen extends ConsumerWidget {
   const AlmereScreen({super.key});
 
@@ -275,7 +261,6 @@ class AlmereScreen extends ConsumerWidget {
     final settings = ref.watch(coachSettingsProvider);
     final estimate = RaceEstimate(config: settings.season, tests: settings.tests, today: CalendarDay.today());
     final secondary = TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant);
-    String minutes(double value) => '${GermanFormat.decimal(value)} min';
     return Scaffold(
       appBar: AppBar(title: const Text('Almere')),
       body: ListView(
@@ -335,17 +320,8 @@ class AlmereScreen extends ConsumerWidget {
                 ),
             ],
           ),
-          FormSection(
-            header: 'Was bringt eine Verbesserung?',
-            footer:
-                'Wechselzeiten sind Annahmen. Die Tabelle zeigt nur die Wirkung, nicht den Aufwand. Beim 70.3 ist das '
-                'Rad der größte Hebel; mehr Zeit braucht es dafür nicht, nur Umschichten.',
-            children: [
-              LabeledRow(label: 'Schwimmen 5 s/100 m schneller', value: minutes(estimate.savings.swim)),
-              LabeledRow(label: 'Rad 1 km/h schneller', value: minutes(estimate.savings.bike)),
-              LabeledRow(label: 'Lauf 10 s/km schneller', value: minutes(estimate.savings.run)),
-            ],
-          ),
+          // Regler statt fester Tabelle (Wunsch vom 25.11.2026): Zeiten selbst durchrechnen.
+          TriathlonCalculatorSection(start: TriathlonTimes.season(settings.season)),
         ],
       ),
     );
@@ -415,6 +391,15 @@ class MarathonScreen extends ConsumerWidget {
               ),
             ],
           ),
+          // Regler zum Durchspielen von Pace und Halbmarathon (Wunsch vom 25.11.2026).
+          MarathonCalculatorSection(
+            pace: season.marathonPaceSecondsPerKm,
+            half:
+                settings.halfMarathonSeconds ??
+                (outlook.targetSeconds /
+                        ((MarathonOutlook.halfMarathonFactorLower + MarathonOutlook.halfMarathonFactorUpper) / 2))
+                    .round(),
+          ),
           TestEntrySection(
             title: 'Halbmarathon-Test eintragen',
             fields: const [(label: 'Zeit (h:mm:ss)', placeholder: 'z. B. 1:45:00')],
@@ -477,13 +462,12 @@ class MarathonScreen extends ConsumerWidget {
               const _InfoTile('Taper', '3 Wochen, Umfang −25 / −40 / −60 %, das Tempo bleibt.'),
               const _InfoTile(
                 'Kraft',
-                'Beine schwer und kurz (2–3 Sätze à 4–6 Wdh.), mindestens 48 h Abstand zu Longrun und Qualitätslauf.',
+                'Lower schwer und kurz (2–3 Sätze à 4–6 Wdh.), mindestens 48 h Abstand zu Longrun und Qualitätslauf.',
               ),
               const _InfoTile(
                 'Stoppsignal',
                 'Schmerz, der beim Laufen zunimmt oder humpeln lässt → abbrechen, 2–3 Tage Pause.',
               ),
-              const EvidenceDisclosure(ruleIDs: ['taper', 'nutrition.carbs', 'strength.economy']),
             ],
           ),
         ],
@@ -514,11 +498,6 @@ class PersonalSportScreen extends StatelessWidget {
             sport: DecouplingSport.run,
             controller: controller,
             showsSkipped: true,
-          ),
-          const FormSection(
-            children: [
-              EvidenceDisclosure(ruleIDs: ['run.progression', 'run.minimum', 'rhr.endurance']),
-            ],
           ),
         ],
         if (sport == TrainingSport.bike) ...[

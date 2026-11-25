@@ -9,7 +9,6 @@ import '../../services/providers.dart';
 import '../../ui/body_map.dart';
 import '../../ui/components.dart';
 import '../../ui/tokens.dart';
-import '../evidence/evidence_views.dart';
 
 export '../../ui/body_map.dart' show BodyMap, BodySide;
 
@@ -40,7 +39,6 @@ class MuscleHeatmapSection extends StatelessWidget {
         ),
         for (final entry in shown)
           LabeledRow(label: entry.key.label, value: '${GermanFormat.decimal(entry.value)} Sätze'),
-        const EvidenceDisclosure(ruleIDs: ['gym.muscle-load', 'gym.volume']),
       ],
     );
   }
@@ -135,7 +133,7 @@ class _MuscleOverviewSectionState extends ConsumerState<MuscleOverviewSection> {
     final (from, to, weeks) = _range(now);
     final period = _mode == _OverviewMode.month ? 'pro Woche (Ø 4 Wochen)' : 'in den letzten 7 Tagen';
 
-    final (values, full, rows, footer, rules) = switch (_kind) {
+    final (values, full, rows, footer) = switch (_kind) {
       BodyLoadKind.strength => (
         {for (final status in statuses) status.muscle: _value(status)},
         MuscleLoad.weeklyFull,
@@ -144,7 +142,6 @@ class _MuscleOverviewSectionState extends ConsumerState<MuscleOverviewSection> {
             'Sätzen pro Woche, orange unter ${MuscleLoad.weeklyEnough.toInt()}. „Vermutlich noch in der Erholung“ heißt: '
             'in den letzten ${MuscleLoad.recoveryHours.toInt()} Stunden nennenswert belastet – eine Schätzung, keine '
             'Messung von Ermüdung.',
-        const ['gym.muscle-load', 'gym.volume'],
       ),
       BodyLoadKind.cardio => (
         _divided(CardioLoad.minutes(_activities, from: from, to: to), weeks),
@@ -156,7 +153,6 @@ class _MuscleOverviewSectionState extends ConsumerState<MuscleOverviewSection> {
         'Minuten Laufen, Radfahren und Schwimmen je Muskel: Hauptmuskeln voll, mitarbeitende halb (Laufen: Beine und '
             'Gesäß; Rad: vor allem Oberschenkel vorn und Gesäß; Schwimmen: Latissimus und Schultern). Volle Farbe ab '
             '${CardioLoad.weeklyFull.toInt()} Minuten pro Woche. Eine Zuordnung zur Orientierung, keine Messung.',
-        const ['activity.who'],
       ),
       BodyLoadKind.stretch => (
         _divided(StretchLoad.minutes(mobilityLog, from: from, to: to), weeks),
@@ -171,7 +167,6 @@ class _MuscleOverviewSectionState extends ConsumerState<MuscleOverviewSection> {
         ],
         'Minuten aus abgeschlossenen Mobility-Einheiten, verteilt auf ihre Schwerpunkte. Volle Farbe ab '
             '${StretchLoad.weeklyFull.toInt()} Minuten pro Woche und Muskel.',
-        const ['mobility.stretching', 'mobility.focus'],
       ),
     };
     final empty = switch (_kind) {
@@ -235,7 +230,6 @@ class _MuscleOverviewSectionState extends ConsumerState<MuscleOverviewSection> {
             title: Text(empty, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ),
         ...rows,
-        EvidenceDisclosure(ruleIDs: rules),
       ],
     );
   }

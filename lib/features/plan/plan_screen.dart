@@ -13,7 +13,6 @@ import '../../ui/components.dart';
 import '../../ui/liquid.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/tokens.dart';
-import '../evidence/evidence_views.dart';
 import '../fuel/fuel_for_slot.dart';
 import '../routes/route_for_slot.dart';
 import 'plan_controller.dart';
@@ -139,16 +138,12 @@ class _PlanScreenState extends ConsumerState<PlanScreen> with TrainingDataReload
                       ),
                   ],
                 ),
-                if (info != null) ...[
-                  FormSection(
-                    header: 'Musterwoche · ${week.ph}',
-                    children: [ListTile(title: Text(info.mw))],
-                  ),
+                // Die Musterwoche steht nicht mehr hier (Wunsch vom 25.11.2026): die Einheiten oben zeigen die Woche.
+                if (info != null)
                   FormSection(
                     header: 'Wenn die Zeit knapp ist',
                     children: [ListTile(title: Text(info.prio))],
                   ),
-                ],
               ],
             ),
     );
@@ -503,7 +498,6 @@ class PlanUnitDetailScreen extends ConsumerWidget {
               ],
             ),
           ...unitGuideSections(UnitGuides.guide(unit)),
-          FormSection(children: [EvidenceDisclosure(ruleIDs: unit.evidenceIDs)]),
         ],
       ),
     );
@@ -619,7 +613,6 @@ class SessionGuideScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isIntervals = slot.intensity == SessionIntensity.hard && slot.sport == TrainingSport.run;
     return Scaffold(
       appBar: AppBar(title: Text(slot.sport.label)),
       body: ListView(
@@ -650,13 +643,6 @@ class SessionGuideScreen extends StatelessWidget {
           ...unitGuideSections(UnitGuides.guideForSlot(slot)),
           if (day case final day?) RouteForSessionSection(slot: slot, day: day, minutes: minutes),
           FuelForSessionSection(slot: slot, day: day, minutes: minutes),
-          FormSection(
-            children: [
-              EvidenceDisclosure(
-                ruleIDs: isIntervals ? const ['run.4x4', 'intensity.distribution'] : const ['intensity.distribution'],
-              ),
-            ],
-          ),
         ],
       ),
     );

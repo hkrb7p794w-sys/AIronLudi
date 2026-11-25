@@ -76,7 +76,7 @@ void main() {
     expect(state.weekday, 'Freitag');
     expect(state.phase, TrainingPhase.grundlage);
     expect(state.daysLeftInWeek, 2);
-    expect(state.todayFixed.map((item) => item.text), ['Push + Pull kombiniert (Home-Gym)']);
+    expect(state.todayFixed.map((item) => item.text), ['Pull & Push (Home-Gym)']);
     expect(state.weekOpen, ['1× Schwimmen', '1× Laufen (1x Zone 2, 1x Schwelle/Intervall im Wechsel)', '1× Rad']);
     expect(state.targets.firstWhere((item) => item.target.sport == ActivitySport.run).percent, 50);
     expect(state.daysToRace, friday.daysUntil(day(2027, 9, 11)));

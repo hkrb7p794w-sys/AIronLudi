@@ -301,7 +301,6 @@ class FitnessFormScreen extends StatelessWidget {
                   style: AppText.footnote(context).copyWith(color: secondary.color),
                 ),
               ),
-              const EvidenceDisclosure(ruleIDs: ['load.fitness-form']),
             ],
           ),
         ],

@@ -279,7 +279,10 @@ final class RaceEstimate {
 
   bool get allFresh => freshness.every((item) => item.isFresh);
 
-  String get corridorText {
+  String get corridorText => corridor(totalMinutes);
+
+  /// Einordnung einer Endzeit in den Zielkorridor 5:30–6:00 (auch für den Zeitrechner).
+  static String corridor(double totalMinutes) {
     if (totalMinutes < corridorLower) return 'Unter dem Zielkorridor 5:30–6:00.';
     if (totalMinutes <= corridorUpper) return 'Im Zielkorridor 5:30–6:00.';
     return '${(totalMinutes - corridorUpper).round()} min über dem Zielkorridor.';
@@ -391,4 +394,109 @@ final class MarathonOutlook {
       '${seconds ~/ 3600}:${((seconds % 3600) ~/ 60).toString().padLeft(2, '0')}';
 
   static String pace(double seconds) => PlanTokens.mmss(seconds.toInt());
+}
+
+/// Zeitrechner 70.3 für die Regler auf der Seite „Almere“: Abschnittszeiten aus frei gewählten Werten, mit denselben
+/// Strecken und Formeln wie [RaceEstimate]. Werte außerhalb der Reglerbereiche werden hineingezogen.
+final class TriathlonTimes {
+  factory TriathlonTimes({
+    required int swimSecondsPer100m,
+    required double bikeKmh,
+    required int runSecondsPerKm,
+    double transitionMinutes = RaceEstimate.transition1 + RaceEstimate.transition2,
+  }) => TriathlonTimes._(
+    swimSecondsPer100m: math.min(math.max(swimSecondsPer100m, swimMin), swimMax),
+    bikeKmh: math.min(math.max(bikeKmh, bikeMin), bikeMax),
+    runSecondsPerKm: math.min(math.max(runSecondsPerKm, runMin), runMax),
+    transitionMinutes: math.min(math.max(transitionMinutes, transitionMin), transitionMax),
+  );
+
+  /// Ausgangswerte wie die Schätzung: CSS, Renngeschwindigkeit Rad und Renn-Laufpace aus den Saisonwerten.
+  factory TriathlonTimes.season(SeasonConfig config) => TriathlonTimes(
+    swimSecondsPer100m: config.cssSecondsPer100m,
+    bikeKmh: config.raceBikeSpeedKmh,
+    runSecondsPerKm: config.racePaceSecondsPerKm,
+  );
+
+  const TriathlonTimes._({
+    required this.swimSecondsPer100m,
+    required this.bikeKmh,
+    required this.runSecondsPerKm,
+    required this.transitionMinutes,
+  });
+
+  /// Reglerbereiche: Schwimmen 1:15–3:30 /100 m, Rad 20–45 km/h, Lauf 3:30–8:00 /km, Wechsel 1–15 min.
+  static const swimMin = 75;
+  static const swimMax = 210;
+  static const bikeMin = 20.0;
+  static const bikeMax = 45.0;
+  static const bikeStep = 0.5;
+  static const runMin = 210;
+  static const runMax = 480;
+  static const transitionMin = 1.0;
+  static const transitionMax = 15.0;
+  static const transitionStep = 0.5;
+
+  final int swimSecondsPer100m;
+  final double bikeKmh;
+  final int runSecondsPerKm;
+
+  /// Beide Wechsel zusammen.
+  final double transitionMinutes;
+
+  double get swimMinutes => swimSecondsPer100m * RaceEstimate.swimMeters / 100 / 60;
+  double get bikeMinutes => RaceEstimate.bikeKilometers / bikeKmh * 60;
+  double get runMinutes => runSecondsPerKm * RaceEstimate.runKilometers / 60;
+  double get totalMinutes => swimMinutes + bikeMinutes + runMinutes + transitionMinutes;
+
+  TriathlonTimes copyWith({
+    int? swimSecondsPer100m,
+    double? bikeKmh,
+    int? runSecondsPerKm,
+    double? transitionMinutes,
+  }) => TriathlonTimes(
+    swimSecondsPer100m: swimSecondsPer100m ?? this.swimSecondsPer100m,
+    bikeKmh: bikeKmh ?? this.bikeKmh,
+    runSecondsPerKm: runSecondsPerKm ?? this.runSecondsPerKm,
+    transitionMinutes: transitionMinutes ?? this.transitionMinutes,
+  );
+
+  @override
+  bool operator ==(Object other) =>
+      other is TriathlonTimes &&
+      other.swimSecondsPer100m == swimSecondsPer100m &&
+      other.bikeKmh == bikeKmh &&
+      other.runSecondsPerKm == runSecondsPerKm &&
+      other.transitionMinutes == transitionMinutes;
+
+  @override
+  int get hashCode => Object.hash(swimSecondsPer100m, bikeKmh, runSecondsPerKm, transitionMinutes);
+}
+
+/// Zeitrechner Marathon für die Regler auf der Seite „Marathon“: Endzeit und Zwischenzeiten aus einer gleichmäßigen
+/// Pace, dazu die realistische Spanne aus einer Halbmarathonzeit (Faktoren wie [MarathonOutlook]).
+abstract final class MarathonTimes {
+  /// Reglerbereiche: Pace 3:30–8:00 /km, Halbmarathon 1:10–3:00 h in 30-s-Schritten.
+  static const paceMin = 210;
+  static const paceMax = 480;
+  static const halfMin = 4200;
+  static const halfMax = 10800;
+  static const halfStep = 30;
+
+  /// Zwischenzeiten in km (Halbmarathon-Marke statt 21 km).
+  static const splits = [10.0, 21.0975, 30.0];
+
+  static int clampPace(int seconds) => math.min(math.max(seconds, paceMin), paceMax);
+
+  static int clampHalf(int seconds) => math.min(math.max(seconds, halfMin), halfMax);
+
+  /// Zeit für [kilometers] bei gleichmäßiger Pace (Sekunden je km).
+  static int seconds(int paceSecondsPerKm, {double kilometers = MarathonOutlook.marathonKilometers}) =>
+      (paceSecondsPerKm * kilometers).round();
+
+  /// Realistische Marathonzeit aus einer Halbmarathonzeit (× 2,15–2,2).
+  static ({int low, int high}) fromHalf(int halfSeconds) => (
+    low: (halfSeconds * MarathonOutlook.halfMarathonFactorLower).round(),
+    high: (halfSeconds * MarathonOutlook.halfMarathonFactorUpper).round(),
+  );
 }

@@ -8,7 +8,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/ai/ai_client.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
-import '../evidence/evidence_views.dart';
 import '../today/today_controller.dart';
 import 'ai_data.dart';
 import 'coach_facts.dart';
@@ -233,7 +232,6 @@ class _Bubble extends StatelessWidget {
                   child: SelectableText(message.text),
                 ),
               ),
-              if (message.sources.isNotEmpty) EvidenceDisclosure(ruleIDs: message.sources, title: 'Belege'),
             ],
           ),
         ),

@@ -233,27 +233,27 @@ final class TodayPlan {
             final detail = done.swim >= 1
                 ? ''
                 : (weekday == 1 ? 'Schwimmen dann am Donnerstag.' : 'Schwimmen fehlt diese Woche noch.');
-            items.add(item(TodayPlanSport.strength, 'Beine', 'vor der Arbeit', detail, done: true));
+            items.add(item(TodayPlanSport.strength, 'Lower', 'vor der Arbeit', detail, done: true));
           } else if (weekday == 1 && done.swim >= 1) {
-            items.add(item(TodayPlanSport.swim, 'Schwimmen', week.swimCode, 'Beine dann am Donnerstag.', done: true));
+            items.add(item(TodayPlanSport.swim, 'Schwimmen', week.swimCode, 'Lower dann am Donnerstag.', done: true));
           } else if (weekday == 1) {
             items.add(
               item(
                 TodayPlanSport.swim,
-                'Schwimmen oder Beine',
+                'Schwimmen oder Lower',
                 week.swimCode,
                 '${week.swim} · Das andere am Donnerstag.',
               ),
             );
           } else if (gymTuesday && done.swim >= 1) {
-            items.add(item(TodayPlanSport.swim, 'Schwimmen', week.swimCode, 'Beine am Dienstag erledigt.', done: true));
+            items.add(item(TodayPlanSport.swim, 'Schwimmen', week.swimCode, 'Lower am Dienstag erledigt.', done: true));
           } else if (gymTuesday) {
             items.add(
-              item(TodayPlanSport.swim, 'Schwimmen', week.swimCode, '${week.swim} · Beine am Dienstag erledigt.'),
+              item(TodayPlanSport.swim, 'Schwimmen', week.swimCode, '${week.swim} · Lower am Dienstag erledigt.'),
             );
           } else if (done.swim >= 1) {
             items.add(
-              item(TodayPlanSport.strength, 'Beine', 'vor der Arbeit', 'Schwimmen ist diese Woche schon erledigt.'),
+              item(TodayPlanSport.strength, 'Lower', 'vor der Arbeit', 'Schwimmen ist diese Woche schon erledigt.'),
             );
           } else {
             items.add(
@@ -261,7 +261,7 @@ final class TodayPlan {
                 TodayPlanSport.swim,
                 'Schwimmen',
                 week.swimCode,
-                '${week.swim} · Beine nur, falls sie am Dienstag ausgefallen sind.',
+                '${week.swim} · Lower nur, falls es am Dienstag ausgefallen ist.',
               ),
             );
           }
@@ -329,7 +329,7 @@ final class TodayPlan {
     }
     if ((weekday == 1 || weekday == 3) &&
         open.any((entry) => entry.sport == TodayPlanSport.run && entry.hardness >= 1)) {
-      hint = 'Qualitätslauf nicht am Tag nach Beine und nicht direkt vor dem Longrun.';
+      hint = 'Qualitätslauf nicht am Tag nach Lower und nicht direkt vor dem Longrun.';
     }
 
     // Rest der Woche: alle noch kommenden Einheiten mit festem Tag.
@@ -346,7 +346,7 @@ final class TodayPlan {
           case WeekFrameBlock.swimlegs when day == 1:
             entry = item(
               TodayPlanSport.swim,
-              'Schwimmen oder Beine',
+              'Schwimmen oder Lower',
               '${week.swimCode} · das andere am Donnerstag',
               week.swim,
             )..day = 'Di';
@@ -354,18 +354,18 @@ final class TodayPlan {
             final swimLeft = done.swim < 1;
             final legsLeft = !(legsTuesday || (weekday == 1 && gymToday));
             if (weekday < 1) {
-              entry = item(TodayPlanSport.strength, 'Beine oder Schwimmen', 'was am Dienstag nicht dran war', '');
+              entry = item(TodayPlanSport.strength, 'Lower oder Schwimmen', 'was am Dienstag nicht dran war', '');
             } else if (swimLeft && legsLeft) {
               entry = item(
                 TodayPlanSport.swim,
-                'Schwimmen oder Beine',
+                'Schwimmen oder Lower',
                 '${week.swimCode} · Schwimmen hat Vorrang',
                 week.swim,
               );
             } else if (swimLeft) {
               entry = item(TodayPlanSport.swim, 'Schwimmen', week.swimCode, week.swim);
             } else if (legsLeft) {
-              entry = item(TodayPlanSport.strength, 'Beine', 'vor der Arbeit', '');
+              entry = item(TodayPlanSport.strength, 'Lower', 'vor der Arbeit', '');
             }
             entry?.day = 'Do';
           case WeekFrameBlock.zwift when weekday < 5 && !weekendZwift && done.bike < 1:
@@ -485,7 +485,7 @@ final class TodayPlan {
   static String gymTitle(WeekFrameBlock block) => switch (block) {
     WeekFrameBlock.push => 'Push',
     WeekFrameBlock.pull => 'Pull',
-    _ => 'Push + Pull',
+    _ => 'Pull & Push',
   };
 
   /// Hinweis je Einheit (`_chip` im Altbestand). „skip“: Die Einheit kann diese Woche nicht mehr stattfinden.

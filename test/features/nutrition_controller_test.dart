@@ -14,7 +14,7 @@ import 'package:coach_core/coach_core.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Freitag, 23.10.2026, mittags (laut Musterwoche Push + Pull → leichter Tag).
+/// Freitag, 23.10.2026, mittags (laut Musterwoche Pull & Push → leichter Tag).
 final friday = DateTime(2026, 10, 23, 12);
 
 void main() {

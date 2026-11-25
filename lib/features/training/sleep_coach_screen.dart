@@ -13,7 +13,6 @@ import '../../services/providers.dart';
 import '../../ui/chart_axes.dart';
 import '../../ui/components.dart';
 import '../../ui/tokens.dart';
-import '../evidence/evidence_views.dart';
 
 /// Erinnerung 30 Minuten vor der empfohlenen Schlafenszeit, täglich bis zur Neuberechnung (Port von
 /// `BedtimeReminder`).
@@ -160,7 +159,6 @@ class _SleepCoachScreenState extends ConsumerState<SleepCoachScreen> {
                     leading: Icon(tip.id == 'good' ? Icons.check_circle : Icons.bedtime_outlined),
                     title: Text(tip.text),
                   ),
-                EvidenceDisclosure(ruleIDs: [for (final tip in report.tips) ...tip.evidenceIDs]),
               ],
             ),
           ] else

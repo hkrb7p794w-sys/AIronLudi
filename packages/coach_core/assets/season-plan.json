@@ -1884,7 +1884,7 @@
   {
    "w": "2027-04-19",
    "ph": "Marathon-Taper",
-   "f": "Taper Woche 2 (−40 %), letzte Beine-Einheit",
+   "f": "Taper Woche 2 (−40 %), letzte Lower-Einheit",
    "z": "Z14 Aktivierung: 35 min: 3×3 min @ §W80§ W + 3×30 s @ §W110§ W · Rennwoche",
    "zc": "Z14",
    "z2": "",
@@ -3107,24 +3107,24 @@
  ],
  "phases": {
   "Grundlage": {
-   "mw": "Mo Push · Di Schwimmen (früh) · Mi Pull + Qualitätslauf · Do Beine (früh) · Fr Push+Pull · Sa Zwift · So Z2-Lauf (mit Partnerin) · optional Di abends 2. Zwift locker",
-   "prio": "Zwift › Qualitätslauf › Z2-Lauf › Schwimmen › Beine › Home-Gym"
+   "mw": "Mo Push · Di Schwimmen (früh) · Mi Pull + Qualitätslauf · Do Lower (früh) · Fr Pull & Push · Sa Zwift · So Z2-Lauf (mit Partnerin) · optional Di abends 2. Zwift locker",
+   "prio": "Zwift › Qualitätslauf › Z2-Lauf › Schwimmen › Lower › Home-Gym"
   },
   "Marathon-Aufbau": {
-   "mw": "Mo Push · Di Schwimmen (früh) + Zwift (abends) · Mi Pull + Qualitätslauf · Do Beine (früh, schwer & kurz) · Fr Push+Pull · Sa Z2-Lauf locker (mit Partnerin) · So Longrun",
-   "prio": "Longrun › Qualitätslauf › Zwift › Schwimmen › Z2-Lauf › Beine › Home-Gym"
+   "mw": "Mo Push · Di Schwimmen (früh) + Zwift (abends) · Mi Pull + Qualitätslauf · Do Lower (früh, schwer & kurz) · Fr Pull & Push · Sa Z2-Lauf locker (mit Partnerin) · So Longrun",
+   "prio": "Longrun › Qualitätslauf › Zwift › Schwimmen › Z2-Lauf › Lower › Home-Gym"
   },
   "Marathon-Taper": {
-   "mw": "wie Marathon-Aufbau, aber kürzer · Beine letzte schwere Einheit ca. 10 Tage vor dem Rennen",
+   "mw": "wie Marathon-Aufbau, aber kürzer · letzte schwere Lower-Einheit ca. 10 Tage vor dem Rennen",
    "prio": "Nichts nachholen – Umfang bewusst reduziert lassen"
   },
   "Regeneration": {
-   "mw": "Woche 1: Spazieren, lockeres Schwimmen/Zwift, Oberkörper leicht · Woche 2: 2× 30–40 min locker laufen, Beine leicht",
+   "mw": "Woche 1: Spazieren, lockeres Schwimmen/Zwift, Push und Pull leicht · Woche 2: 2× 30–40 min locker laufen, Lower leicht",
    "prio": "Erholung ist das Training – keine Intensität"
   },
   "Almere-Aufbau": {
-   "mw": "Mo Push · Di Schwimmen (früh) + Zwift-Intervall (abends) · Mi Pull + Qualitätslauf · Do Beine · Fr Push+Pull · Sa lange Radeinheit + Koppellauf · So Z2-Lauf (mit Partnerin)",
-   "prio": "Lange Radeinheit + Koppellauf › Zwift-Intervall › Qualitätslauf › Schwimmen › Z2-Lauf › Beine › Home-Gym"
+   "mw": "Mo Push · Di Schwimmen (früh) + Zwift-Intervall (abends) · Mi Pull + Qualitätslauf · Do Lower · Fr Pull & Push · Sa lange Radeinheit + Koppellauf · So Z2-Lauf (mit Partnerin)",
+   "prio": "Lange Radeinheit + Koppellauf › Zwift-Intervall › Qualitätslauf › Schwimmen › Z2-Lauf › Lower › Home-Gym"
   },
   "Almere-Peak": {
    "mw": "wie Almere-Aufbau · Kraft auf Erhalt (1–2 Sätze pro Übung)",

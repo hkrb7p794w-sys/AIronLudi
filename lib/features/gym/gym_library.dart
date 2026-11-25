@@ -9,7 +9,6 @@ import 'package:intl/intl.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/tokens.dart';
-import '../evidence/evidence_views.dart';
 import 'exercise_history_charts.dart';
 import 'exercise_picker.dart';
 import 'gym_controller.dart';
@@ -192,7 +191,6 @@ class ExerciseDetailScreen extends ConsumerWidget {
                   title: Text(progress.headline, style: const TextStyle(fontWeight: FontWeight.w600)),
                   subtitle: Text(progress.detail),
                 ),
-                const EvidenceDisclosure(ruleIDs: ['gym.progression', 'gym.rir']),
               ],
             ),
           if (exercise != null) ...[
@@ -521,7 +519,6 @@ class RoutinesScreen extends ConsumerWidget {
                     gym.routines.addAll(suggestions.where((routine) => !existing.contains(routine.name)));
                   }),
                 ),
-              const EvidenceDisclosure(ruleIDs: ['gym.frequency', 'gym.load', 'gym.volume']),
             ],
           ),
         ],

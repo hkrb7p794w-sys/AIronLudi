@@ -291,8 +291,7 @@ class _FuelPlanScreenState extends ConsumerState<FuelPlanScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Richtwerte nach ACSM, ISSN und aktueller Studienlage – Verträglichkeit im Training testen, nie erst am '
-            'Wettkampftag.',
+            'Richtwerte – Verträglichkeit im Training testen, nie erst am Wettkampftag.',
             style: LiquidText.label(context),
             textAlign: TextAlign.center,
           ),

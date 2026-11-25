@@ -605,8 +605,8 @@ abstract final class HeartRateZoneCalculator {
       }
     }
     hints.add(
-      'Optisches Messen am Handgelenk unterschätzt bei intensiven Intervallen die Zeit in hohen Zonen (Neudorfer 2024). '
-      'Der Hart-Anteil ist eher eine Untergrenze.',
+      'Optisches Messen am Handgelenk unterschätzt bei intensiven Intervallen die Zeit in hohen Zonen. Der Hart-Anteil '
+      'ist eher eine Untergrenze.',
     );
     return hints;
   }

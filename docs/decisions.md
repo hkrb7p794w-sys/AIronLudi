@@ -1673,3 +1673,35 @@ Benutzer ohne den Wert behalten das bisherige Verhalten.
 - **Gym-Mitteilung:** ausgeklappt Gewicht ± und Wiederholungen ± (vorher nur Gewicht ± als Knopf unten, Android
   erlaubt höchstens drei Knöpfe). Unten bleiben „Satz erledigt“ und „Pause überspringen“.
 - „Recovery“ heißt in den Health-Widgets beider Plattformen jetzt „Erholung“ (Glossar).
+
+## 2026-11-25 – Rückmeldungen zu Plan, Ernährung, Almere und KI-Einstellungen
+
+Acht Punkte des Nutzers aus Bildschirmfotos (iPhone):
+
+- **Plan-Kacheln gleich groß:** Das Raster misst den längsten Kernwert und Bereichstext und reserviert diese Höhe in
+  jeder Kachel (`_HubGrid` in `training_screen.dart`); vorher richtete sich jede Kachel nach ihrem Text. Untertitel
+  kürzer: „Laufen & Rad“ (ohne „auf OpenStreetMap“), Verpflegung „Rund ums Training“.
+- **Namen der Krafteinheiten:** überall Push, Pull, Lower und Pull & Push (`WorkoutNames` in `coach_core`). Der
+  Standardplan, die GymBook-Vorlagen, der Saisonplan („Heute“, Wochenziele, Phasentexte, `season-plan.json`), der
+  Marathon-Hinweis und das Athletenprofil im Worker nutzen die neuen Namen; „Beine“ als Einheit heißt jetzt „Lower“
+  (als Muskelgruppe bleibt es „Beine“). Gespeicherte Einheiten und Routinen mit alten Namen („Push A“, „Push & Pull
+  B“, „Push + Pull“, „Beine“) heißen beim Lesen wie heute – wie `ExerciseAliases` ohne die gespeicherten Daten
+  umzuschreiben; Routinen werden beim nächsten Sichern mit dem neuen Namen gespeichert. Der Schlüssel des
+  GymBook-Imports (`gymbook:Tag:Name`) bleibt unverändert, damit nichts doppelt importiert wird. Die Fixture
+  `today-cases.json` aus der Swift-App ist entsprechend angepasst (nur die Namen).
+- **Musterwoche** steht nicht mehr im Wochenplan; „Wenn die Zeit knapp ist“ bleibt.
+- **Wasser:** kleiner Knopf „+250 ml“ ohne doppeltes Plus, Menge und Ziel im gleichen Format, damit die Zeile nicht
+  umbricht.
+- **Plan erstellen:** Die lange Einheit lässt sich nur auf gewählte Trainingstage legen; fällt ihr Tag weg, rückt sie
+  auf den letzten gewählten Tag.
+- **Keine Grundlagen und Quellen mehr in der App:** Literaturangaben (Verpflegung „Grundlage“, Klammern wie „(ACSM
+  2009)“), die aufklappbaren „Quellen“ unter Empfehlungen, „Belege“ im Chat und die Seite „Quellen und Regeln“ samt
+  Schalter sind entfernt. Die Regeln und ihre Belege bleiben in `coach_core` (KI-Fakten, Worker-Prüfung, Export);
+  „Eigene Quellen“ für die KI bleibt unter „KI und Automatisierung“. Der Einstellungswert `coach.showsEvidence` bleibt
+  nur für unveränderte Sicherungen.
+- **Zeitrechner:** Almere („Was bringt eine Verbesserung?“) mit Reglern für Schwimm-Pace, Rad-Geschwindigkeit,
+  Lauf-Pace und Wechselzeit (`TriathlonTimes`, gleiche Formeln wie `RaceEstimate`); Marathon mit Regler für die Pace
+  (Endzeit, 10 km, Halbmarathon, 30 km) und für eine Halbmarathonzeit (Spanne × 2,15–2,2, `MarathonTimes`). Regler
+  nach rechts heißt immer schneller; „Zurücksetzen“ holt die Ausgangswerte, gespeichert wird nichts.
+- **KI-Einstellungen:** Auswahl im Menüstil (`MenuPickerTile`): Titel links, Wert rechts, Erklärung in voller Breite
+  darunter, statt einer Ausklappliste, die den Text auf eine schmale Spalte drückte.
