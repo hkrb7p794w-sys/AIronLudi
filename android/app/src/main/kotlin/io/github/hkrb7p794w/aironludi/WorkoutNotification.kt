@@ -10,6 +10,8 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.view.View
+import android.widget.RemoteViews
 import io.flutter.plugin.common.MethodChannel
 import org.json.JSONArray
 import org.json.JSONObject
@@ -99,31 +101,64 @@ object WorkoutNotification {
         if (resting) {
             builder.setWhen(restEndsAt!!).setUsesChronometer(true).setChronometerCountDown(true)
         }
-        // Android zeigt höchstens drei Knöpfe: Satz erledigt, Pause überspringen bzw. Gewicht ±.
+        // Knöpfe unten: Satz erledigt, Pause überspringen. Gewicht ± und Wiederholungen ± stehen ausgeklappt darüber
+        // (wie die Live-Aktivität unter iOS); Android zeigt höchstens drei Knöpfe unten.
         if (!allDone) builder.addAction(action(context, "completeSet", 0, "Satz erledigt"))
-        if (resting) {
-            builder.addAction(action(context, "skipRest", 0, "Pause überspringen"))
-        } else if (!allDone && weight != null && showsExercise) {
-            val step = state["weightStep"] as? String ?: ""
-            builder.addAction(action(context, "weight", -1, "− $step kg"))
-            builder.addAction(action(context, "weight", 1, "+ $step kg"))
+        if (resting) builder.addAction(action(context, "skipRest", 0, "Pause überspringen"))
+        if (!allDone && showsExercise && (weight != null || reps != null)) {
+            val big = RemoteViews(context.packageName, R.layout.notification_workout)
+            big.setTextViewText(R.id.workout_title, if (resting) "Pause · $exercise" else exercise)
+            big.setTextViewText(R.id.workout_detail, listOfNotNull(detail.ifEmpty { null }, next).joinToString(" · "))
+            stepper(context, big, weight, state["weightStep"] as? String, "kg", "weight",
+                R.id.workout_weight_row, R.id.workout_weight, R.id.workout_weight_minus, R.id.workout_weight_plus)
+            val repsStep = state["repsStep"] as? String ?: "1"
+            stepper(context, big, reps, repsStep, if (repsStep.endsWith("s")) "" else "Wdh.", "reps",
+                R.id.workout_reps_row, R.id.workout_reps, R.id.workout_reps_minus, R.id.workout_reps_plus)
+            builder.setStyle(Notification.DecoratedCustomViewStyle()).setCustomBigContentView(big)
         }
         manager.notify(NOTIFICATION_ID, builder.build())
     }
 
-    private fun action(context: Context, name: String, steps: Int, title: String): Notification.Action {
+    /** Zeile „− Schritt · Wert · + Schritt“; ohne Wert ausgeblendet. */
+    private fun stepper(
+        context: Context,
+        views: RemoteViews,
+        value: String?,
+        step: String?,
+        unit: String,
+        name: String,
+        row: Int,
+        label: Int,
+        minus: Int,
+        plus: Int,
+    ) {
+        if (value == null) {
+            views.setViewVisibility(row, View.GONE)
+            return
+        }
+        val amount = listOf(step ?: "", unit).filter { it.isNotEmpty() }.joinToString(" ")
+        views.setViewVisibility(row, View.VISIBLE)
+        views.setTextViewText(label, value)
+        views.setTextViewText(minus, "− $amount")
+        views.setTextViewText(plus, "+ $amount")
+        views.setOnClickPendingIntent(minus, pending(context, name, -1))
+        views.setOnClickPendingIntent(plus, pending(context, name, 1))
+    }
+
+    private fun action(context: Context, name: String, steps: Int, title: String): Notification.Action =
+        Notification.Action.Builder(null, title, pending(context, name, steps)).build()
+
+    private fun pending(context: Context, name: String, steps: Int): PendingIntent {
         val intent = Intent(context, WorkoutActionReceiver::class.java)
             .setAction(ACTION)
             .putExtra("action", name)
             .putExtra("steps", steps)
-        val code = (name + steps).hashCode()
-        val pending = PendingIntent.getBroadcast(
+        return PendingIntent.getBroadcast(
             context,
-            code,
+            (name + steps).hashCode(),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        return Notification.Action.Builder(null, title, pending).build()
     }
 
     /** Knopf an Dart; ohne laufende Engine für später merken. */
