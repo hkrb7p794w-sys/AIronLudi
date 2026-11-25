@@ -486,3 +486,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Durchlauf „Ich“ (alle Bereiche, Sicherung, Datenquellen, Benutzer, Konto); Datensicherung unter Allgemein, Sicherungsdatei im Export-Ordner je Benutzer | erledigt |
 | Durchlauf Einrichtung und Heute (beide Geräte); Einrichtung: „Weiter“ schlägt den Wochenplan aus den gewählten Tagen vor | erledigt |
 | Ernährung: Makrobalken (Protein/KH/Fett) über die volle Breite, Name links und Rest rechts, 8 pt hoch; Balkenspur (`LiquidTheme.track`) kräftiger, damit der Fortschritt auf weißen Karten erkennbar ist | erledigt |
+| Routenvorschläge zu geplanten Läufen: passend zum Training, annehmen/ablehnen, Gelände und Start in den Einstellungen, Abwechslung über vier Wochen | erledigt |
