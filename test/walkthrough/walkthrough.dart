@@ -78,7 +78,11 @@ Future<void> tab(WidgetTester tester, String label) async {
 
 /// Text in die Sicht scrollen (im obersten Scrollbereich) und antippen.
 Future<void> tapText(WidgetTester tester, String text, {bool contains = false}) async {
-  final target = await reveal(tester, contains ? find.textContaining(text) : find.text(text));
+  // Nur angezeigte Texte, keine Eingabefelder (sonst träfe „Kniebeuge“ nach dem Suchen das Suchfeld).
+  final shown = find.byWidgetPredicate(
+    (widget) => widget is Text && (contains ? (widget.data ?? '').contains(text) : widget.data == text),
+  );
+  final target = await reveal(tester, shown);
   await tester.tap(target, warnIfMissed: false);
   await settle(tester);
 }
@@ -111,3 +115,14 @@ Future<void> back(WidgetTester tester) async {
 
 /// Fortschritt im Testprotokoll (hilft, wenn ein Durchlauf hängt).
 void step(String text) => debugPrint('▶ $text');
+
+/// Alle Navigationsstapel auf ihre erste Seite zurücksetzen (Reiter-Übersichten).
+Future<void> home(WidgetTester tester) async {
+  final navigators = find.byType(Navigator, skipOffstage: false).evaluate().toList().reversed;
+  for (final element in navigators) {
+    if (element case StatefulElement(:final NavigatorState state) when element.mounted) {
+      state.popUntil((route) => route.isFirst);
+    }
+  }
+  await settle(tester);
+}
