@@ -376,9 +376,9 @@ class _WaterSection extends StatelessWidget {
             child: FilledButton.tonal(
               onPressed: () => onAdd(250),
               style: FilledButton.styleFrom(
-                minimumSize: const Size(44, 36),
+                // Sichtbar kompakt, Tap-Fläche trotzdem 44 pt hoch.
+                minimumSize: const Size(44, 44),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                visualDensity: VisualDensity.compact,
                 textStyle: AppText.callout(context).copyWith(fontWeight: FontWeight.w600),
               ),
               child: const Text('+250 ml'),
