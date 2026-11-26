@@ -349,8 +349,14 @@ class _WaterSection extends StatelessWidget {
     children: [
       ListTile(
         leading: const Icon(Icons.water_drop, color: AppPalette.cyan),
-        title: Text('Wasser ${GermanFormat.number(water.total / 1000)} / ${GermanFormat.decimal(target / 1000)} l'),
-        subtitle: water.food >= 50 ? Text('davon ${GermanFormat.decimal(water.food / 1000)} l aus Essen') : null,
+        title: Text('Wasser ${GermanFormat.number(water.total / 1000)} / ${GermanFormat.number(target / 1000)} l'),
+        subtitle: water.food >= 50
+            ? Text(
+                'davon ${GermanFormat.number(water.food / 1000)} l aus Essen',
+                style: AppText.footnote(context).copyWith(color: AppColors.muted(context)),
+              )
+            : null,
+        // Kleiner Knopf statt des großen Standardknopfs: sonst bleibt für Menge und Ziel kaum Platz.
         trailing: GestureDetector(
           onLongPress: () async {
             final box = context.findRenderObject()! as RenderBox;
@@ -367,10 +373,15 @@ class _WaterSection extends StatelessWidget {
           },
           child: Semantics(
             hint: 'Gedrückt halten für andere Mengen',
-            child: FilledButton.tonalIcon(
+            child: FilledButton.tonal(
               onPressed: () => onAdd(250),
-              icon: const Icon(Icons.add),
-              label: const Text('+250 ml'),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(44, 36),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                visualDensity: VisualDensity.compact,
+                textStyle: AppText.callout(context).copyWith(fontWeight: FontWeight.w600),
+              ),
+              child: const Text('+250 ml'),
             ),
           ),
         ),

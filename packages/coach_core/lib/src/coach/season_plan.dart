@@ -305,7 +305,7 @@ abstract final class SeasonPlan {
       label: 'Kraft',
       minimum: 4,
       maximum: 4,
-      detail: '1x Beine + 3x Home-Gym (Push, Pull, Push+Pull)',
+      detail: '1x Lower + 3x Home-Gym (Push, Pull, Pull & Push)',
     );
     SportTarget run(int minimum, int maximum, String detail) =>
         SportTarget(sport: ActivitySport.run, label: 'Laufen', minimum: minimum, maximum: maximum, detail: detail);
@@ -324,7 +324,7 @@ abstract final class SeasonPlan {
       TrainingPhase.marathonTaper => [
         swim,
         run(3, 3, 'kürzer, Tempo halten'),
-        strengthTarget(2, 4, 'Beine nur bis 10 Tage vor dem Rennen'),
+        strengthTarget(2, 4, 'Lower nur bis 10 Tage vor dem Rennen'),
         bike(0, 1, 'kurz und locker'),
       ],
       TrainingPhase.regeneration => [
@@ -354,7 +354,7 @@ abstract final class SeasonPlan {
     };
   }
 
-  /// Musterwoche (Stand 14.10.2026): Mo Push · Di/Do Schwimmen und Beine · Mi Pull · Fr Push+Pull · Wochenende Zwift
+  /// Musterwoche (Stand 14.10.2026): Mo Push · Di/Do Schwimmen und Lower · Mi Pull · Fr Pull & Push · Wochenende Zwift
   /// bzw. lange Einheiten. Läufe ohne festen Tag erscheinen über „offen“.
   static List<TemplateItem> template(TrainingPhase phase, int weekday) {
     if (phase == TrainingPhase.regeneration) {
@@ -367,7 +367,7 @@ abstract final class SeasonPlan {
         return [
           TemplateItem(
             kind: TemplateItemKind.swimOrLegs,
-            text: 'Schwimmen oder Beine vor der Arbeit (das andere am Donnerstag)',
+            text: 'Schwimmen oder Lower vor der Arbeit (das andere am Donnerstag)',
           ),
         ];
       case 2:
@@ -376,11 +376,11 @@ abstract final class SeasonPlan {
         return [
           TemplateItem(
             kind: TemplateItemKind.swimOrLegs,
-            text: 'Schwimmen oder Beine vor der Arbeit (was am Dienstag nicht dran war)',
+            text: 'Schwimmen oder Lower vor der Arbeit (was am Dienstag nicht dran war)',
           ),
         ];
       case 4:
-        return [TemplateItem(kind: TemplateItemKind.strength, text: 'Push + Pull kombiniert (Home-Gym)')];
+        return [TemplateItem(kind: TemplateItemKind.strength, text: 'Pull & Push (Home-Gym)')];
     }
     final saturday = weekday == 5;
     return switch (phase) {
@@ -538,7 +538,7 @@ abstract final class PhasePlanTexts {
       bike:
           '1x Zwift: Sweet Spot 3×10 → 2×20 min @ ${p.watts(88)}–${p.watts(94)} W, dann Schwelle '
           '${p.watts(98)} W und Over-Under · FTP-Test 07.12. · optional 1x Z2 ${p.watts(65)}–${p.watts(70)} W',
-      strength: 'Mo Push · Mi Pull · Fr Push+Pull · Beine Di oder Do',
+      strength: 'Mo Push · Mi Pull · Fr Pull & Push · Lower Di oder Do',
     ),
     TrainingPhase.marathonAufbau => PhasePlanText(
       run:
@@ -550,20 +550,20 @@ abstract final class PhasePlanTexts {
           '1x Zwift am Wochenende zum Erhalt: Sweet Spot @ ${p.watts(90)}–${p.watts(94)} W, in '
           'Entlastungswochen Z2 · FTP-Tests 01.02. und 29.03.',
       strength:
-          'Home-Gym wie gewohnt · Beine schwer und kurz (2-3 Sätze à 4-6 Wdh.), 48 h Abstand zu '
+          'Home-Gym wie gewohnt · Lower schwer und kurz (2-3 Sätze à 4-6 Wdh.), 48 h Abstand zu '
           'Longrun/Qualität',
     ),
     TrainingPhase.marathonTaper => PhasePlanText(
       run: 'Longrun 24 → 16 km, Marathontempo kurz @ ${p.marathon} /km · Rennen So 02.05., 60-90 g KH/h',
       swim: 'kurz und locker, ein paar zügige 50er',
       bike: 'Zwift kurz mit Aktivierung (3×3 min @ ${p.watts(80)} W)',
-      strength: 'Volumen reduzieren, letzte schwere Beine-Einheit ca. 10 Tage vor dem Rennen',
+      strength: 'Volumen reduzieren, letzte schwere Lower-Einheit ca. 10 Tage vor dem Rennen',
     ),
     TrainingPhase.regeneration => PhasePlanText(
       run: 'ab Tag 5 sehr locker 20-30 min, Woche 2: 2× 30-40 min locker',
       swim: 'locker, Technik',
       bike: 'Zwift locker Z2 (${p.watts(65)}–${p.watts(70)} W)',
-      strength: 'Oberkörper leicht, Beine erst in Woche 2 leicht',
+      strength: 'Push und Pull leicht, Lower erst in Woche 2 leicht',
     ),
     TrainingPhase.almereAufbau => PhasePlanText(
       run:
@@ -575,7 +575,7 @@ abstract final class PhasePlanTexts {
       bike:
           'Zwift-Intervall unter der Woche (Sweet Spot, Renntempo 2×30 / 3×20 min @ ${p.watts(77)}–'
           '${p.watts(78)} W) · Wochenende lange Ausfahrt 2:00 → 3:00 h mit Renntempo-Blöcken + Koppellauf',
-      strength: 'Home-Gym wie gewohnt, Beine 1x',
+      strength: 'Home-Gym wie gewohnt, Lower 1x',
     ),
     TrainingPhase.almerePeak => PhasePlanText(
       run: 'Renn-Laufpace 2×5 km / 3×3 km, Koppelläufe 20-30 min',

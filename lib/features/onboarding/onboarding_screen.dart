@@ -12,7 +12,6 @@ import '../../ui/liquid.dart';
 import '../../ui/platform_names.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
-import '../evidence/evidence_views.dart';
 import '../settings/backup_screen.dart';
 import 'personalization_widgets.dart';
 import 'schedule_editor.dart';
@@ -538,10 +537,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         if (assessment != null && assessment.notes.isNotEmpty)
           FormSection(
             header: 'Hinweise zu deinem Ziel',
-            children: [
-              for (final note in assessment.notes) ListTile(title: Text(note)),
-              EvidenceDisclosure(ruleIDs: assessment.evidenceIDs),
-            ],
+            children: [for (final note in assessment.notes) ListTile(title: Text(note))],
           ),
         InputIssuesSection(issues: _inputIssues),
       ],

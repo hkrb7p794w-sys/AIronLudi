@@ -39,7 +39,7 @@ Einrichtungsassistent (`/einrichtung`, `features/onboarding`). Hintergrund: `doc
 | Ernährung | `nutrition`, `recipes` | Tagebuch, Erfassen (Suche, Foto, Barcode, Text/Diktat), BLS und Open Food Facts, Tagesziele, Gewicht, Rezepte, Vorrat, Kochplan, Teilen |
 | Ich | `me` (Einstellungen als Reiter); `settings`, `account`, `social`, `game`, `ai` | Profil und Ziele, Datenquellen, Konto, Freunde & Liga (Feed, Rangliste, Challenges), KI (Empfehlungen, Chat, Export/Import), alle Einstellungen |
 
-Querschnitt: `motivation` (Begleiter), `evidence` (Quellen zu Empfehlungen). Logik dazu liegt in
+Querschnitt: `motivation` (Begleiter), `evidence` (eigene Quellen für die KI; angezeigt werden keine Quellen). Logik dazu liegt in
 `packages/coach_core/lib/src/<bereich>/` mit gleichem Namen. Wo eine Funktion herkommt, zeigt der Swift-Code in
 Coach-App; was schon portiert ist, Abschnitt 8 des Migrationsplans.
 
@@ -98,7 +98,10 @@ Grundlage: `docs/roast/design-konzept.md` (Abschnitt 3 und Glossar).
   Ringe und Balken mit `Semantics(label: …)`, große Schrift ohne Abschneiden (geprüft in `test/a11y/` und
   `test/features/layout_overflow_test.dart`).
 - **Begriffe** (eine Schreibweise je Sache): KI, Belastung (0–21), Erholung, Einheit (geplant) / Aktivität
-  (aufgezeichnet), Kraft (Sportart) / Gym (Live-Einheit), Verpflegung, Morgenbericht.
+  (aufgezeichnet), Kraft (Sportart) / Gym (Live-Einheit), Verpflegung, Morgenbericht. Krafteinheiten heißen Push, Pull,
+  Lower und Pull & Push (`WorkoutNames`).
+- **Keine Quellen oder Literaturangaben in der UI** (Wunsch vom 25.11.2026): Belege bleiben in `coach_core` für KI und
+  Export, die App zeigt sie nicht an.
 - Eine Linie für beide Plattformen mit iOS-Grammatik; plattformgerecht nur bei Schaltern, Zurück-Geste,
   Datums-/Zeitwählern, Teilen und Haptik.
 

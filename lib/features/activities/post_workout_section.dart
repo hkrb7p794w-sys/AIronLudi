@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/tokens.dart';
-import '../evidence/evidence_views.dart';
 import '../plan/my_week_screen.dart';
 import '../today/now_views.dart';
 
@@ -148,7 +147,6 @@ class _PostWorkoutSectionState extends ConsumerState<PostWorkoutSection> {
             if (entry.key != '${activity.id}') entry.key: entry.value,
         },
       ),
-      if (result.evidenceIDs.isNotEmpty) EvidenceDisclosure(ruleIDs: result.evidenceIDs),
     ];
   }
 }

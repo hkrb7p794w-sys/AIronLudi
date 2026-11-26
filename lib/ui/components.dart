@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -267,6 +269,75 @@ class LabeledRow extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// Auswahl wie ein iOS-`Picker` im Menüstil: Titel links, gewählter Wert rechts, Erklärung in voller Breite darunter.
+/// Antippen öffnet das Menü an der Zeile. Statt `DropdownButton` als `trailing`, das Titel und Erklärung auf eine
+/// schmale Spalte zusammendrückt.
+class MenuPickerTile<T extends Object> extends StatelessWidget {
+  const MenuPickerTile({
+    super.key,
+    required this.title,
+    required this.value,
+    required this.values,
+    required this.label,
+    required this.onChanged,
+    this.detail,
+  });
+
+  final String title;
+  final T value;
+  final List<T> values;
+  final String Function(T value) label;
+  final ValueChanged<T> onChanged;
+
+  /// Erklärung zum gewählten Wert.
+  final String? detail;
+
+  Future<void> _open(BuildContext context) async {
+    final box = context.findRenderObject()! as RenderBox;
+    final overlay = Overlay.of(context).context.findRenderObject()! as RenderBox;
+    final topRight = box.localToGlobal(box.size.topRight(Offset.zero), ancestor: overlay);
+    final picked = await showMenu<T>(
+      context: context,
+      position: RelativeRect.fromRect(
+        Rect.fromLTWH(topRight.dx, topRight.dy, 0, box.size.height),
+        Offset.zero & overlay.size,
+      ),
+      initialValue: value,
+      items: [
+        for (final item in values)
+          CheckedPopupMenuItem<T>(value: item, checked: item == value, child: Text(label(item))),
+      ],
+    );
+    if (picked != null && picked != value) onChanged(picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ListTile(
+      title: Row(
+        spacing: 8,
+        children: [
+          Expanded(child: Text(title)),
+          Flexible(
+            child: Text(
+              label(value),
+              textAlign: TextAlign.end,
+              style: TextStyle(color: theme.colorScheme.primary),
+            ),
+          ),
+          Icon(Icons.unfold_more, size: 18, color: theme.colorScheme.primary),
+        ],
+      ),
+      subtitle: switch (detail) {
+        final detail? => Text(detail),
+        null => null,
+      },
+      onTap: () => unawaited(_open(context)),
+    );
+  }
 }
 
 /// Zahlenfeld mit deutscher Tastatur (Komma).

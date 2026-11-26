@@ -572,7 +572,6 @@ class _GymPlanScreenState extends ConsumerState<GymPlanScreen> {
             title: const Text('Neu erstellen'),
             onTap: () => setState(() => _result = null),
           ),
-          const EvidenceDisclosure(ruleIDs: ['gym.frequency', 'gym.volume', 'gym.load']),
         ],
       ),
     ];

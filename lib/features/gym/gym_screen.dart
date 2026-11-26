@@ -15,7 +15,6 @@ import '../../ui/components.dart';
 import '../../ui/liquid.dart';
 import '../../ui/platform_names.dart';
 import '../../ui/tokens.dart';
-import '../evidence/evidence_views.dart';
 import 'active_workout_screen.dart';
 import 'gym_controller.dart';
 import 'gym_library.dart';

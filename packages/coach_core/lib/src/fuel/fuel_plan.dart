@@ -829,7 +829,7 @@ abstract final class FuelPlanner {
       if (mix != null && mix.concentration > FuelMix.highConcentration) {
         notes.add(
           FuelNote(
-            '${product.name}: ${GermanFormat.decimal(mix.concentration)} % Kohlenhydrate – über den 5–10 % der ACSM '
+            '${product.name}: ${GermanFormat.decimal(mix.concentration)} % Kohlenhydrate – über 5–10 % '
             'leert sich der Magen langsamer. Mit Wasser nachspülen und im Training testen.',
             FuelNoteKind.warning,
           ),

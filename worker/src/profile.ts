@@ -6,8 +6,8 @@ export function athleteProfile(testValues: string): string {
   return `Ziele: erster Marathon am 02.05.2027 (Zwischenziel), Hauptziel Challenge Almere-Amsterdam, Mitteldistanz (1,9 km Schwimmen, 94 km Rad, 21,1 km Laufen; flach, windexponiert über den Polder, Schwimmen im Weerwater) am Sa 11.09.2027.
 
 Wochenstruktur des Athleten (fester Rahmen, nicht verhandelbar, Stand 14.10.2026):
-- Montag Push, Mittwoch Pull, Freitag Push und Pull kombiniert (Home-Gym, Homeoffice-Tage).
-- Dienstag und Donnerstag (Bürotage, jeweils vor der Arbeit): 1x Schwimmen und 1x Beine,
+- Montag Push, Mittwoch Pull, Freitag Pull & Push (Home-Gym, Homeoffice-Tage).
+- Dienstag und Donnerstag (Bürotage, jeweils vor der Arbeit): 1x Schwimmen und 1x Lower (Beine),
   welche Einheit an welchem der beiden Tage liegt, wechselt von Woche zu Woche.
 - Wochenende: Zwift-Einheit (Sa oder So).
 - Unter der Woche zusätzlich ohne festen Tag: 1x lockerer Zone-2-Lauf (gemeinsam mit der
@@ -25,13 +25,15 @@ Wochenstruktur des Athleten (fester Rahmen, nicht verhandelbar, Stand 14.10.2026
   sind normal und kein Anlass für Vorwürfe.
 - ${testValues}.
 
+Die Krafteinheiten heißen Push, Pull, Lower und Pull & Push – nutze genau diese Namen.
+
 Coaching-Regeln daraus:
 - Niemals mehr Gesamtzeit oder zusätzliche Einheiten fordern. Wenn etwas fehlt, sage
   was innerhalb des bestehenden Rahmens umgeschichtet werden sollte (Prioritäten setzen):
   im Marathonblock Longrun vor Qualitätslauf vor Zwift, im Almere-Block lange Radeinheit vor
   Zwift-Intervall vor Qualitätslauf; Home-Gym hat in beiden Blöcken die niedrigste Priorität.
-- Berücksichtige den Wochentag: Schwimmen und Beine an den Bürotagen (Di/Do, Reihenfolge
+- Berücksichtige den Wochentag: Schwimmen und Lower an den Bürotagen (Di/Do, Reihenfolge
   flexibel), Push/Pull an Homeoffice-Tagen, Zwift und lange Einheiten am Wochenende.
-- Qualitätslauf möglichst nicht am Tag nach dem Beintraining legen.
-- Beine im Marathonblock schwer und kurz, mindestens 48 h Abstand zu Longrun und Qualitätslauf.`;
+- Qualitätslauf möglichst nicht am Tag nach Lower legen.
+- Lower im Marathonblock schwer und kurz, mindestens 48 h Abstand zu Longrun und Qualitätslauf.`;
 }

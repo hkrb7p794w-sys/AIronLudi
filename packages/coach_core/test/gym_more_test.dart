@@ -313,7 +313,7 @@ void main() {
 
     test('GymBook-Pläne nutzen bekannte Übungen', () {
       final plans = RoutineTemplates.gymBook;
-      expect(plans.map((routine) => routine.name), ['Lower', 'Push & Pull B', 'Pull A', 'Push A']);
+      expect(plans.map((routine) => routine.name), ['Lower', 'Pull & Push', 'Pull', 'Push']);
       for (final item in plans.expand((routine) => routine.items)) {
         expect(ExerciseLibrary.info(item.exerciseID), isNotNull, reason: item.exerciseID);
       }

@@ -1,5 +1,4 @@
-// Durchlauf Quellen: Bibliothek mit Regeln und Studien, eigene Quelle anlegen, wiederfinden und löschen.
-import 'package:aironludi/features/evidence/evidence_views.dart';
+// Durchlauf Quellen: eigene Quelle für die KI anlegen, wiederfinden und löschen.
 import 'package:aironludi/services/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,21 +6,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'walkthrough.dart';
 
 void main() {
-  walk('Quellen: Bibliothek, eigene Quelle anlegen und löschen', (tester, device) async {
+  walk('Quellen: eigene Quelle anlegen und löschen', (tester, device) async {
     final container = await startDemo(tester, device: device);
     await tab(tester, 'Ich');
 
-    step('Allgemein › Quellen und Regeln');
-    await tapText(tester, 'Allgemein');
-    await tapText(tester, 'Quellen und Regeln');
-    expect(find.byType(EvidenceLibraryScreen), findsOneWidget);
-    await tester.tap(await reveal(tester, find.byType(EvidenceRuleRow)));
-    await settle(tester);
-    await scrollToEnd(tester);
-    await home(tester);
-
+    // Die App zeigt keine Quellen und Regeln mehr an (Wunsch vom 25.11.2026), eigene Quellen für die KI bleiben.
     step('KI und Automatisierung › Eigene Quellen: anlegen');
-    await tab(tester, 'Ich');
     await tapText(tester, 'KI und Automatisierung');
     await tapText(tester, 'Eigene Quellen');
     await tapText(tester, 'Quelle hinzufügen');

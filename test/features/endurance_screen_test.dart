@@ -3,9 +3,10 @@ import 'package:aironludi/app/user_providers.dart';
 import 'package:aironludi/features/endurance/endurance_controller.dart';
 import 'package:aironludi/features/endurance/endurance_screens.dart';
 import 'package:aironludi/services/providers.dart';
+import 'package:aironludi/ui/components.dart';
 import 'package:aironludi/ui/liquid.dart';
 import 'package:coach_core/coach_core.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -43,6 +44,27 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(EndurancePlanSetupScreen), findsOneWidget);
     expect(find.text('Schwerpunkt'), findsOneWidget);
+
+    // Lange Einheit: nur gewählte Trainingstage; fällt ihr Tag weg, rückt sie auf einen gewählten Tag.
+    DropdownButton<Weekday> longDay() => tester.widget(find.byType(DropdownButton<Weekday>));
+    List<Weekday?> offered() => [for (final item in longDay().items!) item.value];
+    final chips = find.byType(FlowChips<Weekday>);
+    await tester.scrollUntilVisible(chips, 200, scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
+    final chosen = [
+      for (final day in Weekday.values)
+        if (offered().contains(day)) day,
+    ];
+    expect(chosen, isNotEmpty);
+    expect(offered(), contains(longDay().value));
+    if (chosen.length >= 2) {
+      final removed = longDay().value!;
+      await tester.tap(find.descendant(of: chips, matching: find.text(removed.short)));
+      await tester.pumpAndSettle();
+      expect(offered(), isNot(contains(removed)));
+      expect(offered(), hasLength(chosen.length - 1));
+      expect(offered(), contains(longDay().value));
+    }
     Navigator.of(tester.element(find.byType(EndurancePlanSetupScreen))).pop();
     await tester.pumpAndSettle();
 

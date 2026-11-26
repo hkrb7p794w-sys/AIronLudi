@@ -333,7 +333,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen>
                     caption: routeToday == null
                         ? (routeStore.settings.explorationEnabled
                               ? '${routeStore.exploration.territories.length} Gebiete · Routen planen'
-                              : 'Laufen & Rad auf OpenStreetMap')
+                              : 'Laufen & Rad')
                         : 'Route heute',
                     onTap: () => _open((_) => const RoutesScreen()),
                   ),
@@ -343,7 +343,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen>
                     symbol: 'fork.knife',
                     color: AppColors.of(context).caution,
                     value: '',
-                    caption: 'Vor, während und nach dem Training',
+                    caption: 'Rund ums Training',
                     onTap: () => _open((_) => const FuelPlannerScreen()),
                   ),
               ],
@@ -443,6 +443,8 @@ class _HubRow extends StatelessWidget {
     required this.caption,
     required this.onTap,
     this.valueColor,
+    this.headlineHeight = 0,
+    this.sublineHeight = 0,
   });
 
   final String title;
@@ -453,56 +455,99 @@ class _HubRow extends StatelessWidget {
   final String caption;
   final VoidCallback onTap;
 
+  /// Mindesthöhe der beiden Textzeilen, damit alle Kacheln eines Rasters gleich groß sind ([_HubGrid]).
+  final double headlineHeight;
+  final double sublineHeight;
+
+  static const padding = EdgeInsets.fromLTRB(12, 12, 12, 10);
+
+  /// Ohne Kernwert steht der Bereich groß und die Erklärung klein darunter – kein einsamer Strich.
+  bool get _plain => value.isEmpty || value == '–';
+  String get headline => _plain ? title : value;
+  String get subline => _plain ? caption : title;
+
+  static TextStyle? headlineStyle(BuildContext context) =>
+      Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700);
+
+  static TextStyle sublineStyle(BuildContext context) =>
+      AppText.caption(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
+
+  _HubRow _reserving({required double headline, required double subline}) => _HubRow(
+    title: title,
+    symbol: symbol,
+    color: color,
+    value: value,
+    caption: caption,
+    onTap: onTap,
+    valueColor: valueColor,
+    headlineHeight: headline,
+    sublineHeight: subline,
+  );
+
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final secondary = theme.colorScheme.onSurfaceVariant;
-    return Semantics(
-      button: true,
-      label: '$title: $value, $caption',
-      excludeSemantics: true,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: 6,
-            children: [
-              Row(
-                children: [
-                  SportIcon(symbol: symbol, color: color, size: 26),
-                  const Spacer(),
-                  const DisclosureChevron(),
-                ],
-              ),
-              // Ohne Kernwert steht der Bereich groß und die Erklärung klein darunter – kein einsamer Strich.
-              Text(
-                value.isEmpty || value == '–' ? title : value,
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: '$title: $value, $caption',
+    excludeSemantics: true,
+    child: InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: padding,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 6,
+          children: [
+            Row(
+              children: [
+                SportIcon(symbol: symbol, color: color, size: 26),
+                const Spacer(),
+                const DisclosureChevron(),
+              ],
+            ),
+            ConstrainedBox(
+              constraints: BoxConstraints(minHeight: headlineHeight),
+              child: Text(
+                headline,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: valueColor),
+                style: headlineStyle(context)?.copyWith(color: valueColor),
               ),
-              Text(
-                value.isEmpty || value == '–' ? caption : title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: AppText.caption(context).copyWith(color: secondary),
-              ),
-            ],
-          ),
+            ),
+            ConstrainedBox(
+              constraints: BoxConstraints(minHeight: sublineHeight),
+              child: Text(subline, maxLines: 2, overflow: TextOverflow.ellipsis, style: sublineStyle(context)),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
-/// Kacheln in zwei Spalten (drei ab Tablet-Breite) statt einer Liste mit Erklärtexten.
+/// Kacheln in zwei Spalten (drei ab Tablet-Breite) statt einer Liste mit Erklärtexten. Alle Kacheln eines Rasters
+/// sind gleich groß: Kernwert und Bereich reservieren so viele Zeilen wie der längste Text im Raster braucht.
 class _HubGrid extends StatelessWidget {
   const _HubGrid({this.header, required this.children});
 
   final String? header;
-  final List<Widget> children;
+  final List<_HubRow> children;
+
+  /// Höhe eines Kacheltextes bei der gegebenen Breite (höchstens zwei Zeilen wie in der Kachel).
+  static double _textHeight(BuildContext context, String text, TextStyle? style, double width) {
+    final defaults = DefaultTextStyle.of(context);
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: defaults.style.merge(style)),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 2,
+      ellipsis: '…',
+      locale: Localizations.maybeLocaleOf(context),
+      textHeightBehavior: defaults.textHeightBehavior ?? DefaultTextHeightBehavior.maybeOf(context),
+    )..layout(maxWidth: width);
+    final height = painter.height;
+    painter.dispose();
+    return height;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -523,6 +568,15 @@ class _HubGrid extends StatelessWidget {
               final columns = constraints.maxWidth >= 600 ? 3 : 2;
               const gap = 10.0;
               final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
+              final textWidth = math.max(width - _HubRow.padding.horizontal, 1.0);
+              final headlineStyle = _HubRow.headlineStyle(context);
+              final sublineStyle = _HubRow.sublineStyle(context);
+              var headline = 0.0;
+              var subline = 0.0;
+              for (final child in children) {
+                headline = math.max(headline, _textHeight(context, child.headline, headlineStyle, textWidth));
+                subline = math.max(subline, _textHeight(context, child.subline, sublineStyle, textWidth));
+              }
               return Wrap(
                 spacing: gap,
                 runSpacing: gap,
@@ -530,7 +584,11 @@ class _HubGrid extends StatelessWidget {
                   for (final child in children)
                     SizedBox(
                       width: width,
-                      child: Card(margin: EdgeInsets.zero, clipBehavior: Clip.antiAlias, child: child),
+                      child: Card(
+                        margin: EdgeInsets.zero,
+                        clipBehavior: Clip.antiAlias,
+                        child: child._reserving(headline: headline, subline: subline),
+                      ),
                     ),
                 ],
               );

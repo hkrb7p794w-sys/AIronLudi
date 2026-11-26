@@ -24,7 +24,6 @@ import '../activities/post_workout_section.dart';
 import '../ai/ai_screen.dart';
 import '../ai/chat_screen.dart';
 import '../endurance/endurance_controller.dart';
-import '../evidence/evidence_views.dart';
 import '../game/game_views.dart';
 import '../gym/gym_providers.dart';
 import '../gym/gym_screen.dart';
@@ -593,7 +592,6 @@ class _CoachNoteSection extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(error, style: AppText.caption(context).copyWith(color: AppColors.of(context).caution)),
           ),
-        EvidenceDisclosure(ruleIDs: controller.noteEvidence),
       ],
     );
   }

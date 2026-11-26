@@ -166,8 +166,6 @@ extension _NutritionSections on _NutritionScreenState {
           enabled: !controller.isWorking && ai.allows('nutrition_review'),
           onTap: () => controller.review(meals: _meals, activities: _activities, recovery: _recoveryText),
         ),
-        if (controller.reviewPoints.isNotEmpty)
-          EvidenceDisclosure(ruleIDs: [...controller.reviewSources, ...NutritionController.reviewEvidence]),
       ],
     );
   }

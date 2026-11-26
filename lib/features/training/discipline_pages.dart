@@ -12,7 +12,7 @@ import '../../ui/chart_axes.dart';
 import '../../ui/components.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/tokens.dart';
-import '../evidence/evidence_views.dart';
+import 'race_calculators.dart';
 import 'training_controller.dart';
 import 'training_pages.dart';
 
@@ -460,7 +460,6 @@ class DecouplingSection extends StatelessWidget {
                 ),
             ],
           ),
-        const EvidenceDisclosure(ruleIDs: ['run.decoupling']),
       ],
     );
   }
@@ -559,7 +558,6 @@ class PaceCheckSection extends ConsumerWidget {
             title: Text('Ausgewertete Läufe (${result.rows.length})'),
             children: [for (final row in result.rows.reversed) _PaceCheckRowView(row: row)],
           ),
-        const EvidenceDisclosure(ruleIDs: ['run.pace-check', 'run.4x4']),
       ],
     );
   }

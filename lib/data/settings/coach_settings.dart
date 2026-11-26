@@ -155,7 +155,8 @@ final class CoachSettings extends ChangeNotifier {
 
   bool _showsEvidence = false;
 
-  /// Quellen unter Empfehlungen einblenden (Standard: aus; sie bleiben unter „Quellen und Regeln“ erreichbar).
+  /// Früher: Quellen unter Empfehlungen einblenden. Die App zeigt keine Quellen mehr an (Wunsch vom 25.11.2026); der
+  /// Wert bleibt nur, damit Sicherungen unverändert lesbar sind.
   bool get showsEvidence => _showsEvidence;
   set showsEvidence(bool value) {
     _showsEvidence = value;

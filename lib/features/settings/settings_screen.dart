@@ -183,21 +183,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ],
                   ),
                   FormSection(
-                    header: 'Quellen',
-                    children: [
-                      SwitchListTile.adaptive(
-                        title: const Text('Quellen bei Empfehlungen zeigen'),
-                        value: settings.showsEvidence,
-                        onChanged: (on) => settings.showsEvidence = on,
-                      ),
-                      ListTile(
-                        title: const Text('Quellen und Regeln'),
-                        trailing: const DisclosureChevron(),
-                        onTap: () => _push(const EvidenceLibraryScreen()),
-                      ),
-                    ],
-                  ),
-                  FormSection(
                     header: 'Motivation',
                     children: [
                       ListTile(

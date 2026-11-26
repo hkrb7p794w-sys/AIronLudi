@@ -10,7 +10,6 @@ import '../../ui/components.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/tokens.dart';
 import '../../ui/zoomable_chart.dart';
-import '../evidence/evidence_views.dart';
 import 'training_controller.dart';
 
 part 'training_trend_pages.dart';
@@ -347,12 +346,7 @@ class HeartRateScreen extends StatelessWidget {
                   ),
                 FormSection(
                   header: 'Hinweise',
-                  children: [
-                    for (final hint in report.hints) ListTile(dense: true, title: Text(hint)),
-                    const EvidenceDisclosure(
-                      ruleIDs: ['hr.threshold-zones', 'hr.max-formula', 'intensity.distribution', 'hr.optical'],
-                    ),
-                  ],
+                  children: [for (final hint in report.hints) ListTile(dense: true, title: Text(hint))],
                 ),
               ],
             ),

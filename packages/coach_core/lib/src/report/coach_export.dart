@@ -158,7 +158,7 @@ abstract final class CoachExport {
       '  "routinen": {',
       '    "modus": "ergaenzen",',
       '    "liste": [',
-      '      {"name": "Push A", "uebungen": [',
+      '      {"name": "Push", "uebungen": [',
       '        {"id": "bankdruecken", "saetze": 3, "wdh_min": 6, "wdh_max": 10, "pause": 120, "gewicht": 55}',
       '      ]}',
       '    ]',

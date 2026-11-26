@@ -147,15 +147,6 @@ class FuelPlannerScreen extends ConsumerWidget {
               ),
             ],
           ),
-          const FormSection(
-            header: 'Grundlage',
-            footer:
-                'ACSM 2016 (Thomas, Erdman, Burke) und 2007 (Flüssigkeit), ISSN Nutrient Timing 2017 und Koffein 2021, '
-                'Jeukendrup 2014 und 2017 (Gut-Training), Burke 2011, Podlogar 2022 und Morton 2026 (bis 120 g/h), '
-                'Barnes 2019 (Schweiß), Moore 2015 (Protein), King 2022 (Krafttraining). Richtwerte, keine '
-                'medizinische Beratung.',
-            children: [],
-          ),
         ],
       ),
     );

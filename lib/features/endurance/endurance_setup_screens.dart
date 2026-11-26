@@ -178,7 +178,9 @@ class _EndurancePlanSetupScreenState extends ConsumerState<EndurancePlanSetupScr
     _days
       ..clear()
       ..addAll(suggestion.days);
-    _longDay = suggestion.longDay;
+    _longDay = _days.contains(suggestion.longDay)
+        ? suggestion.longDay
+        : Weekday.values.lastWhere(_days.contains, orElse: () => suggestion.longDay);
     _hours = (suggestion.weeklyMinutes / 60).clamp(1, 20).toDouble();
     _focus = suggestion.focus;
     _basis = EnduranceGoals.explanation(profile, today: today, goal: preferred);
@@ -257,6 +259,7 @@ class _EndurancePlanSetupScreenState extends ConsumerState<EndurancePlanSetupScr
   @override
   Widget build(BuildContext context) {
     final eventSports = _mode == PlanningMode.goal ? _event.sports.toSet() : <EnduranceSport>{};
+    final trainingDays = Weekday.values.where(_days.contains).toList();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Plan erstellen'),
@@ -400,15 +403,26 @@ class _EndurancePlanSetupScreenState extends ConsumerState<EndurancePlanSetupScr
                   isSelected: _days.contains,
                   onToggle: (day) => setState(() {
                     if (!_days.remove(day)) _days.add(day);
+                    // Die lange Einheit liegt immer auf einem Trainingstag: fällt ihr Tag weg, rückt sie auf den
+                    // letzten gewählten Tag der Woche.
+                    if (!_days.contains(_longDay)) {
+                      _longDay = Weekday.values.lastWhere(_days.contains, orElse: () => _longDay);
+                    }
                   }),
                 ),
               ),
-              _Choice<Weekday>(
-                label: 'Lange Einheit',
-                value: _longDay,
-                items: [for (final day in Weekday.values) DropdownMenuItem(value: day, child: Text(day.long))],
-                onChanged: (value) => setState(() => _longDay = value ?? _longDay),
-              ),
+              // Nur die gewählten Trainingstage stehen zur Wahl (vorher alle sieben).
+              if (trainingDays.isEmpty)
+                const ListTile(title: Text('Lange Einheit'), subtitle: Text('Erst Trainingstage wählen.'))
+              else
+                _Choice<Weekday>(
+                  // Neu aufbauen, wenn sich Tage oder Auswahl ändern (das Feld merkt sich sonst seinen Startwert).
+                  key: ValueKey('long-${_longDay.index}-${trainingDays.map((day) => day.index).join(',')}'),
+                  label: 'Lange Einheit',
+                  value: _longDay,
+                  items: [for (final day in trainingDays) DropdownMenuItem(value: day, child: Text(day.long))],
+                  onChanged: (value) => setState(() => _longDay = value ?? _longDay),
+                ),
               ListTile(
                 title: const Text('Zeit je Woche'),
                 subtitle: Slider(

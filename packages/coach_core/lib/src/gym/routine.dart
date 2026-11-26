@@ -7,6 +7,7 @@ import '../util/int_range.dart';
 import 'exercise_catalog.dart';
 import 'exercise_library.dart';
 import 'gym_tools.dart';
+import 'workout_names.dart';
 
 final RegExp _uuid = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
 
@@ -202,12 +203,13 @@ extension RoutineRanges on List<Routine> {
 /// Vorschläge für Routinen nach Profil, Anzahl der Krafttage und Ausstattung.
 ///
 /// Aufbau: Jeder große Muskel wird mindestens zweimal pro Woche trainiert (Schoenfeld et al. 2016). Bei 1–3 Tagen
-/// Ganzkörper, bei 4 Tagen Ober-/Unterkörper, ab 5 Tagen zusätzlich Push/Pull/Beine. Wiederholungsbereiche im
+/// Ganzkörper, bei 4 Tagen Ober-/Unterkörper, ab 5 Tagen zusätzlich Push/Pull/Lower. Wiederholungsbereiche im
 /// mittleren Bereich: Muskelaufbau gelingt über ein breites Lastspektrum (Schoenfeld et al. 2017), Grundübungen
 /// etwas schwerer. Sätze je Übung nach Erfahrung (Einsteiger 2, sonst 3).
 abstract final class RoutineTemplates {
-  /// Die vier Pläne aus GymBook (Stand 27.10.2026, aus den Screenshots des Nutzers): je 2 Sätze à 12 Wiederholungen,
-  /// Planks 2 × 60 Sekunden, mit den zuletzt genutzten Gewichten als Startwert.
+  /// Die vier Pläne aus GymBook (Stand 27.10.2026, aus den Screenshots des Nutzers; Namen seit 25.11.2026 wie in der
+  /// ganzen App): je 2 Sätze à 12 Wiederholungen, Planks 2 × 60 Sekunden, mit den zuletzt genutzten Gewichten als
+  /// Startwert.
   static List<Routine> get gymBook {
     RoutineItem item(String id, String name, double? weight, {int reps = 12, int rest = 90}) => RoutineItem(
       exerciseID: id,
@@ -222,7 +224,7 @@ abstract final class RoutineTemplates {
     // dart format off
     return [
       Routine(
-        name: 'Lower',
+        name: WorkoutNames.lower,
         items: [
           item('beinbeugen', 'Beinbeugen Sitzend', 110),
           item('beinstrecken', 'Beinstrecken', 120),
@@ -231,7 +233,7 @@ abstract final class RoutineTemplates {
           item('crunch_geraet', 'Crunches am Gerät', 90),
         ]),
       Routine(
-        name: 'Push & Pull B',
+        name: WorkoutNames.pullPush,
         items: [
           item('hammer_curl_kabel', 'Curls in Hammerhaltung am Kabel', 22.5),
           item('trizeps_kabel_schraegbank', 'Armstrecken am Tiefen Kabel auf Schrägbank', 32.5),
@@ -241,7 +243,7 @@ abstract final class RoutineTemplates {
           item('dips_barren', 'Dips am Barren', 79),
         ]),
       Routine(
-        name: 'Pull A',
+        name: WorkoutNames.pull,
         items: [
           item('rudern_kabel', 'Enges Rudern am Kabel Sitzend', 110, rest: 120),
           item('kabel_curl_liegend', 'Curls am Kabel liegend', 50),
@@ -251,7 +253,7 @@ abstract final class RoutineTemplates {
           item('crunch_kabel', 'Crunches am Kabel Kniend', 65),
         ]),
       Routine(
-        name: 'Push A',
+        name: WorkoutNames.push,
         items: [
           item('fliegende_kabel_hoch', 'Flyings am Hohen Kabel', 22.5),
           item('trizeps_kabel_schraegbank', 'Armstrecken am Tiefen Kabel auf Schrägbank', 32.5),
@@ -368,7 +370,7 @@ abstract final class RoutineTemplates {
       ],
     ),
     'beine': (
-      name: 'Beine',
+      name: 'Lower (Beine, Gesäß)',
       slots: [
         ['kniebeuge', 'goblet_squat', 'beinpresse'],
         ['rumaenisches_kreuzheben', 'hueftstoss'],
@@ -650,7 +652,11 @@ final class GymSettings {
     }
 
     settings
-      ..routines = listStrict(json['routines'], Routine.fromJson) ?? []
+      // Ältere Namen („Push A“, „Push & Pull B“) heißen wie heute; gespeichert wird das beim nächsten Sichern.
+      ..routines = [
+        for (final routine in listStrict(json['routines'], Routine.fromJson) ?? <Routine>[])
+          routine..name = WorkoutNames.canonical(routine.name),
+      ]
       ..customExercises = listStrict(json['customExercises'], ExerciseInfo.fromJson) ?? []
       ..equipment = enumListStrict(Equipment.values, json['equipment'])?.toSet() ?? {...Equipment.gym}
       ..tracksRIR = flag('tracksRIR', true)

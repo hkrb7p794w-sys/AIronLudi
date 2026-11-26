@@ -9,7 +9,6 @@ import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
 import '../../ui/tokens.dart';
 import '../endurance/endurance_screens.dart';
-import '../evidence/evidence_views.dart';
 import '../health/mobility_screen.dart';
 import '../plan/my_week_screen.dart';
 import '../plan/plan_screen.dart';
@@ -222,7 +221,6 @@ class NowSection extends ConsumerWidget {
               child: PlanDayActions(day: today, suggested: advice.move),
             ),
         ],
-        if (focus.evidenceIDs.isNotEmpty) EvidenceDisclosure(ruleIDs: focus.evidenceIDs),
       ],
     );
   }
@@ -491,7 +489,6 @@ class SuggestionCard extends StatelessWidget {
               ),
             ],
           ),
-          if (suggestion.evidenceIDs.isNotEmpty) EvidenceDisclosure(ruleIDs: suggestion.evidenceIDs),
         ],
       ),
     );
@@ -681,7 +678,6 @@ class HintPage extends StatelessWidget {
                 for (final entry in sorted) LabeledRow(label: entry.key.label, value: '${entry.value.toInt()}'),
               ],
             ),
-          FormSection(children: [EvidenceDisclosure(ruleIDs: ruleIDs)]),
         ],
       ),
     );

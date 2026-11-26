@@ -415,7 +415,6 @@ class GymHintsSection extends ConsumerWidget {
           ),
         for (final hint in gym.hints) ListTile(dense: true, leading: const Icon(Icons.north_east), title: Text(hint)),
         if (gym.isLoadingHints) const LinearProgressIndicator(),
-        EvidenceDisclosure(ruleIDs: gym.hintEvidence),
       ],
     );
   }
@@ -442,7 +441,7 @@ class _ProgressSectionState extends State<_ProgressSection> {
     return FormSection(
       header: 'Gewichts-Progression',
       footer:
-          'Regel: alle Arbeitssätze an der Obergrenze → +2,5–5 % und wieder unten im Bereich anfangen (ACSM 2009). '
+          'Regel: alle Arbeitssätze an der Obergrenze → +2,5–5 % und wieder unten im Bereich anfangen. '
           'Bleiben in allen Sätzen 4 oder mehr Wiederholungen in Reserve, sofort steigern. Die Tagesampel verschiebt '
           'nur den Zeitpunkt.',
       children: [
@@ -461,7 +460,6 @@ class _ProgressSectionState extends State<_ProgressSection> {
             title: Text('${rest.length} weitere Übungen'),
             children: [for (final item in rest) _ProgressRow(item: item, gym: widget.gym)],
           ),
-        const EvidenceDisclosure(ruleIDs: ['gym.progression', 'gym.rir']),
       ],
     );
   }
@@ -516,7 +514,7 @@ class _VolumeSection extends StatelessWidget {
     header: 'Sätze je Muskel · 7 Tage',
     footer:
         'Grün ab 5 Sätzen pro Woche: solider Kraftaufbau neben dem Ausdauertraining. Mehr Sätze bringen mehr, aber mit '
-        'abnehmendem Ertrag (Schoenfeld 2017, Pelland 2025). Für Lauf- und Radökonomie zählt Beintraining am meisten.',
+        'abnehmendem Ertrag. Für Lauf- und Radökonomie zählt Beintraining am meisten.',
     children: [
       if ((gym.daysSinceLegs ?? 99) > 10)
         Padding(
@@ -555,7 +553,6 @@ class _VolumeSection extends StatelessWidget {
             ),
           );
         }(),
-      const EvidenceDisclosure(ruleIDs: ['gym.volume', 'strength.economy', 'strength.interference']),
     ],
   );
 }

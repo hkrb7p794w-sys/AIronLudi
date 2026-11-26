@@ -88,6 +88,7 @@ export 'src/gym/muscle_load.dart';
 export 'src/gym/routine.dart';
 export 'src/gym/workout_edits.dart';
 export 'src/gym/workout_flow.dart';
+export 'src/gym/workout_names.dart';
 export 'src/health/body_battery.dart';
 export 'src/health/german_holidays.dart';
 export 'src/health/health_access_diagnosis.dart';

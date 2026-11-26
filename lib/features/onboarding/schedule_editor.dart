@@ -5,7 +5,6 @@ import '../../ui/components.dart';
 import '../../ui/sport_style.dart';
 import '../../ui/symbols.dart';
 import '../../ui/tokens.dart';
-import '../evidence/evidence_views.dart';
 
 /// Wochenplan bearbeiten: je Tag Einheiten hinzufügen, Intensität ändern oder entfernen.
 class ScheduleEditor extends StatelessWidget {
@@ -196,7 +195,6 @@ class ScheduleHintsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (hints.isEmpty) return const SizedBox.shrink();
-    final ids = [for (final hint in hints) ...hint.evidenceIDs];
     return FormSection(
       header: 'Dein Plan im Check',
       children: [
@@ -217,7 +215,6 @@ class ScheduleHintsSection extends StatelessWidget {
             title: Text(hint.message),
             subtitle: hint.isPracticeRule && hint.severity != HintSeverity.info ? const Text('Praxisregel') : null,
           ),
-        if (ids.isNotEmpty) EvidenceDisclosure(ruleIDs: ids),
       ],
     );
   }
@@ -233,7 +230,6 @@ class InputIssuesSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (issues.isEmpty) return const SizedBox.shrink();
-    final ids = [for (final issue in issues) ...issue.evidenceIDs];
     return FormSection(
       header: title,
       children: [
@@ -253,7 +249,6 @@ class InputIssuesSection extends StatelessWidget {
             ),
             title: Text(issue.message),
           ),
-        if (ids.isNotEmpty) EvidenceDisclosure(ruleIDs: ids),
       ],
     );
   }

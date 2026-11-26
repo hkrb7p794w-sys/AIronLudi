@@ -7,82 +7,7 @@ import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/tokens.dart';
 
-/// Aufklappbare Quellen zu einer Empfehlung; nur sichtbar, wenn „Quellen einblenden“ an ist.
-class EvidenceDisclosure extends ConsumerWidget {
-  const EvidenceDisclosure({super.key, required this.ruleIDs, this.title = 'Quellen'});
-
-  final List<String> ruleIDs;
-  final String title;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(coachSettingsProvider);
-    final unique = ruleIDs.toSet().toList();
-    final rules = Evidence.rulesFor(unique);
-    final own = settings.userSources.where((source) => unique.contains(source.evidenceID)).toList();
-    if (!settings.showsEvidence || (rules.isEmpty && own.isEmpty)) return const SizedBox.shrink();
-    return ExpansionTile(
-      leading: const Icon(Icons.menu_book, size: 20),
-      title: Text(title, style: Theme.of(context).textTheme.bodyMedium),
-      childrenPadding: const EdgeInsets.symmetric(horizontal: 16),
-      children: [
-        for (final rule in rules) EvidenceRuleRow(rule: rule),
-        for (final source in own) UserSourceRow(source: source),
-      ],
-    );
-  }
-}
-
-class EvidenceRuleRow extends StatelessWidget {
-  const EvidenceRuleRow({super.key, required this.rule});
-
-  final EvidenceRule rule;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: Text(rule.title, style: text.titleSmall)),
-              StrengthBadge(strength: rule.strength),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(rule.statement, style: text.bodySmall),
-          for (final study in rule.studies)
-            TextButton(
-              style: TextButton.styleFrom(padding: EdgeInsets.zero, alignment: Alignment.centerLeft),
-              onPressed: () => launchUrl(study.url),
-              child: Text('${study.citation} · ${study.kind.rawValue}', style: text.labelSmall),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class StrengthBadge extends StatelessWidget {
-  const StrengthBadge({super.key, required this.strength});
-
-  final EvidenceStrength strength;
-
-  @override
-  Widget build(BuildContext context) => AppChip(
-    text: strength.rawValue,
-    color: switch (strength) {
-      EvidenceStrength.strong => AppColors.of(context).good,
-      EvidenceStrength.moderate => AppColors.of(context).info,
-      EvidenceStrength.practice => AppColors.of(context).caution,
-    },
-  );
-}
-
+/// Eigene Quelle in der Liste: Kurzbeleg, Kernaussage, Themen, Link.
 class UserSourceRow extends StatelessWidget {
   const UserSourceRow({super.key, required this.source});
 
@@ -117,63 +42,6 @@ class UserSourceRow extends StatelessWidget {
               onPressed: () => launchUrl(url),
               child: Text(source.reference, style: text.labelSmall),
             ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Alle Regeln der App mit ihren Quellen (Einstellungen › Wissenschaftliche Grundlagen).
-class EvidenceLibraryScreen extends ConsumerWidget {
-  const EvidenceLibraryScreen({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(coachSettingsProvider);
-    return Scaffold(
-      appBar: AppBar(title: const Text('Quellen und Regeln')),
-      body: ListView(
-        children: [
-          const FormSection(
-            footer:
-                'Die App entscheidet nach festen Regeln; die KI formuliert nur. Jede Regel nennt ihre Quellen. '
-                '„Praxisregel“ heißt: vorsichtig gewählt, aber ohne direkte Studie für genau diesen Wert.',
-            children: [],
-          ),
-          FormSection(
-            footer: 'Eigene Studien ergänzen, die die KI zusätzlich berücksichtigt.',
-            children: [
-              ListTile(
-                title: Text('Eigene Quellen (${settings.userSources.length})'),
-                trailing: const DisclosureChevron(),
-                onTap: () =>
-                    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const UserSourcesScreen())),
-              ),
-            ],
-          ),
-          for (final rule in Evidence.rules)
-            FormSection(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: EvidenceRuleRow(rule: rule),
-                ),
-              ],
-            ),
-          const FormSection(
-            header: 'Kontrolle der KI',
-            children: [
-              Padding(
-                padding: EdgeInsets.all(16),
-                child: Text(
-                  'Die KI bekommt nur die Fakten der App und diese Regeln. Der Worker prüft jede Antwort: Zahlen, die '
-                  'nicht in den Fakten stehen, und unbekannte Quellen werden verworfen. Ist nichts belegt, zeigt die '
-                  'App die regelbasierte Notiz.',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
         ],
       ),
     );

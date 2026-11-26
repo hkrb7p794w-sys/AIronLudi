@@ -5,6 +5,7 @@ import '../nutrition/meal.dart' show newUuid;
 import '../util/enum_codec.dart';
 import '../util/swift_date.dart';
 import 'exercise_catalog.dart';
+import 'workout_names.dart';
 
 /// Art eines Satzes. Aufwärmsätze zählen nicht für Volumen, Bestleistungen und Progression.
 enum SetKind implements RawEnum {
@@ -393,14 +394,17 @@ final class GymSession {
 /// Körpergewichts-Crunch zugeordnet; das Gewicht erschien dann als Zusatz zum Körpergewicht. Solche Einträge gelten
 /// jetzt als Kabel-Crunch (Gerätegewicht), damit Anzeige, Volumen und Progression mit den neuen Einheiten
 /// zusammenpassen.
+///
+/// Ältere Namen der Einheit („Push A“, „Push & Pull B“) heißen beim Lesen wie heute ([WorkoutNames]).
 abstract final class ExerciseAliases {
   static LoggedExercise canonical(LoggedExercise exercise) {
     if (exercise.exerciseID != 'crunch' || !exercise.name.toLowerCase().contains('kabel')) return exercise;
     return exercise.copy()..exerciseID = 'crunch_kabel';
   }
 
-  static GymSession normalized(GymSession session) =>
-      session.copy()..exercises = session.exercises.map(canonical).toList();
+  static GymSession normalized(GymSession session) => session.copy()
+    ..title = WorkoutNames.canonical(session.title)
+    ..exercises = session.exercises.map(canonical).toList();
 }
 
 /// Sätze je Muskelgruppe der letzten 7 Tage (Karte `coach-gym`, Modus Volumen, im Altbestand).

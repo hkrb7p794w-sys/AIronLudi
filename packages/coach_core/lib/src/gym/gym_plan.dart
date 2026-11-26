@@ -4,6 +4,7 @@ import '../calendar/calendar_day.dart';
 import '../util/enum_codec.dart';
 import '../util/int_range.dart';
 import 'exercise_catalog.dart';
+import 'workout_names.dart';
 
 /// Eine geplante Übung im Trainingsplan.
 final class PlannedExercise {
@@ -79,7 +80,7 @@ final class PlannedExercise {
   int get hashCode => Object.hash(name, garmin, sets, reps, weightKg, restSeconds);
 }
 
-/// Eine Trainingseinheit des Plans (z. B. „Push A“).
+/// Eine Trainingseinheit des Plans (z. B. „Push“).
 final class Workout {
   Workout({required this.key, required this.name, required this.note, required this.exercises});
 
@@ -224,7 +225,7 @@ final class GymPlan {
     workouts: [
       Workout(
         key: 'push',
-        name: 'Push A',
+        name: WorkoutNames.push,
         note: 'Home-Gym · nur Wiederholungen anpassen',
         exercises: [
           PlannedExercise(name: 'Flyings am hohen Kabel', garmin: 'FLYE (CABLE_CROSSOVER)', sets: 2, reps: 12, weightKg: 22.5, restSeconds: 90),
@@ -237,7 +238,7 @@ final class GymPlan {
       ),
       Workout(
         key: 'pull',
-        name: 'Pull A',
+        name: WorkoutNames.pull,
         note: 'Home-Gym · nur Wiederholungen anpassen',
         exercises: [
           PlannedExercise(name: 'Enges Rudern am Kabel sitzend', garmin: 'ROW (V_GRIP_CABLE_ROW)', sets: 2, reps: 12, weightKg: 110, restSeconds: 120),
@@ -250,7 +251,7 @@ final class GymPlan {
       ),
       Workout(
         key: 'pp',
-        name: 'Push & Pull B',
+        name: WorkoutNames.pullPush,
         note: 'Home-Gym · nur Wiederholungen anpassen',
         exercises: [
           PlannedExercise(name: 'Curls in Hammerhaltung am Kabel', garmin: 'CURL (CABLE_HAMMER_CURL)', sets: 2, reps: 12, weightKg: 22.5, restSeconds: 90),
@@ -263,7 +264,7 @@ final class GymPlan {
       ),
       Workout(
         key: 'legs',
-        name: 'Lower',
+        name: WorkoutNames.lower,
         note: 'nur Wiederholungen anpassen',
         exercises: [
           PlannedExercise(name: 'Beinbeugen sitzend', garmin: 'LEG_CURL (LEG_CURL)', sets: 2, reps: 12, weightKg: 110, restSeconds: 90),

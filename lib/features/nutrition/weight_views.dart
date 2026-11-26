@@ -14,7 +14,6 @@ import '../../ui/chart_axes.dart';
 import '../../ui/components.dart';
 import '../../ui/platform_names.dart';
 import '../../ui/tokens.dart';
-import '../evidence/evidence_views.dart';
 
 String _signed(double value) => (value > 0 ? '+' : (value < 0 ? '−' : '')) + GermanFormat.number(value.abs());
 
@@ -396,7 +395,6 @@ class _WeightTrendScreenState extends ConsumerState<WeightTrendScreen> {
             ),
             onTap: () => _change(settings, (nutrition) => nutrition.energyAdjustmentKilocalories += value.kilocalories),
           ),
-        EvidenceDisclosure(ruleIDs: value.evidenceIDs),
       ];
     } else {
       advice = [
@@ -490,7 +488,6 @@ class _WeightTrendScreenState extends ConsumerState<WeightTrendScreen> {
           label: 'Ziel ${GermanFormat.number(target)} kg',
           value: 'in etwa $weeks Wochen (${DateFormat('EEE, d. MMM', 'de_DE').format(day.referenceDate)})',
         ),
-      const EvidenceDisclosure(ruleIDs: ['weightloss.rate', 'weightloss.protein', 'weightloss.exercise']),
     ],
   );
 
@@ -536,7 +533,6 @@ class _WeightTrendScreenState extends ConsumerState<WeightTrendScreen> {
               style: TextStyle(color: AppColors.of(context).good),
             ),
           ),
-        const EvidenceDisclosure(ruleIDs: ['energy.measured']),
       ],
     );
   }

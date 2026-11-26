@@ -18,37 +18,29 @@ class AISettingsSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(coachSettingsProvider);
     final ai = settings.ai;
-    final muted = Theme.of(context).textTheme.bodySmall
-        ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
     return FormSection(
       header: 'KI',
       footer:
           'Empfehlungen, Ampel und Ziele kommen immer aus den Regeln der App; die KI formuliert und fasst nur '
           'zusammen. Fällt sie aus oder ist sie aus, bleibt alles nutzbar – auch Importe und der Export.',
       children: [
-        ListTile(
-          title: const Text('KI nutzen'),
-          trailing: DropdownButton<AIMode>(
-            value: ai.mode,
-            underline: const SizedBox.shrink(),
-            items: [for (final mode in AIMode.values) DropdownMenuItem(value: mode, child: Text(mode.label))],
-            onChanged: (mode) => settings.ai = ai.copyWith(mode: mode),
-          ),
-          subtitle: Text(ai.mode.detail, style: muted),
+        // Wert rechts, Erklärung in voller Breite darunter (vorher drückte die Auswahlliste den Text zusammen).
+        MenuPickerTile<AIMode>(
+          title: 'KI nutzen',
+          value: ai.mode,
+          values: AIMode.values,
+          label: (mode) => mode.label,
+          detail: ai.mode.detail,
+          onChanged: (mode) => settings.ai = ai.copyWith(mode: mode),
         ),
         if (ai.mode != AIMode.off)
-          ListTile(
-            title: const Text('Anbieter'),
-            trailing: DropdownButton<AIProviderChoice>(
-              value: ai.provider,
-              underline: const SizedBox.shrink(),
-              items: [
-                for (final provider in AIProviderChoice.values)
-                  DropdownMenuItem(value: provider, child: Text(provider.label)),
-              ],
-              onChanged: (provider) => settings.ai = ai.copyWith(provider: provider),
-            ),
-            subtitle: Text(ai.provider.detail, style: muted),
+          MenuPickerTile<AIProviderChoice>(
+            title: 'Anbieter',
+            value: ai.provider,
+            values: AIProviderChoice.values,
+            label: (provider) => provider.label,
+            detail: ai.provider.detail,
+            onChanged: (provider) => settings.ai = ai.copyWith(provider: provider),
           ),
         ListTile(
           title: const Text('Anbieter und Nutzung'),

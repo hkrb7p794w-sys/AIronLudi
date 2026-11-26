@@ -11,7 +11,6 @@ import '../../ui/tokens.dart';
 import '../activities/activities_screen.dart';
 import '../activities/activity_detail_screen.dart';
 import '../activities/activity_parts.dart';
-import '../evidence/evidence_views.dart';
 import '../game/game_views.dart';
 import 'now_views.dart';
 import 'today_controller.dart';
@@ -424,7 +423,6 @@ class _PersonalGoalSection extends ConsumerWidget {
               style: AppText.footnote(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ),
-          const EvidenceDisclosure(ruleIDs: ['rhr.endurance']),
         ],
         if (targets.runDistanceKilometers case final target?)
           row(

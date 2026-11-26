@@ -12,7 +12,6 @@ import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/tokens.dart';
 import '../activities/activity_parts.dart';
-import '../evidence/evidence_views.dart';
 import '../nutrition/meal_editor.dart';
 import '../nutrition/nutrition_controller.dart';
 import '../today/now_views.dart';
@@ -242,7 +241,6 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                   ],
                 ),
               ],
-              const FormSection(children: [EvidenceDisclosure(ruleIDs: RecipePlanner.evidence)]),
               if (plan == null && !controller.isWorking)
                 Padding(
                   padding: const EdgeInsets.all(16),
