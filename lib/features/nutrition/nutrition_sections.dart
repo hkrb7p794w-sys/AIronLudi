@@ -104,29 +104,32 @@ extension _NutritionSections on _NutritionScreenState {
     );
   }
 
-  Widget _pendingSection() => FormSection(
-    header: 'Wartet auf Netz',
-    footer: 'Ohne Netz gespeichert. Wird automatisch ausgewertet, sobald die App wieder online ist.',
-    children: [
-      for (final item in _controller.pending)
-        Dismissible(
-          key: ValueKey(item.id),
-          direction: DismissDirection.endToStart,
-          background: Container(color: AppColors.of(context).alert),
-          onDismissed: (_) => _controller.removePending(item),
-          child: ListTile(
-            leading: Icon(item.hasPhoto ? Icons.photo_outlined : Icons.chat_bubble_outline),
-            title: Text(item.text.isEmpty ? 'Foto' : item.text, maxLines: 1),
-            trailing: Text(DateFormat.Hm('de_DE').format(item.created.toLocal())),
+  Widget _pendingSection() {
+    final waiting = _controller.waiting;
+    final automatic = waiting.any((item) => item.autoLog);
+    return FormSection(
+      header: 'Wartet auf Auswertung',
+      footer: automatic
+          ? 'Gesichert. Automatisch eingetragene Fotos wertet die App aus, sobald Netz und KI verfügbar sind – auch im '
+                'Hintergrund – mit der Uhrzeit der Aufnahme. Antippen wertet sofort aus.'
+          : 'Gesichert, bis die Auswertung klappt. Antippen wertet sofort aus, Wischen löscht.',
+      children: [
+        for (final item in waiting)
+          Dismissible(
+            key: ValueKey(item.id),
+            direction: DismissDirection.endToStart,
+            background: Container(color: AppColors.of(context).alert),
+            onDismissed: (_) => _controller.removePending(item),
+            child: _PendingRow(
+              item: item,
+              photo: _controller.pendingPhoto(item),
+              enabled: !_controller.isWorking,
+              onTap: () => _after(_controller.retryItem(item, _foods)),
+            ),
           ),
-        ),
-      ListTile(
-        leading: const Icon(Icons.refresh),
-        title: const Text('Jetzt auswerten'),
-        onTap: () => _after(_controller.retryPending(_foods)),
-      ),
-    ],
-  );
+      ],
+    );
+  }
 
   Widget _checkInSection() => FormSection(
     header: 'Wochen-Check-in',
@@ -268,5 +271,48 @@ extension _NutritionSections on _NutritionScreenState {
         },
       ),
     ];
+  }
+}
+
+/// Wartende Auswertung: Vorschau des Fotos, Beschreibung, Stand (automatisch / letzter Fehler) und Uhrzeit der Aufnahme.
+class _PendingRow extends StatelessWidget {
+  const _PendingRow({required this.item, required this.photo, required this.enabled, required this.onTap});
+
+  final PendingAnalysis item;
+  final Uint8List? photo;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final time = DateFormat.Hm('de_DE').format(item.eatenAt.toLocal());
+    final status = item.autoLog
+        ? 'Wird automatisch eingetragen'
+        : (item.lastError == null ? 'Antippen zum Auswerten' : 'Fehlgeschlagen – antippen zum erneuten Versuch');
+    return ListTile(
+      enabled: enabled,
+      onTap: onTap,
+      leading: photo == null
+          ? Icon(item.hasPhoto ? Icons.photo_outlined : Icons.chat_bubble_outline)
+          : ClipRRect(
+              borderRadius: LiquidRadii.innerAll,
+              child: Image.memory(photo!, width: 44, height: 44, fit: BoxFit.cover),
+            ),
+      title: Text(item.text.trim().isEmpty ? 'Foto' : item.text.trim(), maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: Text(status, style: AppText.footnote(context).copyWith(color: AppColors.muted(context))),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(time, style: AppText.footnote(context).copyWith(color: AppColors.muted(context))),
+          const SizedBox(width: LiquidSpacing.s),
+          Icon(
+            item.autoLog ? Icons.schedule : Icons.refresh,
+            size: 20,
+            color: item.autoLog ? AppColors.of(context).info : null,
+            semanticLabel: 'Jetzt auswerten',
+          ),
+        ],
+      ),
+    );
   }
 }

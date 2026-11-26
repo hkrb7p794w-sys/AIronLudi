@@ -491,3 +491,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Gerätetests auf Android-Emulator und iOS-Simulator (`device-test.yml`); behoben: „Verpasst“ direkt nach der Einrichtung | erledigt |
 | Durchläufe Rezepte, Garmin-Konto und WHOOP gegen nachgebaute Server; „Eigene Rezepte“ mit Knopf im leeren Zustand | erledigt |
 | Wünsche vom 25.11.2026: Plan-Kacheln gleich groß, Krafteinheiten heißen überall Push, Pull, Lower, Pull & Push, Musterwoche und Quellen/Grundlagen nicht mehr angezeigt, Wasser-Karte kompakt, lange Einheit nur an Trainingstagen, Zeitrechner mit Reglern (Almere, Marathon), KI-Auswahl im Menüstil | erledigt |
+| Fotos beim Erfassen: bis zur erfolgreichen Auswertung gesichert, nach Fehlschlag „Erneut versuchen“, „Später automatisch eintragen“ (auch im Hintergrund, mit Uhrzeit der Aufnahme, Mitteilung) oder „Verwerfen“; Warteschlange als Dateien mit Sperre; gewähltes Foto als Karte | erledigt |
