@@ -5,7 +5,7 @@
 # fehlt sie, steht der aktuelle Hash in der Zusammenfassung des Laufs) lädt der Lauf Garmins offizielle Gerätedateien.
 # Ohne sie nimmt er die minimale Beschreibung aus garmin/ci/devices: strenge Typprüfung und eine Testversion.
 # Schlüssel: Secret CIQ_DEVELOPER_KEY (DER, Base64); ohne Secret ein Wegwerf-Schlüssel (reicht zum Prüfen).
-# Worker-Adresse: Variable WATCH_WORKER_URL (wird in die Einstellungen des Datenfelds geschrieben).
+# Worker-Adresse: Variable WATCH_WORKER_URL (wird beim Build in garmin/source/WorkerConfig.mc eingesetzt).
 name: Garmin
 
 on:
@@ -100,7 +100,7 @@ jobs:
             openssl pkcs8 -topk8 -inform PEM -outform DER -in "$RUNNER_TEMP/developer.pem" -out "$RUNNER_TEMP/developer.der" -nocrypt
           fi
           if [ -n "$WATCH_WORKER_URL" ]; then
-            sed -i "s#__WORKER_URL__#${WATCH_WORKER_URL%/}#" garmin/resources/properties/properties.xml
+            sed -i "s#__WORKER_URL__#${WATCH_WORKER_URL%/}#" garmin/source/WorkerConfig.mc
             echo "::notice::Worker-Adresse eingetragen."
             echo "Worker-Adresse: eingetragen" >> "$GITHUB_STEP_SUMMARY"
           else
