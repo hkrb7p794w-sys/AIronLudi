@@ -101,6 +101,12 @@ jobs:
           fi
           if [ -n "$WATCH_WORKER_URL" ]; then
             sed -i "s#__WORKER_URL__#${WATCH_WORKER_URL%/}#" garmin/resources/properties/properties.xml
+            echo "::notice::Worker-Adresse eingetragen."
+            echo "Worker-Adresse: eingetragen" >> "$GITHUB_STEP_SUMMARY"
+          else
+            # Ohne Adresse zeigt das Datenfeld „Worker-Adresse fehlt“.
+            echo "::warning::Variable WATCH_WORKER_URL fehlt – das Datenfeld zeigt „Worker-Adresse fehlt“ (docs/einrichtung.md)."
+            echo "Worker-Adresse: **fehlt** (Variable \`WATCH_WORKER_URL\` anlegen und neu bauen)" >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Typprüfung und Build
