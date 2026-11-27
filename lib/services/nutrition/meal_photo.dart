@@ -8,9 +8,15 @@ import 'package:image/image.dart' as img;
 abstract final class MealPhoto {
   static const maxPixels = 1280;
 
+  /// Screenshots mit viel Text (z. B. Übungsliste einer Trainings-App): höher aufgelöst, damit die KI Zahlen lesen kann.
+  static const screenshotPixels = 2048;
+
   static Future<Uint8List?> jpeg(Uint8List data) => compute(jpegSync, data);
 
-  static Uint8List? jpegSync(Uint8List data) {
+  static Future<Uint8List?> screenshot(Uint8List data) =>
+      compute((Uint8List data) => jpegSync(data, maxPixels: screenshotPixels), data);
+
+  static Uint8List? jpegSync(Uint8List data, {int maxPixels = maxPixels}) {
     final decoded = img.decodeImage(data);
     if (decoded == null) return null;
     // Ausrichtung aus EXIF in die Pixel übernehmen, danach alle Metadaten verwerfen.

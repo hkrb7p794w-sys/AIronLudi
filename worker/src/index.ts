@@ -48,7 +48,7 @@ import {
 } from "./usage";
 import { handleWhoop, whoopCallbackPage, whoopConfigured } from "./whoop";
 
-export const VERSION = "0.4.0";
+export const VERSION = "0.5.0";
 export const MAX_BODY_BYTES = 8 * 1024 * 1024;
 export const MAX_IMAGES = 4;
 /** Die App wartet 120 s; vorher soll eine verständliche Antwort kommen statt eines Abbruchs. */

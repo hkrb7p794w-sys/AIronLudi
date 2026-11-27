@@ -124,3 +124,120 @@ export function checkGymPlan(output: unknown, promptText: string, input: Record<
   );
   return { routinen, hinweise };
 }
+
+/** Muskelgruppen wie `MuscleGroup` in der App (Rohwerte). */
+const MUSCLE_GROUPS = [
+  "Brust",
+  "Rücken",
+  "Schultern",
+  "Bizeps",
+  "Trizeps",
+  "Beine",
+  "Rumpf",
+  "Unterarme",
+  "Sonstige",
+];
+
+const IMPORT_SHAPE = `Antwortformat (JSON):
+{"titel": str, "tag": number|null, "monat": number|null, "jahr": number|null, "start": "HH:MM"|null,
+"ende": "HH:MM"|null, "uebungen": [{"name": str, "id": str|null, "gruppe": str|null,
+"saetze": [{"wdh": number|null, "kg": number|null, "sekunden": number|null}]}]}`;
+
+/**
+ * Krafttraining von Screenshots einer anderen App ablesen (z. B. WHOOP Strength Trainer, dessen Sätze die WHOOP-API
+ * nicht herausgibt). Die App schickt ihre Übungsbibliothek („id | Name“), damit die KI bekannte Übungen zuordnet;
+ * Unbekanntes legt die App als eigene Übung an. Die KI liest nur ab, sie schätzt nichts.
+ */
+export function gymImportPrompt(input: Record<string, unknown>, images: number): string {
+  const library = list(input.library, 200, 120);
+  const note = text(input.text, 300);
+  return [
+    `Du liest ein Krafttraining von ${images > 1 ? `${images} Screenshots` : "einem Screenshot"} einer ` +
+      "Trainings-App ab (z. B. WHOOP Strength Trainer, Hevy, Strong) und antwortest NUR mit JSON.",
+    images > 1
+      ? "Die Screenshots gehören zu derselben Einheit; Übungen, die auf zwei Bildern stehen, nur einmal."
+      : "",
+    "",
+    "Regeln:",
+    "- Nur übernehmen, was zu lesen ist. Nichts schätzen oder ergänzen; Unleserliches als null.",
+    "- Jeder Satz einzeln: „3 × 10 @ 60 kg“ sind drei Sätze mit 10 Wdh. und 60 kg. Aufwärmsätze mitnehmen.",
+    "- Gewicht in kg; lbs umrechnen (× 0,4536). Körpergewicht ohne Zusatzgewicht: kg = 0.",
+    "- Zeitübungen (Plank, Halten): sekunden statt wdh.",
+    "- Summen (Volumenlast, Wiederholungen insgesamt, Kalorien, Strain, Herzfrequenz) sind keine Sätze.",
+    "- name: Übungsname wie auf dem Bild (auf Deutsch übersetzen, wenn er englisch ist).",
+    "- id: passende Übung aus der Bibliothek unten, nur bei gleichem Bewegungsablauf und Gerät; sonst null.",
+    `- gruppe: bei id null die Hauptmuskelgruppe, genau eines von: ${MUSCLE_GROUPS.join(", ")}; sonst null.`,
+    "- Datum und Uhrzeit nur, wenn sie auf dem Bild stehen (z. B. „19. Nov. 07:16 bis 08:09“ → tag 19, monat 11, " +
+      'start "07:16", ende "08:09"); jahr nur, wenn es dasteht.',
+    '- titel: Name der Einheit, falls zu sehen (z. B. „Oberkörper“), sonst "".',
+    "",
+    "Bibliothek (id | Name):",
+    ...(library.length ? library.map((line) => `- ${line}`) : ["- keine"]),
+    ...(note ? ["", `Hinweis der Person: ${userText(note)}`] : []),
+    "",
+    IMPORT_SHAPE,
+  ]
+    .filter((line, index, all) => line !== "" || all[index - 1] !== "")
+    .join("\n");
+}
+
+function bounded(value: unknown, max: number, integer = false): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > max) return null;
+  return integer ? Math.round(value) : Math.round(value * 100) / 100;
+}
+
+function clock(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
+  if (!match) return null;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  return hour < 24 && minute < 60 ? `${String(hour).padStart(2, "0")}:${match[2]}` : null;
+}
+
+/**
+ * Antwort auf das Format prüfen: nur Sätze mit Wiederholungen oder Sekunden in plausiblen Grenzen, IDs nur aus der
+ * Bibliothek. Ohne eine einzige Übung mit Satz ist nichts erkannt.
+ */
+export function checkGymImport(
+  output: unknown,
+  _promptText: string,
+  input: Record<string, unknown>,
+): unknown {
+  const root = typeof output === "object" && output !== null && !Array.isArray(output) ? output : {};
+  const value = root as Record<string, unknown>;
+  const ids = new Set(list(input.library, 200, 120).map((line) => line.split("|")[0]?.trim() ?? ""));
+  const exercises = (Array.isArray(value.uebungen) ? value.uebungen : []).slice(0, 40).flatMap((raw) => {
+    if (typeof raw !== "object" || raw === null) return [];
+    const item = raw as Record<string, unknown>;
+    const name = text(item.name, 80);
+    if (!name) return [];
+    const sets = (Array.isArray(item.saetze) ? item.saetze : []).slice(0, 20).flatMap((rawSet) => {
+      if (typeof rawSet !== "object" || rawSet === null) return [];
+      const set = rawSet as Record<string, unknown>;
+      const wdh = bounded(set.wdh, 200, true);
+      const sekunden = bounded(set.sekunden, 3600, true);
+      if (!wdh && !sekunden) return [];
+      return [{ wdh, kg: bounded(set.kg, 1000) ?? 0, sekunden }];
+    });
+    if (sets.length === 0) return [];
+    const id = typeof item.id === "string" && ids.has(item.id.trim()) ? item.id.trim() : null;
+    const gruppe =
+      !id && typeof item.gruppe === "string" && MUSCLE_GROUPS.includes(item.gruppe) ? item.gruppe : null;
+    return [{ name, id, gruppe, saetze: sets }];
+  });
+  if (exercises.length === 0)
+    throw new GroundingError("Auf den Bildern wurden keine Übungen mit Sätzen erkannt.");
+  const day = bounded(value.tag, 31, true);
+  const month = bounded(value.monat, 12, true);
+  const year = bounded(value.jahr, 2100, true);
+  return {
+    titel: text(value.titel, 60),
+    tag: day && day >= 1 ? day : null,
+    monat: month && month >= 1 ? month : null,
+    jahr: year && year >= 2000 ? year : null,
+    start: clock(value.start),
+    ende: clock(value.ende),
+    uebungen: exercises,
+  };
+}
