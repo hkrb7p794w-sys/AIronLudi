@@ -64,12 +64,20 @@ class WatchSync {
         }) as ByteArray;
     }
 
+    // Adresse aus den Einstellungen, wenn dort eine gültige steht, sonst die beim Build eingesetzte.
     private function workerUrl() as String? {
-        var url = Properties.getValue("workerUrl");
-        if (!(url instanceof String) || url.length() < 8 || url.find("__") != null) {
-            return null;
+        var setting = Properties.getValue("workerUrl");
+        if (isUrl(setting)) {
+            return setting as String;
         }
-        return url;
+        return isUrl(WORKER_URL) ? WORKER_URL : null;
+    }
+
+    private function isUrl(value as Object?) as Boolean {
+        if (!(value instanceof String)) {
+            return false;
+        }
+        return value.length() >= 8 && value.find("__") == null && value.find("http") == 0;
     }
 
     // Geräteschlüssel: eindeutige Kennung der Uhr für diese App (sonst einmal zufällig erzeugt).

@@ -1822,3 +1822,15 @@ Rückfrage des Nutzers zu Lizenz-Hash und Garmin-Passwort in GitHub.
   statt `master`. Korrektur: der Parameter heißt `--agreement-hash`.
 - **Entwicklerschlüssel optional:** Zum Kopieren per USB reicht ein Schlüssel je Lauf.
 
+
+## 2026-11-27 – Garmin: Worker-Adresse fest im Code statt nur als Einstellung
+
+Erster Test auf der Forerunner 265: Das Datenfeld zeigte „Worker-Adresse fehlt“, obwohl der Build die Adresse in die
+Einstellung `workerUrl` geschrieben hatte. Die Uhr behält gespeicherte Einstellungen, wenn die App ersetzt wird; der
+Platzhalter der ersten Version blieb so stehen.
+
+- Der Build setzt die Adresse jetzt in `garmin/source/WorkerConfig.mc` ein (Konstante `WORKER_URL`).
+- Die Einstellung `workerUrl` ist standardmäßig leer und dient nur noch als Abweichung; steht dort nichts Gültiges
+  (leer, Platzhalter, keine `http`-Adresse), gilt die eingebaute.
+- Außerdem: Der Workflow ruft das Werkzeug unter seinem richtigen Namen `connect-iq-sdk-manager` auf und meldet eine
+  fehlende Worker-Adresse in der Zusammenfassung.
