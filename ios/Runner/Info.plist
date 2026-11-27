@@ -77,10 +77,11 @@
 	<!-- Live-Aktivitäten (laufende Gym-Einheit, Mahlzeiten). -->
 	<key>NSSupportsLiveActivities</key>
 	<true/>
-	<!-- Hintergrundabruf (workmanager → BGTaskScheduler). -->
+	<!-- Hintergrundabruf (workmanager → BGTaskScheduler); Ortung im Hintergrund nur bei „Route folgen“. -->
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
+		<string>location</string>
 		<string>processing</string>
 	</array>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
@@ -101,7 +102,9 @@
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>AIronLudi wandelt deine diktierte Mahlzeit in Text um, wenn möglich direkt auf dem iPhone.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>AIronLudi nutzt deinen Standort nur auf Wunsch als Startpunkt im Routenplaner. Er verlässt das Gerät nur als Start der Routenanfrage.</string>
+	<string>AIronLudi nutzt deinen Standort nur auf Wunsch: als Startpunkt im Routenplaner und bei „Route folgen“, auch bei gesperrtem Bildschirm, bis du beendest. Er verlässt das Gerät nur als Start der Routenanfrage.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>AIronLudi ortet im Hintergrund nur, solange du „Route folgen“ nutzt, um dich bei gesperrtem Bildschirm zu warnen, wenn du die Route verlässt.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>AIronLudi nutzt Fotos aus deiner Mediathek für Mahlzeiten und das Bild deines Begleiters.</string>
 </dict>

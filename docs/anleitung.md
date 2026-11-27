@@ -194,11 +194,14 @@ von Hand: denselben Link wieder öffnen.
    Routen-Import, Coros, Suunto, Polar und Wahoo über ihre Apps. Mit angemeldetem Garmin-Konto (*Ich ›
    Training und Fitness › Garmin-Konto*) legt **Direkt an Garmin Connect senden** den Kurs ohne Datei an; er steht
    dann in Garmin Connect unter *Training › Strecken* – dort „An Gerät senden“, auf der Uhr *Navigation › Kurse*.
+   Auf einer Forerunner (z. B. 265): Lauf starten, **UP** halten › *Navigation › Kurse* › Kurs › *Kurs durchführen*.
+   Einmalig unter **UP** halten › *Navigation › Alarme* die Alarme **Kursabweichung** und **Abbiegehinweise**
+   einschalten, unter *Navigation › Datenseiten* die **Karte** (mit Datenfeld) und ggf. **Höhenprofil**.
 7. **Gassi und unterwegs:** Beim Spazieren gibt es die Wegart *Hundewiese* (die Runde führt über eine). Auf der
    Karte stehen Trinkbrunnen, beim Spazieren auch Hundewiesen und Kotbeutel. Das Lesezeichen oben im Planer speichert
    eine **Vorlage** (z. B. „Gassi 3 km ab Zuhause“), die unter *Routen* mit einem Tipp plant. In einer gespeicherten
    Route zeigt **Route folgen** deinen Standort live, die Restdistanz und vibriert, wenn du von der Route abkommst
-   (Bildschirm bleibt an).
+   (auch bei gesperrtem Bildschirm – dann als Mitteilung mit Vibration; der Sonnen-Knopf lässt den Bildschirm auf Wunsch an).
 8. **Wetter und Wind:** In einer gespeicherten Route steht das Wetter für den geplanten Tag (sonst heute) – Startzeit
    wählen, dann Temperatur, Regen und Wind über die geschätzte Dauer. Hättest du auf einem Rundweg zum Schluss
    Gegenwind, schlägt die App **Richtung umkehren** vor. Mit eingerichtetem Worker (MapTiler) ist die Karte im

@@ -78,7 +78,7 @@ final class FakeLocation implements LocationSource {
   Future<GeoPoint> current() async => const GeoPoint(48.1, 11.6);
 
   @override
-  Stream<GeoPoint> watch() => const Stream.empty();
+  Stream<GeoPoint> watch({bool background = false}) => const Stream.empty();
 }
 
 void main() {

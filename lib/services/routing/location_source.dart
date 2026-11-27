@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:coach_core/coach_core.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -6,8 +8,9 @@ abstract interface class LocationSource {
   /// Wirft [LocationProblem] mit einer verständlichen Meldung.
   Future<GeoPoint> current();
 
-  /// Laufende Positionen (nur solange jemand zuhört, nur im Vordergrund); Fehler als [LocationProblem].
-  Stream<GeoPoint> watch();
+  /// Laufende Positionen, solange jemand zuhört; Fehler als [LocationProblem]. [background]: auch bei gesperrtem
+  /// Bildschirm (iOS mit blauer Standortanzeige, Android als Vordergrunddienst mit Mitteilung).
+  Stream<GeoPoint> watch({bool background = false});
 }
 
 final class LocationProblem implements Exception {
@@ -53,12 +56,41 @@ final class DeviceLocationSource implements LocationSource {
   }
 
   @override
-  Stream<GeoPoint> watch() async* {
+  Stream<GeoPoint> watch({bool background = false}) async* {
     // Freigabe wie bei [current] prüfen (wirft verständliche Meldungen).
     await current();
-    yield* Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.best, distanceFilter: 5),
-    ).map((position) => GeoPoint(position.latitude, position.longitude));
+    yield* Geolocator.getPositionStream(locationSettings: settings(background: background))
+        .map((position) => GeoPoint(position.latitude, position.longitude));
+  }
+
+  /// Einstellungen je Plattform: im Hintergrund unter iOS mit Standortanzeige und ohne automatische Pause (Ampeln),
+  /// unter Android als Vordergrunddienst mit dauerhafter Mitteilung.
+  static LocationSettings settings({required bool background}) {
+    if (!background) return const LocationSettings(accuracy: LocationAccuracy.best, distanceFilter: 5);
+    if (Platform.isIOS) {
+      return AppleSettings(
+        accuracy: LocationAccuracy.best,
+        distanceFilter: 5,
+        activityType: ActivityType.fitness,
+        pauseLocationUpdatesAutomatically: false,
+        allowBackgroundLocationUpdates: true,
+        showBackgroundLocationIndicator: true,
+      );
+    }
+    if (Platform.isAndroid) {
+      return AndroidSettings(
+        accuracy: LocationAccuracy.best,
+        distanceFilter: 5,
+        foregroundNotificationConfig: const ForegroundNotificationConfig(
+          notificationTitle: 'Route folgen',
+          notificationText: 'AIronLudi zeigt dir den Weg – auch bei gesperrtem Bildschirm.',
+          notificationChannelName: 'Route folgen (Ortung)',
+          enableWakeLock: true,
+          setOngoing: true,
+        ),
+      );
+    }
+    return const LocationSettings(accuracy: LocationAccuracy.best, distanceFilter: 5);
   }
 
   static Future<void> openSettings() => Geolocator.openAppSettings();

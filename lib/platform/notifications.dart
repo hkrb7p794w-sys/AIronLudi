@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:coach_core/coach_core.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -81,6 +82,9 @@ abstract interface class NotificationCenterBridge {
   Future<void> removeDelivered(List<String> identifiers);
 
   Future<void> add(LocalNotification notification);
+
+  /// Sofort zeigen (mit Ton und Vibration), z. B. „Abseits der Route“ bei gesperrtem Bildschirm.
+  Future<void> showNow({required String id, required String title, required String body});
 }
 
 /// Umsetzung mit `flutter_local_notifications`. Die Kennungen der Swift-App (Text) stehen in der Nutzlast; das Plugin
@@ -96,6 +100,34 @@ final class DeviceNotificationCenter implements NotificationCenterBridge {
     channelDescription: 'Training, Mahlzeiten, Wochenplanung und Morgenbericht',
     importance: Importance.high,
     priority: Priority.high,
+  );
+
+  /// Unterwegs (Route folgen): wichtig, mit Vibration, auch bei gesperrtem Bildschirm.
+  static final _routeChannel = AndroidNotificationDetails(
+    'coach.route',
+    'Route folgen',
+    channelDescription: 'Warnung, wenn du die Route verlässt, und Ankunft am Ziel',
+    importance: Importance.max,
+    priority: Priority.max,
+    category: AndroidNotificationCategory.navigation,
+    enableVibration: true,
+    vibrationPattern: Int64List.fromList([0, 400, 200, 400, 200, 400]),
+  );
+
+  @override
+  Future<void> showNow({required String id, required String title, required String body}) => _plugin.show(
+    id: numericID(id),
+    title: title,
+    body: body,
+    payload: jsonEncode({'id': id}),
+    notificationDetails: NotificationDetails(
+      android: _routeChannel,
+      iOS: const DarwinNotificationDetails(
+        presentAlert: true,
+        presentSound: true,
+        interruptionLevel: InterruptionLevel.active,
+      ),
+    ),
   );
 
   /// Richtet das Plugin samt Zeitzone und Aktionen ein; [onAnswer] bekommt Antippen und Aktionen.
@@ -262,4 +294,11 @@ final class FakeNotificationCenter implements NotificationCenterBridge {
 
   @override
   Future<void> add(LocalNotification notification) async => pending[notification.id] = notification;
+
+  /// Sofort gezeigte Mitteilungen (Kennung, Titel, Text).
+  final List<(String, String, String)> shown = [];
+
+  @override
+  Future<void> showNow({required String id, required String title, required String body}) async =>
+      shown.add((id, title, body));
 }
