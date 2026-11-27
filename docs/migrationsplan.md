@@ -496,3 +496,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Routenplaner: „Route folgen“ auch bei gesperrtem Bildschirm (iOS Hintergrund-Ortung, Android Vordergrunddienst, Warnung als Mitteilung) | erledigt |
 | Karte auf der Garmin-Uhr, Schritt 1: Uhr-Paket `AIW1` (Wegenetz, Varianten, Abbiegungen), Worker-Ablage und Kopplung, „Karte auf die Uhr“ in der App, Datenfeld-Grundgerüst `garmin/` mit CI | erledigt |
 | Garmin-Build: Testversion ohne Garmin-Zugang als Artefakt, Lizenz-Hash in der Zusammenfassung, Werkzeug fest auf v0.8.4, Anleitung in Stufen | erledigt |
+| Garmin-Build: richtiger Programmname des Werkzeugs (`connect-iq-sdk-manager`), Fehler beim Abrufen des Lizenz-Hashs im Protokoll | erledigt |
