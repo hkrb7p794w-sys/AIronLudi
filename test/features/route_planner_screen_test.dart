@@ -13,6 +13,8 @@ import 'package:aironludi/features/routes/route_parts.dart';
 import 'package:aironludi/features/routes/route_planner_controller.dart';
 import 'package:aironludi/features/routes/route_planner_screen.dart';
 import 'package:aironludi/features/routes/routes_screen.dart';
+import 'package:aironludi/platform/notifications.dart';
+import 'package:aironludi/services/providers.dart';
 import 'package:aironludi/services/routing/garmin_course_service.dart';
 import 'package:aironludi/services/routing/location_source.dart';
 import 'package:aironludi/services/routing/route_weather_service.dart';
@@ -35,8 +37,14 @@ final class FakeLocation implements LocationSource {
   @override
   Future<GeoPoint> current() async => home;
 
+  /// Zuletzt angefragt: Ortung auch bei gesperrtem Bildschirm.
+  bool? background;
+
   @override
-  Stream<GeoPoint> watch() => positions.stream;
+  Stream<GeoPoint> watch({bool background = false}) {
+    this.background = background;
+    return positions.stream;
+  }
 }
 
 /// Router ohne Netz: läuft die Wegpunkte ab (Umwegfaktor 1,3) und liefert Höhen.
@@ -181,6 +189,7 @@ Future<ProviderContainer> openPlanner(
   FakeFeatures? features,
   FakePlaces? places,
   FakeLocation? location,
+  FakeNotificationCenter? notifications,
 }) async {
   OsmTiles.cacheDisabled = true;
   tester.view.physicalSize = const Size(1170, 2532);
@@ -198,6 +207,7 @@ Future<ProviderContainer> openPlanner(
           locationSourceProvider.overrideWithValue(location ?? FakeLocation()),
           garminCourseTargetProvider.overrideWithValue(fakeGarmin),
           weatherSourceProvider.overrideWithValue(FakeWeather()),
+          notificationCenterProvider.overrideWithValue(notifications),
         ],
       ),
     ) as Widget,
@@ -785,10 +795,13 @@ void main() {
     expect(planner.routes, isNotEmpty);
   });
 
-  testWidgets('Route folgen: Standort live, Fortschritt, Warnung abseits der Route', (tester) async {
+  testWidgets('Route folgen: Standort live, Fortschritt, Warnung abseits der Route – auch bei gesperrtem Bildschirm', (
+    tester,
+  ) async {
     final routing = FakeRouting();
     final location = FakeLocation();
-    await openPlanner(tester, routing, location: location);
+    final notifications = FakeNotificationCenter();
+    await openPlanner(tester, routing, location: location, notifications: notifications);
     await tapCentered(tester, find.text('Aktueller Standort'), delta: -300);
     await tapCentered(tester, find.text('Routen vorschlagen'));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
@@ -798,6 +811,12 @@ void main() {
     await tapCentered(tester, find.text('Route folgen'));
     expect(find.byType(FollowRouteScreen), findsOneWidget);
     expect(find.text('Standort wird gesucht …'), findsOneWidget);
+    // Ortung läuft auch bei gesperrtem Bildschirm weiter; der Bildschirm muss nicht anbleiben.
+    expect(location.background, isTrue);
+    expect(find.textContaining('Du kannst den Bildschirm sperren'), findsOneWidget);
+    await tester.tap(find.byTooltip('Bildschirm anlassen'));
+    await tester.pump();
+    expect(find.text('Bildschirm bleibt an.'), findsOneWidget);
 
     location.positions.add(home);
     await tester.pump();
@@ -812,6 +831,27 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
     expect(find.textContaining('Abseits der Route'), findsOneWidget);
+    // Im Vordergrund: Vibration, keine Mitteilung.
+    expect(notifications.shown, isEmpty);
+
+    // Bildschirm gesperrt: zurück auf die Route, dann wieder weg – jetzt als Mitteilung.
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    location.positions.add(home);
+    await tester.pump();
+    location.positions.add(home);
+    await tester.pump();
+    location.positions.add(away);
+    await tester.pump();
+    location.positions.add(away);
+    await tester.pump();
+    expect(notifications.shown.single.$2, 'Abseits der Route');
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    expect(notifications.removedDelivered, contains('coach.route.follow'));
 
     await tester.tap(find.byTooltip('Beenden'));
     await tester.pumpAndSettle();

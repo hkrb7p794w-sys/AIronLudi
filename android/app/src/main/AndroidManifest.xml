@@ -25,6 +25,8 @@
     <!-- Laufende Gym-Einheit als dauerhafte Mitteilung (Gegenstück zur Live-Aktivität). -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- „Route folgen“ bei gesperrtem Bildschirm: Ortung als Vordergrunddienst (geolocator). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <!-- Hintergrundabruf (WorkManager). -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 

@@ -1766,3 +1766,20 @@ erkannt; Wunsch, die Übungen des WHOOP Strength Trainers (Gewicht, Sätze) zu �
   Strecke und Pulszonen heraus – keine Übungen, Sätze, Wiederholungen, Gewichte oder Volumenlast. Ein Import ist
   deshalb nicht möglich. Übungen mit Gewicht protokolliert die App selbst (Gym, Live-Einheit); die WHOOP-Aufzeichnung
   desselben Tages zählt mit ihr nur einmal.
+
+## 2026-11-27 – „Route folgen“ bei gesperrtem Bildschirm
+
+Wunsch des Nutzers; löst die Entscheidung vom 22.11.2026 („bewusst nicht: Ortung bei gesperrtem Bildschirm“) ab.
+
+- **Ortung im Hintergrund nur während „Route folgen“:** iOS `UIBackgroundModes: location`, Freigabe „Beim Verwenden
+  der App“ reicht (Ortung startet im Vordergrund, blaue Standortanzeige, `activityType: fitness`, keine automatische
+  Pause an Ampeln). Android als Vordergrunddienst (`FOREGROUND_SERVICE_LOCATION`, geolocator) mit dauerhafter
+  Mitteilung „Route folgen“; keine Freigabe „Immer“ nötig. Beenden stoppt die Ortung.
+- **Warnung:** im Vordergrund Vibration wie bisher; ist die App im Hintergrund oder der Bildschirm gesperrt, eine
+  Mitteilung „Abseits der Route“ bzw. „Ziel erreicht“ mit Ton und Vibration (Kanal `coach.route`, Wichtigkeit max).
+  Zurück auf der Route oder wieder im Vordergrund wird sie entfernt.
+- **Bildschirm:** bleibt nicht mehr automatisch an (Akku); der Sonnen-Knopf lässt ihn auf Wunsch an.
+- **Garmin-Uhr:** Für Navigation am Handgelenk bleibt der Kurs (An Uhr senden). Laut Handbuch der Forerunner 265:
+  *Navigation › Alarme* mit „Kursabweichung“ (Off Course) und „Abbiegehinweise“ (Turn Prompts), *Navigation ›
+  Datenseiten* mit Karte, „Vorschau“ (Up Ahead), Kompass und Höhenprofil.
+

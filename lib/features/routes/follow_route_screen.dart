@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../platform/notifications.dart';
 import '../../services/providers.dart';
 import '../../services/routing/location_source.dart';
 import '../../services/routing/routing_providers.dart';
@@ -15,7 +16,8 @@ import 'my_location.dart';
 import 'route_parts.dart';
 
 /// Unterwegs der Route folgen: eigener Standort live auf der Karte, Restdistanz und Fortschritt, Warnung mit Vibration,
-/// sobald man die Route verlässt. Nur bei geöffneter App (der Bildschirm bleibt an) – keine Ortung im Hintergrund.
+/// sobald man die Route verlässt. Läuft auch bei gesperrtem Bildschirm weiter (iOS: blaue Standortanzeige, Android:
+/// Mitteilung „Route folgen“); dann warnt eine Mitteilung mit Ton und Vibration. Auf Wunsch bleibt der Bildschirm an.
 class FollowRouteScreen extends ConsumerStatefulWidget {
   const FollowRouteScreen({super.key, required this.route});
 
@@ -25,7 +27,7 @@ class FollowRouteScreen extends ConsumerStatefulWidget {
   ConsumerState<FollowRouteScreen> createState() => _FollowRouteScreenState();
 }
 
-class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen> {
+class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen> with WidgetsBindingObserver {
   final _map = MapController();
   late final RouteFollower _follower = RouteFollower(
     widget.route.points,
@@ -39,20 +41,48 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen> {
   bool _followCamera = true;
   String? _problem;
 
+  /// Bildschirm anlassen (kostet Akku); sonst läuft die Ortung bei gesperrtem Bildschirm weiter.
+  bool _keepScreenOn = false;
+
+  /// App im Vordergrund; sonst warnt eine Mitteilung statt der Vibration.
+  bool _foreground = true;
+
   /// Gemerkt, weil `ref` im `dispose` nicht mehr benutzt werden darf.
   late final Future<void> Function(bool on) _screenAwake = ref.read(screenAwakeProvider);
+  late final NotificationCenterBridge? _notifications = ref.read(notificationCenterProvider);
+
+  static const _alertID = 'coach.route.follow';
 
   @override
   void initState() {
     super.initState();
-    unawaited(_screenAwake(true));
+    WidgetsBinding.instance.addObserver(this);
+    // Für Warnungen bei gesperrtem Bildschirm einmal nach Mitteilungen fragen.
+    unawaited(_notifications?.permission(requestIfNeeded: true));
     _start();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    if (_foreground) unawaited(_notifications?.removeDelivered([_alertID]));
+  }
+
+  void _setKeepScreenOn(bool value) {
+    setState(() => _keepScreenOn = value);
+    unawaited(_screenAwake(value));
+  }
+
+  /// Warnung: im Vordergrund Vibration, im Hintergrund Mitteilung (Ton und Vibration).
+  void _alert({required bool strong, required String title, required String body}) {
+    unawaited(strong ? HapticFeedback.heavyImpact() : HapticFeedback.mediumImpact());
+    if (!_foreground) unawaited(_notifications?.showNow(id: _alertID, title: title, body: body));
   }
 
   void _start() {
     _positions = ref
         .read(locationSourceProvider)
-        .watch()
+        .watch(background: true)
         .listen(
           _onPosition,
           onError: (Object error) {
@@ -69,9 +99,20 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen> {
     final previous = _state;
     final state = _follower.update(position);
     if (!mounted) return;
-    // Spürbar warnen, wenn man die Route verlässt bzw. ankommt.
-    if (state.isOffRoute && !(previous?.isOffRoute ?? false)) unawaited(HapticFeedback.heavyImpact());
-    if (state.arrived && !(previous?.arrived ?? false)) unawaited(HapticFeedback.mediumImpact());
+    // Spürbar warnen, wenn man die Route verlässt bzw. ankommt – auch bei gesperrtem Bildschirm.
+    if (state.isOffRoute && !(previous?.isOffRoute ?? false)) {
+      _alert(
+        strong: true,
+        title: 'Abseits der Route',
+        body: '${state.offRouteMeters.round()} m neben „${widget.route.name}“ – zurück zur Linie.',
+      );
+    }
+    if (!state.isOffRoute && (previous?.isOffRoute ?? false) && !_foreground) {
+      unawaited(_notifications?.removeDelivered([_alertID]));
+    }
+    if (state.arrived && !(previous?.arrived ?? false)) {
+      _alert(strong: false, title: 'Ziel erreicht', body: '„${widget.route.name}“ geschafft.');
+    }
     setState(() {
       _position = position;
       _state = state;
@@ -88,9 +129,11 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     unawaited(_positions?.cancel());
     _ticker?.cancel();
-    unawaited(_screenAwake(false));
+    if (_keepScreenOn) unawaited(_screenAwake(false));
+    unawaited(_notifications?.removeDelivered([_alertID]));
     super.dispose();
   }
 
@@ -172,6 +215,17 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen> {
                   radius: LiquidRadii.pill,
                   strong: true,
                   child: IconButton(
+                    tooltip: _keepScreenOn ? 'Bildschirm darf ausgehen' : 'Bildschirm anlassen',
+                    isSelected: _keepScreenOn,
+                    icon: const Icon(Icons.light_mode_outlined),
+                    selectedIcon: const Icon(Icons.light_mode),
+                    onPressed: () => _setKeepScreenOn(!_keepScreenOn),
+                  ),
+                ),
+                LiquidSurface(
+                  radius: LiquidRadii.pill,
+                  strong: true,
+                  child: IconButton(
                     tooltip: _followCamera ? 'Karte frei bewegen' : 'Karte mitführen',
                     isSelected: _followCamera,
                     icon: const Icon(Icons.navigation_outlined),
@@ -229,6 +283,12 @@ class _FollowRouteScreenState extends ConsumerState<FollowRouteScreen> {
                       LiquidProgressBar(
                         value: state?.fraction ?? 0,
                         color: offRoute ? AppColors.of(context).alert : color,
+                      ),
+                      Text(
+                        _keepScreenOn
+                            ? 'Bildschirm bleibt an.'
+                            : 'Du kannst den Bildschirm sperren – Warnungen kommen als Mitteilung mit Vibration.',
+                        style: LiquidText.label(context),
                       ),
                     ],
                   ),

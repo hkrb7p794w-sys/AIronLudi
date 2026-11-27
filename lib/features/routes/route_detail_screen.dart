@@ -154,7 +154,7 @@ class _RouteDetailScreenState extends ConsumerState<RouteDetailScreen> {
           FormSection(
             footer:
                 'Zeigt deinen Standort live auf der Route, die Restdistanz und warnt mit Vibration, wenn du die '
-                'Route verlässt. Der Bildschirm bleibt dabei an; bei gesperrtem Bildschirm ortet die App nicht.',
+                'Route verlässt – auch bei gesperrtem Bildschirm (dann als Mitteilung). Beenden stoppt die Ortung.',
             children: [
               ListTile(
                 leading: const Icon(Icons.navigation),
