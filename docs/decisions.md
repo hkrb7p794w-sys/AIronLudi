@@ -1753,8 +1753,9 @@ erkannt; Wunsch, die Übungen des WHOOP Strength Trainers (Gewicht, Sätze) zu �
 - **WHOOP-Sportarten:** `WhoopImport.typeKey` bildet „rock climbing“/„climbing“ auf Klettern ab und jeden Namen mit
   „boulder“ auf Bouldern; „Climber“ und „Stairmaster“ sind Stepper (Cardio). Liefert WHOOP nur einen allgemeinen Namen
   („activity“, „other“) oder keinen, entscheidet die Sport-ID (Tabelle der WHOOP-Dokumentation, z. B. 60 = Rock
-  Climbing, 123 = Strength Trainer). Welchen Namen WHOOP für Bouldern genau sendet, ist nicht dokumentiert; abgedeckt
-  sind die naheliegenden Schreibweisen.
+  Climbing, 123 = Strength Trainer). WHOOP kennt Bouldern inzwischen als eigene Sportart; die Liste der Sport-IDs in
+  der Entwicklerdoku ist älter und führt sie nicht. `sport_name` ist Freitext (Beispiel der API: „running“), erkannt
+  wird jeder Name mit „boulder“, unabhängig von Schreibweise und Zusätzen.
 - **Einheit „Anderes“ mit Art:** Im Wochenplan lässt sich bei „Anderes“ die genaue Art wählen (Bouldern, Klettern,
   Yoga …; `SessionSlot.activity`, neu und optional im JSON, `id` unverändert). Der Plan zeigt dann „Bouldern“ statt
   „Yoga / Beweglichkeit / Wandern“. Abgleich: dieselbe Art ist erledigt; ein anderes Training aus „Anderes“ (Yoga statt
