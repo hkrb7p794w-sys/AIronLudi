@@ -139,8 +139,9 @@ bash test/screenshots/make_index.sh
 - `ios-build.yml`: unsignierte IPA (pseudo-signiert mit `ldid` und den Entitlements) per Label `ios-build`, auf
   `main` und per „Run workflow“; Bereitstellung nur mit `vars.DEPLOY_SIDESTORE == 'true'`.
 - `garmin.yml`: strenge Typprüfung und Build des Datenfelds bei Änderungen in `garmin/`; mit Garmin-Zugang
-  (Secrets `GARMIN_USERNAME`/`GARMIN_PASSWORD`, Variable `CIQ_AGREEMENT_HASH`) offizielle Gerätedateien und `.prg` als
-  Artefakt, sonst minimale Beschreibung aus `garmin/ci/devices`.
+  (Secrets `GARMIN_USERNAME`/`GARMIN_PASSWORD`, Variable `CIQ_AGREEMENT_HASH`) offizielle Gerätedateien, sonst minimale
+  Beschreibung aus `garmin/ci/devices`; `.prg` immer als Artefakt (ohne Zugang `aironludi-karte-test`). Die
+  Lizenz bestätigt nur der Nutzer (der Lauf zeigt den aktuellen Hash in der Zusammenfassung).
 - `device-test.yml`: Gerätetests (`integration_test/device_test.dart`) auf Android-Emulator und iOS-Simulator per
   Label `device-test` (läuft dann bei jedem Push des PRs), „Run workflow“ und montags; Bildschirmfotos als Artefakt.
   Vor Änderungen an nativen Brücken, Start, Speicher oder Benutzerwechsel setzen.
