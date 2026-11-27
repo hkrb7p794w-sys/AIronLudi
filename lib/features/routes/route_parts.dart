@@ -21,6 +21,7 @@ import '../../services/share/export_folders.dart';
 import '../../ui/liquid.dart';
 import '../../ui/tokens.dart';
 import 'my_location.dart';
+import 'watch_map_tile.dart';
 
 part 'route_map_layers.dart';
 

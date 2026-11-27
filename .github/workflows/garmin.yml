@@ -1,0 +1,99 @@
+# AIronLudi-Karte (Connect-IQ-Datenfeld für Garmin-Uhren, Ordner garmin/): strenge Typprüfung und Build.
+#
+# Gerätedateien: Mit den Secrets GARMIN_USERNAME und GARMIN_PASSWORD und der Variable CIQ_AGREEMENT_HASH
+# (Garmins SDK-Lizenz, selbst gelesen und bestätigt – docs/einrichtung.md) lädt der Lauf Garmins offizielle
+# Gerätedateien; nur damit läuft die .prg sicher auf der Uhr. Ohne sie nimmt er die minimale Beschreibung aus
+# garmin/ci/devices (nur für die Typprüfung).
+# Schlüssel: Secret CIQ_DEVELOPER_KEY (DER, Base64); ohne Secret ein Wegwerf-Schlüssel (reicht zum Prüfen).
+# Worker-Adresse: Variable WATCH_WORKER_URL (wird in die Einstellungen des Datenfelds geschrieben).
+name: Garmin
+
+on:
+  pull_request:
+    paths: ["garmin/**", ".github/workflows/garmin.yml"]
+  push:
+    branches: [main]
+    paths: ["garmin/**", ".github/workflows/garmin.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CIQ_SDK: connectiq-sdk-lin-9.3.0-2026-10-20-95888f262.zip
+  DEVICES: fr265 fr265s
+
+jobs:
+  garmin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GARMIN_USERNAME: ${{ secrets.GARMIN_USERNAME }}
+      GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
+      CIQ_DEVELOPER_KEY: ${{ secrets.CIQ_DEVELOPER_KEY }}
+      CIQ_AGREEMENT_HASH: ${{ vars.CIQ_AGREEMENT_HASH }}
+      WATCH_WORKER_URL: ${{ vars.WATCH_WORKER_URL }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Connect-IQ-SDK laden
+        run: |
+          curl -fsSL -o sdk.zip "https://developer.garmin.com/downloads/connect-iq/sdks/$CIQ_SDK"
+          unzip -q sdk.zip -d "$HOME/ciq-sdk"
+          echo "$HOME/ciq-sdk/bin" >> "$GITHUB_PATH"
+
+      - name: Gerätedateien
+        id: devices
+        run: |
+          mkdir -p "$HOME/.Garmin/ConnectIQ/Devices"
+          if [ -n "$GARMIN_USERNAME" ] && [ -n "$GARMIN_PASSWORD" ] && [ -n "$CIQ_AGREEMENT_HASH" ]; then
+            curl -fsSL https://raw.githubusercontent.com/lindell/connect-iq-sdk-manager-cli/master/install.sh | sh -s -- -b "$HOME/bin"
+            "$HOME/bin/connect-iq-sdk-manager-cli" agreement accept --acceptance-hash="$CIQ_AGREEMENT_HASH"
+            "$HOME/bin/connect-iq-sdk-manager-cli" login
+            "$HOME/bin/connect-iq-sdk-manager-cli" device download --manifest=garmin/manifest.xml
+            echo "official=true" >> "$GITHUB_OUTPUT"
+          else
+            cp -r garmin/ci/devices/* "$HOME/.Garmin/ConnectIQ/Devices/"
+            echo "::notice::Ohne Garmin-Zugang: minimale Gerätebeschreibung, nur Typprüfung (docs/einrichtung.md)."
+            echo "official=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Schlüssel und Worker-Adresse
+        run: |
+          if [ -n "$CIQ_DEVELOPER_KEY" ]; then
+            echo "$CIQ_DEVELOPER_KEY" | base64 -d > "$RUNNER_TEMP/developer.der"
+          else
+            openssl genrsa -out "$RUNNER_TEMP/developer.pem" 4096
+            openssl pkcs8 -topk8 -inform PEM -outform DER -in "$RUNNER_TEMP/developer.pem" -out "$RUNNER_TEMP/developer.der" -nocrypt
+          fi
+          if [ -n "$WATCH_WORKER_URL" ]; then
+            sed -i "s#__WORKER_URL__#${WATCH_WORKER_URL%/}#" garmin/resources/properties/properties.xml
+          fi
+
+      - name: Typprüfung und Build
+        run: |
+          mkdir -p build
+          for device in $DEVICES; do
+            monkeyc -f garmin/monkey.jungle -d "$device" -y "$RUNNER_TEMP/developer.der" \
+              -o "build/AIronLudiKarte-$device.prg" -l 3 -w 2>&1 | tee "build/$device.log"
+            if grep -q "WARNING\|ERROR" "build/$device.log"; then
+              echo "::error::Warnungen oder Fehler beim Build für $device"
+              exit 1
+            fi
+          done
+
+      - name: Paket für den Connect-IQ-Store
+        if: steps.devices.outputs.official == 'true'
+        run: monkeyc -e -f garmin/monkey.jungle -y "$RUNNER_TEMP/developer.der" -o build/AIronLudiKarte.iq -r
+
+      - uses: actions/upload-artifact@v7
+        if: steps.devices.outputs.official == 'true'
+        with:
+          name: aironludi-karte
+          path: build/*.prg
+          retention-days: 14

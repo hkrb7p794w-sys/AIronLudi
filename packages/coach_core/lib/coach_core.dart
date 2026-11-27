@@ -170,6 +170,7 @@ export 'src/routes/route_tools.dart';
 export 'src/routes/route_weather.dart';
 export 'src/routes/routing_formats.dart';
 export 'src/routes/run_route_suggestions.dart';
+export 'src/routes/watch_package.dart';
 export 'src/settings/app_settings.dart';
 export 'src/social/social.dart';
 export 'src/social/social_timeline.dart';

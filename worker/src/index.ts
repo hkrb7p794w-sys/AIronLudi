@@ -15,6 +15,8 @@
  * /v1/social/…          – Freunde und Feed zwischen Konten (siehe social.ts), nur mit Sitzung
  * /v1/whoop/…          – WHOOP-Anmeldung: Code bzw. Refresh-Token tauschen (siehe whoop.ts); GET /w/whoop ohne
  *                         Anmeldung leitet nach der Freigabe bei WHOOP in die App zurück
+ * /v1/watch/…           – Karte auf der Garmin-Uhr: Kopplung, Uhr-Pakete hochladen und abrufen (siehe watch.ts);
+ *                         die Uhr selbst meldet sich mit ihrem Geräteschlüssel
  * /v1/maps/…            – Rundwege (openrouteservice) und Kartenkacheln (MapTiler) mit Schlüssel im Worker (siehe
  *                         maps.ts), mit Anmeldung
  * /v1/account/…         – Konten: Registrieren mit Einladung, Anmelden, Sitzungen (siehe accounts.ts). Überall, wo ein
@@ -46,9 +48,10 @@ import {
   recordUsage,
   type UsageStore,
 } from "./usage";
+import { handleWatch, isWatchDeviceRoute, type WatchStore } from "./watch";
 import { handleWhoop, whoopCallbackPage, whoopConfigured } from "./whoop";
 
-export const VERSION = "0.4.0";
+export const VERSION = "0.5.0";
 export const MAX_BODY_BYTES = 8 * 1024 * 1024;
 export const MAX_IMAGES = 4;
 /** Die App wartet 120 s; vorher soll eine verständliche Antwort kommen statt eines Abbruchs. */
@@ -148,6 +151,25 @@ export async function handle(
         principal: principalKey(principal),
         cache: cache ?? defaultCache(),
         counters: env.LEAGUE as unknown as CounterStore | undefined,
+      })) ?? json(404, { error: "Nicht gefunden" })
+    );
+  }
+
+  if (pathname.startsWith("/v1/watch/")) {
+    if (!env.COACH_APP_TOKEN)
+      return json(503, { error: "Worker ist nicht konfiguriert (COACH_APP_TOKEN fehlt)" });
+    // Die Uhr meldet sich mit ihrem Geräteschlüssel (kein App-Token); alles andere nur mit Anmeldung.
+    let principal: string | null = null;
+    if (!isWatchDeviceRoute(pathname)) {
+      const signedIn = await authenticate(request.headers.get("authorization") ?? "", env, deps.now());
+      if (!signedIn) return json(401, { error: "Nicht autorisiert", code: "unauthorized" });
+      principal = principalKey(signedIn);
+    }
+    return (
+      (await handleWatch(request, {
+        store: env.LEAGUE as unknown as WatchStore | undefined,
+        principal,
+        now: deps.now(),
       })) ?? json(404, { error: "Nicht gefunden" })
     );
   }

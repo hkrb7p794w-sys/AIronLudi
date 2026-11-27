@@ -1783,3 +1783,28 @@ Wunsch des Nutzers; löst die Entscheidung vom 22.11.2026 („bewusst nicht: Ort
   *Navigation › Alarme* mit „Kursabweichung“ (Off Course) und „Abbiegehinweise“ (Turn Prompts), *Navigation ›
   Datenseiten* mit Karte, „Vorschau“ (Up Ahead), Kompass und Höhenprofil.
 
+## 2026-11-27 – Karte auf der Garmin-Uhr (Schritt 1: Paket, Worker, Datenfeld-Grundgerüst)
+
+Wunsch des Nutzers: auf der Forerunner 265 (ohne eingebaute Karten) eine Karte zum Navigieren – als Datenseite in
+der normalen Laufaktivität, zurück zur Route bei Abweichung, Route unterwegs ändern, **ohne Handy** während des Laufs.
+
+- **Datenfeld statt eigener App:** Laut SDK (Gerätereferenz) hat die 265 für Datenfelder 256 KB, ab API 5.0 dürfen
+  Datenfelder im Vordergrund `makeWebRequest` nutzen. Die Laufaktivität bleibt Garmins eigene (Aufzeichnung, Runden,
+  Pace); die Karte ist eine Datenseite. Tasten bekommt ein Datenfeld nicht, nur – je nach Uhr – Antippen.
+- **Ohne Handy unterwegs:** Alles kommt vorher auf die Uhr: Route, Varianten (±2/±4 km bei Rundwegen) und das
+  Wegenetz in einem Streifen von 400 m (Overpass, begehbare Wege und Straßen, Kreuzungen und auf 5 m vereinfachte
+  Zwischenpunkte). Ein 10-km-Lauf im dichten Raster ergab rund 2500 Knoten und 28 KB.
+- **Format `AIW1`** (`garmin/FORMAT.md`): binär, Meter um den Start als 16-Bit-Zahlen, Abbiegungen an Kreuzungen
+  (ab 30° Richtungsänderung) und die Zuordnung Knoten → Routenabschnitt für den späteren Rückweg. Übertragung in
+  Base64-Teilen zu 6000 Bytes (Größe einer Antwort an die Uhr ist nicht dokumentiert).
+- **Kopplung ohne Eingabe auf der Uhr:** Die Uhr meldet ihren Geräteschlüssel (`uniqueIdentifier`) und zeigt einen
+  Code (15 Minuten gültig); die App koppelt ihn mit dem Konto. Der Worker speichert nur den Hash des Schlüssels,
+  höchstens fünf Routen je Person für 60 Tage (`worker/src/watch.ts`, KV `LEAGUE`).
+- **Build:** Garmins Gerätedateien gibt es nur mit Garmin-Konto und bestätigter SDK-Lizenz; das entscheidet der
+  Nutzer (Secrets). Ohne sie prüft CI mit einer minimalen eigenen Gerätebeschreibung (`garmin/ci/devices`) streng die
+  Typen (Stufe 3) – installiert wird nur, was mit den offiziellen Dateien gebaut ist.
+- **Schritt 1 enthält:** Koppeln, Laden, Karte in Laufrichtung (Netz, Route, Gelaufenes, Position), Restdistanz,
+  Pace, Distanz, Hinweis 150 m vor Abbiegungen, Abseits-Warnung (roter Rand, Linie zum nächsten Routenpunkt),
+  Antippen wechselt den Maßstab. **Folgt:** Rückweg über das Wegenetz (kürzester Weg), Wechsel auf Varianten und
+  „Abkürzen zum Start“, Vibration, schnellere Darstellung (Raster statt aller Kanten je Bild) – erst nach dem Test auf
+  der echten Uhr.

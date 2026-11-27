@@ -494,3 +494,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Fotos beim Erfassen: bis zur erfolgreichen Auswertung gesichert, nach Fehlschlag „Erneut versuchen“, „Später automatisch eintragen“ (auch im Hintergrund, mit Uhrzeit der Aufnahme, Mitteilung) oder „Verwerfen“; Warteschlange als Dateien mit Sperre; gewähltes Foto als Karte | erledigt |
 | WHOOP: Bouldern und Klettern erkannt (auch über die Sport-ID); Wochenplan: „Anderes“ mit gewählter Art (z. B. Bouldern), Abgleich nach Art | erledigt |
 | Routenplaner: „Route folgen“ auch bei gesperrtem Bildschirm (iOS Hintergrund-Ortung, Android Vordergrunddienst, Warnung als Mitteilung) | erledigt |
+| Karte auf der Garmin-Uhr, Schritt 1: Uhr-Paket `AIW1` (Wegenetz, Varianten, Abbiegungen), Worker-Ablage und Kopplung, „Karte auf die Uhr“ in der App, Datenfeld-Grundgerüst `garmin/` mit CI | erledigt |

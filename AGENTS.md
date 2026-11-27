@@ -18,7 +18,8 @@ der nativen iPhone-App aus `hkrb7p794w-sys/Coach-App` (Swift, Stand `793d408`). 
 | `lib/services/`, `lib/platform/` | Dienste (Garmin, WHOOP, Health, KI, Mitteilungen …) und Plattformbrücken; Provider in `services/providers.dart` |
 | `lib/features/<bereich>/` | Screens und Controller je Bereich (siehe Funktionsübersicht) |
 | `ios/Runner/`, `ios/CoachWidgets/`, `android/app/` | Native Konfiguration; Widgets/Live-Aktivitäten bleiben nativ (Migrationsplan 4.2) |
-| `worker/` | Cloudflare Worker „coach-ai“ (TypeScript): KI-Weiterleitung, Konten, Freunde, Kartendienste, SideStore-Quelle, Android-Download; Prompts in `src/tasks.ts` (seit 16.11.2026 hier statt in Coach-App) |
+| `worker/` | Cloudflare Worker „coach-ai“ (TypeScript): KI-Weiterleitung, Konten, Freunde, Kartendienste, Uhr-Pakete, SideStore-Quelle, Android-Download; Prompts in `src/tasks.ts` (seit 16.11.2026 hier statt in Coach-App) |
+| `garmin/` | AIronLudi-Karte: Connect-IQ-Datenfeld (Monkey C) für Garmin-Uhren; Paketformat `garmin/FORMAT.md` gemeinsam mit `coach_core/src/routes/watch_package.dart` ändern |
 | `docs/migrationsplan.md` | Audit und Checkliste – bei jeder PR den Stand (Abschnitt 8) nachführen |
 | `docs/decisions.md` | Begründete Abweichungen und Entscheidungen (ein Abschnitt `## JJJJ-MM-TT – Titel` je Entscheidung) |
 | `docs/FUEL_PLANNER_SCIENCE.md` | Wissenschaftliche Grundlage und Regeln des Fuel Planners (`coach_core/src/fuel`) – Zahlen nur dort und in den Tests ändern |
@@ -137,6 +138,9 @@ bash test/screenshots/make_index.sh
   bereitgestellten Worker, nur manuell.
 - `ios-build.yml`: unsignierte IPA (pseudo-signiert mit `ldid` und den Entitlements) per Label `ios-build`, auf
   `main` und per „Run workflow“; Bereitstellung nur mit `vars.DEPLOY_SIDESTORE == 'true'`.
+- `garmin.yml`: strenge Typprüfung und Build des Datenfelds bei Änderungen in `garmin/`; mit Garmin-Zugang
+  (Secrets `GARMIN_USERNAME`/`GARMIN_PASSWORD`, Variable `CIQ_AGREEMENT_HASH`) offizielle Gerätedateien und `.prg` als
+  Artefakt, sonst minimale Beschreibung aus `garmin/ci/devices`.
 - `device-test.yml`: Gerätetests (`integration_test/device_test.dart`) auf Android-Emulator und iOS-Simulator per
   Label `device-test` (läuft dann bei jedem Push des PRs), „Run workflow“ und montags; Bildschirmfotos als Artefakt.
   Vor Änderungen an nativen Brücken, Start, Speicher oder Benutzerwechsel setzen.

@@ -462,3 +462,45 @@ final class OverpassPoiSource implements RoutePoiSource {
     throw const RoutingUnavailable('Punkte unterwegs sind gerade nicht abrufbar.');
   }
 }
+
+/// Wegenetz für die Karte auf der Uhr: alle begehbaren Wege im Streifen um Route und Varianten (Overpass, mit
+/// Spiegeln wie [OverpassFeatureSource]).
+final class OverpassNetworkSource implements WatchNetworkSource {
+  OverpassNetworkSource(this.transport, {RateGate? gate, List<Uri>? servers})
+    : gate = gate ?? RateGate(const Duration(seconds: 2)),
+      servers = servers ?? OverpassFormat.uris;
+
+  final HttpTransport transport;
+  final RateGate gate;
+  final List<Uri> servers;
+
+  @override
+  Future<OsmWays> network(List<List<GeoPoint>> lines, {double radius = WatchNetworkFormat.corridorMeters}) async {
+    final query = WatchNetworkFormat.query(lines, radius: radius);
+    for (final server in servers) {
+      try {
+        final response = await gate.run(
+          () => transport.send(
+            HttpRequest(
+              method: 'POST',
+              url: server,
+              headers: const {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'User-Agent': _HttpEngine.userAgent,
+              },
+              body: utf8.encode('data=${Uri.encodeQueryComponent(query)}'),
+              timeout: const Duration(seconds: 90),
+            ),
+          ),
+        );
+        if (!response.isSuccess) continue;
+        return WatchNetworkFormat.parse(_HttpEngine.decode(response));
+      } on HttpTransportException {
+        // Nächster Spiegel.
+      } on RoutingUnavailable {
+        // Nächster Spiegel.
+      }
+    }
+    throw const RoutingUnavailable('Das Wegenetz (Overpass) ist gerade nicht erreichbar.');
+  }
+}

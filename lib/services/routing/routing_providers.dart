@@ -14,6 +14,7 @@ import 'route_stores.dart';
 import 'route_weather_service.dart';
 import 'routing_service.dart';
 import 'run_route_suggester.dart';
+import 'watch_export.dart';
 import 'worker_maps.dart';
 
 /// Routen, Gebiete und Planer-Einstellungen des aktiven Benutzers (je Benutzer ein eigener Container).
@@ -105,5 +106,22 @@ final runRouteSuggesterProvider = Provider<RunRouteSuggester>(
     location: ref.watch(locationSourceProvider),
     features: ref.watch(routeFeatureSourceProvider),
     roundTrips: ref.watch(roundTripSourceProvider),
+  ),
+);
+
+/// Wegenetz für die Karte auf der Uhr (Overpass); in Tests überschreibbar.
+final watchNetworkSourceProvider = Provider<WatchNetworkSource>((ref) {
+  final transport = DioTransport();
+  ref.onDispose(transport.close);
+  return OverpassNetworkSource(transport);
+});
+
+/// „Auf die Uhr“: Paket für das Garmin-Datenfeld packen und beim Worker ablegen.
+final watchExportProvider = Provider<WatchExportService>(
+  (ref) => WatchExportService(
+    ai: ref.watch(aiClientProvider),
+    backend: ref.watch(routingBackendProvider),
+    network: ref.watch(watchNetworkSourceProvider),
+    features: ref.watch(routeFeatureSourceProvider),
   ),
 );

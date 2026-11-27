@@ -369,6 +369,9 @@ void main() {
     await tapCentered(tester, find.text('An Uhr senden'));
     expect(find.text('Garmin'), findsOneWidget);
     expect(find.text('Apple Watch'), findsOneWidget);
+    // Karte auf die Uhr (Garmin-Datenfeld): ohne Worker nur ein Hinweis.
+    expect(find.text('Karte auf die Uhr (Garmin)'), findsOneWidget);
+    expect(find.textContaining('eigene Worker nötig'), findsWidgets);
     expect(find.text('FIT'), findsWidgets);
     // Direkt an Garmin Connect: Kurs-ID landet an der gespeicherten Route.
     await tester.tap(find.text('Direkt an Garmin Connect senden'));

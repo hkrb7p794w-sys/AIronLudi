@@ -148,3 +148,34 @@ ihnen kommen über den Worker hinzu (die Schlüssel bleiben dort, nie in der App
 Beide als GitHub-Secret (Abschnitt 4) eintragen und *Actions › Worker › Run workflow* starten. Ob sie greifen, zeigt
 `https://<worker>/v1/health` unter `maps` (`roundTrip`, `tiles`). Die App fragt das beim Öffnen der Karte ab.
 
+## 9. Garmin-Karte (optional, AIronLudi-Datenfeld)
+
+Das Datenfeld `garmin/` zeigt die Route mit Wegenetz auf der Uhr (Forerunner 265/265S), unterwegs ohne Handy. Es holt
+die Routen über deinen Worker (nichts weiter einzurichten – die Ablage nutzt das KV `LEAGUE`).
+
+**GitHub (einmalig):**
+
+1. *Variable* `WATCH_WORKER_URL`: die Worker-Adresse (wie in der App, z. B. `https://coach-ai.<konto>.workers.dev`).
+   Der Build schreibt sie ins Datenfeld.
+2. *Secret* `CIQ_DEVELOPER_KEY`: dein Entwicklerschlüssel, damit Updates die installierte Version ersetzen. Einmal
+   erzeugen (z. B. in Git Bash unter Windows) und **nie ins Repo**:
+   ```sh
+   openssl genrsa -out developer.pem 4096
+   openssl pkcs8 -topk8 -inform PEM -outform DER -in developer.pem -out developer.der -nocrypt
+   base64 -w0 developer.der   # Ausgabe als Secret eintragen; Datei sicher aufbewahren
+   ```
+3. Für Garmins offizielle Gerätedateien (nötig, damit die `.prg` sicher auf der Uhr läuft): *Secrets*
+   `GARMIN_USERNAME` und `GARMIN_PASSWORD` (dein Garmin-Konto) und *Variable* `CIQ_AGREEMENT_HASH`. Den Hash
+   bekommst du, nachdem du Garmins SDK-Lizenz gelesen hast: `connect-iq-sdk-manager-cli agreement view`
+   (Werkzeug von github.com/lindell/connect-iq-sdk-manager-cli). Mit dem Eintrag bestätigst du die Lizenz.
+
+Danach *Actions › Garmin › Run workflow*; die Datei `AIronLudiKarte-fr265.prg` (bzw. `-fr265s`) liegt als Artefakt
+am Lauf.
+
+**Auf die Uhr:** Uhr per USB an den PC, die `.prg` in den Ordner `GARMIN/APPS` kopieren, Uhr trennen. Dann auf der
+Uhr *Laufen* › **UP** halten › *Laufen-Einstellungen* › *Datenseiten* › *Neu hinzufügen* › Layout mit **einem**
+Feld › Feld *Connect IQ* › *AIronLudi-Karte*.
+
+**Koppeln:** Laufen öffnen, zur Karte blättern (Handy in der Nähe) – sie zeigt einen Code. In AIronLudi: Route ›
+*An Uhr senden* › *Uhr koppeln*, Code eingeben. Danach *Karte auf die Uhr* tippen; beim nächsten Öffnen von Laufen
+mit Handy in der Nähe lädt die Uhr die Route.
