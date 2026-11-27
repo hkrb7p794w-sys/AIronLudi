@@ -162,19 +162,6 @@ von Hand: denselben Link wieder öffnen.
    `Dokumente\Zwift\Workouts\<Zwift-ID>\` kopieren. In Zwift unter
    *Plan › Eigene Workouts*. **FIT-Datei teilen** gibt es für alle Einheiten.
 
-## Krafttraining aus WHOOP (Strength Trainer) übernehmen
-
-WHOOP gibt Übungen, Sätze und Gewichte des Strength Trainers weder über die Schnittstelle noch im Datenexport heraus.
-Deshalb per Screenshot:
-
-1. In WHOOP das Krafttraining öffnen, unter den Übungen **Alle anzeigen** tippen und Screenshots der Liste machen
-   (bei langen Listen mehrere, gern auch den Kopf mit Datum und Uhrzeit).
-2. In AIronLudi *Plan › Gym › Aus Screenshots übernehmen › Screenshots wählen* (bis zu 4 Bilder).
-3. Die KI liest Übungen, Sätze, Wiederholungen und Gewichte ab. Prüfen: Satz antippen zum Ändern oder Löschen,
-   **Wann** für Datum und Uhrzeit (ohne Uhrzeit auf dem Bild nimmt die App die WHOOP-Aufzeichnung des Tages), dann
-   **Sichern**. Unbekannte Übungen werden als eigene Übungen angelegt. Ein zweiter Import derselben Einheit ersetzt
-   die erste. Klappt auch mit Screenshots aus Hevy, Strong und ähnlichen Apps.
-
 ## Routen planen: Laufen und Rad (OpenStreetMap)
 
 1. *Plan › Routen › Neue Route planen:* Start als **Adresse** eingeben (Vorschläge erscheinen beim Tippen,

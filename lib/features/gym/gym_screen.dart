@@ -19,7 +19,6 @@ import 'active_workout_screen.dart';
 import 'gym_controller.dart';
 import 'gym_library.dart';
 import 'gym_providers.dart';
-import 'gym_screenshot_import_screen.dart';
 import 'gym_share_views.dart';
 import 'muscle_views.dart';
 
@@ -191,13 +190,6 @@ class _GymScreenState extends ConsumerState<GymScreen> {
                   icon: Icons.fitness_center,
                   caption: 'Muskel-Heatmap, Erholung, Fortschritt',
                   onTap: () => _push((_) => const GymAnalysisScreen()),
-                ),
-                // WHOOP gibt die Sätze des Strength Trainers nicht über die API heraus: per Screenshot und KI.
-                _HubTile(
-                  title: 'Aus Screenshots übernehmen',
-                  icon: Icons.document_scanner_outlined,
-                  caption: 'WHOOP Strength Trainer, Hevy … – Übungen, Sätze, Gewichte',
-                  onTap: () => _push((_) => const GymScreenshotImportScreen()),
                 ),
               ],
             ),

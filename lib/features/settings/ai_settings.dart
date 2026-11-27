@@ -96,7 +96,6 @@ class AIUsageScreen extends ConsumerStatefulWidget {
     'daily_note' || 'personal_note' => 'Tagesnotiz',
     'meal_analyze' => 'Mahlzeit auswerten',
     'nutrition_label' => 'Etikett lesen',
-    'gym_import' => 'Krafttraining übernehmen',
     'nutrition_review' => 'Ernährung auswerten',
     'gym_hints' => 'Gym-Tipps',
     'gym_plan' => 'Trainingsplan',

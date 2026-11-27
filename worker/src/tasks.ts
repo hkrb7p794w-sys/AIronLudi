@@ -15,7 +15,7 @@ import {
   POINTS_WITH_SOURCES,
   restrictedToday,
 } from "./grounding";
-import { checkGymImport, checkGymPlan, gymHintsPrompt, gymImportPrompt, gymPlanPrompt } from "./gym";
+import { checkGymPlan, gymHintsPrompt, gymPlanPrompt } from "./gym";
 import { groundInsights, INSIGHTS_SYSTEM, insightsPrompt } from "./insights";
 import {
   groundAmend,
@@ -207,15 +207,6 @@ export const TASKS: Record<string, TaskDefinition> = {
     maxOutputTokens: 8000,
     build: (input) => ({ system: USER_TEXT_RULE, prompt: gymPlanPrompt(input) }),
     ground: checkGymPlan,
-  },
-  /** Krafttraining von Screenshots einer anderen App (WHOOP Strength Trainer, Hevy …) ablesen. */
-  gym_import: {
-    json: true,
-    allowImages: true,
-    temperature: 0,
-    maxOutputTokens: 6000,
-    build: (input, images) => ({ system: USER_TEXT_RULE, prompt: gymImportPrompt(input, images) }),
-    ground: checkGymImport,
   },
   /** Chat mit dem Coach, nur aus den Fakten der App. */
   coach_chat: {

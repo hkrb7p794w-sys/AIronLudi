@@ -1763,30 +1763,6 @@ erkannt; Wunsch, die Übungen des WHOOP Strength Trainers (Gewicht, Sätze) zu �
   Sportart „Bouldern“ neben Laufen, Rad, Schwimmen und Kraft hätte das Profilformat (`TrainingSport`) und alle
   Auswertungen je Sportart verändert; die Art an der Einheit genügt für Plan und Abgleich.
 - **Strength Trainer:** Die öffentliche WHOOP-API (v2) gibt zu Trainings nur Sportart, Zeiten, Strain, Puls, Energie,
-  Strecke und Pulszonen heraus – keine Übungen, Sätze, Wiederholungen, Gewichte oder Volumenlast. Ein direkter Import
-  ist nicht möglich; Ausweg siehe nächster Abschnitt.
-
-## 2026-11-27 – Krafttraining aus Screenshots übernehmen (Ausweg für den WHOOP Strength Trainer)
-
-Wunsch des Nutzers: Übungen, Sätze und Gewichte aus dem WHOOP Strength Trainer in die App holen. Geprüfte Wege:
-
-- **WHOOP-API und CSV-Datenexport:** enthalten keine Sätze, Wiederholungen oder Gewichte (Antwort von WHOOP in der
-  Community, Datenmodell der API).
-- **Apple Health / Health Connect:** WHOOP schreibt nur das Training (Sportart, Dauer, Energie, Puls), keine Übungen.
-- **Strava:** WHOOP soll Strength-Trainer-Einheiten mit Übungsliste an Strava senden; das hieße eine neue
-  Strava-Anbindung (Konto, OAuth, Geheimnis im Worker) mit nicht dokumentiertem Textformat – verworfen.
-- **Inoffizielle WHOOP-App-Schnittstelle** mit Benutzername und Passwort: verstößt gegen die Nutzungsbedingungen und
-  bricht bei jeder App-Änderung – verworfen.
-
-Gewählt: **Screenshots und KI.** Neue Worker-Aufgabe `gym_import` (bis zu 4 Bilder, Temperatur 0, Bildmodelle zuerst):
-Die KI liest nur ab (jeder Satz einzeln, lbs → kg, Zeitübungen in Sekunden, Summen wie Volumenlast sind keine Sätze),
-ordnet Übungen der mitgeschickten Bibliothek („id | Name“) zu und nennt für Unbekanntes die Muskelgruppe; der Worker
-prüft Grenzen und IDs (`checkGymImport`). In der App (`GymScreenshotImport` in `coach_core`,
-`GymScreenshotImportScreen` unter *Plan › Gym*) wird daraus eine Gym-Einheit zum Prüfen: Sätze ändern oder löschen,
-Übungen entfernen, Datum und Uhrzeit ändern. Ohne Jahr auf dem Bild gilt der letzte solche Tag bis heute; ohne
-Uhrzeit die Zeit der Kraft-Aufzeichnung desselben Tages (WHOOP, Garmin, Health), sonst 18 Uhr. Unbekannte Übungen
-werden beim Sichern eigene Übungen (wie beim GymBook-Import). Die Kennung ergibt sich aus Tag und Beginn
-(`import:<Tag>:<HH:MM>`), ein zweiter Import derselben Einheit ersetzt die erste. Die WHOOP-Aufzeichnung und die
-übernommene Einheit zählen im Plan einmal (wie Uhr-Aufzeichnung und App-Einheit). Screenshots werden höher aufgelöst
-verschickt als Mahlzeit-Fotos (2048 statt 1280 px), damit Zahlen lesbar bleiben, und nicht gespeichert. Die Aufgabe
-zählt als „Erfassen“ (`AIPolicy`), läuft also auch in der Einstellung „Nur Erfassen“.
+  Strecke und Pulszonen heraus – keine Übungen, Sätze, Wiederholungen, Gewichte oder Volumenlast. Ein Import ist
+  deshalb nicht möglich. Übungen mit Gewicht protokolliert die App selbst (Gym, Live-Einheit); die WHOOP-Aufzeichnung
+  desselben Tages zählt mit ihr nur einmal.

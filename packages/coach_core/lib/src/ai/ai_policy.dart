@@ -67,7 +67,7 @@ enum AITrigger implements RawEnum {
 /// Zentrale Regel, ob eine KI-Anfrage erlaubt ist – gilt für alle Aufgaben im KI-Dienst.
 abstract final class AIPolicy {
   static AITaskKind kind(String task) => switch (task) {
-    'meal_analyze' || 'meal_amend' || 'nutrition_label' || 'gym_import' => AITaskKind.capture,
+    'meal_analyze' || 'meal_amend' || 'nutrition_label' => AITaskKind.capture,
     'gym_plan' || 'weekly_recipes' || 'meal_now' || 'cook_plan' || 'pantry_recipes' => AITaskKind.planning,
     'ping' => AITaskKind.system,
     _ => AITaskKind.recommendation,

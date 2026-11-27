@@ -80,7 +80,6 @@ export 'src/gym/gym_hints.dart';
 export 'src/gym/gym_overview.dart';
 export 'src/gym/gym_plan.dart';
 export 'src/gym/gym_progression.dart';
-export 'src/gym/gym_screenshot_import.dart';
 export 'src/gym/gym_session.dart';
 export 'src/gym/gym_share.dart';
 export 'src/gym/gym_stats.dart';

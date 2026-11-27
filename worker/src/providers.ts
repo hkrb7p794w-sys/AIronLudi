@@ -137,8 +137,6 @@ export const TASK_ROUTES: Record<string, ProviderId[]> = {
   meal_analyze: ["gemini", "github", "mistral", "groq", "workers_ai", "cerebras"],
   meal_amend: ["gemini", "github", "mistral", "groq", "workers_ai", "cerebras"],
   nutrition_label: ["gemini", "github", "mistral", "groq", "workers_ai"],
-  // Screenshots eines Krafttrainings: Bildmodelle, Gemini liest Text auf Bildern am besten.
-  gym_import: ["gemini", "github", "mistral", "groq", "workers_ai"],
   weekly_recipes: ["cerebras", "gemini", "github", "groq", "workers_ai", "mistral"],
   cook_plan: ["cerebras", "gemini", "github", "groq", "workers_ai", "mistral"],
   gym_plan: ["cerebras", "gemini", "github", "groq", "workers_ai", "mistral"],
