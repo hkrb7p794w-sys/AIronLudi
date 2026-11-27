@@ -27,6 +27,9 @@ import workmanager_apple
     }
     WorkmanagerPlugin.registerPeriodicTask(
       withIdentifier: "io.github.hkrb7p794w.coach.refresh", earliestBeginInSeconds: NSNumber(value: 2 * 3600))
+    // Wartende Fotos nachtragen (BGProcessingTask mit Netz): Dart plant ihn, sobald ein Foto automatisch eingetragen
+    // werden soll (`BackgroundRefresh.scheduleMeals`).
+    WorkmanagerPlugin.registerBGProcessingTask(withIdentifier: "io.github.hkrb7p794w.coach.meals")
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 

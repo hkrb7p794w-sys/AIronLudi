@@ -10,6 +10,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../services/nutrition/meal_photo.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
+import '../../ui/liquid.dart';
 import '../../ui/tokens.dart';
 import 'meal_shortcuts.dart';
 
@@ -174,16 +175,9 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
             ),
           ),
           if (_photo case final photo?)
-            ListTile(
-              leading: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.memory(photo, width: 64, height: 64, fit: BoxFit.cover),
-              ),
-              title: Text('Foto ausgewählt', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
-              trailing: TextButton(
-                onPressed: () => setState(() => _photo = null),
-                child: Text('Entfernen', style: TextStyle(color: AppColors.of(context).alert)),
-              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: SelectedPhotoCard(photo: photo, onRemove: () => setState(() => _photo = null)),
             ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -238,6 +232,137 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> {
           ),
           CaptureShortcutsSection(shortcuts: widget.shortcuts, done: () => Navigator.of(context).pop()),
         ],
+      ),
+    );
+  }
+}
+
+/// Gewähltes Foto als Karte über der Beschreibung: Vorschau, was damit passiert, „Entfernen“.
+class SelectedPhotoCard extends StatelessWidget {
+  const SelectedPhotoCard({super.key, required this.photo, required this.onRemove});
+
+  final Uint8List photo;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return LiquidCard(
+      padding: const EdgeInsets.all(LiquidSpacing.m),
+      child: Row(
+        children: [
+          Semantics(
+            image: true,
+            label: 'Gewähltes Foto',
+            child: ClipRRect(
+              borderRadius: LiquidRadii.innerAll,
+              child: Image.memory(photo, width: 64, height: 64, fit: BoxFit.cover),
+            ),
+          ),
+          const SizedBox(width: LiquidSpacing.m),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Foto ausgewählt', style: AppText.headline(context)),
+                const SizedBox(height: 2),
+                Text(
+                  'Wird mit der Beschreibung ausgewertet und bis dahin gesichert.',
+                  style: AppText.footnote(context).copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
+            onPressed: onRemove,
+            child: Text('Entfernen', style: TextStyle(color: AppColors.of(context).alert)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Wahl nach einer fehlgeschlagenen Auswertung.
+enum AnalysisFailureChoice { retry, autoLog, discard }
+
+/// Auswertung fehlgeschlagen: Foto und Beschreibung sind gesichert. Erneut versuchen (ohne neues Foto), bei Netz- oder
+/// KI-Überlastung später automatisch eintragen lassen, oder verwerfen. Schließen ohne Wahl lässt sie in „Wartet auf
+/// Auswertung“ stehen.
+class AnalysisFailureSheet extends StatelessWidget {
+  const AnalysisFailureSheet({super.key, required this.message, required this.temporary, this.photo, this.text = ''});
+
+  final String message;
+
+  /// Netz oder KI überlastet: „Später automatisch eintragen“ anbieten.
+  final bool temporary;
+  final Uint8List? photo;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = AppText.footnote(context).copyWith(color: theme.colorScheme.onSurfaceVariant);
+    final what = photo != null
+        ? (text.trim().isEmpty ? 'Dein Foto ist' : 'Foto und Beschreibung sind')
+        : 'Deine Beschreibung ist';
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(LiquidSpacing.page, 0, LiquidSpacing.page, LiquidSpacing.l),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                if (photo case final photo?) ...[
+                  ClipRRect(
+                    borderRadius: LiquidRadii.innerAll,
+                    child: Image.memory(photo, width: 56, height: 56, fit: BoxFit.cover),
+                  ),
+                  const SizedBox(width: LiquidSpacing.m),
+                ],
+                Expanded(child: Text('Auswertung fehlgeschlagen', style: AppText.title(context))),
+              ],
+            ),
+            const SizedBox(height: LiquidSpacing.m),
+            Text(message),
+            const SizedBox(height: LiquidSpacing.s),
+            Text('$what gespeichert – du musst nichts neu aufnehmen.', style: muted),
+            const SizedBox(height: LiquidSpacing.l),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+              onPressed: () => Navigator.of(context).pop(AnalysisFailureChoice.retry),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Erneut versuchen'),
+            ),
+            if (temporary) ...[
+              const SizedBox(height: LiquidSpacing.s),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+                onPressed: () => Navigator.of(context).pop(AnalysisFailureChoice.autoLog),
+                icon: const Icon(Icons.schedule),
+                label: const Text('Später automatisch eintragen'),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(LiquidSpacing.xs, LiquidSpacing.s, LiquidSpacing.xs, 0),
+                child: Text(
+                  'Die App wertet das Foto aus, sobald Netz und KI wieder verfügbar sind – auch wenn sie geschlossen '
+                  'ist – und trägt Gericht, Mengen, Makros und die Uhrzeit der Aufnahme ein. Du bekommst eine '
+                  'Mitteilung und kannst den Eintrag danach prüfen.',
+                  style: muted,
+                ),
+              ),
+            ],
+            const SizedBox(height: LiquidSpacing.s),
+            TextButton(
+              style: TextButton.styleFrom(minimumSize: const Size.fromHeight(44)),
+              onPressed: () => Navigator.of(context).pop(AnalysisFailureChoice.discard),
+              child: Text('Verwerfen', style: TextStyle(color: AppColors.of(context).alert)),
+            ),
+          ],
+        ),
       ),
     );
   }

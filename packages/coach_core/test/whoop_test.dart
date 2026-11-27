@@ -213,6 +213,26 @@ void main() {
     expect(unknown.sport, ActivitySport.other);
   });
 
+  test('Bouldern und Klettern erkannt, auch über die Sport-ID; „Climber“ ist der Stepper', () {
+    WhoopWorkout workout(Object? name, {int? id}) =>
+        WhoopWorkout.fromJson({...workoutJson, 'sport_name': name, 'sport_id': ?id})!;
+    final boulder = WhoopImport.activity(workout('bouldering'));
+    expect(boulder.name, 'Bouldern · WHOOP');
+    expect(ActivityKind.ofActivity(boulder), ActivityKind.bouldering);
+    expect(ActivityKind.ofActivity(boulder).workout, isTrue);
+    expect(WhoopImport.typeKey('Bouldering'), 'bouldering');
+    expect(WhoopImport.typeKey('indoor bouldering'), 'bouldering');
+    final rock = WhoopImport.activity(workout('rock climbing'));
+    expect(rock.name, 'Klettern · WHOOP');
+    expect(ActivityKind.ofActivity(rock), ActivityKind.climbing);
+    expect(ActivityKind.ofActivity(WhoopImport.activity(workout('climber'))), ActivityKind.cardio);
+    // Allgemeiner Name: Sport-ID entscheidet.
+    final byID = WhoopImport.activity(workout('activity', id: 60));
+    expect(byID.name, 'Klettern · WHOOP');
+    expect(WhoopImport.activity(workout(null, id: 123)).sport, ActivitySport.strength);
+    expect(WhoopImport.activity(workout('activity')).name, 'Activity · WHOOP');
+  });
+
   test('Token aus dem Tausch, Ablauf mit Puffer, gespeichert und gelesen', () {
     final now = DateTime.utc(2026, 11, 14, 12);
     final token = WhoopToken.fromResponse({'access_token': 'a', 'refresh_token': 'r', 'expires_in': 3600}, now: now)!;

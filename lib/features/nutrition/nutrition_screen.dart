@@ -11,6 +11,8 @@ import '../../app/deep_links.dart';
 import '../../app/training_data_reload.dart';
 import '../../data/repositories/meal_repository.dart';
 import '../../data/storage.dart';
+import '../../services/background/background_refresh.dart';
+import '../../services/nutrition/pending_analysis.dart';
 import '../../services/providers.dart';
 import '../../ui/components.dart';
 import '../../ui/large_title.dart';
@@ -82,11 +84,16 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen>
     )..addListener(_controllerChanged);
     _query.addListener(() => setState(() {}));
     unawaited(_reload().then((_) => _controller.retryPending(_foods)));
+    // Zurück in der App: inzwischen im Hintergrund eingetragene Fotos zeigen, fällige Auswertungen nachholen.
+    _lifecycle = AppLifecycleListener(
+      onResume: () => unawaited(_reload().then((_) => mounted ? _controller.retryPending(_foods) : null)),
+    );
     // Mahlzeiten von anderswo (z. B. Fuel Planner aus einer Einheit des Ausdauerplans) sofort zeigen.
     _mealChanges = ref.read(mealDataChangesProvider).listen((_) => _reloadSoon());
   }
 
   StreamSubscription<void>? _mealChanges;
+  late final AppLifecycleListener _lifecycle;
   bool _reloadQueued = false;
 
   /// Mehrere Änderungen kurz hintereinander: einmal neu laden.
@@ -102,6 +109,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen>
   @override
   void dispose() {
     unawaited(_mealChanges?.cancel());
+    _lifecycle.dispose();
     _controller
       ..removeListener(_controllerChanged)
       ..dispose();
@@ -135,6 +143,42 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen>
     if (_controller.missingBarcode case final barcode?) {
       _controller.missingBarcode = null;
       WidgetsBinding.instance.addPostFrameCallback((_) => _draftForMissing(barcode));
+    }
+    if (_controller.failedAnalysis case final failure? when !_showsFailure) {
+      _showsFailure = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _askAfterFailure(failure));
+    }
+  }
+
+  bool _showsFailure = false;
+
+  /// Auswertung fehlgeschlagen: erneut versuchen, später automatisch eintragen oder verwerfen.
+  Future<void> _askAfterFailure(({PendingAnalysis item, String message, bool temporary}) failure) async {
+    if (!mounted) return;
+    final choice = await showModalBottomSheet<AnalysisFailureChoice>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => AnalysisFailureSheet(
+        message: failure.message,
+        temporary: failure.temporary,
+        photo: _controller.pendingPhoto(failure.item),
+        text: failure.item.text,
+      ),
+    );
+    _showsFailure = false;
+    if (!mounted) return;
+    switch (choice) {
+      case AnalysisFailureChoice.retry:
+        await _controller.retryItem(failure.item, _foods);
+        await _reload();
+      case AnalysisFailureChoice.autoLog:
+        await _controller.autoLogLater(failure.item);
+        await BackgroundRefresh.scheduleMeals();
+      case AnalysisFailureChoice.discard:
+        await _controller.removePending(failure.item);
+      case null:
+        _controller.keepFailed();
     }
   }
 
@@ -292,7 +336,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen>
                       unawaited(_reload());
                     },
                   ),
-                  if (controller.pending.isNotEmpty) _pendingSection(),
+                  if (controller.waiting.isNotEmpty) _pendingSection(),
                   for (final card in settings.nutritionDashboard.visible) ..._dashboardCard(card),
                   // Wochen-Check-in unter dem Tag (Roast, Konzept 6.4): bleibt sichtbar, solange er fällig ist.
                   if (_showsCheckIn) _checkInSection(),
@@ -372,7 +416,20 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen>
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [CircularProgressIndicator(), SizedBox(height: 12), Text('Wird ausgewertet …')],
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 12),
+                      const Text('Wird ausgewertet …'),
+                      // Lange Auswertung: das Foto geht nicht verloren, auch wenn es nicht klappt.
+                      if (controller.analyzingID != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            'Foto ist gesichert',
+                            style: AppText.footnote(context).copyWith(color: AppColors.muted(context)),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),

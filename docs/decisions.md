@@ -1705,3 +1705,64 @@ Acht Punkte des Nutzers aus Bildschirmfotos (iPhone):
   nach rechts heißt immer schneller; „Zurücksetzen“ holt die Ausgangswerte, gespeichert wird nichts.
 - **KI-Einstellungen:** Auswahl im Menüstil (`MenuPickerTile`): Titel links, Wert rechts, Erklärung in voller Breite
   darunter, statt einer Ausklappliste, die den Text auf eine schmale Spalte drückte.
+
+## 2026-11-26 – Fotos gehen bei fehlgeschlagener Auswertung nicht mehr verloren
+
+Rückmeldung des Nutzers (iPhone): Fotos wurden teils lange ausgewertet, dann schlug die Analyse fehl und das Foto war
+weg; außerdem hing das gewählte Foto im Erfassen-Bildschirm ohne Rahmen zwischen den Knöpfen.
+
+- **Foto gesichert, bis die Auswertung klappt:** `NutritionController.analyze` legt Foto und Beschreibung vor dem
+  Aufruf der KI in der Warteschlange ab und löscht sie erst nach dem Erfolg (bzw. nach dem Eintragen). Vorher
+  landete nur bei reinen Netzfehlern etwas in der Warteschlange; bei Zeitüberschreitung, „KI überlastet“ (502/503/504)
+  oder ausgeschöpftem Kontingent (429) war das Foto verloren. Fällt die App während der Auswertung aus, bleibt das
+  Foto ebenfalls erhalten.
+- **Nach einem Fehlschlag** fragt ein Sheet (`AnalysisFailureSheet`): „Erneut versuchen“ (ohne neues Foto, öffnet wie
+  bisher den Editor), „Später automatisch eintragen“ (nur bei vorübergehenden Fehlern: Netz, Zeitüberschreitung, 408,
+  429, 5xx – nicht, wenn die KI auf dem Foto nichts erkannt hat oder die Anmeldung abgelehnt wurde) und „Verwerfen“.
+  Schließen ohne Wahl lässt das Foto unter „Wartet auf Auswertung“ stehen; dort zeigt die Zeile Vorschaubild, Stand
+  und Uhrzeit der Aufnahme, Antippen wertet sofort aus, Wischen löscht. Die frühere Meldung „Ohne Netz gespeichert“
+  entfällt, weil ohne Netz dasselbe Sheet erscheint.
+- **Automatisch eintragen** (`PendingMealService`): Gericht, Mengen und Makros aus der KI, Tag und Uhrzeit der
+  Aufnahme (gewählter Tag zur Uhrzeit des Fotos), Mahlzeit wie vorgewählt, sonst laut KI, sonst nach Uhrzeit;
+  bekannte eigene Lebensmittel haben Vorrang wie im Editor. Der Hinweis „Automatisch nachgetragen – bitte prüfen.“
+  steht an der Mahlzeit. In der App läuft das beim Öffnen der Ernährung und bei Rückkehr in die App (mit
+  „Rückgängig“), bei geschlossener App im Hintergrund: Android als einmalige WorkManager-Arbeit mit Netz und
+  wachsendem Abstand, iOS als `BGProcessingTask` mit Netz (`io.github.hkrb7p794w.coach.meals`, in `Info.plist` und
+  `AppDelegate` registriert); der regelmäßige Abruf (`BackgroundRefresh.run`) nimmt fällige Fotos zuerst mit.
+  Eingetragene Mahlzeiten meldet eine Mitteilung („Mahlzeit nachgetragen“). Wann iOS die Aufgabe ausführt, entscheidet
+  das System – meist, wenn das Gerät ruht und Netz hat. Automatische Versuche warten nach Fehlschlägen 2, 5, 15, 30,
+  dann 60 Minuten (`PendingMealRetry`); bei einem nicht vorübergehenden Fehler hört das automatische Eintragen auf und
+  das Foto wartet auf den Nutzer. Die Anfrage zählt als vom Nutzer ausgelöst (`AITrigger.user`), weil er sie gewählt
+  hat. Im Hintergrund nur für den aktiven Benutzer.
+- **Ablage als Dateien statt Einstellungen:** Je Mahlzeit eine JSON-Datei neben dem Foto im Ordner `pending-meals` des
+  Benutzers. Der Hintergrundabruf läuft in einem eigenen Isolate mit eigenem Zwischenspeicher der Einstellungen; eine
+  Liste in `nutrition.pendingAnalyses` hätte die App mit veraltetem Stand zurückgeschrieben und Mahlzeiten doppelt
+  eingetragen. Eine Sperrdatei (`.lock`, exklusiv angelegt) verhindert, dass App und Hintergrund dieselbe Mahlzeit
+  gleichzeitig auswerten; liegengebliebene Sperren (älter als 4 Minuten) werden übernommen. Die alte Liste wird beim
+  ersten Laden in Dateien übernommen und der Schlüssel entfernt. Die Warteschlange war und ist nicht Teil von
+  `AppBackup`.
+- **Gewähltes Foto als Karte** (`SelectedPhotoCard`) mit Abstand zu den Knöpfen, Vorschau, Satz „Wird mit der
+  Beschreibung ausgewertet und bis dahin gesichert.“ und „Entfernen“; während der Auswertung steht unter „Wird
+  ausgewertet …“ zusätzlich „Foto ist gesichert“.
+
+## 2026-11-27 – Bouldern aus WHOOP und im Wochenplan; kein Import aus dem WHOOP Strength Trainer
+
+Rückmeldung des Nutzers: Bouldern, in WHOOP so erfasst und im eigenen Plan vorgesehen, wurde nicht als Sportart
+erkannt; Wunsch, die Übungen des WHOOP Strength Trainers (Gewicht, Sätze) zu übernehmen.
+
+- **WHOOP-Sportarten:** `WhoopImport.typeKey` bildet „rock climbing“/„climbing“ auf Klettern ab und jeden Namen mit
+  „boulder“ auf Bouldern; „Climber“ und „Stairmaster“ sind Stepper (Cardio). Liefert WHOOP nur einen allgemeinen Namen
+  („activity“, „other“) oder keinen, entscheidet die Sport-ID (Tabelle der WHOOP-Dokumentation, z. B. 60 = Rock
+  Climbing, 123 = Strength Trainer). WHOOP kennt Bouldern inzwischen als eigene Sportart; die Liste der Sport-IDs in
+  der Entwicklerdoku ist älter und führt sie nicht. `sport_name` ist Freitext (Beispiel der API: „running“), erkannt
+  wird jeder Name mit „boulder“, unabhängig von Schreibweise und Zusätzen.
+- **Einheit „Anderes“ mit Art:** Im Wochenplan lässt sich bei „Anderes“ die genaue Art wählen (Bouldern, Klettern,
+  Yoga …; `SessionSlot.activity`, neu und optional im JSON, `id` unverändert). Der Plan zeigt dann „Bouldern“ statt
+  „Yoga / Beweglichkeit / Wandern“. Abgleich: dieselbe Art ist erledigt; ein anderes Training aus „Anderes“ (Yoga statt
+  Bouldern) zählt als „anders gemacht“, ein Spaziergang nicht. Ohne gewählte Art bleibt alles wie bisher. Eine eigene
+  Sportart „Bouldern“ neben Laufen, Rad, Schwimmen und Kraft hätte das Profilformat (`TrainingSport`) und alle
+  Auswertungen je Sportart verändert; die Art an der Einheit genügt für Plan und Abgleich.
+- **Strength Trainer:** Die öffentliche WHOOP-API (v2) gibt zu Trainings nur Sportart, Zeiten, Strain, Puls, Energie,
+  Strecke und Pulszonen heraus – keine Übungen, Sätze, Wiederholungen, Gewichte oder Volumenlast. Ein Import ist
+  deshalb nicht möglich. Übungen mit Gewicht protokolliert die App selbst (Gym, Live-Einheit); die WHOOP-Aufzeichnung
+  desselben Tages zählt mit ihr nur einmal.

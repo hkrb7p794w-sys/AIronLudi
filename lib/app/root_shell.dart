@@ -114,6 +114,8 @@ class _RootShellState extends ConsumerState<RootShell> {
     final model = ref.read(appModelProvider);
     if (!model.isDemo) {
       await BackgroundRefresh.schedule();
+      // Fotos, die automatisch eingetragen werden sollen: Auswertung im Hintergrund planen.
+      if (ref.read(pendingMealServiceProvider).hasAutoLog) await BackgroundRefresh.scheduleMeals();
       await ref.read(backupServiceProvider).backupToFolder();
     }
     await ref.read(widgetPublisherProvider).publish();

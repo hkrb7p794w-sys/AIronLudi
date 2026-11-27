@@ -30,6 +30,7 @@ import 'nutrition/cook_share_service.dart';
 import 'nutrition/meal_share_service.dart';
 import 'nutrition/open_food_facts_client.dart';
 import 'nutrition/pending_analysis.dart';
+import 'nutrition/pending_meal_service.dart';
 import 'reminders/reminder_service.dart';
 import 'social/game_service.dart';
 import 'social/league_service.dart';
@@ -138,6 +139,17 @@ final openFoodFactsProvider = Provider<OpenFoodFactsClient>((ref) => OpenFoodFac
 
 final pendingAnalysisStoreProvider = Provider<PendingAnalysisStore>(
   (ref) => PendingAnalysisStore(ref.watch(settingsStoreProvider), folder: ref.watch(activityFoldersProvider).support),
+);
+
+/// Wartende Fotos ohne Rückfrage eintragen (Hintergrundabruf); meldet eingetragene Mahlzeiten per Mitteilung.
+final pendingMealServiceProvider = Provider<PendingMealService>(
+  (ref) => PendingMealService(
+    store: ref.watch(pendingAnalysisStoreProvider),
+    ai: ref.watch(aiClientProvider),
+    meals: ref.watch(mealRepositoryProvider),
+    settings: ref.watch(coachSettingsProvider),
+    notifications: ref.watch(notificationCenterProvider),
+  ),
 );
 
 final garminStrengthServiceProvider = Provider<GarminStrengthService>((ref) {

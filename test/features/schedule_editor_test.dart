@@ -39,4 +39,35 @@ void main() {
     await tester.pumpAndSettle();
     expect(schedule.slots(Weekday.tuesday).single.intensity, SessionIntensity.long);
   });
+
+  testWidgets('„Anderes“ als Bouldern festlegen und wieder allgemein machen', (tester) async {
+    var schedule = WeekSchedule().withSlots(const [SessionSlot(TrainingSport.other)], Weekday.wednesday);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) => SingleChildScrollView(
+              child: ScheduleEditor(
+                schedule: schedule,
+                sports: const [TrainingSport.other],
+                onChanged: (updated) => setState(() => schedule = updated),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Anderes'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Bouldern'));
+    await tester.pumpAndSettle();
+    expect(schedule.slots(Weekday.wednesday).single.activity, ActivityKind.bouldering);
+    expect(find.text('Bouldern'), findsOneWidget);
+
+    await tester.tap(find.text('Bouldern'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Beliebig (Yoga, Wandern …)'));
+    await tester.pumpAndSettle();
+    expect(schedule.slots(Weekday.wednesday).single, const SessionSlot(TrainingSport.other));
+  });
 }

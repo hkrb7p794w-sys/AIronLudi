@@ -114,4 +114,41 @@ void main() {
     await tester.pumpAndSettle();
     expect(results, [MissingBarcodeSheet.create]);
   });
+
+  testWidgets('gewähltes Foto als Karte, „Entfernen“ nimmt es weg', (tester) async {
+    await host(tester, () => CaptureScreen(pickPhoto: (_) async => photo));
+    await tester.tap(find.text('Kamera'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SelectedPhotoCard), findsOneWidget);
+    expect(find.textContaining('bis dahin gesichert'), findsOneWidget);
+    await tester.tap(find.text('Entfernen'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SelectedPhotoCard), findsNothing);
+  });
+
+  testWidgets('Auswertung fehlgeschlagen: erneut versuchen, später automatisch, verwerfen', (tester) async {
+    final results = await host(
+      tester,
+      () => AnalysisFailureSheet(message: 'Die KI ist gerade überlastet.', temporary: true, photo: photo),
+      sheet: true,
+    );
+    expect(find.text('Auswertung fehlgeschlagen'), findsOneWidget);
+    expect(find.textContaining('Dein Foto ist gespeichert'), findsOneWidget);
+    await tester.tap(find.text('Später automatisch eintragen'));
+    await tester.pumpAndSettle();
+    expect(results.single, AnalysisFailureChoice.autoLog);
+
+    // Nicht vorübergehend (KI erkennt nichts): nur erneut versuchen oder verwerfen.
+    await tester.pumpWidget(const SizedBox());
+    final again = await host(
+      tester,
+      () => const AnalysisFailureSheet(message: 'Die KI hat keine Lebensmittel erkannt.', temporary: false, text: 'x'),
+      sheet: true,
+    );
+    expect(find.text('Später automatisch eintragen'), findsNothing);
+    expect(find.textContaining('Deine Beschreibung ist gespeichert'), findsOneWidget);
+    await tester.tap(find.text('Erneut versuchen'));
+    await tester.pumpAndSettle();
+    expect(again.single, AnalysisFailureChoice.retry);
+  });
 }

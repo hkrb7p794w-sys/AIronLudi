@@ -126,6 +126,13 @@ final class _SetIntensity extends _SlotAction {
   final SessionIntensity intensity;
 }
 
+final class _SetActivity extends _SlotAction {
+  const _SetActivity(this.activity);
+
+  /// `null` = allgemein „Anderes“.
+  final ActivityKind? activity;
+}
+
 final class _RemoveSlot extends _SlotAction {
   const _RemoveSlot();
 }
@@ -151,7 +158,8 @@ class _SlotChip extends StatelessWidget {
     return PopupMenuButton<_SlotAction>(
       tooltip: slot.chipLabel,
       onSelected: (action) => onChanged(switch (action) {
-        _SetIntensity(:final intensity) => SessionSlot(slot.sport, intensity),
+        _SetIntensity(:final intensity) => SessionSlot(slot.sport, intensity, slot.activity),
+        _SetActivity(:final activity) => slot.withActivity(activity),
         _RemoveSlot() => null,
       }),
       itemBuilder: (_) => [
@@ -161,6 +169,20 @@ class _SlotChip extends StatelessWidget {
             checked: intensity == slot.intensity,
             child: Text(intensity.label),
           ),
+        // „Anderes“: welche Sportart genau (Bouldern, Yoga …) – dann zählt nur die passende Aktivität als erledigt.
+        if (slot.sport == TrainingSport.other) ...[
+          CheckedPopupMenuItem<_SlotAction>(
+            value: const _SetActivity(null),
+            checked: slot.activity == null,
+            child: const Text('Beliebig (Yoga, Wandern …)'),
+          ),
+          for (final kind in SessionSlot.otherActivities)
+            CheckedPopupMenuItem<_SlotAction>(
+              value: _SetActivity(kind),
+              checked: slot.activity == kind,
+              child: Text(kind.label),
+            ),
+        ],
         PopupMenuItem<_SlotAction>(
           value: _RemoveSlot(),
           child: Text('Entfernen', style: TextStyle(color: AppColors.of(context).alert)),
@@ -173,7 +195,7 @@ class _SlotChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(AppSymbols.of(slot.sport.symbol), size: 16, color: color),
+            Icon(AppSymbols.of(slot.symbol), size: 16, color: color),
             const SizedBox(width: 6),
             Text(
               slot.chipLabel,

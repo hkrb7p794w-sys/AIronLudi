@@ -132,15 +132,57 @@ void main() {
     });
   });
 
-  test('Wartende Auswertung mit Foto bleibt erhalten', () async {
-    final store = PendingAnalysisStore(settings, folder: temp.path);
-    final item = store.create(text: 'Nudeln mit Pesto', photo: Uint8List.fromList([1, 2, 3]));
-    await store.save([item]);
-    final loaded = store.load();
-    expect(loaded, [item]);
-    expect(store.photo(loaded.single), [1, 2, 3]);
-    store.deletePhoto(loaded.single);
-    expect(store.photo(loaded.single), isNull);
+  group('Wartende Auswertungen', () {
+    test('Foto und Stand bleiben als Dateien erhalten', () {
+      final store = PendingAnalysisStore(settings, folder: temp.path);
+      final item = store.create(text: 'Nudeln mit Pesto', photo: Uint8List.fromList([1, 2, 3]));
+      final loaded = store.load();
+      expect(loaded, [item]);
+      expect(store.photo(loaded.single), [1, 2, 3]);
+      // Eine zweite Ablage (Hintergrundabruf, eigenes Isolate) sieht denselben Stand.
+      final other = PendingAnalysisStore(settings, folder: temp.path);
+      other.put(item.copyWith(autoLog: true));
+      expect(store.load().single.autoLog, isTrue);
+      store.remove(loaded.single);
+      expect(store.load(), isEmpty);
+      expect(store.photo(loaded.single), isNull);
+    });
+
+    test('älteres Format aus den Einstellungen wird übernommen', () async {
+      final item = PendingAnalysis(text: 'Müsli', hasPhoto: false, created: DateTime.utc(2026, 11, 20, 8));
+      await settings.setJson(PendingAnalysisStore.legacyKey, [item.toJson()]);
+      final store = PendingAnalysisStore(settings, folder: temp.path);
+      expect(store.load(), [item]);
+      expect(settings.contains(PendingAnalysisStore.legacyKey), isFalse);
+      expect(PendingAnalysisStore(settings, folder: temp.path).load(), [item]);
+    });
+
+    test('belegt: ein zweiter Ablauf wartet, liegengebliebene Sperre wird übernommen', () {
+      final store = PendingAnalysisStore(settings, folder: temp.path);
+      final other = PendingAnalysisStore(settings, folder: temp.path);
+      final item = store.create(text: 'Reis', photo: Uint8List.fromList([9]));
+      final now = DateTime.now();
+      expect(store.claim(item, now: now), isTrue);
+      expect(other.claim(item, now: now), isFalse);
+      expect(other.claim(item, now: now.add(const Duration(minutes: 5))), isTrue);
+      other.release(item);
+      expect(store.claim(item, now: now), isTrue);
+    });
+
+    test('Abstände zwischen automatischen Versuchen', () {
+      expect(PendingMealRetry.delay(1), const Duration(minutes: 2));
+      expect(PendingMealRetry.delay(3), const Duration(minutes: 15));
+      expect(PendingMealRetry.delay(20), const Duration(hours: 1));
+      final item = PendingAnalysis(text: '', hasPhoto: true, autoLog: true, created: DateTime.utc(2026, 11, 26, 17));
+      final now = DateTime(2026, 11, 26, 18, 45);
+      final failed = item.failed('überlastet', now: now);
+      expect(failed.attempts, 1);
+      expect(failed.isDue(now), isFalse);
+      expect(failed.isDue(now.add(const Duration(minutes: 2))), isTrue);
+      expect(failed.autoLog, isTrue);
+      expect(item.failed('abgelehnt', now: now, keepAuto: false).autoLog, isFalse);
+      expect(PendingAnalysis.fromJson(failed.toJson()), failed);
+    });
   });
 
   group('Workout an Garmin senden', () {

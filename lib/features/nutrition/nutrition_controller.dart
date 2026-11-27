@@ -9,6 +9,7 @@ import '../../data/settings/coach_settings.dart';
 import '../../services/ai/ai_client.dart';
 import '../../services/nutrition/open_food_facts_client.dart';
 import '../../services/nutrition/pending_analysis.dart';
+import '../../services/nutrition/pending_meal_service.dart';
 
 /// Entwurf einer Mahlzeit, der im Editor geprüft und dann gespeichert wird.
 final class MealDraft {
@@ -50,20 +51,31 @@ final class NutritionController extends ChangeNotifier {
     required this._settings,
     required this._ai,
     OpenFoodFactsClient? openFoodFacts,
-    this._pendingStore,
+    PendingAnalysisStore? pendingStore,
     DateTime Function()? clock,
   }) : _openFoodFacts = openFoodFacts ?? OpenFoodFactsClient(),
        _clock = clock ?? DateTime.now {
     today = CalendarDay.fromDate(_clock());
-    pending = _pendingStore?.load() ?? [];
+    if (pendingStore != null) {
+      _pendingMeals = PendingMealService(
+        store: pendingStore,
+        ai: _ai,
+        meals: _meals,
+        settings: _settings,
+        clock: _clock,
+      );
+    }
+    pending = pendingStore?.load() ?? [];
   }
 
   final MealRepository _meals;
   final CoachSettings _settings;
   final AIClient _ai;
   final OpenFoodFactsClient _openFoodFacts;
-  final PendingAnalysisStore? _pendingStore;
   final DateTime Function() _clock;
+
+  /// Warteschlange der Fotos und Beschreibungen, die noch ausgewertet werden müssen.
+  PendingMealService? _pendingMeals;
 
   /// Heute laut letzter Aktualisierung.
   late CalendarDay today;
@@ -97,13 +109,25 @@ final class NutritionController extends ChangeNotifier {
   /// Barcode ohne Treffer bei Open Food Facts – selbst anlegen oder Etikett fotografieren.
   String? missingBarcode;
 
-  /// Fotos und Beschreibungen, die ohne Netz nicht ausgewertet werden konnten.
+  /// Fotos und Beschreibungen, die noch ausgewertet werden müssen (ohne Netz, KI überlastet, Zeitüberschreitung).
   List<PendingAnalysis> pending = [];
+
+  /// Gerade laufende Auswertung (erscheint nicht in der Warteschlange).
+  String? analyzingID;
+
+  /// Angetippte Auswertung ist fehlgeschlagen: Foto und Beschreibung sind gesichert; der Bildschirm fragt, wie es
+  /// weitergeht (erneut versuchen, später automatisch eintragen, verwerfen). [temporary]: Netz oder KI überlastet –
+  /// ein späterer Versuch lohnt.
+  ({PendingAnalysis item, String message, bool temporary})? failedAnalysis;
+
+  /// Wartende Auswertungen ohne die gerade laufende.
+  List<PendingAnalysis> get waiting => [
+    for (final item in pending)
+      if (item.id != analyzingID) item,
+  ];
 
   List<Recipe> nowSuggestions = [];
   List<String> nowNotes = [];
-
-  Object? _lastError;
 
   void _changed() => notifyListeners();
 
@@ -259,21 +283,117 @@ final class NutritionController extends ChangeNotifier {
     _changed();
   }
 
-  // Ohne Netz
+  // Warteschlange
 
-  /// Nächste wartende Auswertung versuchen; bleibt bei Netzfehler in der Warteschlange.
+  void _reloadPending() => pending = _pendingMeals?.store.load() ?? pending;
+
+  /// Beim Öffnen und bei Rückkehr in die App: fällige automatische Einträge direkt eintragen (mit „Rückgängig“), dann
+  /// die nächste fällige ohne „automatisch“ auswerten und im Editor zeigen. Fehlschläge hier fragen nicht nach – sie
+  /// bleiben mit Meldung in der Warteschlange.
   Future<void> retryPending(List<StoredFood> foods) async {
-    if (pending.isEmpty || isWorking || draft != null || !_ai.isConfigured) return;
-    final next = pending.first;
-    final ok = await analyze(next.text, photo: _pendingStore?.photo(next), foods: foods, queueOnNetworkError: false);
-    if (ok) await removePending(next);
+    final service = _pendingMeals;
+    if (service == null || isWorking || draft != null || !_ai.isConfigured) return;
+    _reloadPending();
+    if (pending.isEmpty) {
+      _changed();
+      return;
+    }
+    isWorking = true;
+    _changed();
+    try {
+      final logged = await service.processDue();
+      if (logged.isNotEmpty) {
+        final last = logged.last;
+        lastLogged = (record: last, label: '${last.title} automatisch nachgetragen', replaced: const <StoredMeal>[]);
+      }
+    } finally {
+      isWorking = false;
+      _reloadPending();
+      _changed();
+    }
+    final now = _clock();
+    final next = pending.where((item) => !item.autoLog && item.isDue(now)).firstOrNull;
+    if (next != null && draft == null) await _analyzePending(next, foods, reportFailure: false);
+  }
+
+  /// „Jetzt auswerten“ bzw. „Erneut versuchen“: sofort, mit Editor; schlägt es fehl, fragt der Bildschirm erneut.
+  Future<bool> retryItem(PendingAnalysis item, List<StoredFood> foods) {
+    failedAnalysis = null;
+    return _analyzePending(item, foods, reportFailure: true);
+  }
+
+  /// „Später automatisch eintragen“: Ergebnis ohne Rückfrage ins Tagebuch, auch im Hintergrund.
+  Future<void> autoLogLater(PendingAnalysis item) async {
+    failedAnalysis = null;
+    final store = _pendingMeals?.store;
+    if (store == null) return;
+    final current = store.reload(item) ?? item;
+    store.put(current.copyWith(autoLog: true));
+    _reloadPending();
+    _changed();
+  }
+
+  /// Fehlgeschlagene Auswertung bleibt in der Warteschlange (Dialog ohne Wahl geschlossen).
+  void keepFailed() {
+    failedAnalysis = null;
+    _changed();
   }
 
   Future<void> removePending(PendingAnalysis item) async {
-    _pendingStore?.deletePhoto(item);
+    if (failedAnalysis?.item.id == item.id) failedAnalysis = null;
+    _pendingMeals?.store.remove(item);
     pending = pending.where((other) => other.id != item.id).toList();
-    await _pendingStore?.save(pending);
     _changed();
+  }
+
+  /// Gespeichertes Foto einer wartenden Auswertung (Vorschau).
+  Uint8List? pendingPhoto(PendingAnalysis item) => _pendingMeals?.store.photo(item);
+
+  Future<bool> _analyzePending(PendingAnalysis item, List<StoredFood> foods, {required bool reportFailure}) async {
+    final service = _pendingMeals;
+    if (service == null) return false;
+    if (!_ai.isConfigured) {
+      errorMessage = AIClientError.notConfigured.message;
+      _changed();
+      return false;
+    }
+    if (isWorking) return false;
+    var succeeded = false;
+    isWorking = true;
+    analyzingID = item.id;
+    errorMessage = null;
+    _changed();
+    try {
+      await service.analyze(
+        item,
+        foods: foods,
+        then: (current, analysis) {
+          draft = _draftFrom(
+            analysis,
+            text: current.text,
+            foods: foods,
+            photo: service.store.photo(current),
+            pending: current,
+          );
+          succeeded = true;
+        },
+      );
+    } on Object catch (error) {
+      if (reportFailure) {
+        final current = service.store.reload(item) ?? item;
+        failedAnalysis = (
+          item: current,
+          message: MealAnalyzer.message(error),
+          temporary: MealAnalyzer.isTemporary(error),
+        );
+      }
+    } finally {
+      isWorking = false;
+      analyzingID = null;
+      _reloadPending();
+      _changed();
+    }
+    return succeeded;
   }
 
   // Kopieren und verschieben
@@ -417,52 +537,61 @@ final class NutritionController extends ChangeNotifier {
     _changed();
   }
 
-  /// KI-Analyse von Foto und/oder Text. Ohne Netz landet die Mahlzeit in der Warteschlange statt im Fehler. [photo]
-  /// ist bereits verkleinert (ohne EXIF/GPS).
-  Future<bool> analyze(
-    String text, {
-    Uint8List? photo,
-    required List<StoredFood> foods,
-    bool queueOnNetworkError = true,
-  }) async {
+  /// KI-Analyse von Foto und/oder Text. Foto und Beschreibung werden vorher gesichert und erst nach erfolgreicher
+  /// Auswertung gelöscht; schlägt sie fehl, steht [failedAnalysis] bereit (erneut versuchen, später automatisch
+  /// eintragen, verwerfen) – nichts muss neu aufgenommen werden. [photo] ist bereits verkleinert (ohne EXIF/GPS).
+  Future<bool> analyze(String text, {Uint8List? photo, required List<StoredFood> foods}) async {
     if (!_ai.isConfigured) {
       errorMessage = AIClientError.notConfigured.message;
       _changed();
       return false;
     }
+    final store = _pendingMeals?.store;
+    if (store == null) return _analyzeDirectly(text, photo: photo, foods: foods);
+    final preferred = preferredCategory;
+    preferredCategory = null;
+    final at = _clock();
+    final item = store.create(
+      text: text,
+      photo: photo,
+      created: at,
+      mealTime: timestamp(now: at),
+      category: preferred,
+    );
+    pending = [...pending, item];
+    return _analyzePending(item, foods, reportFailure: true);
+  }
+
+  /// Ohne Ablage (Tests, Vorschau): direkt auswerten, Fehler als Meldung.
+  Future<bool> _analyzeDirectly(String text, {Uint8List? photo, required List<StoredFood> foods}) async {
     var succeeded = false;
-    _lastError = null;
     await _work(() async {
-      final input = {
-        'text': text,
-        'diet': _settings.nutrition.diet.rawValue,
-        'personalFoods': [for (final food in foods.take(40)) food.name],
-      };
-      final response = await _ai.run(
-        'meal_analyze',
-        input: input,
-        images: photo == null ? const [] : [AIImage(mimeType: 'image/jpeg', data: photo)],
-      );
-      final analysis = MealAnalysis.fromOutput(response.output);
-      if (analysis == null) throw const AIClientError.http(200, 'Die KI hat keine Lebensmittel erkannt.');
-      draft = MealDraft(
-        title: analysis.title.isEmpty ? text : analysis.title,
-        category: currentCategoryOr(analysis.category),
-        hint: analysis.hint,
-        items: [for (final item in analysis.items) preferKnownFood(item, foods)],
-        photo: photo,
-        possiblyMissing: analysis.possiblyMissing,
-      );
+      final analysis = await MealAnalyzer.request(_ai, _settings, text: text, photo: photo, foods: foods);
+      draft = _draftFrom(analysis, text: text, foods: foods, photo: photo);
       succeeded = true;
     });
-    if (!succeeded && queueOnNetworkError && _lastError is AINetworkError && _pendingStore != null) {
-      final item = _pendingStore.create(text: text, photo: photo);
-      pending = [...pending, item];
-      await _pendingStore.save(pending);
-      errorMessage = 'Ohne Netz gespeichert – wird ausgewertet, sobald du wieder online bist.';
-      _changed();
-    }
     return succeeded;
+  }
+
+  MealDraft _draftFrom(
+    MealAnalysis analysis, {
+    required String text,
+    required List<StoredFood> foods,
+    Uint8List? photo,
+    PendingAnalysis? pending,
+  }) {
+    final at = pending?.eatenAt;
+    return MealDraft(
+      title: analysis.title.isEmpty ? text : analysis.title,
+      category: pending == null
+          ? currentCategoryOr(analysis.category)
+          : (pending.category ?? analysis.category ?? category(at!)),
+      hint: analysis.hint,
+      items: [for (final item in analysis.items) preferKnownFood(item, foods)],
+      date: at,
+      photo: photo,
+      possiblyMissing: analysis.possiblyMissing,
+    );
   }
 
   /// Ergänzt einen Entwurf per KI („noch 150 g Hähnchenbrust und 1 EL Olivenöl“). Liefert nur die neuen Positionen; die
@@ -663,25 +792,16 @@ final class NutritionController extends ChangeNotifier {
   // Hilfen
 
   /// Eigene, schon einmal gespeicherte Lebensmittel haben Vorrang vor der KI-Schätzung (Nährwerte je 100 g).
-  static MealItem preferKnownFood(MealItem item, List<StoredFood> foods) {
-    final known = foods.where((food) => food.name.toLowerCase() == item.name.toLowerCase()).firstOrNull?.item;
-    if (known == null || known.source == MealItemSource.ai) return item;
-    return item.copy()
-      ..per100g = known.per100g.copy()
-      ..source = known.source
-      ..barcode = known.barcode;
-  }
+  static MealItem preferKnownFood(MealItem item, List<StoredFood> foods) => MealAnalyzer.preferKnownFood(item, foods);
 
   Future<void> _work(Future<void> Function() operation) async {
     if (isWorking) return;
     isWorking = true;
     errorMessage = null;
-    _lastError = null;
     _changed();
     try {
       await operation();
     } on Object catch (error) {
-      _lastError = error;
       errorMessage = switch (error) {
         AIClientError(:final message) || FoodLookupError(:final message) => message,
         _ => '$error',

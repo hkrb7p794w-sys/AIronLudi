@@ -116,8 +116,7 @@ class AdjustDaySheet extends ConsumerWidget {
             FormSection(
               header: weekday.long,
               children: [
-                for (final slot in slots)
-                  ListTile(leading: Icon(AppSymbols.of(slot.sport.symbol)), title: Text(slot.title)),
+                for (final slot in slots) ListTile(leading: Icon(AppSymbols.of(slot.symbol)), title: Text(slot.title)),
               ],
             ),
             FormSection(
