@@ -621,7 +621,7 @@ class SessionGuideScreen extends StatelessWidget {
           FormSection(
             children: [
               ListTile(
-                leading: SportIcon(symbol: slot.sport.symbol, color: slot.sport.color, size: 48),
+                leading: SportIcon(symbol: slot.symbol, color: slot.sport.color, size: 48),
                 title: Text(
                   slot.intensity.label,
                   style: TextStyle(fontWeight: FontWeight.w600, color: slot.sport.color),

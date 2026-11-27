@@ -21,8 +21,12 @@ extension TrainingSportStyle on TrainingSport {
 }
 
 extension SessionSlotStyle on SessionSlot {
-  /// Kurzbeschriftung für Chips: „Laufen · Locker“.
-  String get chipLabel => sport == TrainingSport.other ? sport.shortLabel : '${sport.shortLabel} · ${intensity.label}';
+  /// Kurzbeschriftung für Chips: „Laufen · Locker“, bei „Anderes“ die gewählte Art („Bouldern“).
+  String get chipLabel =>
+      sport == TrainingSport.other ? (activity?.label ?? sport.shortLabel) : '${sport.shortLabel} · ${intensity.label}';
+
+  /// Symbol der Einheit: bei „Anderes“ das der gewählten Art.
+  String get symbol => activity?.symbol ?? sport.symbol;
 }
 
 /// Symbol und Farbe je feinerer Sportart (Bouldern, Yoga …), wo die Grobeinteilung nur „Anderes“ kennt.

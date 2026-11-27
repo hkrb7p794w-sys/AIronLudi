@@ -345,7 +345,7 @@ class _WeekDayRow extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         spacing: 10,
                         children: [
-                          SportIcon(symbol: slot.sport.symbol, color: slot.sport.color, size: 28),
+                          SportIcon(symbol: slot.symbol, color: slot.sport.color, size: 28),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,

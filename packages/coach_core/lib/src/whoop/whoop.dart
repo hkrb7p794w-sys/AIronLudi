@@ -246,6 +246,14 @@ final class WhoopSleep {
 }
 
 /// Training (`GET /v2/activity/workout`).
+/// Sportart aus `sport_name`; fehlt er oder ist er allgemein („activity“, „other“), aus `sport_id`.
+String _sport(String? name, int? id) {
+  final generic =
+      name == null || name.trim().isEmpty || const ['activity', 'other'].contains(name.trim().toLowerCase());
+  if (!generic) return name;
+  return WhoopImport.sportName(id) ?? name ?? 'activity';
+}
+
 final class WhoopWorkout {
   const WhoopWorkout({
     required this.id,
@@ -293,7 +301,7 @@ final class WhoopWorkout {
       start: start,
       end: end,
       offset: whoopOffset(_str(json['timezone_offset'])),
-      sport: _str(json['sport_name']) ?? 'activity',
+      sport: _sport(_str(json['sport_name']), _num(json['sport_id'])?.toInt()),
       strain: _num(score?['strain']),
       averageHeartRate: _num(score?['average_heart_rate']),
       maxHeartRate: _num(score?['max_heart_rate']),
@@ -478,9 +486,42 @@ abstract final class WhoopImport {
       'hiit' => 'hiit',
       'rowing' || 'indoor_rowing' => 'indoor_rowing',
       'elliptical' => 'elliptical',
+      // WHOOP kennt „Rock Climbing“ (Klettern, auch Bouldern) und eigene Namen fürs Bouldern; „Climber“ ist der
+      // Stepper (Cardio).
+      'rock_climbing' || 'climbing' || 'indoor_climbing' || 'sport_climbing' => 'rock_climbing',
+      'climber' || 'stairmaster' => 'stair_climbing',
+      _ when key.contains('boulder') => 'bouldering',
       _ => key,
     };
   }
+
+  /// Name zur Sport-ID, falls WHOOP keinen brauchbaren Namen liefert (`sport_id` laut Dokumentation, nur die für
+  /// Sportart und Plan wichtigen; Stand 2025).
+  static String? sportName(int? sportID) => switch (sportID) {
+    0 => 'running',
+    1 => 'cycling',
+    18 => 'rowing',
+    33 => 'swimming',
+    43 => 'pilates',
+    44 => 'yoga',
+    45 => 'weightlifting',
+    48 => 'functional_fitness',
+    52 => 'hiking',
+    57 => 'mountain_biking',
+    59 => 'powerlifting',
+    60 => 'rock_climbing',
+    63 => 'walking',
+    65 => 'elliptical',
+    66 => 'stairmaster',
+    83 => 'climber',
+    96 => 'hiit',
+    97 => 'spin',
+    123 => 'strength_trainer',
+    126 => 'assault_bike',
+    128 => 'stretching',
+    259 => 'hot_yoga',
+    _ => null,
+  };
 
   /// Aktivität aus einem WHOOP-Training. Zonen 1–5 wie bei Garmin (Zone 0 = sehr leicht entfällt), Strain als Text.
   static GarminActivity activity(WhoopWorkout workout) {

@@ -2,6 +2,7 @@ import 'package:collection/collection.dart';
 
 import '../calendar/calendar_day.dart';
 import '../coach/template_item.dart';
+import '../garmin/activity_kind.dart';
 import '../nutrition/nutrition_settings.dart';
 import '../util/enum_codec.dart';
 import 'session_match.dart';
@@ -51,17 +52,48 @@ enum SessionIntensity implements RawEnum {
   bool get isDemanding => this != easy;
 }
 
-/// Eine Einheit an einem Tag: Sportart plus Intensität.
+/// Eine Einheit an einem Tag: Sportart plus Intensität; bei „Anderes“ auf Wunsch die genaue Art (Bouldern, Yoga …).
 final class SessionSlot {
-  const SessionSlot(this.sport, [this.intensity = SessionIntensity.easy]);
+  const SessionSlot(this.sport, [this.intensity = SessionIntensity.easy, this.activity]);
 
   final TrainingSport sport;
   final SessionIntensity intensity;
 
+  /// Genaue Art einer Einheit „Anderes“ (z. B. [ActivityKind.bouldering]); nur dort gespeichert.
+  final ActivityKind? activity;
+
+  /// Arten, die sich für „Anderes“ wählen lassen (die übrigen haben eine eigene Sportart oder zählen nicht als
+  /// Training).
+  static const otherActivities = [
+    ActivityKind.bouldering,
+    ActivityKind.climbing,
+    ActivityKind.yoga,
+    ActivityKind.mobility,
+    ActivityKind.hiking,
+    ActivityKind.hiit,
+    ActivityKind.rowing,
+    ActivityKind.paddling,
+    ActivityKind.cardio,
+    ActivityKind.dance,
+    ActivityKind.winter,
+    ActivityKind.racket,
+    ActivityKind.team,
+    ActivityKind.martialArts,
+  ];
+
+  /// Gleiche Einheit mit gewählter Art ([kind] `null` = allgemein).
+  SessionSlot withActivity(ActivityKind? kind) =>
+      SessionSlot(sport, intensity, sport == TrainingSport.other ? kind : null);
+
+  /// Unverändert ohne die genaue Art: Zuordnungen und Anpassungen bleiben gültig, wenn sie gewählt wird.
   String get id => '${sport.rawValue}-${intensity.rawValue}';
+
+  /// Passt eine Aufzeichnung zur gewählten Art? Ohne Wahl passt jede Art von „Anderes“.
+  bool fits(ActivityKind kind) => activity == null || activity == kind;
 
   /// Kurzer Name der Einheit.
   String get title => switch ((sport, intensity)) {
+    (TrainingSport.other, _) when activity != null => activity!.label,
     (TrainingSport.run, SessionIntensity.easy) => 'Lockerer Lauf',
     (TrainingSport.run, SessionIntensity.hard) => 'Qualitätslauf (Tempo oder Intervalle)',
     (TrainingSport.run, SessionIntensity.long) => 'Langer Lauf',
@@ -106,21 +138,28 @@ final class SessionSlot {
     },
   };
 
-  Map<String, Object?> toJson() => {'sport': sport.rawValue, 'intensity': intensity.rawValue};
+  /// `activity` ist neu in AIronLudi und fehlt sonst (Swift-Daten bleiben lesbar und gleich).
+  Map<String, Object?> toJson() => {
+    'sport': sport.rawValue,
+    'intensity': intensity.rawValue,
+    'activity': ?activity?.name,
+  };
 
   static SessionSlot? fromJson(Object? json) {
     if (json is! Map) return null;
     final sport = enumFromRaw(TrainingSport.values, json['sport']);
     final intensity = enumFromRaw(SessionIntensity.values, json['intensity']);
     if (sport == null || intensity == null) return null;
-    return SessionSlot(sport, intensity);
+    final activity = ActivityKind.values.where((kind) => kind.name == json['activity']).firstOrNull;
+    return SessionSlot(sport, intensity).withActivity(activity);
   }
 
   @override
-  bool operator ==(Object other) => other is SessionSlot && other.sport == sport && other.intensity == intensity;
+  bool operator ==(Object other) =>
+      other is SessionSlot && other.sport == sport && other.intensity == intensity && other.activity == activity;
 
   @override
-  int get hashCode => Object.hash(sport, intensity);
+  int get hashCode => Object.hash(sport, intensity, activity);
 
   @override
   String toString() => id;

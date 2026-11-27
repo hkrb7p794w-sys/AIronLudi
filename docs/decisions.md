@@ -1744,3 +1744,24 @@ weg; außerdem hing das gewählte Foto im Erfassen-Bildschirm ohne Rahmen zwisch
 - **Gewähltes Foto als Karte** (`SelectedPhotoCard`) mit Abstand zu den Knöpfen, Vorschau, Satz „Wird mit der
   Beschreibung ausgewertet und bis dahin gesichert.“ und „Entfernen“; während der Auswertung steht unter „Wird
   ausgewertet …“ zusätzlich „Foto ist gesichert“.
+
+## 2026-11-27 – Bouldern aus WHOOP und im Wochenplan; kein Import aus dem WHOOP Strength Trainer
+
+Rückmeldung des Nutzers: Bouldern, in WHOOP so erfasst und im eigenen Plan vorgesehen, wurde nicht als Sportart
+erkannt; Wunsch, die Übungen des WHOOP Strength Trainers (Gewicht, Sätze) zu übernehmen.
+
+- **WHOOP-Sportarten:** `WhoopImport.typeKey` bildet „rock climbing“/„climbing“ auf Klettern ab und jeden Namen mit
+  „boulder“ auf Bouldern; „Climber“ und „Stairmaster“ sind Stepper (Cardio). Liefert WHOOP nur einen allgemeinen Namen
+  („activity“, „other“) oder keinen, entscheidet die Sport-ID (Tabelle der WHOOP-Dokumentation, z. B. 60 = Rock
+  Climbing, 123 = Strength Trainer). Welchen Namen WHOOP für Bouldern genau sendet, ist nicht dokumentiert; abgedeckt
+  sind die naheliegenden Schreibweisen.
+- **Einheit „Anderes“ mit Art:** Im Wochenplan lässt sich bei „Anderes“ die genaue Art wählen (Bouldern, Klettern,
+  Yoga …; `SessionSlot.activity`, neu und optional im JSON, `id` unverändert). Der Plan zeigt dann „Bouldern“ statt
+  „Yoga / Beweglichkeit / Wandern“. Abgleich: dieselbe Art ist erledigt; ein anderes Training aus „Anderes“ (Yoga statt
+  Bouldern) zählt als „anders gemacht“, ein Spaziergang nicht. Ohne gewählte Art bleibt alles wie bisher. Eine eigene
+  Sportart „Bouldern“ neben Laufen, Rad, Schwimmen und Kraft hätte das Profilformat (`TrainingSport`) und alle
+  Auswertungen je Sportart verändert; die Art an der Einheit genügt für Plan und Abgleich.
+- **Strength Trainer:** Die öffentliche WHOOP-API (v2) gibt zu Trainings nur Sportart, Zeiten, Strain, Puls, Energie,
+  Strecke und Pulszonen heraus – keine Übungen, Sätze, Wiederholungen, Gewichte oder Volumenlast. Ein Import ist
+  deshalb nicht möglich. Übungen mit Gewicht protokolliert die App selbst (Gym, Live-Einheit); die WHOOP-Aufzeichnung
+  desselben Tages zählt mit ihr nur einmal.

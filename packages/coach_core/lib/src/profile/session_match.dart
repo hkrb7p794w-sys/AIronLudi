@@ -5,6 +5,7 @@ import 'package:collection/collection.dart';
 import '../analysis/session_kind.dart';
 import '../calendar/calendar_day.dart';
 import '../coach/recovery_level.dart';
+import '../garmin/activity_kind.dart';
 import '../garmin/garmin_activity.dart';
 import '../util/enum_codec.dart';
 import 'plan_adjustments.dart';
@@ -207,8 +208,12 @@ abstract final class SessionMatcher {
       var gymAvailable = weekGymDays.contains(day);
       final open = <PlannedSession>[];
       for (final session in sessions) {
+        // „Anderes“ mit gewählter Art (Bouldern): nur dieselbe Art; eine andere zählt unten als Ersatz.
         final activity = candidates.firstWhereOrNull(
-          (activity) => !used.contains(activity.id) && sport(activity.sport) == session.slot.sport,
+          (activity) =>
+              !used.contains(activity.id) &&
+              sport(activity.sport) == session.slot.sport &&
+              session.slot.fits(ActivityKind.ofActivity(activity)),
         );
         if (activity != null) {
           used.add(activity.id);
@@ -224,10 +229,18 @@ abstract final class SessionMatcher {
       }
       if (gymAvailable) spareStrength.add(day);
       for (final session in open) {
-        // Ersatz: andere Ausdauer-Sportart (Rad statt Lauf), nicht Kraft oder Spaziergang.
+        // Ersatz: andere Ausdauer-Sportart (Rad statt Lauf), nicht Kraft oder Spaziergang; bei „Anderes“ mit gewählter
+        // Art ein anderes Training derselben Gruppe (Yoga statt Bouldern).
         final substitute = session.slot.sport.isEndurance
             ? candidates.firstWhereOrNull(
                 (activity) => !used.contains(activity.id) && sport(activity.sport).isEndurance,
+              )
+            : session.slot.activity != null
+            ? candidates.firstWhereOrNull(
+                (activity) =>
+                    !used.contains(activity.id) &&
+                    activity.sport == ActivitySport.other &&
+                    ActivityKind.ofActivity(activity).workout,
               )
             : null;
         if (substitute != null) {

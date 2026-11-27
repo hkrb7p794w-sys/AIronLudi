@@ -141,6 +141,58 @@ void main() {
       expect(only.extraIDs, isNot(contains(7)));
     });
 
+    test('„Anderes“ mit gewählter Art: Bouldern erledigt, Yoga statt Bouldern anders gemacht, Spaziergang nicht', () {
+      final bouldering = const SessionSlot(TrainingSport.other).withActivity(ActivityKind.bouldering);
+      expect(bouldering.title, 'Bouldern');
+      expect(bouldering.id, const SessionSlot(TrainingSport.other).id);
+      final boulderPlan = plan({
+        Weekday.monday: [bouldering],
+        Weekday.tuesday: [bouldering],
+      });
+      final planned = SessionMatcher.planned(boulderPlan, monday: monday);
+      final week = SessionMatcher.match(
+        planned: planned,
+        activities: [
+          activity(1, 'walking', monday, 30),
+          activity(2, 'bouldering', monday, 60),
+          activity(3, 'yoga', monday.adding(1), 40),
+        ],
+        today: today,
+      );
+      expect(week.resultsOn(monday).single.activityID, 2);
+      expect(week.resultsOn(monday).single.status, SessionStatus.done);
+      expect(week.resultsOn(monday.adding(1)).single.status, SessionStatus.substituted);
+      final walkOnly = SessionMatcher.match(
+        planned: planned,
+        activities: [activity(1, 'walking', monday, 60)],
+        today: today,
+      );
+      expect(walkOnly.resultsOn(monday).single.status, SessionStatus.missed);
+      // Ohne gewählte Art zählt wie bisher jedes „Anderes“.
+      final general = SessionMatcher.match(
+        planned: SessionMatcher.planned(
+          plan({
+            Weekday.monday: [const SessionSlot(TrainingSport.other)],
+          }),
+          monday: monday,
+        ),
+        activities: [activity(1, 'walking', monday, 60)],
+        today: today,
+      );
+      expect(general.resultsOn(monday).single.status, SessionStatus.done);
+    });
+
+    test('gewählte Art bleibt gespeichert; ältere Pläne ohne Art bleiben lesbar', () {
+      final slot = const SessionSlot(TrainingSport.other).withActivity(ActivityKind.bouldering);
+      expect(slot.toJson(), {'sport': 'other', 'intensity': 'easy', 'activity': 'bouldering'});
+      expect(SessionSlot.fromJson(jsonDecode(jsonEncode(slot.toJson()))), slot);
+      expect(SessionSlot.fromJson({'sport': 'other', 'intensity': 'easy'}), const SessionSlot(TrainingSport.other));
+      expect(const SessionSlot(TrainingSport.run).toJson(), {'sport': 'run', 'intensity': 'easy'});
+      // Nur „Anderes“ trägt eine Art.
+      expect(const SessionSlot(TrainingSport.run).withActivity(ActivityKind.bouldering).activity, isNull);
+      expect(SessionSlot.fromJson({'sport': 'other', 'intensity': 'easy', 'activity': 'unbekannt'})?.activity, isNull);
+    });
+
     test('zusätzliches Gym ohne offene Kraft-Einheit ändert nichts', () {
       final planned = SessionMatcher.planned(schedule, monday: monday);
       final week = SessionMatcher.match(

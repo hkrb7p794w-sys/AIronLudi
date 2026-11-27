@@ -2,6 +2,7 @@
 // Worker, Heute anpassen, Verschieben, Woche auslassen, Morgenbericht).
 import 'package:aironludi/features/today/today_screen.dart';
 import 'package:aironludi/services/providers.dart';
+import 'package:coach_core/coach_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -66,10 +67,14 @@ void main() {
     await scrollToEnd(tester);
     await back(tester);
 
-    step('Verschieben');
-    await tapText(tester, 'Verschieben');
-    await scrollToEnd(tester);
-    await back(tester);
+    // „Verschieben“ gibt es nur an Tagen mit Einheit; im Demo-Plan ist Freitag Ruhetag (sonst scheitert der Durchlauf
+    // jeden Freitag).
+    if (Weekday.of(CalendarDay.fromDate(DateTime.now())) != Weekday.friday) {
+      step('Verschieben');
+      await tapText(tester, 'Verschieben');
+      await scrollToEnd(tester);
+      await back(tester);
+    }
 
     step('Heute anpassen');
     await tapText(tester, 'Heute anpassen');
