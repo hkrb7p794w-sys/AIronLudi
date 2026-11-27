@@ -55,10 +55,15 @@ jobs:
           # Werkzeug für Garmins Gerätedateien, feste Version (github.com/lindell/connect-iq-sdk-manager-cli).
           curl -fsSL "https://raw.githubusercontent.com/lindell/connect-iq-sdk-manager-cli/$CIQ_MANAGER/install.sh" \
             | sh -s -- -b "$HOME/bin" "$CIQ_MANAGER"
-          cli="$HOME/bin/connect-iq-sdk-manager-cli"
+          # Das Skript legt das Programm als „connect-iq-sdk-manager“ ab (ohne „-cli“).
+          cli="$HOME/bin/connect-iq-sdk-manager"
+          "$cli" version
           if [ -z "$CIQ_AGREEMENT_HASH" ]; then
             # Nur anzeigen, nichts bestätigen: Lizenz-Link und aktueller Hash in die Zusammenfassung des Laufs.
-            hash=$("$cli" agreement view 2>/dev/null | sed -n 's/^Current Hash: //p' || true)
+            # Ausgabe ins Protokoll, damit ein Fehler beim Abrufen sichtbar bleibt.
+            view=$("$cli" agreement view 2>&1 || true)
+            echo "$view"
+            hash=$(echo "$view" | sed -n 's/^Current Hash: //p')
             {
               echo "### Garmin-SDK-Lizenz"
               echo
@@ -96,6 +101,12 @@ jobs:
           fi
           if [ -n "$WATCH_WORKER_URL" ]; then
             sed -i "s#__WORKER_URL__#${WATCH_WORKER_URL%/}#" garmin/resources/properties/properties.xml
+            echo "::notice::Worker-Adresse eingetragen."
+            echo "Worker-Adresse: eingetragen" >> "$GITHUB_STEP_SUMMARY"
+          else
+            # Ohne Adresse zeigt das Datenfeld „Worker-Adresse fehlt“.
+            echo "::warning::Variable WATCH_WORKER_URL fehlt – das Datenfeld zeigt „Worker-Adresse fehlt“ (docs/einrichtung.md)."
+            echo "Worker-Adresse: **fehlt** (Variable \`WATCH_WORKER_URL\` anlegen und neu bauen)" >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Typprüfung und Build
