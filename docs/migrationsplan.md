@@ -495,3 +495,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | WHOOP: Bouldern und Klettern erkannt (auch über die Sport-ID); Wochenplan: „Anderes“ mit gewählter Art (z. B. Bouldern), Abgleich nach Art | erledigt |
 | Routenplaner: „Route folgen“ auch bei gesperrtem Bildschirm (iOS Hintergrund-Ortung, Android Vordergrunddienst, Warnung als Mitteilung) | erledigt |
 | Karte auf der Garmin-Uhr, Schritt 1: Uhr-Paket `AIW1` (Wegenetz, Varianten, Abbiegungen), Worker-Ablage und Kopplung, „Karte auf die Uhr“ in der App, Datenfeld-Grundgerüst `garmin/` mit CI | erledigt |
+| Garmin-Build: Testversion ohne Garmin-Zugang als Artefakt, Lizenz-Hash in der Zusammenfassung, Werkzeug fest auf v0.8.4, Anleitung in Stufen | erledigt |

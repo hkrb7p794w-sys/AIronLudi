@@ -151,30 +151,45 @@ Beide als GitHub-Secret (Abschnitt 4) eintragen und *Actions › Worker › Run 
 ## 9. Garmin-Karte (optional, AIronLudi-Datenfeld)
 
 Das Datenfeld `garmin/` zeigt die Route mit Wegenetz auf der Uhr (Forerunner 265/265S), unterwegs ohne Handy. Es holt
-die Routen über deinen Worker (nichts weiter einzurichten – die Ablage nutzt das KV `LEAGUE`).
+die Routen über deinen Worker (dort ist nichts einzurichten – die Ablage nutzt das KV `LEAGUE`).
 
-**GitHub (einmalig):**
+GitHub › AIronLudi › *Settings › Secrets and variables › Actions*: **Variables** sind sichtbar, **Secrets** sind
+verschlüsselt (niemand kann sie wieder lesen, in Protokollen erscheinen sie als `***`).
 
-1. *Variable* `WATCH_WORKER_URL`: die Worker-Adresse (wie in der App, z. B. `https://coach-ai.<konto>.workers.dev`).
-   Der Build schreibt sie ins Datenfeld.
-2. *Secret* `CIQ_DEVELOPER_KEY`: dein Entwicklerschlüssel, damit Updates die installierte Version ersetzen. Einmal
-   erzeugen (z. B. in Git Bash unter Windows) und **nie ins Repo**:
-   ```sh
-   openssl genrsa -out developer.pem 4096
-   openssl pkcs8 -topk8 -inform PEM -outform DER -in developer.pem -out developer.der -nocrypt
-   base64 -w0 developer.der   # Ausgabe als Secret eintragen; Datei sicher aufbewahren
-   ```
-3. Für Garmins offizielle Gerätedateien (nötig, damit die `.prg` sicher auf der Uhr läuft): *Secrets*
-   `GARMIN_USERNAME` und `GARMIN_PASSWORD` (dein Garmin-Konto) und *Variable* `CIQ_AGREEMENT_HASH`. Den Hash
-   bekommst du, nachdem du Garmins SDK-Lizenz gelesen hast: `connect-iq-sdk-manager-cli agreement view`
-   (Werkzeug von github.com/lindell/connect-iq-sdk-manager-cli). Mit dem Eintrag bestätigst du die Lizenz.
+**Stufe 1 – Testversion ohne Garmin-Zugang (zum Ausprobieren):**
 
-Danach *Actions › Garmin › Run workflow*; die Datei `AIronLudiKarte-fr265.prg` (bzw. `-fr265s`) liegt als Artefakt
-am Lauf.
+1. *Variable* `WATCH_WORKER_URL`: die Worker-Adresse, wie in der App (z. B. `https://coach-ai.<konto>.workers.dev`).
+2. *Actions › Garmin › Run workflow*. Am fertigen Lauf liegt unten das Artefakt **aironludi-karte-test** (ZIP mit
+   `AIronLudiKarte-fr265.prg` und `-fr265s.prg`).
 
-**Auf die Uhr:** Uhr per USB an den PC, die `.prg` in den Ordner `GARMIN/APPS` kopieren, Uhr trennen. Dann auf der
-Uhr *Laufen* › **UP** halten › *Laufen-Einstellungen* › *Datenseiten* › *Neu hinzufügen* › Layout mit **einem**
-Feld › Feld *Connect IQ* › *AIronLudi-Karte*.
+Die Testversion ist mit einer selbst geschriebenen Gerätebeschreibung gebaut, nicht mit Garmins Gerätedatei. Sie
+sollte laufen; zeigt die Uhr beim Datenfeld nur ein Fehlersymbol (`IQ!`), Stufe 2 nehmen.
+
+**Stufe 2 – mit Garmins offiziellen Gerätedateien:**
+
+1. **Eigenes Garmin-Konto nur dafür** anlegen (kostenlos auf garmin.com, eine zweite E-Mail-Adresse), **ohne**
+   Zwei-Faktor-Anmeldung. Bitte nicht das Konto deiner Uhr nehmen: Das Passwort liegt dann bei GitHub, und Konten mit
+   Zwei-Faktor-Anmeldung kann das Werkzeug ohnehin nicht anmelden.
+2. *Secrets* `GARMIN_USERNAME` (E-Mail dieses Kontos) und `GARMIN_PASSWORD` (sein Passwort).
+3. **Lizenz:** Garmin gibt Gerätedateien nur heraus, wenn die *Connect IQ SDK License Agreement* bestätigt ist (das,
+   was man im SDK-Manager von Garmin beim ersten Start mit „Accept“ bestätigt). Starte *Actions › Garmin › Run
+   workflow*; in der Zusammenfassung des Laufs steht der Link zur Lizenz und ein Hash (Prüfsumme der aktuellen
+   Fassung). Lies die Lizenz; bist du einverstanden, trag den Hash als *Variable* `CIQ_AGREEMENT_HASH` ein. Ändert
+   Garmin die Lizenz, schlägt der Lauf fehl und zeigt den neuen Hash.
+4. Erneut *Run workflow* → Artefakt **aironludi-karte**.
+
+**Optional – eigener Entwicklerschlüssel** (Secret `CIQ_DEVELOPER_KEY`): Ohne ihn signiert jeder Lauf mit einem neuen
+Schlüssel; zum Kopieren per USB reicht das. Für eine Veröffentlichung im Connect-IQ-Store braucht es einen festen
+Schlüssel – einmal erzeugen (z. B. in Git Bash), **nie ins Repo**:
+```sh
+openssl genrsa -out developer.pem 4096
+openssl pkcs8 -topk8 -inform PEM -outform DER -in developer.pem -out developer.der -nocrypt
+base64 -w0 developer.der   # Ausgabe als Secret eintragen; Datei sicher aufbewahren
+```
+
+**Auf die Uhr:** ZIP entpacken, Uhr per USB an den PC, `AIronLudiKarte-fr265.prg` in den Ordner `GARMIN/APPS`
+kopieren, Uhr trennen. Dann auf der Uhr *Laufen* › **UP** halten › *Laufen-Einstellungen* › *Datenseiten* › *Neu
+hinzufügen* › Layout mit **einem** Feld › Feld *Connect IQ* › *AIronLudi-Karte*.
 
 **Koppeln:** Laufen öffnen, zur Karte blättern (Handy in der Nähe) – sie zeigt einen Code. In AIronLudi: Route ›
 *An Uhr senden* › *Uhr koppeln*, Code eingeben. Danach *Karte auf die Uhr* tippen; beim nächsten Öffnen von Laufen

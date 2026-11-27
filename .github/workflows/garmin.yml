@@ -1,9 +1,9 @@
 # AIronLudi-Karte (Connect-IQ-Datenfeld für Garmin-Uhren, Ordner garmin/): strenge Typprüfung und Build.
 #
-# Gerätedateien: Mit den Secrets GARMIN_USERNAME und GARMIN_PASSWORD und der Variable CIQ_AGREEMENT_HASH
-# (Garmins SDK-Lizenz, selbst gelesen und bestätigt – docs/einrichtung.md) lädt der Lauf Garmins offizielle
-# Gerätedateien; nur damit läuft die .prg sicher auf der Uhr. Ohne sie nimmt er die minimale Beschreibung aus
-# garmin/ci/devices (nur für die Typprüfung).
+# Gerätedateien: Mit den Secrets GARMIN_USERNAME und GARMIN_PASSWORD (am besten ein eigenes Garmin-Konto nur dafür,
+# ohne Zwei-Faktor-Anmeldung) und der Variable CIQ_AGREEMENT_HASH (Garmins SDK-Lizenz, selbst gelesen und bestätigt;
+# fehlt sie, steht der aktuelle Hash in der Zusammenfassung des Laufs) lädt der Lauf Garmins offizielle Gerätedateien.
+# Ohne sie nimmt er die minimale Beschreibung aus garmin/ci/devices: strenge Typprüfung und eine Testversion.
 # Schlüssel: Secret CIQ_DEVELOPER_KEY (DER, Base64); ohne Secret ein Wegwerf-Schlüssel (reicht zum Prüfen).
 # Worker-Adresse: Variable WATCH_WORKER_URL (wird in die Einstellungen des Datenfelds geschrieben).
 name: Garmin
@@ -22,6 +22,7 @@ permissions:
 env:
   CIQ_SDK: connectiq-sdk-lin-9.3.0-2026-10-20-95888f262.zip
   DEVICES: fr265 fr265s
+  CIQ_MANAGER: v0.8.4
 
 jobs:
   garmin:
@@ -51,15 +52,37 @@ jobs:
         id: devices
         run: |
           mkdir -p "$HOME/.Garmin/ConnectIQ/Devices"
+          # Werkzeug für Garmins Gerätedateien, feste Version (github.com/lindell/connect-iq-sdk-manager-cli).
+          curl -fsSL "https://raw.githubusercontent.com/lindell/connect-iq-sdk-manager-cli/$CIQ_MANAGER/install.sh" \
+            | sh -s -- -b "$HOME/bin" "$CIQ_MANAGER"
+          cli="$HOME/bin/connect-iq-sdk-manager-cli"
+          if [ -z "$CIQ_AGREEMENT_HASH" ]; then
+            # Nur anzeigen, nichts bestätigen: Lizenz-Link und aktueller Hash in die Zusammenfassung des Laufs.
+            hash=$("$cli" agreement view 2>/dev/null | sed -n 's/^Current Hash: //p' || true)
+            {
+              echo "### Garmin-SDK-Lizenz"
+              echo
+              echo "Für Garmins offizielle Gerätedateien muss die Lizenz bestätigt sein. Lies sie hier:"
+              echo "https://developer.garmin.com/downloads/connect-iq/sdks/agreement.html"
+              echo
+              echo "Bist du einverstanden, trag diesen Wert als Repo-Variable \`CIQ_AGREEMENT_HASH\` ein:"
+              echo
+              echo "\`\`\`"
+              echo "${hash:-(nicht abrufbar – Lauf später wiederholen)}"
+              echo "\`\`\`"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
           if [ -n "$GARMIN_USERNAME" ] && [ -n "$GARMIN_PASSWORD" ] && [ -n "$CIQ_AGREEMENT_HASH" ]; then
-            curl -fsSL https://raw.githubusercontent.com/lindell/connect-iq-sdk-manager-cli/master/install.sh | sh -s -- -b "$HOME/bin"
-            "$HOME/bin/connect-iq-sdk-manager-cli" agreement accept --acceptance-hash="$CIQ_AGREEMENT_HASH"
-            "$HOME/bin/connect-iq-sdk-manager-cli" login
-            "$HOME/bin/connect-iq-sdk-manager-cli" device download --manifest=garmin/manifest.xml
+            "$cli" agreement accept --agreement-hash="$CIQ_AGREEMENT_HASH"
+            if ! "$cli" login; then
+              echo "::error::Garmin-Anmeldung fehlgeschlagen. Passwort prüfen; Konten mit Zwei-Faktor-Anmeldung gehen nicht (docs/einrichtung.md)."
+              exit 1
+            fi
+            "$cli" device download --manifest=garmin/manifest.xml
             echo "official=true" >> "$GITHUB_OUTPUT"
           else
             cp -r garmin/ci/devices/* "$HOME/.Garmin/ConnectIQ/Devices/"
-            echo "::notice::Ohne Garmin-Zugang: minimale Gerätebeschreibung, nur Typprüfung (docs/einrichtung.md)."
+            echo "::notice::Ohne Garmin-Zugang: Testversion mit minimaler Gerätebeschreibung (docs/einrichtung.md)."
             echo "official=false" >> "$GITHUB_OUTPUT"
           fi
 
@@ -92,8 +115,8 @@ jobs:
         run: monkeyc -e -f garmin/monkey.jungle -y "$RUNNER_TEMP/developer.der" -o build/AIronLudiKarte.iq -r
 
       - uses: actions/upload-artifact@v7
-        if: steps.devices.outputs.official == 'true'
         with:
-          name: aironludi-karte
+          # Ohne Garmin-Zugang eine Testversion (minimale Gerätebeschreibung) – zum Ausprobieren auf eigene Gefahr.
+          name: ${{ steps.devices.outputs.official == 'true' && 'aironludi-karte' || 'aironludi-karte-test' }}
           path: build/*.prg
           retention-days: 14

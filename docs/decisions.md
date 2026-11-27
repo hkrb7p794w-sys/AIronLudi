@@ -1808,3 +1808,17 @@ der normalen Laufaktivität, zurück zur Route bei Abweichung, Route unterwegs �
   Antippen wechselt den Maßstab. **Folgt:** Rückweg über das Wegenetz (kürzester Weg), Wechsel auf Varianten und
   „Abkürzen zum Start“, Vibration, schnellere Darstellung (Raster statt aller Kanten je Bild) – erst nach dem Test auf
   der echten Uhr.
+
+## 2026-11-27 – Garmin-Build: Testversion ohne Zugang, Lizenz-Hash im Lauf
+
+Rückfrage des Nutzers zu Lizenz-Hash und Garmin-Passwort in GitHub.
+
+- **Testversion ohne Garmin-Zugang:** Der Lauf legt die `.prg` immer als Artefakt ab (`aironludi-karte-test`, gebaut
+  mit der minimalen Gerätebeschreibung), damit das Datenfeld ohne Konto und Lizenz ausprobiert werden kann.
+- **Lizenz:** Der Lauf zeigt Link und aktuellen Hash in seiner Zusammenfassung, bestätigt aber nichts. Bestätigt wird
+  nur über die Variable `CIQ_AGREEMENT_HASH`, die der Nutzer selbst setzt.
+- **Zugangsdaten:** Empfehlung eines eigenen Garmin-Kontos nur für die Gerätedateien (ohne Zwei-Faktor-Anmeldung,
+  die das Werkzeug nicht kann), damit das Konto der Uhr nicht in GitHub liegt. Das Werkzeug ist auf v0.8.4 festgelegt
+  statt `master`. Korrektur: der Parameter heißt `--agreement-hash`.
+- **Entwicklerschlüssel optional:** Zum Kopieren per USB reicht ein Schlüssel je Lauf.
+
