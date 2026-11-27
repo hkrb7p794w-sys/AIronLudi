@@ -427,6 +427,7 @@ Future<void> showSendToWatchSheet(BuildContext context, PlannedRoute route) => s
               style: LiquidText.label(sheet),
             ),
           ),
+          WatchMapTile(route: route),
           _GarminDirectTile(route: route),
           for (final watch in WatchTarget.values)
             Builder(

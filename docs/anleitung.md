@@ -197,6 +197,10 @@ von Hand: denselben Link wieder öffnen.
    Auf einer Forerunner (z. B. 265): Lauf starten, **UP** halten › *Navigation › Kurse* › Kurs › *Kurs durchführen*.
    Einmalig unter **UP** halten › *Navigation › Alarme* die Alarme **Kursabweichung** und **Abbiegehinweise**
    einschalten, unter *Navigation › Datenseiten* die **Karte** (mit Datenfeld) und ggf. **Höhenprofil**.
+   **Karte mit Wegenetz auf der Garmin (AIronLudi-Datenfeld, Forerunner 265/265S):** *An Uhr senden* › **Karte auf
+   die Uhr** legt Route, Varianten (±2/±4 km) und die Wege rundherum für die Uhr bereit; unterwegs braucht sie kein
+   Handy. Einmalig das Datenfeld installieren und als Datenseite anlegen (`docs/einrichtung.md`, Abschnitt 9) und mit
+   *Uhr koppeln* den Code eingeben, den die Karte zeigt.
 7. **Gassi und unterwegs:** Beim Spazieren gibt es die Wegart *Hundewiese* (die Runde führt über eine). Auf der
    Karte stehen Trinkbrunnen, beim Spazieren auch Hundewiesen und Kotbeutel. Das Lesezeichen oben im Planer speichert
    eine **Vorlage** (z. B. „Gassi 3 km ab Zuhause“), die unter *Routen* mit einem Tipp plant. In einer gespeicherten

@@ -1,0 +1,21 @@
+{
+  "deviceId": "fr265s",
+  "displayName": "Forerunner 265S",
+  "deviceFamily": "round-360x360",
+  "worldWidePartNumber": "006-B4257-00",
+  "partNumbers": [
+    {"number": "006-B4257-00", "connectIQVersion": "5.2.0", "firmwareVersion": 2700, "languages": [{"code": "deu", "fontSet": "ww"}, {"code": "eng", "fontSet": "ww"}]}
+  ],
+  "orientation": "portrait",
+  "bitsPerPixel": 16,
+  "resolution": {"width": 360, "height": 360},
+  "appTypes": [
+    {"type": "datafield", "memoryLimit": 262144},
+    {"type": "background", "memoryLimit": 65536},
+    {"type": "watchApp", "memoryLimit": 786432}
+  ],
+  "launcherIcon": {"width": 60, "height": 60},
+  "imageFormats": ["png", "jpg"],
+  "antiAliasedFontSupport": true,
+  "alphaBlendingSupport": true
+}

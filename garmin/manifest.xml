@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!-- AIronLudi-Karte: Connect-IQ-Datenfeld für die Garmin-Uhr (Route, Wegenetz, Rückweg – unterwegs ohne Handy). -->
+<iq:manifest xmlns:iq="http://www.garmin.com/xml/connectiq" version="3">
+    <iq:application id="e46731baec444af7a8a078631d1207d0" type="datafield" name="@Strings.AppName" entry="AIronLudiMapApp" launcherIcon="@Drawables.LauncherIcon" minApiLevel="5.0.0">
+        <iq:products>
+            <iq:product id="fr265"/>
+            <iq:product id="fr265s"/>
+        </iq:products>
+        <iq:permissions>
+            <iq:uses-permission id="Communications"/>
+            <iq:uses-permission id="Positioning"/>
+        </iq:permissions>
+        <iq:languages>
+            <iq:language>deu</iq:language>
+            <iq:language>eng</iq:language>
+        </iq:languages>
+        <iq:barrels/>
+    </iq:application>
+</iq:manifest>
