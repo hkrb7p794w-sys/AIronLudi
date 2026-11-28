@@ -498,3 +498,4 @@ Der Umfang (≈ 65 000 Zeilen) passt nicht in eine PR. Vorschlag: je PR ein Teil
 | Garmin-Build: Testversion ohne Garmin-Zugang als Artefakt, Lizenz-Hash in der Zusammenfassung, Werkzeug fest auf v0.8.4, Anleitung in Stufen | erledigt |
 | Garmin-Build: richtiger Programmname des Werkzeugs (`connect-iq-sdk-manager`), Fehler beim Abrufen des Lizenz-Hashs im Protokoll, Hinweis bei fehlender Worker-Adresse | erledigt |
 | Garmin: Worker-Adresse beim Build fest im Code (`WorkerConfig.mc`), Einstellung nur noch als Abweichung | erledigt |
+| Garmin: Uhr fragt von selbst wieder nach Routen (ohne Route alle 30 s, mit Route alle 2 min, nicht während der Aktivität); Statustexte umgebrochen | erledigt |

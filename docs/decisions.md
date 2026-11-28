@@ -1834,3 +1834,14 @@ Platzhalter der ersten Version blieb so stehen.
   (leer, Platzhalter, keine `http`-Adresse), gilt die eingebaute.
 - Außerdem: Der Workflow ruft das Werkzeug unter seinem richtigen Namen `connect-iq-sdk-manager` auf und meldet eine
   fehlende Worker-Adresse in der Zusammenfassung.
+
+## 2026-11-28 – Garmin: Uhr fragt selbst wieder nach Routen
+
+Erster Test mit Kopplung: Die Uhr fragte nach dem Koppeln einmal nach Routen und danach nicht mehr; eine kurz darauf
+gesendete Route kam erst nach einem Neustart der Laufaktivität an. Außerdem wurde der Hinweis „Keine Route …“ am
+runden Rand abgeschnitten.
+
+- Die Uhr fragt jetzt wieder nach: ohne Route alle 30 s, mit Route alle 2 min, solange das Handy verbunden ist.
+- Läuft die Aktivität (Timer gestartet) und liegt eine Route vor, bleibt sie unverändert – unterwegs keine Abfragen
+  und kein Austausch der Route mitten im Lauf.
+- Statustexte werden mit `Graphics.fitTextToArea` umgebrochen und notfalls gekürzt.
