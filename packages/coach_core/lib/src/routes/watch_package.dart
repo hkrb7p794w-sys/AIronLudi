@@ -34,16 +34,52 @@ abstract final class WatchNetworkFormat {
   /// Höchstzahl der Punkte, mit denen die Linien in der Abfrage stehen (sonst wird sie zu lang).
   static const maxQueryPoints = 160;
 
-  /// Overpass-QL: Wege im Abstand [radius] um die Linien, mit allen Knoten (IDs und Koordinaten).
+  /// Fläche (km²), bis zu der ein Rechteck abgefragt wird statt Streifen um jede Linie. Ein Rechteck ist für Overpass
+  /// viel leichter; beim Packen wird ohnehin auf den Streifen um die Linien zugeschnitten.
+  static const maxBoxSquareKilometers = 16.0;
+
+  /// Overpass-QL: Wege im Abstand [radius] um die Linien, mit allen Knoten (IDs und Koordinaten). Kleine Gebiete
+  /// (Runde mit Varianten) als ein Rechteck, große als Streifen um die Linien.
   static String query(List<List<GeoPoint>> lines, {double radius = corridorMeters}) {
+    const filter = '["access"!~"^(private|no)\$"]["foot"!~"^(no|private)\$"]';
+    final box = _box(lines, radius);
+    if (box != null) {
+      final (south, west, north, east) = box;
+      return '[out:json][timeout:40];way["highway"~"^($highways)\$"]$filter'
+          '(${[south, west, north, east].map((value) => value.toStringAsFixed(5)).join(',')});'
+          '(._;>;);out skel qt;';
+    }
     final perLine = math.max(8, maxQueryPoints ~/ math.max(1, lines.length));
     final parts = [
       for (final line in lines)
         if (line.length >= 2)
-          'way["highway"~"^($highways)\$"]["access"!~"^(private|no)\$"]["foot"!~"^(no|private)\$"]'
+          'way["highway"~"^($highways)\$"]$filter'
               '(around:${radius.round()},${[for (final point in Geo.thin(line, perLine)) '${point.latitude.toStringAsFixed(5)},${point.longitude.toStringAsFixed(5)}'].join(',')});',
     ];
-    return '[out:json][timeout:90];(${parts.join()});(._;>;);out skel qt;';
+    return '[out:json][timeout:40];(${parts.join()});(._;>;);out skel qt;';
+  }
+
+  /// Rechteck (Süd, West, Nord, Ost) um alle Linien plus [radius], wenn es klein genug ist; sonst null.
+  static (double, double, double, double)? _box(List<List<GeoPoint>> lines, double radius) {
+    final points = [for (final line in lines) ...line];
+    if (points.isEmpty) return null;
+    var south = points.first.latitude, north = south;
+    var west = points.first.longitude, east = west;
+    for (final point in points) {
+      south = math.min(south, point.latitude);
+      north = math.max(north, point.latitude);
+      west = math.min(west, point.longitude);
+      east = math.max(east, point.longitude);
+    }
+    final dLat = radius / 111320;
+    final dLon = radius / (111320 * math.cos((south + north) / 2 * math.pi / 180));
+    south -= dLat;
+    north += dLat;
+    west -= dLon;
+    east += dLon;
+    final height = (north - south) * 111.32;
+    final width = (east - west) * 111.32 * math.cos((south + north) / 2 * math.pi / 180);
+    return width * height <= maxBoxSquareKilometers ? (south, west, north, east) : null;
   }
 
   /// Antwort (`out skel`): Knoten mit `lat`/`lon`, Wege mit `nodes`. Wirft [RoutingUnavailable] ohne `elements`.
@@ -296,6 +332,8 @@ final class WatchPackage {
       return i;
     }
 
+    // Ohne Wegenetz (Overpass nicht erreichbar): Abbiegungen aus der Form der Route.
+    if (nodes.isEmpty) return _shapeManeuvers(points, cumulative, back, ahead);
     final result = <WatchManeuver>[];
     for (final (node, segment) in attach) {
       if (degree[node] < 3) continue;
@@ -321,6 +359,34 @@ final class WatchPackage {
       result.add(WatchManeuver(pointIndex: pointIndex, turn: turn));
     }
     return result;
+  }
+
+  /// Abbiegungen nur aus der Linie: deutliche Knicke (ab 55°, „leicht“ wäre bei kurvigen Wegen zu häufig); liegen
+  /// zwei innerhalb von 25 m, zählt der stärkere.
+  static List<WatchManeuver> _shapeManeuvers(
+    List<(int, int)> points,
+    List<double> cumulative,
+    int Function(int, double) back,
+    int Function(int, double) ahead,
+  ) {
+    final result = <(WatchManeuver, double)>[];
+    for (var index = 1; index < points.length - 1; index++) {
+      final from = points[back(index, 20)];
+      final at = points[index];
+      final to = points[ahead(index, 20)];
+      if (from == at || to == at) continue;
+      final delta = ((_bearing(at, to) - _bearing(from, at) + 540) % 360) - 180;
+      if (delta.abs() < 55) continue;
+      final turn = WatchTurn.of(delta)!;
+      if (result.isNotEmpty && cumulative[index] - cumulative[result.last.$1.pointIndex] < 25) {
+        if (delta.abs() > result.last.$2.abs()) {
+          result[result.length - 1] = (WatchManeuver(pointIndex: index, turn: turn), delta);
+        }
+        continue;
+      }
+      result.add((WatchManeuver(pointIndex: index, turn: turn), delta));
+    }
+    return [for (final (maneuver, _) in result) maneuver];
   }
 
   static double _bearing((int, int) a, (int, int) b) =>

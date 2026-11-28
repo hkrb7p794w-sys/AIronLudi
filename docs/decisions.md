@@ -1845,3 +1845,9 @@ runden Rand abgeschnitten.
 - Läuft die Aktivität (Timer gestartet) und liegt eine Route vor, bleibt sie unverändert – unterwegs keine Abfragen
   und kein Austausch der Route mitten im Lauf.
 - Statustexte werden mit `Graphics.fitTextToArea` umgebrochen und notfalls gekürzt.
+- **Ohne Wegenetz weiter:** War Overpass nicht erreichbar, scheiterte „Karte auf die Uhr“ ganz. Jetzt geht die Route
+  trotzdem auf die Uhr (mit Varianten, ohne Wege drumherum); die App sagt das dazu. Abbiegungen kommen dann aus der
+  Form der Route (Knicke ab 55°, „leicht“ wäre bei kurvigen Wegen zu häufig).
+- **Leichtere Abfrage:** Bis 16 km² fragt die App ein Rechteck ab statt Streifen um Route und Varianten (für Overpass
+  viel leichter; beim Packen wird ohnehin auf 400 m um die Linien zugeschnitten). Grenze je Abfrage 40 s, je Spiegel
+  50 s statt 90 s.
