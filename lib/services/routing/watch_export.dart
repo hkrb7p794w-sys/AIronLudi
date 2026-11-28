@@ -7,7 +7,13 @@ import '../ai/ai_client.dart';
 
 /// Ergebnis von „Auf die Uhr“.
 final class WatchExportResult {
-  const WatchExportResult({required this.bytes, required this.chunks, required this.variants, required this.nodes});
+  const WatchExportResult({
+    required this.bytes,
+    required this.chunks,
+    required this.variants,
+    required this.nodes,
+    this.withoutNetwork = false,
+  });
 
   final int bytes;
   final int chunks;
@@ -17,6 +23,9 @@ final class WatchExportResult {
 
   /// Knoten im Wegenetz.
   final int nodes;
+
+  /// Wegenetz war nicht erreichbar: nur Route und Varianten, Abbiegungen aus der Form der Route.
+  final bool withoutNetwork;
 }
 
 /// Kein Worker eingerichtet oder die Uhr-Funktion dort nicht erreichbar.
@@ -94,13 +103,18 @@ final class WatchExportService {
     }
     final variants = await this.variants(route, onProgress: onProgress);
     onProgress?.call('Wegenetz wird geladen …');
+    // Ohne Wegenetz geht die Route trotzdem auf die Uhr (Overpass ist ein öffentlicher Dienst und öfter überlastet).
+    var osm = const OsmWays(nodes: {}, ways: []);
+    var withoutNetwork = false;
+    try {
+      osm = await network.network([route.points, for (final (_, _, variant) in variants) variant.points]);
+    } on RoutingUnavailable {
+      withoutNetwork = true;
+    }
     final WatchPackage package;
     try {
-      final osm = await network.network([route.points, for (final (_, _, variant) in variants) variant.points]);
       onProgress?.call('Paket für die Uhr wird gepackt …');
       package = WatchPackage.build(route: route, variants: variants, osm: osm);
-    } on RoutingUnavailable catch (error) {
-      throw WatchExportFailed('${error.message} Bitte gleich noch einmal versuchen.');
     } on WatchPackageTooLarge catch (error) {
       throw WatchExportFailed(error.message);
     }
@@ -129,6 +143,7 @@ final class WatchExportService {
       chunks: chunks.length,
       variants: variants.length,
       nodes: package.nodes.length,
+      withoutNetwork: withoutNetwork,
     );
   }
 

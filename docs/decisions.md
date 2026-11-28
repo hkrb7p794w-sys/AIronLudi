@@ -1834,3 +1834,20 @@ Platzhalter der ersten Version blieb so stehen.
   (leer, Platzhalter, keine `http`-Adresse), gilt die eingebaute.
 - Außerdem: Der Workflow ruft das Werkzeug unter seinem richtigen Namen `connect-iq-sdk-manager` auf und meldet eine
   fehlende Worker-Adresse in der Zusammenfassung.
+
+## 2026-11-28 – Garmin: Uhr fragt selbst wieder nach Routen
+
+Erster Test mit Kopplung: Die Uhr fragte nach dem Koppeln einmal nach Routen und danach nicht mehr; eine kurz darauf
+gesendete Route kam erst nach einem Neustart der Laufaktivität an. Außerdem wurde der Hinweis „Keine Route …“ am
+runden Rand abgeschnitten.
+
+- Die Uhr fragt jetzt wieder nach: ohne Route alle 30 s, mit Route alle 2 min, solange das Handy verbunden ist.
+- Läuft die Aktivität (Timer gestartet) und liegt eine Route vor, bleibt sie unverändert – unterwegs keine Abfragen
+  und kein Austausch der Route mitten im Lauf.
+- Statustexte werden mit `Graphics.fitTextToArea` umgebrochen und notfalls gekürzt.
+- **Ohne Wegenetz weiter:** War Overpass nicht erreichbar, scheiterte „Karte auf die Uhr“ ganz. Jetzt geht die Route
+  trotzdem auf die Uhr (mit Varianten, ohne Wege drumherum); die App sagt das dazu. Abbiegungen kommen dann aus der
+  Form der Route (Knicke ab 55°, „leicht“ wäre bei kurvigen Wegen zu häufig).
+- **Leichtere Abfrage:** Bis 16 km² fragt die App ein Rechteck ab statt Streifen um Route und Varianten (für Overpass
+  viel leichter; beim Packen wird ohnehin auf 400 m um die Linien zugeschnitten). Grenze je Abfrage 40 s, je Spiegel
+  50 s statt 90 s.

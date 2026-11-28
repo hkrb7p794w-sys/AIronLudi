@@ -48,7 +48,9 @@ class _WatchMapTileState extends ConsumerState<WatchMapTile> {
         () => _message =
             'Liegt für die Uhr bereit (${(result.bytes / 1024).ceil()} KB'
             '${result.variants > 0 ? ', ${result.variants} Varianten' : ''}). Öffne auf der Uhr „Laufen“ mit dem '
-            'AIronLudi-Datenfeld, solange das Handy in der Nähe ist – danach brauchst du es nicht mehr.',
+            'AIronLudi-Datenfeld, solange das Handy in der Nähe ist – danach brauchst du es nicht mehr.'
+            '${result.withoutNetwork ? ' Das Wegenetz war gerade nicht erreichbar: Die Uhr zeigt nur die Route, '
+                      'ohne Wege drumherum. Später noch einmal senden, dann kommt es dazu.' : ''}',
       );
     } on WatchExportFailed catch (error) {
       if (!mounted) return;

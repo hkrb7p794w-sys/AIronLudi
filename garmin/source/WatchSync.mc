@@ -23,7 +23,9 @@ class WatchSync {
     public var routePackage as WatchPackage? = null;
 
     private var _busy as Boolean = false;
-    private var _checked as Boolean = false;
+    // Zeitpunkt der letzten vollständigen Abfrage (null: noch keine). Danach fragt die Uhr wieder nach – ohne Route
+    // alle 30 s, mit Route alle 2 min, aber nur solange die Aktivität nicht läuft.
+    private var _checkedAt as Number? = null;
     private var _lastTry as Number = -100000;
     private var _routeId as String = "";
     private var _updatedAt as String = "";
@@ -95,10 +97,21 @@ class WatchSync {
         return key;
     }
 
-    // Jede Sekunde aus compute(): fragt höchstens alle 20 s beim Worker nach, solange etwas zu tun ist.
-    public function tick() as Void {
-        if (_busy || _checked) {
+    // Jede Sekunde aus compute(): fragt höchstens alle 20 s beim Worker nach, solange etwas zu tun ist. Läuft die
+    // Aktivität (running), bleibt eine geladene Route unverändert.
+    public function tick(running as Boolean) as Void {
+        if (_busy) {
             return;
+        }
+        var checkedAt = _checkedAt;
+        if (checkedAt != null) {
+            if (routePackage != null && running) {
+                return;
+            }
+            var wait = routePackage == null ? 30000 : 120000;
+            if (System.getTimer() - checkedAt < wait) {
+                return;
+            }
         }
         if (workerUrl() == null) {
             status = "Worker-Adresse fehlt";
@@ -165,9 +178,9 @@ class WatchSync {
         }
         var routes = data["routes"];
         if (!(routes instanceof Array) || routes.size() == 0) {
-            _checked = true;
+            _checkedAt = System.getTimer();
             if (routePackage == null) {
-                status = "Keine Route – in AIronLudi „Karte auf die Uhr“";
+                status = "Keine Route.\nIn AIronLudi „Karte auf die Uhr“ tippen";
             }
             return;
         }
@@ -175,7 +188,7 @@ class WatchSync {
         var id = newest["id"] as String;
         var updatedAt = newest["updatedAt"] as String;
         if (id.equals(Storage.getValue("routeId")) && updatedAt.equals(Storage.getValue("updatedAt"))) {
-            _checked = true;
+            _checkedAt = System.getTimer();
             return;
         }
         _routeId = id;
@@ -213,7 +226,7 @@ class WatchSync {
         Storage.setValue("routeId", _routeId);
         Storage.setValue("updatedAt", _updatedAt);
         _chunks = [];
-        _checked = true;
+        _checkedAt = System.getTimer();
         load();
     }
 }

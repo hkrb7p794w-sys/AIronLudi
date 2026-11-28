@@ -489,7 +489,8 @@ final class OverpassNetworkSource implements WatchNetworkSource {
                 'User-Agent': _HttpEngine.userAgent,
               },
               body: utf8.encode('data=${Uri.encodeQueryComponent(query)}'),
-              timeout: const Duration(seconds: 90),
+              // Abfrage-Grenze 40 s plus Übertragung; danach der nächste Spiegel.
+              timeout: const Duration(seconds: 50),
             ),
           ),
         );

@@ -16,6 +16,13 @@ import '../features/route_planner_screen_test.dart' show FakeRouting;
 
 const start = GeoPoint(52.52, 13.405);
 
+/// Overpass nicht erreichbar (alle Spiegel).
+final class DownNetwork implements WatchNetworkSource {
+  @override
+  Future<OsmWays> network(List<List<GeoPoint>> lines, {double radius = 400}) async =>
+      throw const RoutingUnavailable('Das Wegenetz (Overpass) ist gerade nicht erreichbar.');
+}
+
 /// Straßenraster 100 m (31 × 31) um den Start.
 final class GridNetwork implements WatchNetworkSource {
   int calls = 0;
@@ -108,6 +115,20 @@ void main() {
     expect(package.routes.length, 1 + result.variants);
     expect(package.routes.skip(1).map((route) => route.kind), everyElement(isNot(WatchRouteKind.main)));
     expect(package.nodes.length, result.nodes);
+  });
+
+  test('Overpass nicht erreichbar: Route geht ohne Wegenetz auf die Uhr', () async {
+    final service = WatchExportService(ai: ai, backend: FakeRouting(), network: DownNetwork());
+    final result = await service.export(loop());
+    expect(result.withoutNetwork, isTrue);
+    expect(result.nodes, 0);
+    final body = jsonDecode(utf8.decode(requests.single.body!)) as Map<String, Object?>;
+    final bytes = Uint8List.fromList([
+      for (final chunk in (body['chunks']! as List).cast<String>()) ...base64.decode(chunk),
+    ]);
+    final package = WatchPackage.decode(bytes);
+    expect(package.nodes, isEmpty);
+    expect(package.routes.length, 1 + result.variants);
   });
 
   test('Ohne Worker: verständlicher Hinweis; Kopplung prüft den Code', () async {

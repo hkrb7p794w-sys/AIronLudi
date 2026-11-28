@@ -46,7 +46,7 @@ class MapField extends WatchUi.DataField {
     }
 
     public function compute(info as Activity.Info) as Void {
-        _sync.tick();
+        _sync.tick(info.timerState != null && info.timerState != Activity.TIMER_STATE_OFF);
         var speed = info.currentSpeed;
         _speed = speed != null ? speed : 0.0;
         var elapsed = info.elapsedDistance;
@@ -134,7 +134,7 @@ class MapField extends WatchUi.DataField {
         if (width < 200 || height < 200) {
             dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
             var text = routePackage == null ? _sync.status : remainingText(routePackage);
-            dc.drawText(width / 2, height / 2, Graphics.FONT_SMALL, text, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            drawWrapped(dc, text, Graphics.FONT_SMALL, width, height);
             return;
         }
         if (routePackage == null || _x == null) {
@@ -160,7 +160,14 @@ class MapField extends WatchUi.DataField {
         }
         var text = routePackage != null ? routePackage.routeName + "\nGPS wird gesucht …" : _sync.status;
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(width / 2, height / 2, Graphics.FONT_TINY, text, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        drawWrapped(dc, text, Graphics.FONT_TINY, width * 3 / 4, height / 2);
+    }
+
+    // Text mittig, umgebrochen und notfalls gekürzt, damit er auf dem runden Bildschirm ganz zu sehen ist.
+    private function drawWrapped(dc as Graphics.Dc, text as String, font as Graphics.FontType, areaWidth as Number, areaHeight as Number) as Void {
+        var fitted = Graphics.fitTextToArea(text, font, areaWidth, areaHeight, true);
+        var shown = fitted != null ? fitted : text;
+        dc.drawText(dc.getWidth() / 2, dc.getHeight() / 2, font, shown, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 
     private function drawMap(dc as Graphics.Dc, routePackage as WatchPackage, x as Float, y as Float) as Void {

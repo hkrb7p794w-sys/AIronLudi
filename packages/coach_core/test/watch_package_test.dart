@@ -60,11 +60,18 @@ PlannedRoute loop() {
 
 void main() {
   test('Abfrage und Antwort von Overpass', () {
+    // Kleine Runde: ein Rechteck um alle Linien plus Abstand (für Overpass viel leichter).
     final query = WatchNetworkFormat.query([loop().points], radius: 300);
-    expect(query, startsWith('[out:json]'));
-    expect(query, contains('(around:300,51.50000,7.30000,'));
+    expect(query, startsWith('[out:json][timeout:40];way['));
+    expect(query, contains('(51.49731,7.29567,51.50719,7.31154);'));
+    expect(query, isNot(contains('around')));
     expect(query, contains('footway|path|track'));
     expect(query, endsWith('(._;>;);out skel qt;'));
+    // Lange Strecke: Streifen um die Linie statt eines riesigen Rechtecks.
+    final projection = LocalProjection(start);
+    final long = [for (var km = 0; km <= 20; km++) projection.unproject(km * 1000.0, km * 1000.0)];
+    final corridor = WatchNetworkFormat.query([long], radius: 300);
+    expect(corridor, contains('(around:300,51.50000,7.30000,'));
     final osm = WatchNetworkFormat.parse({
       'elements': [
         {'type': 'node', 'id': 1, 'lat': 51.5, 'lon': 7.3},
@@ -175,5 +182,18 @@ void main() {
       ),
       throwsA(isA<WatchPackageTooLarge>()),
     );
+  });
+  test('Ohne Wegenetz: Route mit Abbiegungen aus ihrer Form', () {
+    final package = WatchPackage.build(
+      route: loop(),
+      osm: const OsmWays(nodes: {}, ways: []),
+    );
+    expect(package.nodes, isEmpty);
+    expect(package.edges, isEmpty);
+    final turns = package.main.maneuvers.map((maneuver) => maneuver.turn).toList();
+    // Runde gegen den Uhrzeigersinn: an den drei Ecken jeweils links.
+    expect(turns, [WatchTurn.left, WatchTurn.left, WatchTurn.left]);
+    final decoded = WatchPackage.decode(package.encode());
+    expect(decoded.main.maneuvers.length, 3);
   });
 }
